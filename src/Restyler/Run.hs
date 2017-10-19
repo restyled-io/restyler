@@ -10,11 +10,11 @@ module Restyler.Run
 
 import ClassyPrelude
 
-import Control.Monad.Except
+import Control.Monad.Except hiding (filterM)
 import Data.Bifunctor (first)
 import Restyler.Clone
 import Restyler.Config
-import System.Directory (getCurrentDirectory)
+import System.Directory (doesFileExist, getCurrentDirectory)
 import System.Process (callProcess)
 
 callRestylers :: Text -> IO (Either String ())
@@ -25,7 +25,7 @@ callRestylers mergeBase = runExceptT $ do
         throwError "Restyler disabled by config"
 
     dir <- tryE getCurrentDirectory
-    paths <- tryE $ changedPaths mergeBase
+    paths <- tryE $ filterM doesFileExist =<< changedPaths mergeBase
     tryE $ for_ cRestylers $ \r@Restyler{..} ->
         callProcess "docker" $ dockerArguments dir r
             ++ rArguments

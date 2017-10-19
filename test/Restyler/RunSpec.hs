@@ -4,12 +4,21 @@
 module Restyler.RunSpec (spec) where
 
 import SpecHelper
+import System.Process (callProcess)
 
 import Restyler.Run
 
 spec :: Spec
 spec = around (withSystemTempDirectory "") $ do
     describe "callRestylers" $ do
+        it "doesn't run on removed files" $ \dir -> do
+            setupGitRepo dir
+            setupGitTrackedFile "Foo.hs" "" Nothing
+            callProcess "git" ["checkout", "--quiet", "-b", "develop"]
+            callProcess "git" ["rm", "Foo.hs"]
+            callProcess "git" ["commit", "--quiet", "--message", "Remove file"]
+            callRestylers "master" `shouldProduceDiff` []
+
         context "Default configuration" $ do
             it "restyles Haskell" $ restylerTestCase "Foo.hs"
                 [st|
