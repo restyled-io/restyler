@@ -24,6 +24,10 @@ test.ci:
 	# skip callRestylers because it requires docker
 	stack test --test-arguments "--skip callRestylers"
 
+.PHONY: install
+install:
+	stack install
+
 .PHONY: image.build
 image.build:
 	docker build --tag "restyled/restyler$(IMAGE_TAG)" .
