@@ -1,0 +1,8 @@
+resolver: lts-9.6
+packages:
+- location: .
+- location:
+    git: https://pbrisbin@bitbucket.org/pbrisbin/haskell-jwt.git
+    commit: 202898d8aa20ab4d4fdff3a9efb08a973ecd0bc4
+  extra-dep: true
+extra-deps: []

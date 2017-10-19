@@ -1,0 +1,62 @@
+name:    restyler
+version: "0.0.0"
+
+# Dependencies shared in *all* targets
+dependencies:
+  - base
+
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+  - -O2
+  dependencies:
+  - Glob
+  - aeson
+  - bytestring
+  - classy-prelude
+  - directory
+  - github
+  - http-client
+  - http-client-tls
+  - http-types
+  - jwt
+  - mtl
+  - operational
+  - optparse-applicative
+  - process
+  - safe
+  - shakespeare
+  - temporary
+  - text
+  - time
+  - unordered-containers
+  - vector
+  - yaml
+
+executables:
+  restyler:
+    main: main.hs
+    source-dirs: app
+    ghc-options:
+    - -Wall
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - restyler
+
+tests:
+  test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options: -Wall
+    dependencies:
+    - restyler
+    - classy-prelude
+    - directory
+    - hspec
+    - process
+    - shakespeare
+    - temporary
+    - text

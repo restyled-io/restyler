@@ -1,0 +1,9 @@
+*.cabal
+*.md
+.dockerignore
+.git
+.stack-work
+Dockerfile
+Makefile
+tags
+test
