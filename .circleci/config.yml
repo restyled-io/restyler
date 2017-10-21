@@ -1,0 +1,35 @@
+version: 2.0
+
+jobs:
+  build:
+    docker:
+      - image: fpco/stack-build:lts
+        environment:
+          GIT_AUTHOR_EMAIL: ci@restyled.io
+          GIT_AUTHOR_NAME: Restyled.io CI
+          GIT_COMMITTER_EMAIL: ci@restyled.io
+          GIT_COMMITTER_NAME: Restyled.io CI
+    steps:
+      - checkout
+      - restore_cache:
+          keys: stack
+            - stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
+            - stack-{{ .Branch }}
+            - stack
+      - run:
+          name: Dependencies
+          command: make setup
+      - run:
+          name: Build
+          command: make build
+      - run:
+          name: Lint
+          command: make lint
+      - save_cache:
+          key: stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
+          paths:
+            - ~/.stack
+            - ./.stack-work
+      - run:
+          name: Test
+          command: make test.ci
