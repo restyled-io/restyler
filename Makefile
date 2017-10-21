@@ -1,10 +1,16 @@
 all: setup build lint test
 
+release: clean build lint test image.build image.release
+
 .PHONY: setup
 setup:
 	stack setup
 	stack build --dependencies-only --test --no-run-tests
 	stack install hlint weeder
+
+.PHONY: clean
+clean:
+	stack clean
 
 .PHONY: build
 build:
