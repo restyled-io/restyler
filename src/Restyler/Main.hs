@@ -41,8 +41,8 @@ restylerMain = do
         pr <- createPullRequest oOwner oRepo CreatePullRequest
             { createPullRequestTitle = rTitle
             , createPullRequestBody = ""
-            , createPullRequestHead = hBranch
-            , createPullRequestBase = rBranch
+            , createPullRequestHead = rBranch
+            , createPullRequestBase = hBranch
             }
 
         void
