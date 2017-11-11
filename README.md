@@ -36,7 +36,10 @@ Available options:
 To pull and run the latest version from Docker Hub:
 
 ```console
-docker run --rm restyled/restyler --help
+docker run --rm \
+  --volume /tmp:tmp \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  restyled/restyler --help
 ```
 
 To build the image locally:
