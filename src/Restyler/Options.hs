@@ -3,7 +3,6 @@
 module Restyler.Options
     ( Options(..)
     , parseOptions
-    , optionsToFlags
     ) where
 
 import ClassyPrelude
@@ -65,20 +64,3 @@ options = Options
 parseOptions :: IO Options
 parseOptions = execParser $ info (options <**> helper)
     (fullDesc <> progDesc "Restyle a GitHub Pull Request")
-
--- | Generate CLI flags
---
--- Library call-sites (e.g. @"Backend"@) should build type-safe @'Options'@ then
--- use this. The function is co-located here as a best-effort way to avoid
--- breaking things at this un-typed boundary.
---
-optionsToFlags :: Options -> [String]
-optionsToFlags Options{..} =
-    [ "--github-app-id", unpack $ toPathPart oGitHubAppId
-    , "--github-app-key", unpack oGitHubAppKey
-    , "--installation-id", unpack $ toPathPart oInstallationId
-    , "--owner", unpack $ toPathPart oOwner
-    , "--repo", unpack $ toPathPart oRepo
-    , "--pull-request", unpack $ toPathPart oPullRequest
-    , "--restyled-root", unpack oRestyledRoot
-    ]
