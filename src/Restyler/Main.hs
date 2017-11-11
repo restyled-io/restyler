@@ -9,14 +9,14 @@ module Restyler.Main
 import ClassyPrelude
 
 import Data.Proxy
+import qualified Data.Text as T
 import GitHub.Client
 import GitHub.Endpoints.Installations
 import Restyler.Clone
 import Restyler.Options
 import Restyler.Run
-import Text.Shakespeare.Text (st)
 import System.Exit (die)
-import qualified Data.Text as T
+import Text.Shakespeare.Text (st)
 
 restylerMain :: IO ()
 restylerMain = do
@@ -32,7 +32,8 @@ restylerMain = do
 
     withinClonedRepo (remoteURL atToken oOwner oRepo) $ do
         checkoutBranch False hBranch
-        either die return =<< callRestylers bBranch
+        paths <- changedPaths bBranch
+        either die return =<< callRestylers paths
         checkoutBranch True rBranch
         commitAll $ restyledCommitMessage oRestyledRoot pullRequest
         pushOrigin rBranch

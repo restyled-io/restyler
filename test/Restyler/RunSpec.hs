@@ -17,7 +17,7 @@ spec = around (withSystemTempDirectory "") $ do
             callProcess "git" ["checkout", "--quiet", "-b", "develop"]
             callProcess "git" ["rm", "Foo.hs"]
             callProcess "git" ["commit", "--quiet", "--message", "Remove file"]
-            callRestylers "master" `shouldProduceDiff` []
+            callRestylers ["Foo.hs"] `shouldProduceDiff` []
 
         context "Default configuration" $ do
             it "restyles Haskell" $ restylerTestCase "Foo.hs"
@@ -57,7 +57,7 @@ spec = around (withSystemTempDirectory "") $ do
                         "example = case x of Just p -> foo bar\n"
                         $ Just "develop"
 
-                    callRestylers "master" `shouldProduceDiff`
+                    callRestylers ["Foo.hs"] `shouldProduceDiff`
                         [ "-example = case x of Just p -> foo bar"
                         , "+example ="
                         , "+  case x of"
@@ -77,7 +77,7 @@ spec = around (withSystemTempDirectory "") $ do
                         |])
                         $ Just "develop"
 
-                    callRestylers "master" `shouldProduceDiff`
+                    callRestylers ["Foo.hs"] `shouldProduceDiff`
                         [ " func (MyLongFoo abc def) = 1"
                         , "-func (Bar a d) = 2"
                         , "-func _ = 3"
@@ -89,7 +89,7 @@ restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
     setupGitTrackedFile name (dedent content) $ Just "develop"
-    callRestylers "master" `shouldProduceDiff` changes
+    callRestylers [name] `shouldProduceDiff` changes
 
 shouldProduceDiff :: IO (Either String ()) -> [String] -> Expectation
 shouldProduceDiff call changes = do
