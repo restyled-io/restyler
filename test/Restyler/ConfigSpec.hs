@@ -5,8 +5,8 @@ module Restyler.ConfigSpec (spec) where
 
 import SpecHelper
 
-import Restyler.Config
 import qualified Data.Text.IO as T
+import Restyler.Config
 
 spec :: Spec
 spec = around withEmptySystemTempFile $ do

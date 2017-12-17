@@ -8,11 +8,13 @@
 module GitHub.Client
     ( GitHubRW
     , runGitHub
+    , runGitHubThrow
     , createComment
     , createPullRequest
     , getPullRequest
     ) where
 
+import Control.Exception (throwIO)
 import Control.Monad.Except
 import Control.Monad.Operational
 import Data.Text (Text)
@@ -39,6 +41,15 @@ runGitHub token m = runExceptT $ do
             go mgr (k b)
 
     auth = OAuth $ encodeUtf8 token
+
+-- | A version that throws (shown) errors in @'IO'@
+--
+-- Actually most useful in a CLI application with overall IO error-handling.
+--
+runGitHubThrow :: Text -> GitHubRW a -> IO a
+runGitHubThrow token m = do
+    result <- runGitHub token m
+    either (throwIO . userError . ("GitHub Error: " ++) . show) pure result
 
 -- | @'pullRequestR'@ lifted to @'GitHubRW'@
 --
