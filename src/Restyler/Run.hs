@@ -10,22 +10,14 @@ module Restyler.Run
 
 import ClassyPrelude
 
-import Control.Monad.Except hiding (filterM)
-import Data.Bifunctor (first)
 import Restyler.Config
 import System.Directory (doesFileExist, getCurrentDirectory)
 import System.Process (callProcess)
 
-callRestylers :: [FilePath] -> IO (Either String ())
-callRestylers paths' = runExceptT $ do
-    Config{..} <- ExceptT loadConfig
-
-    unless cEnabled $
-        throwError "Restyler disabled by config"
-
-    tryE $ do
-        paths <- filterM doesFileExist paths'
-        traverse_ (callRestyler paths) cRestylers
+callRestylers :: Config -> [FilePath] -> IO ()
+callRestylers Config{..} paths' = do
+    paths <- filterM doesFileExist paths'
+    traverse_ (callRestyler paths) cRestylers
 
 callRestyler :: [FilePath] -> Restyler -> IO ()
 callRestyler paths r = do
@@ -42,6 +34,3 @@ dockerArguments dir r@Restyler{..} paths =
     ]
     ++ rArguments
     ++ restylePaths r paths
-
-tryE :: IO a -> ExceptT String IO a
-tryE f = ExceptT $ first show <$> tryIO f

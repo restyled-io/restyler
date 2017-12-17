@@ -4,9 +4,10 @@
 module Restyler.RunSpec (spec) where
 
 import SpecHelper
-import System.Process (callProcess)
 
+import Restyler.Config
 import Restyler.Run
+import System.Process (callProcess)
 
 spec :: Spec
 spec = around (withSystemTempDirectory "") $ do
@@ -17,7 +18,8 @@ spec = around (withSystemTempDirectory "") $ do
             callProcess "git" ["checkout", "--quiet", "-b", "develop"]
             callProcess "git" ["rm", "Foo.hs"]
             callProcess "git" ["commit", "--quiet", "--message", "Remove file"]
-            callRestylers ["Foo.hs"] `shouldProduceDiff` []
+            callRestylers defaultConfig ["Foo.hs"]
+            ["Foo.hs"] `shouldRestyleAs` []
 
         context "Default configuration" $ do
             it "restyles Haskell" $ restylerTestCase "Foo.hs"
@@ -57,7 +59,7 @@ spec = around (withSystemTempDirectory "") $ do
                         "example = case x of Just p -> foo bar\n"
                         $ Just "develop"
 
-                    callRestylers ["Foo.hs"] `shouldProduceDiff`
+                    ["Foo.hs"] `shouldRestyleAs`
                         [ "-example = case x of Just p -> foo bar"
                         , "+example ="
                         , "+  case x of"
@@ -77,7 +79,7 @@ spec = around (withSystemTempDirectory "") $ do
                         |])
                         $ Just "develop"
 
-                    callRestylers ["Foo.hs"] `shouldProduceDiff`
+                    ["Foo.hs"] `shouldRestyleAs`
                         [ " func (MyLongFoo abc def) = 1"
                         , "-func (Bar a d) = 2"
                         , "-func _ = 3"
@@ -89,12 +91,13 @@ restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
     setupGitTrackedFile name (dedent content) $ Just "develop"
-    callRestylers [name] `shouldProduceDiff` changes
+    [name] `shouldRestyleAs` changes
 
-shouldProduceDiff :: IO (Either String ()) -> [String] -> Expectation
-shouldProduceDiff call changes = do
-    result <- call
-    result `shouldBe` Right ()
-
-    output <- lines <$> readProcess "git" ["diff"] ""
-    output `shouldContain` changes
+shouldRestyleAs :: [FilePath] -> [String] -> Expectation
+paths `shouldRestyleAs` changes = either
+    (expectationFailure . ("loadConfig: " <>))
+    (\config -> do
+        callRestylers config paths
+        output <- lines <$> readProcess "git" ["diff"] ""
+        output `shouldContain` changes
+    ) =<< loadConfig

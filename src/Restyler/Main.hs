@@ -13,17 +13,17 @@ import qualified Data.Text as T
 import GitHub.Client
 import GitHub.Endpoints.Installations
 import Restyler.Clone
+import Restyler.Config
 import Restyler.Options
 import Restyler.Run
-import System.Exit (die)
+import System.Exit (die, exitSuccess)
 import Text.Shakespeare.Text (st)
 
 restylerMain :: IO ()
-restylerMain = do
+restylerMain = handleIO (die . show) $ do
     Options{..} <- parseOptions
     AccessToken{..} <- createAccessToken oGitHubAppId oGitHubAppKey oInstallationId
-    pullRequest <- either (die . show) return
-        =<< runGitHub atToken (getPullRequest oOwner oRepo oPullRequest)
+    pullRequest <- runGitHubThrow atToken (getPullRequest oOwner oRepo oPullRequest)
 
     let bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
         hBranch = pullRequestCommitRef $ pullRequestHead pullRequest
@@ -32,13 +32,19 @@ restylerMain = do
 
     withinClonedRepo (remoteURL atToken oOwner oRepo) $ do
         checkoutBranch False hBranch
+
+        config <-fromEitherM =<< loadConfig
+        unless (cEnabled config) $ do
+            putStrLn "Restyler disabled by config"
+            exitSuccess
+
         paths <- changedPaths bBranch
-        either die return =<< callRestylers paths
+        callRestylers config paths
         checkoutBranch True rBranch
         commitAll $ restyledCommitMessage oRestyledRoot pullRequest
         pushOrigin rBranch
 
-    result <- runGitHub atToken $ do
+    runGitHubThrow atToken $ do
         pr <- createPullRequest oOwner oRepo CreatePullRequest
             { createPullRequestTitle = rTitle
             , createPullRequestBody = ""
@@ -49,8 +55,6 @@ restylerMain = do
         void
             $ createComment oOwner oRepo (asIssueId oPullRequest)
             $ restyledCommentBody oRestyledRoot pr
-
-    either (die . show) return result
 
 -- TODO: template with more details
 restyledCommitMessage :: Text -> PullRequest -> Text
@@ -84,3 +88,6 @@ remoteURL token owner repo = "https://x-access-token:"
 
 asIssueId :: Id PullRequest -> Id Issue
 asIssueId = mkId Proxy . untagId
+
+fromEitherM :: MonadThrow m => Either String a -> m a
+fromEitherM = either throwString pure
