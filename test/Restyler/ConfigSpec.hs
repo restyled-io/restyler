@@ -26,6 +26,7 @@ spec = around withEmptySystemTempFile $ do
                         , rCommand = "stylish-haskell"
                         , rArguments = ["--inplace", "--"]
                         , rInclude = [Include "**/*.hs"]
+                        , rInterpreters = []
                         }
                     , Restyler
                         { rName = "prettier"
@@ -35,6 +36,7 @@ spec = around withEmptySystemTempFile $ do
                             [ "**/*.js"
                             , "**/*.jsx"
                             ]
+                        , rInterpreters = []
                         }
                     ]
                 }
@@ -82,6 +84,7 @@ spec = around withEmptySystemTempFile $ do
                         , rCommand = "stylish-haskell"
                         , rArguments = ["--inplace", "--"]
                         , rInclude = [Include "**/*.lhs"]
+                        , rInterpreters = []
                         }
                     ]
                 }

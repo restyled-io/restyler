@@ -7,8 +7,13 @@ module Restyler.Config
     , loadConfigFrom
     , Restyler(..)
     , restylePaths
+
     -- * Include Patterns
     , module Restyler.Config.Include
+
+    -- * Filtering by shebang
+    , module Restyler.Config.Interpreter
+
     -- * Exported for documentation only
     , configPath
     , defaultConfig
@@ -22,6 +27,7 @@ import Data.Aeson.Types (typeMismatch)
 import Data.Bifunctor (first)
 import Data.Yaml
 import Restyler.Config.Include
+import Restyler.Config.Interpreter
 import System.Directory (doesFileExist)
 
 import qualified Data.HashMap.Lazy as HM
@@ -53,30 +59,35 @@ allRestylers =
         , rCommand = "stylish-haskell"
         , rArguments = ["--inplace", "--"]
         , rInclude = ["**/*.hs"]
+        , rInterpreters = []
         }
     , Restyler
         { rName = "prettier"
         , rCommand = "prettier"
         , rArguments = ["--write", "--"]
         , rInclude = ["**/*.js", "**/*.jsx"]
+        , rInterpreters = []
         }
     , Restyler
         { rName = "hindent"
         , rCommand = "hindent-inplace"
         , rArguments = ["--"]
         , rInclude = ["**/*.hs"]
+        , rInterpreters = []
         }
     , Restyler
         { rName = "brittany"
         , rCommand = "brittany-inplace"
         , rArguments = ["--"]
         , rInclude = ["**/*.hs"]
+        , rInterpreters = []
         }
     , Restyler
         { rName = "shfmt"
         , rCommand = "shfmt"
         , rArguments = ["-w", "--"]
-        , rInclude = ["**/*"] -- N.B. shfmt will look for shebangs itself
+        , rInclude = ["**/*.sh", "**/*.bash"]
+        , rInterpreters = [Sh, Bash]
         }
     ]
 
@@ -116,6 +127,7 @@ data Restyler = Restyler
     , rCommand :: String
     , rArguments :: [String]
     , rInclude :: [Include]
+    , rInterpreters :: [Interpreter]
     }
     deriving (Eq, Show)
 
@@ -129,10 +141,18 @@ instance FromJSON Restyler where
                     <*> o' .:? "command" .!= rCommand
                     <*> o' .:? "arguments" .!= rArguments
                     <*> o' .:? "include" .!= rInclude
+                    <*> o' .:? "interpreters" .!= rInterpreters
             ) v'
         _ -> typeMismatch "Name with override object" v
     parseJSON (String t) = namedRestyler t
     parseJSON v = typeMismatch "Name or named with override object" v
 
-restylePaths :: Restyler -> [FilePath] -> [FilePath]
-restylePaths Restyler{..} = filter (includePath rInclude)
+restylePaths :: Restyler -> [FilePath] -> IO [FilePath]
+restylePaths Restyler{..} = filterM $ \path -> (||)
+    <$> pure (includePath rInclude path)
+    <*> anyM (path `hasInterpreter`) rInterpreters
+
+anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+anyM _ [] = pure False
+anyM p (x:xs) = p x >>= \r ->
+    if r then pure True else anyM p xs
