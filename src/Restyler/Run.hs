@@ -15,8 +15,8 @@ import System.Directory (doesFileExist, getCurrentDirectory)
 import System.Process (callProcess)
 
 callRestylers :: Config -> [FilePath] -> IO ()
-callRestylers Config{..} paths' = do
-    paths <- filterM doesFileExist paths'
+callRestylers Config{..} paths = do
+    paths' <- filterM doesFileExist paths
     traverse_ (callRestyler paths) cRestylers
 
 callRestyler :: [FilePath] -> Restyler -> IO ()
