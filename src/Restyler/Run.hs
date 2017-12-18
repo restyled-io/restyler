@@ -17,7 +17,7 @@ import System.Process (callProcess)
 callRestylers :: Config -> [FilePath] -> IO ()
 callRestylers Config{..} paths = do
     paths' <- filterM doesFileExist paths
-    traverse_ (callRestyler paths) cRestylers
+    traverse_ (callRestyler paths') cRestylers
 
 callRestyler :: [FilePath] -> Restyler -> IO ()
 callRestyler paths r = do
