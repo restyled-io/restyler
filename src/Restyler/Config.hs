@@ -23,6 +23,7 @@ import Data.Bifunctor (first)
 import Data.Yaml
 import Restyler.Config.Include
 import System.Directory (doesFileExist)
+
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Vector as V
 
