@@ -39,6 +39,7 @@ defaultConfig = Config
     , cRestylers =
         [ namedRestyler' "stylish-haskell"
         , namedRestyler' "prettier"
+        , namedRestyler' "shfmt"
         ]
     }
   where
@@ -70,6 +71,12 @@ allRestylers =
         , rCommand = "brittany-inplace"
         , rArguments = ["--"]
         , rInclude = ["**/*.hs"]
+        }
+    , Restyler
+        { rName = "shfmt"
+        , rCommand = "shfmt"
+        , rArguments = ["-w", "--"]
+        , rInclude = ["**/*"] -- N.B. shfmt will look for shebangs itself
         }
     ]
 
