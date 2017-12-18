@@ -33,7 +33,7 @@ restylerMain = handleIO (die . show) $ do
     withinClonedRepo (remoteURL atToken oOwner oRepo) $ do
         checkoutBranch False hBranch
 
-        config <-fromEitherM =<< loadConfig
+        config <- fromEitherM =<< loadConfig
         unless (cEnabled config) $ do
             putStrLn "Restyler disabled by config"
             exitSuccess
