@@ -57,35 +57,35 @@ allRestylers =
     [ Restyler
         { rName = "stylish-haskell"
         , rCommand = "stylish-haskell"
-        , rArguments = ["--inplace", "--"]
+        , rArguments = ["--inplace"]
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
         }
     , Restyler
         { rName = "prettier"
         , rCommand = "prettier"
-        , rArguments = ["--write", "--"]
+        , rArguments = ["--write"]
         , rInclude = ["**/*.js", "**/*.jsx"]
         , rInterpreters = []
         }
     , Restyler
         { rName = "hindent"
         , rCommand = "hindent-inplace"
-        , rArguments = ["--"]
+        , rArguments = []
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
         }
     , Restyler
         { rName = "brittany"
         , rCommand = "brittany-inplace"
-        , rArguments = ["--"]
+        , rArguments = []
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
         }
     , Restyler
         { rName = "shfmt"
         , rCommand = "shfmt"
-        , rArguments = ["-w", "--"]
+        , rArguments = ["-w"]
         , rInclude = ["**/*.sh", "**/*.bash"]
         , rInterpreters = [Sh, Bash]
         }

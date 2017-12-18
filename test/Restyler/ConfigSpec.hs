@@ -24,14 +24,14 @@ spec = around withEmptySystemTempFile $ do
                     [ Restyler
                         { rName = "stylish-haskell"
                         , rCommand = "stylish-haskell"
-                        , rArguments = ["--inplace", "--"]
+                        , rArguments = ["--inplace"]
                         , rInclude = [Include "**/*.hs"]
                         , rInterpreters = []
                         }
                     , Restyler
                         { rName = "prettier"
                         , rCommand = "prettier"
-                        , rArguments = ["--write", "--"]
+                        , rArguments = ["--write"]
                         , rInclude =
                             [ "**/*.js"
                             , "**/*.jsx"
@@ -82,7 +82,7 @@ spec = around withEmptySystemTempFile $ do
                     [ Restyler
                         { rName = "stylish-haskell"
                         , rCommand = "stylish-haskell"
-                        , rArguments = ["--inplace", "--"]
+                        , rArguments = ["--inplace"]
                         , rInclude = [Include "**/*.lhs"]
                         , rInterpreters = []
                         }
