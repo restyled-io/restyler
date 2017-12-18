@@ -16,7 +16,6 @@ import System.Process (callProcess)
 
 callRestylers :: Config -> [FilePath] -> IO ()
 callRestylers Config{..} paths' = do
-    -- FIXME: @doesFileExist@ should arguably be @restylePaths@' responsibility
     paths <- filterM doesFileExist paths'
     traverse_ (callRestyler paths) cRestylers
 
