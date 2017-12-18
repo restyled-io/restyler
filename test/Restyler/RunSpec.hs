@@ -87,6 +87,32 @@ spec = around (withSystemTempDirectory "") $ do
                         , "+func _                   = 3"
                         ]
 
+            describe "shfmt" $ do
+                it "works" $ \dir -> do
+                    setupGitRepo dir
+                    setupConfig ["shfmt"]
+                    setupGitTrackedFile
+                        "foo"
+                        (dedent [st|
+                            #!/bin/sh
+                            if [ 2 -eq 2 ]
+                                then
+                                    echo "yup"
+                                fi
+                        |])
+                        $ Just "develop"
+
+                    ["foo"] `shouldRestyleAs`
+                        [ " #!/bin/sh"
+                        , "-if [ 2 -eq 2 ]"
+                        , "-    then"
+                        , "-        echo \"yup\""
+                        , "-    fi"
+                        , "+if [ 2 -eq 2 ]; then"
+                        , "+\techo \"yup\""
+                        , "+fi"
+                        ]
+
 restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
