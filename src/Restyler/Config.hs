@@ -49,13 +49,13 @@ allRestylers =
     [ Restyler
         { rName = "stylish-haskell"
         , rCommand = "stylish-haskell"
-        , rArguments = ["--inplace"]
+        , rArguments = ["--inplace", "--"]
         , rInclude = ["**/*.hs"]
         }
     , Restyler
         { rName = "prettier"
         , rCommand = "prettier"
-        , rArguments = ["--write"]
+        , rArguments = ["--write", "--"]
         , rInclude = ["**/*.js", "**/*.jsx"]
         }
     , Restyler
