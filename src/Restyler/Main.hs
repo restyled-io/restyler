@@ -40,6 +40,12 @@ restylerMain = handleIO (die . show) $ do
 
         paths <- changedPaths bBranch
         callRestylers config paths
+
+        wasRestyled <- not . null <$> changedPaths hBranch
+        unless wasRestyled $ do
+            putStrLn "No style differences found"
+            exitSuccess
+
         checkoutBranch True rBranch
         commitAll $ restyledCommitMessage oRestyledRoot pullRequest
         pushOrigin rBranch
