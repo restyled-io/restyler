@@ -2,7 +2,7 @@
 version: 2.0
 
 jobs:
-  build:
+  build_and_test:
     docker:
       - image: fpco/stack-build:lts
         environment:
@@ -34,3 +34,48 @@ jobs:
       - run:
           name: Test
           command: make test.ci
+
+  deploy:
+    docker:
+      - image: docker:17.07.0-ce
+    steps:
+      - checkout
+      - setup_remote_docker:
+          reusable: true
+          version: 17.07.0-ce
+      - run:
+          name: Dependencies
+          command: apk add --update git make
+      - run:
+          name: Build image
+          command: |
+            if git show | grep -Fq ':nodeploy:'; then
+              echo "HEAD commit included :nodeploy:, skipping..."
+              exit 0
+            fi
+
+            make image.build
+      - deploy:
+          name: Docker Hub
+          command: |
+            if git show | grep -Fq ':nodeploy:'; then
+              echo "HEAD commit included :nodeploy:, skipping..."
+              exit 0
+            fi
+
+            if [[ "$CIRCLE_BRANCH" == master ]]; then
+              docker login \
+                --password "$DOCKERHUB_USERNAME" \
+                --username "$DOCKERHUB_PASSWORD"
+
+              make image.release
+            fi
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build_and_test
+      - deploy:
+          requires:
+            - build_and_test
