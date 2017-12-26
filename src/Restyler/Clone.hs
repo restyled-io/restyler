@@ -6,6 +6,7 @@ module Restyler.Clone
     , changedPaths
     , commitAll
     , pushOrigin
+    , forcePushOrigin
     ) where
 
 import ClassyPrelude
@@ -32,3 +33,7 @@ commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
 
 pushOrigin :: Text -> IO ()
 pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
+
+forcePushOrigin :: Text -> IO ()
+forcePushOrigin branch = callProcess "git"
+    ["push", "--force-with-lease", "origin", unpack branch]

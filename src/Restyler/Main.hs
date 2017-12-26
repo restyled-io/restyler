@@ -48,7 +48,14 @@ restylerMain = handleIO (die . show) $ do
 
         checkoutBranch True rBranch
         commitAll $ restyledCommitMessage oRestyledRoot pullRequest
-        pushOrigin rBranch
+
+        if oBranchExists
+            then forcePushOrigin rBranch
+            else pushOrigin rBranch
+
+    when oBranchExists $ do
+        putStrLn "Skipping Restyled PR and comment, branch exists"
+        exitSuccess
 
     runGitHubThrow atToken $ do
         pr <- createPullRequest oOwner oRepo CreatePullRequest
