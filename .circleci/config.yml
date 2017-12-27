@@ -65,8 +65,8 @@ jobs:
 
             if [[ "$CIRCLE_BRANCH" == master ]]; then
               docker login \
-                --password "$DOCKERHUB_USERNAME" \
-                --username "$DOCKERHUB_PASSWORD"
+                --username "$DOCKERHUB_USERNAME" \
+                --password "$DOCKERHUB_PASSWORD"
 
               make image.release
             fi
