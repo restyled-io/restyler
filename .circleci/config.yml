@@ -77,5 +77,6 @@ workflows:
     jobs:
       - build_and_test
       - deploy:
+          context: org-global
           requires:
             - build_and_test
