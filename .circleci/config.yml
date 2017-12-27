@@ -49,7 +49,7 @@ jobs:
       - run:
           name: Build image
           command: |
-            if git show | grep -Fq ':nodeploy:'; then
+            if git show --no-patch | grep -Fq ':nodeploy:'; then
               echo "HEAD commit included :nodeploy:, skipping..."
               exit 0
             fi
@@ -58,7 +58,7 @@ jobs:
       - deploy:
           name: Docker Hub
           command: |
-            if git show | grep -Fq ':nodeploy:'; then
+            if git show --no-patch | grep -Fq ':nodeploy:'; then
               echo "HEAD commit included :nodeploy:, skipping..."
               exit 0
             fi
