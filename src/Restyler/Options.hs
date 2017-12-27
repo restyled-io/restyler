@@ -19,7 +19,6 @@ data Options = Options
     , oRepo :: Name Repo
     , oPullRequest :: Id PullRequest
     , oRestyledRoot :: Text
-    , oBranchExists :: Bool
     }
 
 options :: Parser Options
@@ -60,10 +59,6 @@ options = Options
         <> help "Root for restyled.io"
         <> value "https://restyled.io"
         ))
-    <*> switch
-        (  long "branch-exists"
-        <> help "A restyled branch already exists"
-        )
 
 parseOptions :: IO Options
 parseOptions = execParser $ info (options <**> helper)

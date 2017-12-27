@@ -7,10 +7,12 @@ module Restyler.Clone
     , commitAll
     , pushOrigin
     , forcePushOrigin
+    , branchHeadMessage
     ) where
 
 import ClassyPrelude
 
+import qualified Data.Text as T
 import System.Directory (withCurrentDirectory)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (callProcess, readProcess)
@@ -37,3 +39,11 @@ pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
 forcePushOrigin :: Text -> IO ()
 forcePushOrigin branch = callProcess "git"
     ["push", "--force-with-lease", "origin", unpack branch]
+
+branchHeadMessage :: Text -> IO (Maybe Text)
+branchHeadMessage branch = handle errNothing $ do
+    output <- readProcess "git" ["log", "-n", "1", "--format='%B'", unpack branch] ""
+    return $ Just $ T.strip $ pack output
+  where
+    errNothing :: Monad m => IOException -> m (Maybe a)
+    errNothing _ = return Nothing

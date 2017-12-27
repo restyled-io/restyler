@@ -29,6 +29,7 @@ restylerMain = handleIO (die . show) $ do
         hBranch = pullRequestCommitRef $ pullRequestHead pullRequest
         rBranch = hBranch <> "-restyled"
         rTitle = pullRequestTitle pullRequest <> " (Restyled)"
+        commitMessage = "Restyled"
 
     withinClonedRepo (remoteURL atToken oOwner oRepo) $ do
         checkoutBranch False hBranch
@@ -47,15 +48,20 @@ restylerMain = handleIO (die . show) $ do
             exitSuccess
 
         checkoutBranch True rBranch
-        commitAll $ restyledCommitMessage oRestyledRoot pullRequest
+        commitAll commitMessage
 
-        if oBranchExists
-            then forcePushOrigin rBranch
-            else pushOrigin rBranch
+        -- If a "-restyled" branch exists with a "Restyled" commit, this is a
+        -- synchronize event and we should just update our already-existing PR
+        -- with our fresh restyled commit.
+        branchExists <- (== Just commitMessage) <$> branchHeadMessage ("origin/" <> rBranch)
 
-    when oBranchExists $ do
-        putStrLn "Skipping Restyled PR and comment, branch exists"
-        exitSuccess
+        when branchExists $ do
+            putStrLn "Restyled branch exists. Force pushing and skipping PR & comment"
+            forcePushOrigin rBranch
+            exitSuccess
+
+        -- Normal path
+        pushOrigin rBranch
 
     runGitHubThrow atToken $ do
         pr <- createPullRequest oOwner oRepo CreatePullRequest
@@ -68,10 +74,6 @@ restylerMain = handleIO (die . show) $ do
         void
             $ createComment oOwner oRepo (asIssueId oPullRequest)
             $ restyledCommentBody oRestyledRoot pr
-
--- TODO: template with more details
-restyledCommitMessage :: Text -> PullRequest -> Text
-restyledCommitMessage _ _ = "Restyled"
 
 restyledCommentBody :: Text -> PullRequest -> Text
 restyledCommentBody root pullRequest = [st|
