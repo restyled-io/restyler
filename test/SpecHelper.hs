@@ -9,15 +9,15 @@ module SpecHelper
 import ClassyPrelude as X hiding (dropEnd)
 
 import Data.Char (isSpace)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+import qualified Prelude as P
 import Restyler.Config (configPath)
 import System.Directory (removeFile, setCurrentDirectory)
 import System.IO.Temp as X (emptySystemTempFile, withSystemTempDirectory)
 import System.Process as X (callProcess, readProcess)
 import Test.Hspec as X
 import Text.Shakespeare.Text as X (st)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import qualified Prelude as P
 
 setupGitRepo :: FilePath -> IO ()
 setupGitRepo dir = do
