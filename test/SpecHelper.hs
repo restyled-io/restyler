@@ -6,7 +6,7 @@ module SpecHelper
     )
     where
 
-import ClassyPrelude as X
+import ClassyPrelude as X hiding (dropEnd)
 
 import Data.Char (isSpace)
 import Restyler.Config (configPath)
