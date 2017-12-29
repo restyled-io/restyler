@@ -1,3 +1,9 @@
+LOCAL_IMAGE   ?= restyled/restyler
+RELEASE_IMAGE ?= $(LOCAL_IMAGE)
+
+DOCKER_USERNAME ?= x
+DOCKER_PASSWORD ?= x
+
 all: setup build lint test
 
 release: clean build lint test image.build image.release
@@ -36,8 +42,13 @@ install:
 
 .PHONY: image.build
 image.build:
-	docker build --tag "restyled/restyler$(IMAGE_TAG)" .
+	docker build --tag "$(LOCAL_IMAGE)" .
 
 .PHONY: image.release
 image.release:
-	docker push "restyled/restyler$(IMAGE_TAG)"
+	@docker login \
+	  --username "$(DOCKER_USERNAME)" \
+	  --password "$(DOCKER_PASSWORD)" || \
+	  echo "docker login failed, release may fail."
+	docker tag "$(LOCAL_IMAGE)" "$(RELEASE_IMAGE)"
+	docker push "$(RELEASE_IMAGE)"

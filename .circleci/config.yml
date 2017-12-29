@@ -2,7 +2,7 @@
 version: 2.0
 
 jobs:
-  build_and_test:
+  tests:
     docker:
       - image: fpco/stack-build:lts
         environment:
@@ -35,7 +35,7 @@ jobs:
           name: Test
           command: make test.ci
 
-  deploy:
+  image:
     docker:
       - image: docker:17.07.0-ce
     steps:
@@ -45,38 +45,41 @@ jobs:
           version: 17.07.0-ce
       - run:
           name: Dependencies
-          command: apk add --update git make
+          command: apk add --update make
       - run:
           name: Build image
           command: |
-            if git show --no-patch | grep -Fq ':nodeploy:'; then
-              echo "HEAD commit included :nodeploy:, skipping..."
-              exit 0
-            fi
-
             make image.build
-      - deploy:
-          name: Docker Hub
+      - run:
+          name: Push image
           command: |
-            if git show --no-patch | grep -Fq ':nodeploy:'; then
-              echo "HEAD commit included :nodeploy:, skipping..."
-              exit 0
-            fi
+            make image.release \
+              DOCKER_USERNAME=$DOCKERHUB_USERNAME \
+              DOCKER_PASSWORD=$DOCKERHUB_PASSWORD \
+              RELEASE_IMAGE=restyled/restyler:b$CIRCLE_BUILD_NUM
 
+  deploy:
+    docker:
+      - image: restyled/ops
+    steps:
+      - deploy:
+          name: Deploy
+          command: |
             if [[ "$CIRCLE_BRANCH" == master ]]; then
-              docker login \
-                --username "$DOCKERHUB_USERNAME" \
-                --password "$DOCKERHUB_PASSWORD"
-
-              make image.release
+              restyled-ops update \
+                --message "[PROD] restyler => b$CIRCLE_BUILD_NUM" \
+                "RestylerTag=b$CIRCLE_BUILD_NUM"
             fi
 
 workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - build_and_test
+      - tests
+      - image:
+          context: org-global
       - deploy:
           context: org-global
           requires:
-            - build_and_test
+            - tests
+            - image
