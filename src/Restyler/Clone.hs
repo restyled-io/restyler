@@ -42,7 +42,7 @@ forcePushOrigin branch = callProcess "git"
 
 branchHeadMessage :: Text -> IO (Maybe Text)
 branchHeadMessage branch = handle errNothing $ do
-    output <- readProcess "git" ["log", "-n", "1", "--format='%B'", unpack branch] ""
+    output <- readProcess "git" ["log", "-n", "1", "--format=%B", unpack branch] ""
     return $ Just $ T.strip $ pack output
   where
     errNothing :: Monad m => IOException -> m (Maybe a)
