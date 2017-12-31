@@ -58,18 +58,30 @@ jobs:
               DOCKER_PASSWORD=$DOCKERHUB_PASSWORD \
               RELEASE_IMAGE=restyled/restyler:b$CIRCLE_BUILD_NUM
 
+      - run:
+          name: Record image tag
+          command: |
+            mkdir -p /tmp/workspace
+            echo "b$CIRCLE_BUILD_NUM" > /tmp/workspace/image-tag
+
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - image-tag
+
   deploy:
     docker:
       - image: restyled/ops
     steps:
+      - attach_workspace:
+          at: /tmp/workspace
       - deploy:
           name: Deploy
           command: |
-            if [[ "$CIRCLE_BRANCH" == master ]]; then
-              restyled-ops update \
-                --message "[PROD] restyler => b$CIRCLE_BUILD_NUM" \
-                "RestylerTag=b$CIRCLE_BUILD_NUM"
-            fi
+            read -r image_tag < /tmp/workspace/image-tag
+            restyled-ops update \
+              --message "[PROD] restyler => $image_tag" \
+              "RestylerTag=$image_tag"
 
 workflows:
   version: 2
@@ -80,6 +92,9 @@ workflows:
           context: org-global
       - deploy:
           context: org-global
+          filters:
+            branches:
+              only: master
           requires:
             - tests
             - image
