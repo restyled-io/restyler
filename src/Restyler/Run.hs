@@ -36,7 +36,8 @@ dockerArguments dir Restyler{..} paths =
     , "restyled/restyler-" <> rName
     , rCommand
     ]
-    -- Separate paths from arguments here. Benefit is we (and users) can't
-    -- forget it when definining @restyler.arguments@. The downside is all
-    -- restylers must support the @"--"@ behavior. They do so far...
-    ++ rArguments ++ ["--"] ++ paths
+    ++ rArguments ++ prependArgSep paths
+  where
+    prependArgSep
+        | rSupportsArgSep = ("--":)
+        | otherwise = id

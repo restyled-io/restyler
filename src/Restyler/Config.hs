@@ -61,6 +61,7 @@ allRestylers =
         , rArguments = ["--inplace"]
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
+        , rSupportsArgSep = True
         }
     , Restyler
         { rName = "prettier"
@@ -68,6 +69,7 @@ allRestylers =
         , rArguments = ["--write"]
         , rInclude = ["**/*.js", "**/*.jsx"]
         , rInterpreters = []
+        , rSupportsArgSep = True
         }
     , Restyler
         { rName = "hindent"
@@ -75,6 +77,7 @@ allRestylers =
         , rArguments = []
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
+        , rSupportsArgSep = True
         }
     , Restyler
         { rName = "brittany"
@@ -82,6 +85,7 @@ allRestylers =
         , rArguments = []
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
+        , rSupportsArgSep = False
         }
     , Restyler
         { rName = "shfmt"
@@ -89,6 +93,7 @@ allRestylers =
         , rArguments = ["-w"]
         , rInclude = ["**/*.sh", "**/*.bash"]
         , rInterpreters = [Sh, Bash]
+        , rSupportsArgSep = True
         }
     ]
 
@@ -132,6 +137,7 @@ data Restyler = Restyler
     , rArguments :: [String]
     , rInclude :: [Include]
     , rInterpreters :: [Interpreter]
+    , rSupportsArgSep :: Bool
     }
     deriving (Eq, Show)
 
@@ -146,6 +152,7 @@ instance FromJSON Restyler where
                     <*> o' .:? "arguments" .!= rArguments
                     <*> o' .:? "include" .!= rInclude
                     <*> o' .:? "interpreters" .!= rInterpreters
+                    <*> pure rSupportsArgSep
             ) v'
         _ -> typeMismatch "Name with override object" v
     parseJSON (String t) = namedRestyler t
