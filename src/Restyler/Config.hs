@@ -148,7 +148,7 @@ instance FromJSON Restyler where
                 Restyler{..} <- namedRestyler k
                 Restyler -- Named + overrides
                     <$> pure (unpack k)
-                    <*> o' .:? "command" .!= rCommand
+                    <*> pure rCommand
                     <*> o' .:? "arguments" .!= rArguments
                     <*> o' .:? "include" .!= rInclude
                     <*> o' .:? "interpreters" .!= rInterpreters
