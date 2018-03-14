@@ -21,23 +21,8 @@ spec = around withEmptySystemTempFile $ do
             result `shouldBe` Right Config
                 { cEnabled = True
                 , cRestylers =
-                    [ Restyler
-                        { rName = "stylish-haskell"
-                        , rCommand = "stylish-haskell"
-                        , rArguments = ["--inplace"]
-                        , rInclude = [Include "**/*.hs"]
-                        , rInterpreters = []
-                        }
-                    , Restyler
-                        { rName = "prettier"
-                        , rCommand = "prettier"
-                        , rArguments = ["--write"]
-                        , rInclude =
-                            [ "**/*.js"
-                            , "**/*.jsx"
-                            ]
-                        , rInterpreters = []
-                        }
+                    [ unsafeNamedRestyler "stylish-haskell"
+                    , unsafeNamedRestyler "prettier"
                     ]
                 }
 
@@ -79,12 +64,8 @@ spec = around withEmptySystemTempFile $ do
             result3 `shouldBe` Right Config
                 { cEnabled = True
                 , cRestylers =
-                    [ Restyler
-                        { rName = "stylish-haskell"
-                        , rCommand = "stylish-haskell"
-                        , rArguments = ["--inplace"]
-                        , rInclude = [Include "**/*.lhs"]
-                        , rInterpreters = []
+                    [ (unsafeNamedRestyler "stylish-haskell")
+                        { rInclude = [Include "**/*.lhs"]
                         }
                     ]
                 }

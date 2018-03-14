@@ -18,6 +18,10 @@ module Restyler.Config
     , configPath
     , defaultConfig
     , allRestylers
+
+    -- * Exported for use in tests
+    , namedRestyler
+    , unsafeNamedRestyler
     ) where
 
 import ClassyPrelude
@@ -43,14 +47,11 @@ defaultConfig :: Config
 defaultConfig = Config
     { cEnabled = True
     , cRestylers =
-        [ namedRestyler' "stylish-haskell"
-        , namedRestyler' "prettier"
-        , namedRestyler' "shfmt"
+        [ unsafeNamedRestyler "stylish-haskell"
+        , unsafeNamedRestyler "prettier"
+        , unsafeNamedRestyler "shfmt"
         ]
     }
-  where
-    -- An unsafe version for use in this mostly static context
-    namedRestyler' = either error id . namedRestyler
 
 allRestylers :: [Restyler]
 allRestylers =
@@ -96,6 +97,9 @@ namedRestyler name =
     case find ((== name) . pack . rName) allRestylers of
         Nothing -> fail $ unpack $ "Unknown restyler name: " <> name <> "."
         Just r -> pure r
+
+unsafeNamedRestyler :: Text -> Restyler
+unsafeNamedRestyler = either error id . namedRestyler
 
 instance FromJSON Config where
     parseJSON (Array v) = Config
