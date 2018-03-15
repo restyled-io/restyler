@@ -9,7 +9,6 @@ module Restyler.Main
 import ClassyPrelude
 
 import Data.Proxy
-import qualified Data.Text as T
 import GitHub.Client
 import GitHub.Endpoints.Installations
 import Restyler.Clone
@@ -82,7 +81,7 @@ Hi there!
 I just wanted to let you know that some code in this PR might not match the
 team's preferred styles. This process isn't perfect, but when we ran some
 auto-reformatting tools on it there were differences. Those differences can be
-seen in ##{T.pack $ show $ pullRequestNumber pullRequest}.
+seen in ##{pullRequestNumber pullRequest}.
 
 To incorporate the changes, merge that PR into yours.
 
