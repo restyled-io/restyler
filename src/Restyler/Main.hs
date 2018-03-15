@@ -92,7 +92,7 @@ Thanks,
 [Restyled.io][]
 
 [restyled.io]: #{root}
-[documentation]: #{root}/docs#disable
+[documentation]: #{root}/docs#disabling
 |]
 
 remoteURL :: Text -> Name Owner -> Name Repo -> Text
