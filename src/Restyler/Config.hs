@@ -111,6 +111,14 @@ allRestylers =
         , rInterpreters = []
         , rSupportsArgSep = False
         }
+    , Restyler
+        { rName = "autopep8"
+        , rCommand = "autopep8"
+        , rArguments = ["--in-place"]
+        , rInclude = ["**/*.py"]
+        , rInterpreters = []
+        , rSupportsArgSep = True
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
