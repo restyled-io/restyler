@@ -52,7 +52,8 @@ restylerMain = handleIO (die . show) $ do
         -- If a "-restyled" branch exists with a "Restyled" commit, this is a
         -- synchronize event and we should just update our already-existing PR
         -- with our fresh restyled commit.
-        branchExists <- (== Just commitMessage) <$> branchHeadMessage ("origin/" <> rBranch)
+        branchExists <- (== Just commitMessage)
+            <$> branchHeadMessage ("origin/" <> rBranch)
 
         when branchExists $ do
             putStrLn "Restyled branch exists. Force pushing and skipping PR & comment"
