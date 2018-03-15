@@ -28,9 +28,10 @@ restylerMain = handleIO (die . show) $ do
     let isFork = pullRequestIsFork pullRequest
         prNumber = pullRequestNumber pullRequest
         bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
-        hBranch = if isFork
-            then "pr/" <> tshow prNumber -- will fetch virtual ref as this
-            else pullRequestCommitRef $ pullRequestHead pullRequest
+        hBranch =
+            if isFork
+                then "pr/" <> tshow prNumber -- fetch virtual ref as this
+                else pullRequestCommitRef $ pullRequestHead pullRequest
         rBranch = hBranch <> "-restyled"
         rTitle = pullRequestTitle pullRequest <> " (Restyled)"
         commitMessage = "Restyled"
