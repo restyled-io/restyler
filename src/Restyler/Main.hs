@@ -14,6 +14,7 @@ import GitHub.Endpoints.Installations
 import Restyler.Clone
 import Restyler.Config
 import Restyler.Options
+import Restyler.PullRequest
 import Restyler.Run
 import System.Exit (die, exitSuccess)
 import Text.Shakespeare.Text (st)
@@ -24,13 +25,18 @@ restylerMain = handleIO (die . show) $ do
     AccessToken{..} <- createAccessToken oGitHubAppId oGitHubAppKey oInstallationId
     pullRequest <- runGitHubThrow atToken (getPullRequest oOwner oRepo oPullRequest)
 
-    let bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
-        hBranch = pullRequestCommitRef $ pullRequestHead pullRequest
+    let isFork = pullRequestIsFork pullRequest
+        prNumber = pullRequestNumber pullRequest
+        bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
+        hBranch = if isFork
+            then "pr/" <> tshow prNumber -- will fetch virtual ref as this
+            else pullRequestCommitRef $ pullRequestHead pullRequest
         rBranch = hBranch <> "-restyled"
         rTitle = pullRequestTitle pullRequest <> " (Restyled)"
         commitMessage = "Restyled"
 
     withinClonedRepo (remoteURL atToken oOwner oRepo) $ do
+        when isFork $ fetchOrigin $ "pull/" <> tshow prNumber <> "/head:" <> hBranch
         checkoutBranch False hBranch
 
         config <- fromEitherM =<< loadConfig
@@ -68,7 +74,13 @@ restylerMain = handleIO (die . show) $ do
             { createPullRequestTitle = rTitle
             , createPullRequestBody = ""
             , createPullRequestHead = rBranch
-            , createPullRequestBase = hBranch
+            , createPullRequestBase =
+                -- We can't open a PR in their fork, so we open a PR in our own
+                -- repository against the base branch. It'll have their changes
+                -- and our restyling as separate commits.
+                if isFork
+                    then bBranch
+                    else hBranch
             }
 
         void
@@ -84,9 +96,7 @@ team's preferred styles. This process isn't perfect, but when we ran some
 auto-reformatting tools on it there were differences. Those differences can be
 seen in ##{pullRequestNumber pullRequest}.
 
-To incorporate the changes, merge that PR into yours.
-
-Sorry if this was unexpected. To disable it, see our [documentation].
+#{restyledAction pullRequest}
 
 Thanks,
 [Restyled.io][]
@@ -94,6 +104,31 @@ Thanks,
 [restyled.io]: #{root}
 [documentation]: #{root}/docs#disabling
 |]
+
+restyledAction :: PullRequest -> Text
+restyledAction pullRequest
+    | pullRequestIsFork pullRequest = [st|
+Your PR was opened from a fork, so we're unable to open our PR with yours as the
+base branch. Therefore, the PR linked above was opened directly against
+`#{bBranch}`. It includes your changes and another commit to adjust styling.
+
+If you're interested in incorporating the style changes in your PR, you can do
+that locally with something like:
+
+```console
+git remote add upstream #{pullRequestRepoURL pullRequest}
+git fetch upstream pull/#{pullRequestNumber pullRequest}/head
+git merge --ff-only FETCH_HEAD
+git push
+```
+|]
+    | otherwise = [st|
+To incorporate the changes, merge that PR into yours.
+
+Sorry if this was unexpected. To disable it, see our [documentation].
+|]
+  where
+    bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
 
 remoteURL :: Text -> Name Owner -> Name Repo -> Text
 remoteURL token owner repo = "https://x-access-token:"

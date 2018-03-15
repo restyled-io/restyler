@@ -5,6 +5,7 @@ module Restyler.Clone
     , checkoutBranch
     , changedPaths
     , commitAll
+    , fetchOrigin
     , pushOrigin
     , forcePushOrigin
     , branchHeadMessage
@@ -32,6 +33,9 @@ changedPaths branch = lines <$>
 
 commitAll :: Text -> IO ()
 commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
+
+fetchOrigin :: Text -> IO ()
+fetchOrigin ref = callProcess "git" ["fetch", "origin", unpack ref]
 
 pushOrigin :: Text -> IO ()
 pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
