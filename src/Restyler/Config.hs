@@ -95,6 +95,22 @@ allRestylers =
         , rInterpreters = [Sh, Bash]
         , rSupportsArgSep = True
         }
+    , Restyler
+        { rName = "astyle"
+        , rCommand = "astyle"
+        , rArguments = []
+        , rInclude =
+            [ "**/*.c" -- C
+            , "**/*.cpp" -- C++
+            , "**/*.cs" -- C#
+            , "**/*.h" -- C/C++/C#/Objective-C
+            , "**/*.java" -- Java
+            , "**/*.m" -- Objective-C
+            , "**/*.mm" -- Objective-C++
+            ]
+        , rInterpreters = []
+        , rSupportsArgSep = False
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler

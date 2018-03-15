@@ -36,8 +36,12 @@ dockerArguments dir Restyler{..} paths =
     , "restyled/restyler-" <> rName
     , rCommand
     ]
-    ++ rArguments ++ prependArgSep paths
+    ++ rArguments ++ prependArgSep (map prependIfRelative paths)
   where
     prependArgSep
         | rSupportsArgSep = ("--":)
         | otherwise = id
+
+    prependIfRelative path
+        | any (`isPrefixOf` path) ["/", "./", "../"] = path
+        | otherwise = "./" <> path

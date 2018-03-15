@@ -113,6 +113,96 @@ spec = around (withSystemTempDirectory "") $ do
                         , "+fi"
                         ]
 
+            describe "astyle" $ do
+                it "works (java)" $ \dir -> do
+                    setupGitRepo dir
+                    setupConfig ["astyle"]
+                    setupGitTrackedFile
+                        "Foo.java"
+                        (dedent [st|
+                            int Foo(bool isBar)
+                                {
+                                if (isBar) {
+                                    bar();
+                                    return 1; }
+                                else
+                                	return 0;
+                            }
+                        |])
+                        $ Just "develop"
+
+                    ["Foo.java"] `shouldRestyleAs`
+                        [ " int Foo(bool isBar)"
+                        , "-    {"
+                        , "+{"
+                        , "     if (isBar) {"
+                        , "         bar();"
+                        , "-        return 1; }"
+                        , "+        return 1;"
+                        , "+    }"
+                        , "     else"
+                        , "-    \treturn 0;"
+                        , "+        return 0;"
+                        , " }"
+                        ]
+
+                it "works (cpp)" $ \dir -> do
+                    setupGitRepo dir
+                    setupConfig ["astyle"]
+                    setupGitTrackedFile
+                        "Foo.cpp"
+                        (dedent [st|
+                            /* FEOF example */
+                            #include <stdio.h>
+                            int main()
+                            {
+                               FILE * pFile;
+                               char buffer [100];
+                               pFile = fopen ("myfile.txt" , "r");
+                               if (pFile == NULL) perror ("Error opening file");
+                               else {
+                                 while ( ! feof (pFile) ) {
+                                   if ( fgets (buffer , 100 , pFile) == NULL ) break;
+                                   fputs (buffer , stdout);
+                                 }
+                                 fclose (pFile);
+                               }
+                               return 0;
+                            }
+                        |])
+                        $ Just "develop"
+
+                    ["Foo.cpp"] `shouldRestyleAs`
+                        [ " #include <stdio.h>"
+                        , " int main()"
+                        , " {"
+                        , "-   FILE * pFile;"
+                        , "-   char buffer [100];"
+                        , "-   pFile = fopen (\"myfile.txt\" , \"r\");"
+                        , "-   if (pFile == NULL) perror (\"Error opening file\");"
+                        , "-   else {"
+                        , "-     while ( ! feof (pFile) ) {"
+                        , "-       if ( fgets (buffer , 100 , pFile) == NULL ) break;"
+                        , "-       fputs (buffer , stdout);"
+                        , "-     }"
+                        , "-     fclose (pFile);"
+                        , "-   }"
+                        , "-   return 0;"
+                        , "+    FILE * pFile;"
+                        , "+    char buffer [100];"
+                        , "+    pFile = fopen (\"myfile.txt\", \"r\");"
+                        , "+    if (pFile == NULL) perror (\"Error opening file\");"
+                        , "+    else {"
+                        , "+        while ( ! feof (pFile) ) {"
+                        , "+            if ( fgets (buffer, 100, pFile) == NULL ) break;"
+                        , "+            fputs (buffer, stdout);"
+                        , "+        }"
+                        , "+        fclose (pFile);"
+                        , "+    }"
+                        , "+    return 0;"
+                        , " }"
+                        ]
+
 restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
