@@ -4,6 +4,10 @@ RELEASE_IMAGE ?= $(LOCAL_IMAGE)
 DOCKER_USERNAME ?= x
 DOCKER_PASSWORD ?= x
 
+# Used by local integration test
+RESTYLER_GITHUB_APP_KEY ?= \
+  $(HOME)/downloads/restyled/restyled-io-development.2017-09-19.private-key.pem
+
 all: setup build lint test
 
 release: clean build lint test image.build image.release
@@ -52,3 +56,18 @@ image.release:
 	  echo "docker login failed, release may fail."
 	docker tag "$(LOCAL_IMAGE)" "$(RELEASE_IMAGE)"
 	docker push "$(RELEASE_IMAGE)"
+
+.PHONY: integration
+integration: image.build
+	@echo "Checking required ENV..."
+	[ -n "$(RESTYLER_TEST_PR)" ]
+	docker run --rm \
+	  --volume /tmp:/tmp \
+	  --volume /var/run/docker.sock:/var/run/docker.sock \
+	  "$(LOCAL_IMAGE)" \
+	    --github-app-id 5355 \
+	    --github-app-key "$$(< "$(RESTYLER_GITHUB_APP_KEY)")" \
+	    --installation-id 58920 \
+	    --owner restyled-io \
+	    --repo demo \
+	    --pull-request "$(RESTYLER_TEST_PR)"
