@@ -116,7 +116,7 @@ allRestylers =
         , rCommand = "autopep8"
         , rArguments = ["--in-place"]
         , rInclude = ["**/*.py"]
-        , rInterpreters = []
+        , rInterpreters = [Python]
         , rSupportsArgSep = True
         }
     ]

@@ -17,6 +17,7 @@ library:
     - bytestring
     - classy-prelude
     - directory
+    - errors
     - filepath
     - github
     - http-client

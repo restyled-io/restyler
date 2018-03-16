@@ -8,6 +8,7 @@ module Restyler.Config.Interpreter
 
 import ClassyPrelude
 
+import Control.Error.Util (hush)
 import Data.Aeson
 import System.FilePath (takeFileName)
 
@@ -17,10 +18,12 @@ import qualified Data.Text.IO as T
 data Interpreter
     = Sh
     | Bash
+    | Python
     deriving (Eq, Show)
 
 instance FromJSON Interpreter where
-    parseJSON = withText "Interpreter" parseInterpreter
+    parseJSON = withText "Interpreter"
+        $ either fail pure . readInterpreter . T.unpack
 
 hasInterpreter :: FilePath -> Interpreter -> IO Bool
 path `hasInterpreter` interpreter = do
@@ -28,23 +31,25 @@ path `hasInterpreter` interpreter = do
     pure $ minterpreter == Just interpreter
 
 getInterpreter :: FilePath -> IO (Maybe Interpreter)
-getInterpreter path = do
-    mshebang <- getShebang path `catch` errNothing
-    pure $ interpreterForShebang =<< mshebang
-  where
-    errNothing :: IOException -> IO (Maybe a)
-    errNothing _ = pure Nothing
-
-getShebang :: FilePath -> IO (Maybe String)
-getShebang path = do
+getInterpreter path = handleIO (const $ pure Nothing) $ do
     mline <- headMay . T.lines <$> T.readFile path
-    pure $ T.unpack . T.strip <$> mline
+    pure $ parseInterpreter . T.unpack . T.strip =<< mline
 
-interpreterForShebang :: String -> Maybe Interpreter
-interpreterForShebang ('#':'!':path) = parseInterpreter $ takeFileName path
-interpreterForShebang _ = Nothing
+parseInterpreter :: String -> Maybe Interpreter
+parseInterpreter ('#':'!':rest) = hush $ readInterpreter =<<
+    case words rest of
+        [exec] -> pure $ takeFileName exec
+        ["/usr/bin/env", arg] -> pure arg
+        _ -> Left "Unexpected shebang length"
 
-parseInterpreter :: (MonadPlus m, IsString a, Eq a) => a -> m Interpreter
-parseInterpreter "sh" = pure Sh
-parseInterpreter "bash" = pure Bash
-parseInterpreter _ = mzero
+parseInterpreter _ = Nothing
+
+readInterpreter :: String -> Either String Interpreter
+readInterpreter "sh" = Right Sh
+readInterpreter "bash" = Right Bash
+readInterpreter "python" = Right Python
+readInterpreter "python2" = Right Python
+readInterpreter "python2.7" = Right Python
+readInterpreter "python3" = Right Python
+readInterpreter "python3.6" = Right Python
+readInterpreter x = Left $ "Unknown executable: " <> x
