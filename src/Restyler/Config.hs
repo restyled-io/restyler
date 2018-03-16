@@ -119,6 +119,14 @@ allRestylers =
         , rInterpreters = [Python]
         , rSupportsArgSep = True
         }
+    , Restyler
+        { rName = "php-cs-fixer"
+        , rCommand = "php-cs-fixer-multi"
+        , rArguments = []
+        , rInclude = ["**/*.php"]
+        , rInterpreters = []
+        , rSupportsArgSep = True
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler

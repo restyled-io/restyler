@@ -244,6 +244,24 @@ spec = around (withSystemTempDirectory "") $ do
                         , "     return (some_tuple, some_variable)"
                         ]
 
+            describe "php-cs-fixer" $ do
+                it "works" $ \dir -> do
+                    setupGitRepo dir
+                    setupConfig ["php-cs-fixer"]
+                    setupGitTrackedFile
+                        "foo.php"
+                        (dedent [st|
+                            <?PHP
+                            $this->foo();
+                        |])
+                        $ Just "develop"
+
+                    ["foo.php"] `shouldRestyleAs`
+                        [ "-<?PHP"
+                        , "+<?php"
+                        , " $this->foo();"
+                        ]
+
 restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
