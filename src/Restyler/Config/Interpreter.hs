@@ -19,6 +19,7 @@ data Interpreter
     = Sh
     | Bash
     | Python
+    | Ruby
     deriving (Eq, Show)
 
 instance FromJSON Interpreter where
@@ -52,4 +53,5 @@ readInterpreter "python2" = Right Python
 readInterpreter "python2.7" = Right Python
 readInterpreter "python3" = Right Python
 readInterpreter "python3.6" = Right Python
+readInterpreter "ruby" = Right Ruby
 readInterpreter x = Left $ "Unknown executable: " <> x

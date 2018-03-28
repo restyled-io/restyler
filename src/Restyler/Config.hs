@@ -135,6 +135,14 @@ allRestylers =
         , rInterpreters = []
         , rSupportsArgSep = True
         }
+    , Restyler
+        { rName = "rubocop"
+        , rCommand = "rubocop"
+        , rArguments = ["--auto-correct"]
+        , rInclude = ["**/*.rb"]
+        , rInterpreters = [Ruby]
+        , rSupportsArgSep = True
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler

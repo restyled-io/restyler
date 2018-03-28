@@ -307,6 +307,28 @@ spec = around (withSystemTempDirectory "") $ do
                         , "+            eval b || eval b_"
                         ]
 
+            describe "rubocop" $ do
+                it "works" $ \dir -> do
+                    setupGitRepo dir
+                    setupConfig ["rubocop"]
+                    setupGitTrackedFile
+                        "foo.rb"
+                        (dedent [st|
+                            # bad - four spaces
+                            def some_method
+                                do_something
+                            end
+                        |])
+                        $ Just "develop"
+
+                    ["foo.rb"] `shouldRestyleAs`
+                        [ " # bad - four spaces"
+                        , " def some_method"
+                        , "-    do_something"
+                        , "+  do_something"
+                        , " end"
+                        ]
+
 restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
