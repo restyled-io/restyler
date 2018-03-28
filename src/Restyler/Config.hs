@@ -50,6 +50,11 @@ defaultConfig = Config
         [ unsafeNamedRestyler "stylish-haskell"
         , unsafeNamedRestyler "prettier"
         , unsafeNamedRestyler "shfmt"
+        , unsafeNamedRestyler "astyle"
+        , unsafeNamedRestyler "autopep8"
+        , unsafeNamedRestyler "php-cs-fixer"
+        , unsafeNamedRestyler "elm-format"
+        , unsafeNamedRestyler "rubocop"
         ]
     }
 
