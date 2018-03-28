@@ -127,6 +127,14 @@ allRestylers =
         , rInterpreters = []
         , rSupportsArgSep = True
         }
+    , Restyler
+        { rName = "elm-format"
+        , rCommand = "elm-format"
+        , rArguments = ["--yes"]
+        , rInclude = ["**/*.elm"]
+        , rInterpreters = []
+        , rSupportsArgSep = True
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler

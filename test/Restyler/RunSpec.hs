@@ -262,6 +262,51 @@ spec = around (withSystemTempDirectory "") $ do
                         , " $this->foo();"
                         ]
 
+            describe "elm-format" $ do
+                it "works" $ \dir -> do
+                    setupGitRepo dir
+                    setupConfig ["elm-format"]
+                    setupGitTrackedFile
+                        "Foo.elm"
+                        (dedent [st|
+                            homeDirectory = "/root/files"
+                            eval boolean = case boolean of
+                                Literal bool -> bool
+                                Not b        -> not (eval b)
+                                And b b_     -> eval b && eval b_
+                                Or b b_      -> eval b   || eval b_
+                        |])
+                        $ Just "develop"
+
+                    ["Foo.elm"] `shouldRestyleAs`
+                        [ "-homeDirectory = \"/root/files\""
+                        , "-eval boolean = case boolean of"
+                        , "-    Literal bool -> bool"
+                        , "-    Not b        -> not (eval b)"
+                        , "-    And b b_     -> eval b && eval b_"
+                        , "-    Or b b_      -> eval b   || eval b_"
+                        , "+module Main exposing (..)"
+                        , "+"
+                        , "+"
+                        , "+homeDirectory ="
+                        , "+    \"/root/files\""
+                        , "+"
+                        , "+"
+                        , "+eval boolean ="
+                        , "+    case boolean of"
+                        , "+        Literal bool ->"
+                        , "+            bool"
+                        , "+"
+                        , "+        Not b ->"
+                        , "+            not (eval b)"
+                        , "+"
+                        , "+        And b b_ ->"
+                        , "+            eval b && eval b_"
+                        , "+"
+                        , "+        Or b b_ ->"
+                        , "+            eval b || eval b_"
+                        ]
+
 restylerTestCase :: FilePath -> Text -> [String] -> FilePath -> Expectation
 restylerTestCase name content changes dir = do
     setupGitRepo dir
