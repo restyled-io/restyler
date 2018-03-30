@@ -19,7 +19,7 @@ spec = around (withSystemTempDirectory "") $ do
             callProcess "git" ["rm", "Foo.hs"]
             callProcess "git" ["commit", "--quiet", "--message", "Remove file"]
             callRestylers defaultConfig ["Foo.hs"]
-            ["Foo.hs"] `shouldRestyleAs` []
+            "Foo.hs" `shouldRestyleAs` []
 
         it "restyles Haskell by default" $ restylerTestCase [] "Foo.hs"
             [st|
@@ -274,7 +274,7 @@ spec = around (withSystemTempDirectory "") $ do
             ]
 
 restylerTestCase
-    :: [Text]   -- ^ Restylers, leave empty to user default configuration
+    :: [Text]   -- ^ Restylers, leave empty to use default configuration
     -> FilePath -- ^ Filename to restyle
     -> Text     -- ^ Content of pre-restyled file
     -> [String] -- ^ Lines of diff to expect
@@ -284,13 +284,13 @@ restylerTestCase restylers name content changes dir = do
     setupGitRepo dir
     unless (null restylers) $ setupConfig restylers
     setupGitTrackedFile name (dedent content) $ Just "develop"
-    [name] `shouldRestyleAs` changes
+    name `shouldRestyleAs` changes
 
-shouldRestyleAs :: [FilePath] -> [String] -> Expectation
-paths `shouldRestyleAs` changes = either
+shouldRestyleAs :: FilePath -> [String] -> Expectation
+path `shouldRestyleAs` changes = either
     (expectationFailure . ("loadConfig: " <>))
     (\config -> do
-        callRestylers config paths
+        callRestylers config [path]
         output <- lines <$> readProcess "git" ["diff"] ""
         output `shouldContain` changes
     ) =<< loadConfig
