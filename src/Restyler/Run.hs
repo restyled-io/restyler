@@ -11,8 +11,8 @@ module Restyler.Run
 import ClassyPrelude
 
 import Restyler.Config
+import Restyler.Process (callProcess)
 import System.Directory (doesFileExist, getCurrentDirectory)
-import System.Process (callProcess)
 
 callRestylers :: Config -> [FilePath] -> IO ()
 callRestylers Config{..} paths = do

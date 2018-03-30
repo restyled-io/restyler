@@ -13,17 +13,18 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Prelude as P
 import Restyler.Config (configPath)
+import Restyler.Process as X (callProcess)
 import System.Directory (removeFile, setCurrentDirectory)
 import System.IO.Temp as X (emptySystemTempFile, withSystemTempDirectory)
-import System.Process as X (callProcess, readProcess)
+import System.Process as X (readProcess)
 import Test.Hspec as X
 import Text.Shakespeare.Text as X (st)
 
 setupGitRepo :: FilePath -> IO ()
 setupGitRepo dir = do
     setCurrentDirectory dir
-    callProcess "git" ["init", "--quiet"]
-    callProcess "git" ["commit", "--quiet", "--allow-empty", "--message", "Test"]
+    callProcess "git" ["init"]
+    callProcess "git" ["commit", "--allow-empty", "--message", "Test"]
 
 -- | Create a tracked file with the given content
 --
@@ -34,10 +35,10 @@ setupGitTrackedFile name content mbranch = do
     T.writeFile name content
 
     for_ mbranch $ \branch ->
-        callProcess "git" ["checkout", "--quiet", "-b", branch]
+        callProcess "git" ["checkout", "-b", branch]
 
     callProcess "git" ["add", name]
-    callProcess "git" ["commit", "--quiet", "--message", "Write code"]
+    callProcess "git" ["commit", "--message", "Write code"]
 
 -- | Setup a YAML config enabling (only) the given restylers by name
 setupConfig :: [Text] -> IO ()

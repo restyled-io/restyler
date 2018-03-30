@@ -11,7 +11,7 @@ spec = around (withSystemTempDirectory "") $ do
     describe "checkoutBranch" $ do
         it "checks out an existing branch" $ \dir -> do
             setupGitRepo dir
-            callProcess "git" ["checkout", "--quiet", "-b", "develop"]
+            callProcess "git" ["checkout", "-b", "develop"]
 
             checkoutBranch False "master"
             readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""

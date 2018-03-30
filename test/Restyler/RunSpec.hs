@@ -7,7 +7,6 @@ import SpecHelper
 
 import Restyler.Config
 import Restyler.Run
-import System.Process (callProcess)
 
 spec :: Spec
 spec = around (withSystemTempDirectory "") $ do
@@ -15,9 +14,9 @@ spec = around (withSystemTempDirectory "") $ do
         it "doesn't run on removed files" $ \dir -> do
             setupGitRepo dir
             setupGitTrackedFile "Foo.hs" "" Nothing
-            callProcess "git" ["checkout", "--quiet", "-b", "develop"]
+            callProcess "git" ["checkout", "-b", "develop"]
             callProcess "git" ["rm", "Foo.hs"]
-            callProcess "git" ["commit", "--quiet", "--message", "Remove file"]
+            callProcess "git" ["commit", "--message", "Remove file"]
             callRestylers defaultConfig ["Foo.hs"]
             "Foo.hs" `shouldRestyleAs` []
 

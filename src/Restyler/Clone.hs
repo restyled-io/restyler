@@ -14,9 +14,10 @@ module Restyler.Clone
 import ClassyPrelude
 
 import qualified Data.Text as T
+import Restyler.Process (callProcess)
 import System.Directory (withCurrentDirectory)
 import System.IO.Temp (withSystemTempDirectory)
-import System.Process (callProcess, readProcess)
+import System.Process (readProcess)
 
 withinClonedRepo :: Text -> IO a -> IO a
 withinClonedRepo url act = withSystemTempDirectory "" $ \dir -> do
@@ -25,7 +26,7 @@ withinClonedRepo url act = withSystemTempDirectory "" $ \dir -> do
 
 checkoutBranch :: Bool -> Text -> IO ()
 checkoutBranch b branch = callProcess "git" $
-    ["checkout", "--quiet"] ++ ["-b" | b] ++ [unpack branch]
+    ["checkout"] ++ ["-b" | b] ++ [unpack branch]
 
 changedPaths :: Text -> IO [FilePath]
 changedPaths branch = lines <$>
