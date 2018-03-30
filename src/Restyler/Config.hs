@@ -55,6 +55,7 @@ defaultConfig = Config
         , unsafeNamedRestyler "php-cs-fixer"
         , unsafeNamedRestyler "elm-format"
         , unsafeNamedRestyler "rubocop"
+        , unsafeNamedRestyler "rustfmt"
         ]
     }
 
@@ -146,6 +147,14 @@ allRestylers =
         , rArguments = ["--auto-correct"]
         , rInclude = ["**/*.rb"]
         , rInterpreters = [Ruby]
+        , rSupportsArgSep = True
+        }
+    , Restyler
+        { rName = "rustfmt"
+        , rCommand = "rustfmt"
+        , rArguments = []
+        , rInclude = ["**/*.rs"]
+        , rInterpreters = []
         , rSupportsArgSep = True
         }
     ]

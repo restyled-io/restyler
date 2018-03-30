@@ -258,6 +258,21 @@ spec = around (withSystemTempDirectory "") $ do
             , " end"
             ]
 
+        it "runs rustfmt" $ restylerTestCase ["rustfmt"] "foo.rs"
+            [st|
+                // Attributes should be on their own lines
+                struct CRepr {
+                    x: f32,y: f32,
+                }
+            |]
+            [ " // Attributes should be on their own lines"
+            , " struct CRepr {"
+            , "-    x: f32,y: f32,"
+            , "+    x: f32,"
+            , "+    y: f32,"
+            , " }"
+            ]
+
 restylerTestCase
     :: [Text]   -- ^ Restylers, leave empty to user default configuration
     -> FilePath -- ^ Filename to restyle
