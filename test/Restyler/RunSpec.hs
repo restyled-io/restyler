@@ -20,7 +20,7 @@ spec = around (withSystemTempDirectory "") $ do
             callRestylers defaultConfig ["Foo.hs"]
             "Foo.hs" `shouldRestyleAs` []
 
-        it "restyles Haskell by default" $ restylerTestCase [] "Foo.hs"
+        it "runs stylish-haskell" $ restylerTestCase ["stylish-haskell"] "Foo.hs"
             [st|
                 {-# LANGUAGE OverloadedStrings, RecordWildcards
                 #-}
@@ -31,7 +31,7 @@ spec = around (withSystemTempDirectory "") $ do
             , "+{-# LANGUAGE RecordWildcards   #-}"
             ]
 
-        it "restyles JavaScript by default" $ restylerTestCase [] "foo.js"
+        it "runs prettier" $ restylerTestCase ["prettier"] "foo.js"
             [st|
                 matrix(
                   1, 0, 0,
@@ -88,7 +88,7 @@ spec = around (withSystemTempDirectory "") $ do
             , "+fi"
             ]
 
-        it "astyles java" $ restylerTestCase ["astyle"] "Foo.java"
+        it "runs astyle on java" $ restylerTestCase ["astyle"] "Foo.java"
             [st|
                 int Foo(bool isBar)
                     {
@@ -113,7 +113,7 @@ spec = around (withSystemTempDirectory "") $ do
             , " }"
             ]
 
-        it "astyles cpp" $ restylerTestCase ["astyle"] "Foo.cpp"
+        it "runs astyle on cpp" $ restylerTestCase ["astyle"] "Foo.cpp"
             [st|
                 /* FEOF example */
                 #include <stdio.h>
