@@ -11,12 +11,12 @@ callProcess :: String -> [String] -> IO ()
 callProcess cmd args = do
     (exitCode, stdout, stderr) <- readProcessWithExitCode cmd args ""
 
-    when (exitCode /= ExitSuccess) $ die $ unlines
-        [ "Process unsuccessful"
-        , "Command: " <> cmd
-        , "Arguments: " <> show args
-        , "stdout:\n" <> indent stdout
-        , "stderr:\n" <> indent stderr
+    when (exitCode /= ExitSuccess) $ die $ unlines $
+        [ "Process unsuccessful ("  <> show exitCode <> ")"
+        , "  command: " <> cmd
+        , "  arguments: " <> show args
         ]
+        ++ "  stdout:" : indent stdout
+        ++ "  stderr:" : indent stderr
   where
-    indent = unlines . map ("  " <>) . lines
+    indent = map ("    " <>) . lines
