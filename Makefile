@@ -39,6 +39,21 @@ test:
 test.core:
 	cram test/core
 
+# Restyles restyled-io/demo#1
+.PHONY: test.integration
+test.integration: image.build
+	docker run --rm \
+	  --env DEBUG=1 \
+	  --volume /tmp:/tmp \
+	  --volume /var/run/docker.sock:/var/run/docker.sock \
+	  "$(LOCAL_IMAGE)" \
+	    --github-app-id 5355 \
+	    --github-app-key "$$(< "$(RESTYLER_GITHUB_APP_KEY)")" \
+	    --installation-id 58920 \
+	    --owner restyled-io \
+	    --repo demo \
+	    --pull-request 1
+
 .PHONY: install
 install:
 	stack install
@@ -55,18 +70,3 @@ image.release:
 	  echo "docker login failed, release may fail."
 	docker tag "$(LOCAL_IMAGE)" "$(RELEASE_IMAGE)"
 	docker push "$(RELEASE_IMAGE)"
-
-# Restyles restyled-io/demo#1
-.PHONY: integration
-integration: image.build
-	docker run --rm \
-	  --env DEBUG=1 \
-	  --volume /tmp:/tmp \
-	  --volume /var/run/docker.sock:/var/run/docker.sock \
-	  "$(LOCAL_IMAGE)" \
-	    --github-app-id 5355 \
-	    --github-app-key "$$(< "$(RESTYLER_GITHUB_APP_KEY)")" \
-	    --installation-id 58920 \
-	    --owner restyled-io \
-	    --repo demo \
-	    --pull-request 1
