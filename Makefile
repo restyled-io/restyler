@@ -35,11 +35,6 @@ lint:
 test:
 	stack test
 
-.PHONY: test.ci
-test.ci:
-	# skip callRestylers because it requires docker
-	stack test --test-arguments "--skip callRestylers"
-
 .PHONY: install
 install:
 	stack install

@@ -12,11 +12,11 @@ import Data.Proxy
 import GitHub.Client
 import GitHub.Endpoints.Installations
 import Restyler.Clone
-import Restyler.Config
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.Run
+import System.Directory (doesFileExist)
 import System.Exit (die, exitSuccess)
+import System.Process (callProcess)
 import Text.Shakespeare.Text (st)
 
 restylerMain :: IO ()
@@ -40,13 +40,8 @@ restylerMain = handleIO (die . show) $ do
         when isFork $ fetchOrigin $ "pull/" <> tshow prNumber <> "/head:" <> hBranch
         checkoutBranch False hBranch
 
-        config <- fromEitherM =<< loadConfig
-        unless (cEnabled config) $ do
-            putStrLn "Restyler disabled by config"
-            exitSuccess
-
-        paths <- changedPaths bBranch
-        callRestylers config paths
+        paths <- filterM doesFileExist =<< changedPaths bBranch
+        callProcess "restyler-core" paths
 
         wasRestyled <- not . null <$> changedPaths hBranch
         unless wasRestyled $ do
@@ -139,6 +134,3 @@ remoteURL token owner repo = "https://x-access-token:"
 
 asIssueId :: Id PullRequest -> Id Issue
 asIssueId = mkId Proxy . untagId
-
-fromEitherM :: MonadThrow m => Either String a -> m a
-fromEitherM = either throwString pure
