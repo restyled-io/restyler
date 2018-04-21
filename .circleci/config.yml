@@ -33,7 +33,7 @@ jobs:
             - ./.stack-work
       - run:
           name: Test
-          command: make test.ci
+          command: make test
 
   image:
     docker:
