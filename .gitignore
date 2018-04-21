@@ -1,2 +1,3 @@
 *.cabal
+*.t.err
 .stack-work
