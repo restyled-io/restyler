@@ -4,3 +4,4 @@
     include:
       - "**/*.hs"
       - "!src/Restyler/Main.hs"  # Avoid HsSpliceExp{}
+      - "!test/core/**/*"
