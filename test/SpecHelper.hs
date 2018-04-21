@@ -10,9 +10,7 @@ import ClassyPrelude as X hiding (dropEnd)
 
 import Data.Char (isSpace)
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import qualified Prelude as P
-import Restyler.Config (configPath)
 import Restyler.Process as X (callProcess)
 import System.Directory (removeFile, setCurrentDirectory)
 import System.IO.Temp as X (emptySystemTempFile, withSystemTempDirectory)
@@ -25,26 +23,6 @@ setupGitRepo dir = do
     setCurrentDirectory dir
     callProcess "git" ["init"]
     callProcess "git" ["commit", "--allow-empty", "--message", "Test"]
-
--- | Create a tracked file with the given content
---
--- Assumes you're already in a repository. Commits in branch if given.
---
-setupGitTrackedFile :: FilePath -> Text -> Maybe String -> IO ()
-setupGitTrackedFile name content mbranch = do
-    T.writeFile name content
-
-    for_ mbranch $ \branch ->
-        callProcess "git" ["checkout", "-b", branch]
-
-    callProcess "git" ["add", name]
-    callProcess "git" ["commit", "--message", "Write code"]
-
--- | Setup a YAML config enabling (only) the given restylers by name
-setupConfig :: [Text] -> IO ()
-setupConfig names = setupGitTrackedFile configPath yaml Nothing
-  where
-    yaml = T.unlines $ "---" : map ("- " <>) names ++ [""]
 
 -- | Dedent content
 --
