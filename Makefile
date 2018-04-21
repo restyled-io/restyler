@@ -52,11 +52,11 @@ image.release:
 	docker tag "$(LOCAL_IMAGE)" "$(RELEASE_IMAGE)"
 	docker push "$(RELEASE_IMAGE)"
 
+# Restyles restyled-io/demo#1
 .PHONY: integration
 integration: image.build
-	@echo "Checking required ENV..."
-	[ -n "$(RESTYLER_TEST_PR)" ]
 	docker run --rm \
+	  --env DEBUG=1 \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  "$(LOCAL_IMAGE)" \
@@ -65,4 +65,4 @@ integration: image.build
 	    --installation-id 58920 \
 	    --owner restyled-io \
 	    --repo demo \
-	    --pull-request "$(RESTYLER_TEST_PR)"
+	    --pull-request 1
