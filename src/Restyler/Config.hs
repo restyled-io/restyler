@@ -87,8 +87,8 @@ allRestylers =
         }
     , Restyler
         { rName = "brittany"
-        , rCommand = "brittany-inplace"
-        , rArguments = []
+        , rCommand = "brittany"
+        , rArguments = ["--write-mode", "inplace"]
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
         , rSupportsArgSep = False
