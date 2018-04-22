@@ -28,7 +28,8 @@ build:
 
 .PHONY: lint
 lint:
-	hlint .
+	@# Use an explicit list to avoid test/core
+	hlint app core src test/SpecHelper.hs test/Restyler
 	weeder .
 
 .PHONY: test
