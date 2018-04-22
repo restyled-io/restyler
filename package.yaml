@@ -69,12 +69,14 @@ tests:
     source-dirs: test
     ghc-options: -Wall
     dependencies:
-      - restyler
+      - bytestring
       - classy-prelude
       - directory
       - github
       - hspec
       - process
+      - restyler
       - shakespeare
       - temporary
       - text
+      - yaml
