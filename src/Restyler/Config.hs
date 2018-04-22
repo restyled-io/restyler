@@ -46,17 +46,16 @@ data Config = Config
 defaultConfig :: Config
 defaultConfig = Config
     { cEnabled = True
-    , cRestylers =
-        [ unsafeNamedRestyler "stylish-haskell"
-        , unsafeNamedRestyler "prettier"
-        , unsafeNamedRestyler "shfmt"
-        , unsafeNamedRestyler "astyle"
-        , unsafeNamedRestyler "autopep8"
-        , unsafeNamedRestyler "php-cs-fixer"
-        , unsafeNamedRestyler "elm-format"
-        , unsafeNamedRestyler "rubocop"
-        , unsafeNamedRestyler "rustfmt"
-        ]
+    , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
+                   , unsafeNamedRestyler "prettier"
+                   , unsafeNamedRestyler "shfmt"
+                   , unsafeNamedRestyler "astyle"
+                   , unsafeNamedRestyler "autopep8"
+                   , unsafeNamedRestyler "php-cs-fixer"
+                   , unsafeNamedRestyler "elm-format"
+                   , unsafeNamedRestyler "rubocop"
+                   , unsafeNamedRestyler "rustfmt"
+                   ]
     }
 
 allRestylers :: [Restyler]
@@ -105,15 +104,14 @@ allRestylers =
         { rName = "astyle"
         , rCommand = "astyle"
         , rArguments = []
-        , rInclude =
-            [ "**/*.c" -- C
-            , "**/*.cpp" -- C++
-            , "**/*.cs" -- C#
-            , "**/*.h" -- C/C++/C#/Objective-C
-            , "**/*.java" -- Java
-            , "**/*.m" -- Objective-C
-            , "**/*.mm" -- Objective-C++
-            ]
+        , rInclude = [ "**/*.c" -- C
+                     , "**/*.cpp" -- C++
+                     , "**/*.cs" -- C#
+                     , "**/*.h" -- C/C++/C#/Objective-C
+                     , "**/*.java" -- Java
+                     , "**/*.m" -- Objective-C
+                     , "**/*.mm" -- Objective-C++
+                     ]
         , rInterpreters = []
         , rSupportsArgSep = False
         }
@@ -160,10 +158,9 @@ allRestylers =
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
-namedRestyler name =
-    case find ((== name) . pack . rName) allRestylers of
-        Nothing -> fail $ unpack $ "Unknown restyler name: " <> name <> "."
-        Just r -> pure r
+namedRestyler name = case find ((== name) . pack . rName) allRestylers of
+    Nothing -> fail $ unpack $ "Unknown restyler name: " <> name <> "."
+    Just r -> pure r
 
 unsafeNamedRestyler :: Text -> Restyler
 unsafeNamedRestyler = either error id . namedRestyler
@@ -180,15 +177,15 @@ instance FromJSON Config where
 
 -- | Load from @'configPath'@ if it exists, otherwise '@defaultConfig'
 loadConfig :: IO (Either String Config)
-loadConfig = doesFileExist configPath >>= \e -> if e
-    then loadConfigFrom configPath
-    else pure $ Right defaultConfig
+loadConfig = doesFileExist configPath >>= \e ->
+    if e then loadConfigFrom configPath else pure $ Right defaultConfig
 
 loadConfigFrom :: FilePath -> IO (Either String Config)
 loadConfigFrom fp = first err <$> decodeFileEither fp
   where
-    err = (("Invalid configuration " <> show fp <> ": ") <>)
-        . prettyPrintParseException
+    err =
+        (("Invalid configuration " <> show fp <> ": ") <>)
+            . prettyPrintParseException
 
 configPath :: FilePath
 configPath = ".restyled.yaml"
@@ -221,11 +218,11 @@ instance FromJSON Restyler where
     parseJSON v = typeMismatch "Name or named with override object" v
 
 restylePaths :: Restyler -> [FilePath] -> IO [FilePath]
-restylePaths Restyler{..} = filterM $ \path -> (||)
-    <$> pure (includePath rInclude path)
-    <*> anyM (path `hasInterpreter`) rInterpreters
+restylePaths Restyler {..} = filterM $ \path ->
+    (||)
+        <$> pure (includePath rInclude path)
+        <*> anyM (path `hasInterpreter`) rInterpreters
 
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM _ [] = pure False
-anyM p (x:xs) = p x >>= \r ->
-    if r then pure True else anyM p xs
+anyM p (x : xs) = p x >>= \r -> if r then pure True else anyM p xs
