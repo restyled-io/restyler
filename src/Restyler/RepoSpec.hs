@@ -26,10 +26,11 @@ parseRepoSpec = first show . parse parser "<input>"
 type Parser = Parsec Void String
 
 parser :: Parser RepoSpec
-parser = RepoSpec
-    <$> (mkName Proxy . T.pack <$> manyTill nonSpace (char '/'))
-    <*> (mkName Proxy . T.pack <$> manyTill nonSpace (char '#'))
-    <*> (mkId Proxy . read <$> some digitChar)
+parser =
+    RepoSpec
+        <$> (mkName Proxy . T.pack <$> manyTill nonSpace (char '/'))
+        <*> (mkName Proxy . T.pack <$> manyTill nonSpace (char '#'))
+        <*> (mkId Proxy . read <$> some digitChar)
 
 nonSpace :: Parser Char
 nonSpace = satisfy $ not . isSpace

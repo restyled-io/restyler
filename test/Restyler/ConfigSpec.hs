@@ -14,44 +14,43 @@ import Restyler.Config
 spec :: Spec
 spec = do
     it "supports a simple, name-based syntax" $ do
-        let result = decodeEither $ C8.unlines
-                [ "---"
-                , "- stylish-haskell"
-                , "- prettier"
-                ]
+        let
+            result = decodeEither
+                $ C8.unlines ["---", "- stylish-haskell", "- prettier"]
 
         result `shouldBe` Right Config
             { cEnabled = True
-            , cRestylers =
-                [ unsafeNamedRestyler "stylish-haskell"
-                , unsafeNamedRestyler "prettier"
-                ]
+            , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
+                           , unsafeNamedRestyler "prettier"
+                           ]
             }
 
     it "has a setting for globally disabling" $ do
-        let result = decodeEither $ C8.unlines
-                [ "---"
-                , "enabled: false"
-                , "restylers:"
-                , "- stylish-haskell"
-                ]
+        let
+            result = decodeEither $ C8.unlines
+                ["---", "enabled: false", "restylers:", "- stylish-haskell"]
 
         fmap cEnabled result `shouldBe` Right False
 
     it "allows re-configuring includes" $ do
-        let result1 = decodeEither $ C8.unlines
-                [ "---"
-                , "- stylish-haskell:"
-                , "    include:"
-                , "    - \"**/*.lhs\""
-                ]
+        let
+            result1 =
+                decodeEither
+                    $ C8.unlines
+                          [ "---"
+                          , "- stylish-haskell:"
+                          , "    include:"
+                          , "    - \"**/*.lhs\""
+                          ]
 
-            result2 = decodeEither $ C8.unlines
-                [ "---"
-                , "- stylish-haskell:"
-                , "    include:"
-                , "    - \"**/*.lhs\""
-                ]
+            result2 =
+                decodeEither
+                    $ C8.unlines
+                          [ "---"
+                          , "- stylish-haskell:"
+                          , "    include:"
+                          , "    - \"**/*.lhs\""
+                          ]
 
             result3 = decodeEither $ C8.unlines
                 [ "---"
@@ -65,25 +64,18 @@ spec = do
         result2 `shouldBe` result3
         result3 `shouldBe` Right Config
             { cEnabled = True
-            , cRestylers =
-                [ (unsafeNamedRestyler "stylish-haskell")
-                    { rInclude = [Include "**/*.lhs"]
-                    }
-                ]
+            , cRestylers = [ (unsafeNamedRestyler "stylish-haskell")
+                                 { rInclude = [Include "**/*.lhs"]
+                                 }
+                           ]
             }
 
     it "has good errors for unknown name" $ do
-        let result1 = decodeEither $ C8.unlines
-                [ "---"
-                , "- uknown-name"
-                ]
+        let
+            result1 = decodeEither $ C8.unlines ["---", "- uknown-name"]
 
             result2 = decodeEither $ C8.unlines
-                [ "---"
-                , "- uknown-name:"
-                , "    arguments:"
-                , "    - --foo"
-                ]
+                ["---", "- uknown-name:", "    arguments:", "    - --foo"]
 
             result3 = decodeEither $ C8.unlines
                 [ "---"

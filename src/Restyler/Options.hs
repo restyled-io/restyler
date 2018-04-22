@@ -26,13 +26,14 @@ data Options = Options
 
 parseRealOptions :: IO Options
 parseRealOptions = do
-    accessToken <- Env.parse id
+    accessToken <-
+        Env.parse id
         $ Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
         $ Env.help "GitHub access token with write access to the repository"
 
-    RepoSpec{..} <- execParser
-        $ info (optionsParser <**> helper)
-        $ fullDesc <> progDesc "Restyle a GitHub Pull Request"
+    RepoSpec {..} <-
+        execParser $ info (optionsParser <**> helper) $ fullDesc <> progDesc
+            "Restyle a GitHub Pull Request"
 
     pure Options
         { oAccessToken = accessToken
@@ -42,8 +43,9 @@ parseRealOptions = do
         }
   where
     optionsParser :: Parser RepoSpec
-    optionsParser = argument (eitherReader parseRepoSpec)
-        (  metavar "<owner>/<name>#<number>"
+    optionsParser = argument
+        (eitherReader parseRepoSpec)
+        (metavar "<owner>/<name>#<number>"
         <> help "Repository and Pull Request to restyle"
         )
 
@@ -70,7 +72,7 @@ data Options' = Options'
 
 parseLegacyOptions :: IO Options
 parseLegacyOptions = do
-    Options'{..} <- parseOptions'
+    Options' {..} <- parseOptions'
     accessToken <- createAccessToken
         oGitHubAppId'
         oGitHubAppKey'
@@ -84,44 +86,43 @@ parseLegacyOptions = do
         }
 
 options :: Parser Options'
-options = Options'
-    <$> (mkId Proxy <$> option auto
-        (  long "github-app-id"
-        <> metavar "ID"
-        <> help "GitHub App Id"
-        ))
-    <*> (pack <$> strOption
-        (  long "github-app-key"
-        <> metavar "KEY"
-        <> help "GitHub App Key"
-        ))
-    <*> (mkId Proxy <$> option auto
-        (  long "installation-id"
-        <> metavar "ID"
-        <> help "Installation Id"
-        ))
-    <*> (mkName Proxy . pack <$> strOption
-        (  long "owner"
-        <> metavar "NAME"
-        <> help "Owner"
-        ))
-    <*> (mkName Proxy . pack <$> strOption
-        (  long "repo"
-        <> metavar "NAME"
-        <> help "Repo"
-        ))
-    <*> (mkId Proxy <$> option auto
-        (  long "pull-request"
-        <> metavar "NUMBER"
-        <> help "Pull Request"
-        ))
-    <*> (pack <$> strOption
-        (  long "restyled-root"
-        <> metavar "URL"
-        <> help "Root for restyled.io"
-        <> value "https://restyled.io"
-        ))
+options =
+    Options'
+        <$> (mkId Proxy <$> option
+                auto
+                (long "github-app-id" <> metavar "ID" <> help "GitHub App Id")
+            )
+        <*> (pack
+            <$> strOption
+                    (long "github-app-key" <> metavar "KEY" <> help
+                        "GitHub App Key"
+                    )
+            )
+        <*> (mkId Proxy <$> option
+                auto
+                (long "installation-id" <> metavar "ID" <> help
+                    "Installation Id"
+                )
+            )
+        <*> (mkName Proxy . pack <$> strOption
+                (long "owner" <> metavar "NAME" <> help "Owner")
+            )
+        <*> (mkName Proxy . pack <$> strOption
+                (long "repo" <> metavar "NAME" <> help "Repo")
+            )
+        <*> (mkId Proxy <$> option
+                auto
+                (long "pull-request" <> metavar "NUMBER" <> help "Pull Request")
+            )
+        <*> (pack <$> strOption
+                (long "restyled-root"
+                <> metavar "URL"
+                <> help "Root for restyled.io"
+                <> value "https://restyled.io"
+                )
+            )
 
 parseOptions' :: IO Options'
-parseOptions' = execParser $ info (options <**> helper)
+parseOptions' = execParser $ info
+    (options <**> helper)
     (fullDesc <> progDesc "Restyle a GitHub Pull Request")
