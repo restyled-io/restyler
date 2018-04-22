@@ -4,26 +4,19 @@ The restyling process, as a CLI.
 
 ## Usage
 
-To restyle a given Pull Request, you would need:
-
-1. The GitHub App Id
-1. The contents of that App's PEM private key
-1. The Installation Id for the Repository's installed instance of that App
-1. The Repository Owner and Name (e.g. `restyled.io/demo`)
-1. The Pull Request Number to restyle
-
 ```console
 docker run --rm \
+  --env "GITHUB_ACCESS_TOKEN=<access-token>" \
   --volume /tmp:tmp \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  restyled/restyler \
-    --github-app-id ... \
-    --github-app-key ... \
-    --installation-id ... \
-    --owner ... \
-    --repo ... \
-    --pull-request ...
+  restyled/restyler "<owner>/<name>#<number>"
 ```
+
+**NOTE**: The Access Token you use will determine some of the resulting
+behavior. In production, we use a token provisioned for an installed instance of
+our GitHub App, which ensures the restyled PRs and comments appear as authored
+by our App. If you use a Personal Access Token, the restyled PRs and comments
+will be authored by your user.
 
 ## Development
 
@@ -52,7 +45,7 @@ make test.core
 End-to-end test that restyles a public Pull Request in our `demo` Repository:
 
 ```console
-make test.integration
+make test.integration GITHUB_ACCESS_TOKEN=$(bin/get-access-token)
 ```
 
 ## Release
