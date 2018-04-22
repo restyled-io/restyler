@@ -25,6 +25,7 @@ library:
     - http-client-tls
     - http-types
     - jwt
+    - megaparsec
     - mtl
     - monad-logger
     - operational
@@ -71,6 +72,7 @@ tests:
       - restyler
       - classy-prelude
       - directory
+      - github
       - hspec
       - process
       - shakespeare

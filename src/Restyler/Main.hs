@@ -10,7 +10,7 @@ import ClassyPrelude
 
 import Data.Proxy
 import GitHub.Client
-import GitHub.Endpoints.Installations
+import GitHub.Data
 import Restyler.Clone
 import Restyler.Options
 import Restyler.PullRequest
@@ -22,8 +22,8 @@ import Text.Shakespeare.Text (st)
 restylerMain :: IO ()
 restylerMain = handleIO (die . show) $ do
     Options{..} <- parseOptions
-    AccessToken{..} <- createAccessToken oGitHubAppId oGitHubAppKey oInstallationId
-    pullRequest <- runGitHubThrow atToken (getPullRequest oOwner oRepo oPullRequest)
+
+    pullRequest <- runGitHubThrow oAccessToken (getPullRequest oOwner oRepo oPullRequest)
 
     let isFork = pullRequestIsFork pullRequest
         prNumber = pullRequestNumber pullRequest
@@ -36,7 +36,7 @@ restylerMain = handleIO (die . show) $ do
         rTitle = pullRequestTitle pullRequest <> " (Restyled)"
         commitMessage = "Restyled"
 
-    withinClonedRepo (remoteURL atToken oOwner oRepo) $ do
+    withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $ do
         when isFork $ fetchOrigin $ "pull/" <> tshow prNumber <> "/head:" <> hBranch
         checkoutBranch False hBranch
 
@@ -65,7 +65,7 @@ restylerMain = handleIO (die . show) $ do
         -- Normal path
         pushOrigin rBranch
 
-    runGitHubThrow atToken $ do
+    runGitHubThrow oAccessToken $ do
         pr <- createPullRequest oOwner oRepo CreatePullRequest
             { createPullRequestTitle = rTitle
             , createPullRequestBody = ""
@@ -81,10 +81,10 @@ restylerMain = handleIO (die . show) $ do
 
         void
             $ createComment oOwner oRepo (asIssueId oPullRequest)
-            $ restyledCommentBody oRestyledRoot pr
+            $ restyledCommentBody pr
 
-restyledCommentBody :: Text -> PullRequest -> Text
-restyledCommentBody root pullRequest = [st|
+restyledCommentBody :: PullRequest -> Text
+restyledCommentBody pullRequest = [st|
 Hi there!
 
 I just wanted to let you know that some code in this PR might not match the
@@ -97,8 +97,8 @@ seen in ##{pullRequestNumber pullRequest}.
 Thanks,
 [Restyled.io][]
 
-[restyled.io]: #{root}
-[documentation]: #{root}/docs#disabling
+[restyled.io]: https://restyled.io
+[documentation]: https://restyled.io/docs#disabling
 |]
 
 restyledAction :: PullRequest -> Text
