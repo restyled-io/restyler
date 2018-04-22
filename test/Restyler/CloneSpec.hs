@@ -5,6 +5,10 @@ module Restyler.CloneSpec (spec) where
 import SpecHelper
 
 import Restyler.Clone
+import Restyler.Process (callProcess)
+import System.Directory (setCurrentDirectory)
+import System.IO.Temp (withSystemTempDirectory)
+import System.Process (readProcess)
 
 spec :: Spec
 spec = around (withSystemTempDirectory "") $ do
@@ -27,3 +31,9 @@ spec = around (withSystemTempDirectory "") $ do
             checkoutBranch True "develop"
             readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
                 `shouldReturn` "develop\n"
+
+setupGitRepo :: FilePath -> IO ()
+setupGitRepo dir = do
+    setCurrentDirectory dir
+    callProcess "git" ["init"]
+    callProcess "git" ["commit", "--allow-empty", "--message", "Test"]

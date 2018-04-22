@@ -9,6 +9,8 @@ import SpecHelper
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Restyler.Config.Interpreter
+import System.Directory (removeFile)
+import System.IO.Temp (emptySystemTempFile)
 
 spec :: Spec
 spec = around withEmptySystemTempFile $ do
@@ -37,3 +39,7 @@ spec = around withEmptySystemTempFile $ do
                 ]
 
             (tmp `hasInterpreter` Python) `shouldReturn` True
+
+
+withEmptySystemTempFile :: (FilePath -> IO a) -> IO a
+withEmptySystemTempFile = bracket (emptySystemTempFile "") removeFile

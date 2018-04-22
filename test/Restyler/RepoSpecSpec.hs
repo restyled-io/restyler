@@ -18,3 +18,7 @@ spec = describe "parseRepoSpec" $ do
         parseRepoSpec "foo/bar" `shouldSatisfy` isLeft
         parseRepoSpec "bar#2" `shouldSatisfy` isLeft
         parseRepoSpec "foo/bar#baz" `shouldSatisfy` isLeft
+
+isLeft :: Either a b -> Bool
+isLeft (Left _) = True
+isLeft _ = False
