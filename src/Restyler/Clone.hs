@@ -46,9 +46,9 @@ forcePushOrigin branch = callProcess "git"
     ["push", "--force-with-lease", "origin", unpack branch]
 
 branchHeadMessage :: Text -> IO (Maybe Text)
-branchHeadMessage branch = handle errNothing $ do
-    output <- readProcess "git" ["log", "-n", "1", "--format=%B", unpack branch] ""
-    return $ Just $ T.strip $ pack output
+branchHeadMessage branch =
+    handle errNothing $ Just . T.strip . pack
+    <$> readProcess "git" ["log", "-n", "1", "--format=%B", unpack branch] ""
   where
     errNothing :: Monad m => IOException -> m (Maybe a)
     errNothing _ = return Nothing
