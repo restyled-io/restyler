@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Restyler.Clone
     ( withinClonedRepo
@@ -11,48 +10,47 @@ module Restyler.Clone
     , branchHeadMessage
     ) where
 
-import ClassyPrelude
-
+import Control.Exception.Safe (MonadCatch, handleIO)
+import Data.Text (Text)
 import qualified Data.Text as T
-import System.Directory (withCurrentDirectory)
-import System.IO.Temp (withSystemTempDirectory)
-import System.Process (callProcess, readProcess)
+import Restyler.App
+import UnliftIO hiding (handleIO)
+import UnliftIO.Directory (withCurrentDirectory)
+import UnliftIO.Process (callProcess, readProcess)
+import UnliftIO.Temporary (withSystemTempDirectory)
 
-withinClonedRepo :: Text -> IO a -> IO a
+withinClonedRepo :: (MonadIO m, MonadUnliftIO m) => Text -> m a -> m a
 withinClonedRepo url act = withSystemTempDirectory "" $ \dir -> do
-    callProcess "git" ["clone", unpack url, dir]
+    callProcess "git" ["clone", T.unpack url, dir]
     withCurrentDirectory dir act
 
-checkoutBranch :: Bool -> Text -> IO ()
+checkoutBranch :: MonadIO m => Bool -> Text -> m ()
 checkoutBranch b branch =
     callProcess "git"
         $ ["checkout", "--quiet"]
         ++ [ "-b" | b ]
-        ++ [unpack branch]
+        ++ [T.unpack branch]
 
-changedPaths :: Text -> IO [FilePath]
+changedPaths :: MonadIO m => Text -> m [FilePath]
 changedPaths branch =
-    lines <$> readProcess "git" ["diff", "--name-only", unpack branch] ""
+    lines <$> readProcess "git" ["diff", "--name-only", T.unpack branch] ""
 
-commitAll :: Text -> IO ()
-commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
+commitAll :: MonadIO m => Text -> m ()
+commitAll msg = callProcess "git" ["commit", "-am", T.unpack msg]
 
-fetchOrigin :: Text -> IO ()
-fetchOrigin ref = callProcess "git" ["fetch", "origin", unpack ref]
+fetchOrigin :: MonadIO m => Text -> m ()
+fetchOrigin ref = callProcess "git" ["fetch", "origin", T.unpack ref]
 
-pushOrigin :: Text -> IO ()
-pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
+pushOrigin :: MonadIO m => Text -> m ()
+pushOrigin branch = callProcess "git" ["push", "origin", T.unpack branch]
 
-forcePushOrigin :: Text -> IO ()
+forcePushOrigin :: MonadIO m => Text -> m ()
 forcePushOrigin branch =
-    callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
+    callProcess "git" ["push", "--force-with-lease", "origin", T.unpack branch]
 
-branchHeadMessage :: Text -> IO (Maybe Text)
+branchHeadMessage :: (MonadCatch m, MonadIO m) => Text -> m (Maybe Text)
 branchHeadMessage branch =
-    handle errNothing $ Just . T.strip . pack <$> readProcess
+    handleIO (const $ pure Nothing) $ Just . T.strip . T.pack <$> readProcess
         "git"
-        ["log", "-n", "1", "--format=%B", unpack branch]
+        ["log", "-n", "1", "--format=%B", T.unpack branch]
         ""
-  where
-    errNothing :: Monad m => IOException -> m (Maybe a)
-    errNothing _ = return Nothing
