@@ -14,7 +14,6 @@ library:
   dependencies:
     - Glob
     - aeson
-    - classy-prelude
     - directory
     - envparse
     - errors
@@ -28,9 +27,9 @@ library:
     - operational
     - optparse-applicative
     - process
+    - safe
     - safe-exceptions
     - shakespeare
-    - temporary
     - text
     - unliftio
     - unordered-containers
