@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -6,7 +5,6 @@ module SpecHelper
     ( module X
     ) where
 
-import ClassyPrelude as X
 import Test.Hspec as X
 
 import Data.Proxy

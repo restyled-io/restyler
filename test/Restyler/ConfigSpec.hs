@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Restyler.ConfigSpec
@@ -8,6 +7,7 @@ module Restyler.ConfigSpec
 import SpecHelper
 
 import qualified Data.ByteString.Char8 as C8
+import Data.List (isInfixOf)
 import Data.Yaml (decodeEither)
 import Restyler.Config
 
