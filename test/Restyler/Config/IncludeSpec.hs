@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Restyler.Config.IncludeSpec (spec) where
 

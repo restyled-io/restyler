@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Restyler.Config.InterpreterSpec
     ( spec
@@ -6,6 +5,7 @@ module Restyler.Config.InterpreterSpec
 
 import SpecHelper
 
+import Control.Exception (bracket)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Restyler.Config.Interpreter
