@@ -8,23 +8,23 @@ module Restyler.Core
 import Control.Monad (unless)
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import Data.Foldable (traverse_)
+import Data.Foldable (for_)
 import Data.List (isPrefixOf)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
+import Restyler.App
 import Restyler.Config
-import Restyler.Core.App
 import System.Directory (getCurrentDirectory)
-import System.Exit hiding (die)
+import System.Exit (die, exitSuccess)
 import System.Process (callProcess)
 
 restyle :: [FilePath] -> IO ()
 restyle paths = do
-    app <- loadApp
+    app <- loadApp =<< either (die . show) pure =<< loadConfig
 
     runApp app $ do
-        config <- either (die . T.pack) pure =<< liftIO loadConfig
+        config <- asks appConfig
         logDebugN $ "Loaded config: " <> tshow config
 
         unless (cEnabled config) $ do
@@ -32,17 +32,19 @@ restyle paths = do
             liftIO exitSuccess
 
         logDebugN $ "Paths: " <> tshow paths
-        traverse_ (callRestyler paths) $ cRestylers config
+        callRestylers paths
 
-callRestyler :: [FilePath] -> Restyler -> AppM ()
-callRestyler allPaths r = do
+callRestylers :: [FilePath] -> AppM Config ()
+callRestylers allPaths = do
     cwd <- liftIO getCurrentDirectory
-    paths <- liftIO $ restylePaths r allPaths
+    restylers <- asks $ cRestylers . appConfig
 
-    unless (null paths) $ do
-        logInfoN $ "Restyling " <> tshow paths <> " via " <> T.pack (rName r)
-        logDebugN $ tshow $ "docker" : dockerArguments cwd r paths
-        liftIO $ callProcess "docker" $ dockerArguments cwd r paths
+    for_ restylers $ \r@Restyler{..} -> do
+        paths <- liftIO $ restylePaths r allPaths
+        unless (null paths) $ do
+            logInfoN $ "Restyling " <> tshow paths <> " via " <> T.pack rName
+            logDebugN $ tshow $ "docker" : dockerArguments cwd r paths
+            liftIO $ callProcess "docker" $ dockerArguments cwd r paths
 
 dockerArguments :: FilePath -> Restyler -> [FilePath] -> [String]
 dockerArguments dir Restyler {..} paths =
