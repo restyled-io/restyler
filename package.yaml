@@ -28,6 +28,7 @@ library:
     - operational
     - optparse-applicative
     - process
+    - safe-exceptions
     - shakespeare
     - temporary
     - text
