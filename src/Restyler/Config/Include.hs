@@ -1,15 +1,15 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Restyler.Config.Include
     ( Include(..)
     , includePath
     ) where
 
-import ClassyPrelude
-
 import Data.Aeson
+import Data.List (foldl')
 import Data.String (IsString(..))
-import System.FilePath.Glob (Pattern(), compile, match)
+import qualified Data.Text as T
+import System.FilePath.Glob (Pattern, compile, match)
 
 data Include
     = Include Pattern
@@ -17,7 +17,7 @@ data Include
     deriving (Eq, Show)
 
 instance FromJSON Include where
-    parseJSON = withText "Include pattern" $ pure . fromString . unpack
+    parseJSON = withText "Include pattern" $ pure . fromString . T.unpack
 
 instance IsString Include where
     fromString ('!':rest) = Negated $ compile rest

@@ -1,19 +1,19 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Restyler.Config.Interpreter
     ( Interpreter(..)
     , hasInterpreter
     ) where
 
-import ClassyPrelude
-
 import Control.Error.Util (hush)
+import Control.Exception.Safe (handleIO)
 import Data.Aeson
-import System.FilePath (takeFileName)
-
+import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Safe (headMay)
+import System.FilePath (takeFileName)
 
 data Interpreter
     = Sh
