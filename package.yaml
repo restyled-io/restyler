@@ -17,8 +17,8 @@ library:
     - bytestring
     - classy-prelude
     - directory
-    - errors
     - envparse
+    - errors
     - filepath
     - github
     - http-client
@@ -26,8 +26,8 @@ library:
     - http-types
     - jwt
     - megaparsec
-    - mtl
     - monad-logger
+    - mtl
     - operational
     - optparse-applicative
     - process
@@ -76,7 +76,6 @@ tests:
       - hspec
       - process
       - restyler
-      - shakespeare
       - temporary
       - text
       - yaml
