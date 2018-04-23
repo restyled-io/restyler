@@ -1,7 +1,4 @@
 ---
 resolver: lts-10.1
-packages:
-  - .
-extra-deps:
-  - git: https://pbrisbin@bitbucket.org/pbrisbin/haskell-jwt.git
-    commit: 202898d8aa20ab4d4fdff3a9efb08a973ecd0bc4
+ghc-options:
+  "$locals": -fhide-source-paths

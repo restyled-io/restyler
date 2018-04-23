@@ -14,7 +14,6 @@ library:
   dependencies:
     - Glob
     - aeson
-    - bytestring
     - classy-prelude
     - directory
     - envparse
@@ -23,19 +22,15 @@ library:
     - github
     - http-client
     - http-client-tls
-    - http-types
-    - jwt
     - megaparsec
     - monad-logger
     - mtl
     - operational
     - optparse-applicative
     - process
-    - safe
     - shakespeare
     - temporary
     - text
-    - time
     - unordered-containers
     - vector
     - yaml

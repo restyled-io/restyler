@@ -22,8 +22,8 @@ import Text.Shakespeare.Text (st)
 restylerMain :: IO ()
 restylerMain = handleIO (die . show) $ do
     Options{..} <- parseOptions
-
-    pullRequest <- runGitHubThrow oAccessToken (getPullRequest oOwner oRepo oPullRequest)
+    pullRequest <- runGitHubThrow oAccessToken
+        $ getPullRequest oOwner oRepo oPullRequest
 
     let isFork = pullRequestIsFork pullRequest
         prNumber = pullRequestNumber pullRequest
