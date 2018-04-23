@@ -1,40 +1,27 @@
-#!/usr/bin/env ruby
-#
-# Get an Access Token for our development GitHub App installed in the
-# restyled-io Org. Uses rubby because it was simple enough to copy the
-# documentatation.
-#
-# - https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-a-github-app
-# - https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-an-installation
-#
-####
-require "jwt"
-require "openssl"
+#!/bin/sh
+set -e
 
-APP_ID = 5355
-APP_KEY = File.expand_path(
-  File.join(
-    "~/downloads/restyled",
-    "restyled-io-development.2017-09-19.private-key.pem",
-  )
-)
-INSTALLATION_ID = 58920
+app_id=${1:-5355}
+app_key=${2:-keys/restyled-io-development.2017-09-19.private-key.pem}
+installation_id=${3:-58920}
 
-jwt = JWT.encode(
-  {
-    iat: Time.now.to_i,
-    exp: Time.now.to_i + (10 * 60),
-    iss: APP_ID,
-  },
-  OpenSSL::PKey::RSA.new(File.read(APP_KEY)),
-  "RS256",
+# https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-a-github-app
+jwt=$(
+  ruby -r jwt -r openssl <<EOM
+    private_pem = File.read("$app_key")
+    private_key = OpenSSL::PKey::RSA.new(private_pem)
+    payload = {
+      iat: Time.now.to_i,
+      exp: Time.now.to_i + (10 * 60),
+      iss: $app_id,
+    }
+    puts JWT.encode(payload, private_key, "RS256")
+EOM
 )
 
-opts = [
-  "--silent", "-X", "POST",
-  "-H", "Authorization: Bearer #{jwt}",
-  "-H", "Accept: application/vnd.github.machine-man-preview+json",
-  "https://api.github.com/installations/#{INSTALLATION_ID}/access_tokens"
-]
-
-puts JSON.parse(`curl #{opts.map { |x| "'#{x}'" }.join(" ")}`).fetch("token")
+# https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-an-installation
+curl --silent -X POST \
+  -H "Authorization: Bearer $jwt" \
+  -H "Accept: application/vnd.github.machine-man-preview+json" \
+  "https://api.github.com/installations/$installation_id/access_tokens" \
+  | jq --raw-output '.token'
