@@ -1,6 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+
 module Restyler.Config
     ( Config(..)
     , loadConfig
@@ -24,18 +24,20 @@ module Restyler.Config
     , unsafeNamedRestyler
     ) where
 
-import ClassyPrelude
-
+import Control.Monad (MonadPlus, filterM)
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import Data.Bifunctor (first)
+import qualified Data.HashMap.Lazy as HM
+import Data.List (find)
+import Data.Semigroup ((<>))
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Vector as V
 import Data.Yaml
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import System.Directory (doesFileExist)
-
-import qualified Data.HashMap.Lazy as HM
-import qualified Data.Vector as V
 
 data Config = Config
     { cEnabled :: Bool
@@ -158,8 +160,8 @@ allRestylers =
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
-namedRestyler name = case find ((== name) . pack . rName) allRestylers of
-    Nothing -> fail $ unpack $ "Unknown restyler name: " <> name <> "."
+namedRestyler name = case find ((== name) . T.pack . rName) allRestylers of
+    Nothing -> fail $ T.unpack $ "Unknown restyler name: " <> name <> "."
     Just r -> pure r
 
 unsafeNamedRestyler :: Text -> Restyler
@@ -206,7 +208,7 @@ instance FromJSON Restyler where
             (\o' -> do
                 Restyler{..} <- namedRestyler k
                 Restyler -- Named + overrides
-                    <$> pure (unpack k)
+                    <$> pure (T.unpack k)
                     <*> pure rCommand
                     <*> o' .:? "arguments" .!= rArguments
                     <*> o' .:? "include" .!= rInclude
