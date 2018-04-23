@@ -22,7 +22,7 @@ type AppM c = ReaderT (App c) (LoggingT IO)
 loadApp :: c -> IO (App c)
 loadApp c = Env.parse id $ App
     <$> pure c
-    <*> Env.flag LevelInfo LevelDebug "DEBUG" mempty
+    <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
 
 runApp :: App c -> AppM c a -> IO a
 runApp app@App{..} action = runStdoutLoggingT
