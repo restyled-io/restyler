@@ -1,4 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Restyler.PullRequest
     ( pullRequestOwner
     , pullRequestRepo
@@ -6,11 +8,11 @@ module Restyler.PullRequest
     , pullRequestIsFork
     ) where
 
-import GitHub.Data
 import Data.Maybe (fromMaybe)
-import Data.Text (Text)
 import Data.Semigroup ((<>))
+import Data.Text (Text)
 import GHC.Stack
+import GitHub.Data
 
 pullRequestOwner :: PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
