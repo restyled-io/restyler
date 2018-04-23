@@ -55,11 +55,13 @@ runGitHubThrow token m = do
 --
 -- Renamed to reduce clashing.
 --
-getPullRequest :: Name Owner -> Name Repo -> Id PullRequest -> GitHubRW PullRequest
+getPullRequest
+    :: Name Owner -> Name Repo -> Id PullRequest -> GitHubRW PullRequest
 getPullRequest o r = singleton . pullRequestR o r
 
 -- | @'createPullRequestR'@ lifted to @'GitHubRW'@
-createPullRequest :: Name Owner -> Name Repo -> CreatePullRequest -> GitHubRW PullRequest
+createPullRequest
+    :: Name Owner -> Name Repo -> CreatePullRequest -> GitHubRW PullRequest
 createPullRequest o r = singleton . createPullRequestR o r
 
 -- | @'createCommentR'@ lifted to @'GitHubRW'@
