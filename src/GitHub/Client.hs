@@ -14,7 +14,7 @@ module GitHub.Client
     , getPullRequest
     ) where
 
-import Control.Exception (throwIO)
+import Control.Exception.Safe (MonadThrow, throwString)
 import Control.Monad.Except
 import Control.Monad.Operational
 import Data.Text (Text)
@@ -42,14 +42,14 @@ runGitHub token m = runExceptT $ do
 
     auth = OAuth $ encodeUtf8 token
 
--- | A version that throws (shown) errors in @'IO'@
+-- | A version that throws (shown) errors
 --
 -- Actually most useful in a CLI application with overall IO error-handling.
 --
-runGitHubThrow :: Text -> GitHubRW a -> IO a
+runGitHubThrow :: (MonadIO m, MonadThrow m) => Text -> GitHubRW a -> m a
 runGitHubThrow token m = do
     result <- runGitHub token m
-    either (throwIO . userError . ("GitHub Error: " ++) . show) pure result
+    either (throwString . ("GitHub Error: " ++) . show) pure result
 
 -- | @'pullRequestR'@ lifted to @'GitHubRW'@
 --
