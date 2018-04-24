@@ -11,6 +11,7 @@ module Restyler.Clone
     ) where
 
 import Control.Exception.Safe (MonadCatch, handleIO)
+import Data.Semigroup ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Restyler.App
@@ -38,8 +39,12 @@ changedPaths branch =
 commitAll :: MonadIO m => Text -> m ()
 commitAll msg = callProcess "git" ["commit", "-am", T.unpack msg]
 
-fetchOrigin :: MonadIO m => Text -> m ()
-fetchOrigin ref = callProcess "git" ["fetch", "origin", T.unpack ref]
+fetchOrigin :: MonadIO m => Text -> Text -> m Text
+fetchOrigin remoteRef localRef = do
+    callProcess
+        "git"
+        ["fetch", "origin", T.unpack $ remoteRef <> ":" <> localRef]
+    pure localRef
 
 pushOrigin :: MonadIO m => Text -> m ()
 pushOrigin branch = callProcess "git" ["push", "origin", T.unpack branch]

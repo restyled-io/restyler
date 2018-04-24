@@ -24,72 +24,71 @@ import UnliftIO.Process (callProcess)
 restylerMain :: IO ()
 restylerMain = do
     Options{..} <- parseOptions
-    pullRequest <- runGitHubThrow oAccessToken
-        $ getPullRequest oOwner oRepo oPullRequest
 
-    -- TODO: decide what goes in global config
-    app <- loadApp ()
+    app <- loadApp =<< runGitHubThrow oAccessToken
+        (getPullRequest oOwner oRepo oPullRequest)
 
-    runApp app $ do
-        let isFork = pullRequestIsFork pullRequest
-            prNumber = pullRequestNumber pullRequest
-            bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
-            hBranch =
-                if isFork
-                    then "pr/" <> tshow prNumber -- fetch virtual ref as this
-                    else pullRequestCommitRef $ pullRequestHead pullRequest
-            rBranch = hBranch <> "-restyled"
-            rTitle = pullRequestTitle pullRequest <> " (Restyled)"
-            commitMessage = "Restyled"
+    withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $
+        runApp app $ do
+            checkoutPullRequest
 
-        withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $ do
-            when isFork $ do
-                logInfoN "Fetching virtual ref for forked PR"
-                fetchOrigin $ "pull/" <> tshow prNumber <> "/head:" <> hBranch
-            checkoutBranch False hBranch
-
-            paths <- filterM doesFileExist =<< changedPaths bBranch
-            callProcess "restyler-core" paths
-
-            wasRestyled <- not . null <$> changedPaths hBranch
+            wasRestyled <- runRestyler
             unless wasRestyled $ do
-                logWarnN "No style differences found"
+                logInfoN "No style differences found"
                 liftIO exitSuccess
 
-            checkoutBranch True rBranch
-            commitAll commitMessage
-
-            -- If a "-restyled" branch exists with a "Restyled" commit, this is a
-            -- synchronize event and we should just update our already-existing PR
-            -- with our fresh restyled commit.
-            branchExists <- (== Just commitMessage)
-                <$> branchHeadMessage ("origin/" <> rBranch)
-
-            when branchExists $ do
-                logInfoN "Restyled branch exists. Force pushing and skipping PR & comment"
-                forcePushOrigin rBranch
+            wasUpdated <- tryUpdateBranch
+            when wasUpdated $ do
+                logInfoN "Existing branch updated. Skipping PR & comment"
                 liftIO exitSuccess
 
-            -- Normal path
-            pushOrigin rBranch
+            createPr <- asks $ restyledCreatePullRequest . appConfig
+            runGitHubThrow oAccessToken $ do
+                pr <- createPullRequest oOwner oRepo createPr
 
-        runGitHubThrow oAccessToken $ do
-            pr <- createPullRequest oOwner oRepo CreatePullRequest
-                { createPullRequestTitle = rTitle
-                , createPullRequestBody = ""
-                , createPullRequestHead = rBranch
-                , createPullRequestBase =
-                    -- We can't open a PR in their fork, so we open a PR in our own
-                    -- repository against the base branch. It'll have their changes
-                    -- and our restyling as separate commits.
-                    if isFork
-                        then bBranch
-                        else hBranch
-                }
+                void
+                    $ createComment oOwner oRepo (asIssueId oPullRequest)
+                    $ restyledCommentBody pr
 
-            void
-                $ createComment oOwner oRepo (asIssueId oPullRequest)
-                $ restyledCommentBody pr
+checkoutPullRequest :: AppM PullRequest ()
+checkoutPullRequest = do
+    pullRequest@PullRequest{..} <- asks appConfig
+    logInfoN $ "Checking out PR: " <> tshow pullRequest
+
+    localRef <- if pullRequestIsFork pullRequest
+        then do
+            logInfoN "Fetching virtual ref for forked PR"
+            fetchOrigin
+                ("pull/" <> toPathPart pullRequestId <> "/head")
+                (pullRequestLocalHeadRef pullRequest)
+        else do
+            logDebugN "Checking out local PR head"
+            pure $ pullRequestHeadRef pullRequest
+
+    checkoutBranch False localRef
+
+runRestyler :: AppM PullRequest Bool
+runRestyler = do
+    callProcess "restyler-core"
+        =<< filterM doesFileExist
+        =<< changedPaths
+        =<< asks (pullRequestBaseRef . appConfig)
+
+    hBranch <- asks $ pullRequestLocalHeadRef . appConfig
+    not . null <$> changedPaths hBranch
+
+tryUpdateBranch :: AppM PullRequest Bool
+tryUpdateBranch = do
+    rBranch <- asks $ pullRequestRestyledRef . appConfig
+    checkoutBranch True rBranch
+    commitAll commitMessage
+    mBranchMessage <- branchHeadMessage ("origin/" <> rBranch)
+
+    if mBranchMessage == Just commitMessage
+        then True <$ forcePushOrigin rBranch
+        else False <$ pushOrigin rBranch
+  where
+    commitMessage = "Restyled"
 
 restyledCommentBody :: PullRequest -> Text
 restyledCommentBody pullRequest = [st|
@@ -132,7 +131,7 @@ To incorporate the changes, merge that PR into yours.
 Sorry if this was unexpected. To disable it, see our [documentation].
 |]
   where
-    bBranch = pullRequestCommitRef $ pullRequestBase pullRequest
+    bBranch = pullRequestBaseRef pullRequest
 
 remoteURL :: Text -> Name Owner -> Name Repo -> Text
 remoteURL token owner repo = "https://x-access-token:"
