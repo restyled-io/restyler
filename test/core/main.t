@@ -6,13 +6,13 @@ stylish-haskell
   $ run_restyler stylish-haskell pragmas.hs
   [Info] Restyling ["pragmas.hs"] via stylish-haskell
   diff --git i/pragmas.hs w/pragmas.hs
-  index 289ffbd..b65cadb 100644
+  index fd4c8c8..a07dc58 100644
   --- i/pragmas.hs
   +++ w/pragmas.hs
   @@ -1,2 +1,2 @@
    {-# LANGUAGE OverloadedStrings #-}
-  -{-# LANGUAGE RecordWildcards #-}
-  +{-# LANGUAGE RecordWildcards   #-}
+  -{-# LANGUAGE RecordWildCards #-}
+  +{-# LANGUAGE RecordWildCards   #-}
 
 prettier
 
