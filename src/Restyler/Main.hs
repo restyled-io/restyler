@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Main
@@ -14,43 +13,43 @@ import GitHub.Client
 import GitHub.Data
 import Restyler.App
 import Restyler.Clone
+import qualified Restyler.Content as Content
 import Restyler.Options
 import Restyler.PullRequest
 import System.Exit (exitSuccess)
-import Text.Shakespeare.Text (st)
 import UnliftIO.Directory (doesFileExist)
 import UnliftIO.Process (callProcess)
 
 restylerMain :: IO ()
 restylerMain = do
-    Options{..} <- parseOptions
+    Options {..} <- parseOptions
 
-    app <- loadApp =<< runGitHubThrow oAccessToken
+    app <- loadApp =<< runGitHubThrow
+        oAccessToken
         (getPullRequest oOwner oRepo oPullRequest)
 
-    withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $
-        runApp app $ do
-            checkoutPullRequest
+    withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $ runApp app $ do
+        checkoutPullRequest
 
-            unlessM runRestyler $ do
-                logInfoN "No style differences found"
-                liftIO exitSuccess
+        unlessM runRestyler $ do
+            logInfoN "No style differences found"
+            liftIO exitSuccess
 
-            whenM tryUpdateBranch $ do
-                logInfoN "Existing branch updated. Skipping PR & comment"
-                liftIO exitSuccess
+        whenM tryUpdateBranch $ do
+            logInfoN "Existing branch updated. Skipping PR & comment"
+            liftIO exitSuccess
 
-            createPr <- asks $ restyledCreatePullRequest . appConfig
-            runGitHubThrow oAccessToken $ do
-                pr <- createPullRequest oOwner oRepo createPr
+        createPr <- asks $ restyledCreatePullRequest . appConfig
+        runGitHubThrow oAccessToken $ do
+            pr <- createPullRequest oOwner oRepo createPr
 
-                void
-                    $ createComment oOwner oRepo (asIssueId oPullRequest)
-                    $ restyledCommentBody pr
+            void
+                $ createComment oOwner oRepo (asIssueId oPullRequest)
+                $ Content.commentBody pr
 
 checkoutPullRequest :: AppM PullRequest ()
 checkoutPullRequest = do
-    pullRequest@PullRequest{..} <- asks appConfig
+    pullRequest@PullRequest {..} <- asks appConfig
     logInfoN $ "Checking out PR: " <> tshow pullRequest
 
     localRef <- if pullRequestIsFork pullRequest
@@ -79,63 +78,22 @@ tryUpdateBranch :: AppM PullRequest Bool
 tryUpdateBranch = do
     rBranch <- asks $ pullRequestRestyledRef . appConfig
     checkoutBranch True rBranch
-    commitAll commitMessage
+    commitAll Content.commitMessage
     mBranchMessage <- branchHeadMessage ("origin/" <> rBranch)
 
-    if mBranchMessage == Just commitMessage
+    if mBranchMessage == Just Content.commitMessage
         then True <$ forcePushOrigin rBranch
         else False <$ pushOrigin rBranch
-  where
-    commitMessage = "Restyled"
-
-restyledCommentBody :: PullRequest -> Text
-restyledCommentBody pullRequest = [st|
-Hi there!
-
-I just wanted to let you know that some code in this PR might not match the
-team's preferred styles. This process isn't perfect, but when we ran some
-auto-reformatting tools on it there were differences. Those differences can be
-seen in ##{pullRequestNumber pullRequest}.
-
-#{restyledAction pullRequest}
-
-Thanks,
-[Restyled.io][]
-
-[restyled.io]: https://restyled.io
-[documentation]: https://restyled.io/docs#disabling
-|]
-
-restyledAction :: PullRequest -> Text
-restyledAction pullRequest
-    | pullRequestIsFork pullRequest = [st|
-Your PR was opened from a fork, so we're unable to open our PR with yours as the
-base branch. Therefore, the PR linked above was opened directly against
-`#{bBranch}`. It includes your changes and another commit to adjust styling.
-
-If you're interested in incorporating the style changes in your PR, you can do
-that locally with something like:
-
-```console
-git remote add upstream #{pullRequestRepoURL pullRequest}
-git fetch upstream pull/#{pullRequestNumber pullRequest}/head
-git merge --ff-only FETCH_HEAD
-git push
-```
-|]
-    | otherwise = [st|
-To incorporate the changes, merge that PR into yours.
-
-Sorry if this was unexpected. To disable it, see our [documentation].
-|]
-  where
-    bBranch = pullRequestBaseRef pullRequest
 
 remoteURL :: Text -> Name Owner -> Name Repo -> Text
-remoteURL token owner repo = "https://x-access-token:"
-    <> token <> "@github.com/"
-    <> untagName owner <> "/"
-    <> untagName repo <> ".git"
+remoteURL token owner repo =
+    "https://x-access-token:"
+        <> token
+        <> "@github.com/"
+        <> untagName owner
+        <> "/"
+        <> untagName repo
+        <> ".git"
 
 asIssueId :: Id PullRequest -> Id Issue
 asIssueId = mkId Proxy . untagId

@@ -3,5 +3,5 @@
 - brittany:
     include:
       - "**/*.hs"
-      - "!src/Restyler/Main.hs"  # Avoid HsSpliceExp{}
+      - "!src/Restyler/Content.hs"  # Avoid HsSpliceExp{}
       - "!test/core/**/*"
