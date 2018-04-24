@@ -32,13 +32,11 @@ restylerMain = do
         runApp app $ do
             checkoutPullRequest
 
-            wasRestyled <- runRestyler
-            unless wasRestyled $ do
+            unlessM runRestyler $ do
                 logInfoN "No style differences found"
                 liftIO exitSuccess
 
-            wasUpdated <- tryUpdateBranch
-            when wasUpdated $ do
+            whenM tryUpdateBranch $ do
                 logInfoN "Existing branch updated. Skipping PR & comment"
                 liftIO exitSuccess
 
@@ -141,6 +139,16 @@ remoteURL token owner repo = "https://x-access-token:"
 
 asIssueId :: Id PullRequest -> Id Issue
 asIssueId = mkId Proxy . untagId
+
+whenM :: Monad m => m Bool -> m () -> m ()
+whenM condition action = do
+    result <- condition
+    when result action
+
+unlessM :: Monad m => m Bool -> m () -> m ()
+unlessM condition action = do
+    result <- condition
+    unless result action
 
 tshow :: Show a => a -> Text
 tshow = T.pack . show
