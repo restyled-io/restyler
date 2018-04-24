@@ -42,15 +42,13 @@ pullRequestIsFork pullRequest =
         /= pullRequestCommitRepo (pullRequestBase pullRequest)
 
 pullRequestBaseRef :: PullRequest -> Text
-pullRequestBaseRef PullRequest{..} =
-    pullRequestCommitRef pullRequestBase
+pullRequestBaseRef PullRequest {..} = pullRequestCommitRef pullRequestBase
 
 pullRequestHeadRef :: PullRequest -> Text
-pullRequestHeadRef PullRequest{..} =
-    pullRequestCommitRef pullRequestHead
+pullRequestHeadRef PullRequest {..} = pullRequestCommitRef pullRequestHead
 
 pullRequestLocalHeadRef :: PullRequest -> Text
-pullRequestLocalHeadRef pullRequest@PullRequest{..}
+pullRequestLocalHeadRef pullRequest@PullRequest {..}
     | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestId
     | otherwise = pullRequestCommitRef pullRequestHead
 
@@ -58,7 +56,7 @@ pullRequestRestyledRef :: PullRequest -> Text
 pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
 
 restyledCreatePullRequest :: PullRequest -> CreatePullRequest
-restyledCreatePullRequest pullRequest@PullRequest{..} = CreatePullRequest
+restyledCreatePullRequest pullRequest@PullRequest {..} = CreatePullRequest
     { createPullRequestTitle = pullRequestTitle <> " (Restyled)"
     , createPullRequestBody = ""
     , createPullRequestHead = pullRequestRestyledRef pullRequest
@@ -66,7 +64,7 @@ restyledCreatePullRequest pullRequest@PullRequest{..} = CreatePullRequest
         -- We can't open a PR in their fork, so we open a PR in our own
         -- repository against the base branch. It'll have their changes
         -- and our restyling as separate commits.
-        if pullRequestIsFork pullRequest
-            then pullRequestBaseRef pullRequest
-            else pullRequestHeadRef pullRequest
+                              if pullRequestIsFork pullRequest
+        then pullRequestBaseRef pullRequest
+        else pullRequestHeadRef pullRequest
     }
