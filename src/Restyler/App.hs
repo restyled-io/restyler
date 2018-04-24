@@ -11,6 +11,7 @@ module Restyler.App
 import Control.Monad.Logger
 import Control.Monad.Reader
 import qualified Env
+import System.IO
 
 data App c = App
     { appConfig :: c
@@ -25,6 +26,11 @@ loadApp c = Env.parse id $ App
     <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
 
 runApp :: App c -> AppM c a -> IO a
-runApp app@App{..} action = runStdoutLoggingT
-    $ filterLogger (\_ level -> level >= appLogLevel)
-    $ runReaderT action app
+runApp app@App{..} action = do
+    -- Ensure output alwyas works correctly in Docker
+    hSetBuffering stdout LineBuffering
+    hSetBuffering stderr LineBuffering
+
+    runStdoutLoggingT
+        $ filterLogger (\_ level -> level >= appLogLevel)
+        $ runReaderT action app
