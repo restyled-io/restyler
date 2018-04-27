@@ -36,7 +36,7 @@ restylerMain = do
             liftIO exitSuccess
 
         whenM tryUpdateBranch $ do
-            logInfoN "Existing branch updated. Skipping PR & comment"
+            logInfoN "Updated existing branch, skipping PR & comment"
             liftIO exitSuccess
 
         createPr <- asks $ restyledCreatePullRequest . appConfig
