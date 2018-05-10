@@ -21,7 +21,7 @@ data RepoSpec = RepoSpec
 
 -- | Parse @<owner>\/<name>#<number>@ into a @'RepoSpec'@
 parseRepoSpec :: String -> Either String RepoSpec
-parseRepoSpec = first show . parse parser "<input>"
+parseRepoSpec = first parseErrorPretty . parse parser "<input>"
 
 type Parser = Parsec Void String
 
