@@ -37,10 +37,10 @@ restyle paths = do
 callRestylers :: [FilePath] -> AppM Config ()
 callRestylers allPaths = do
     cwd <- liftIO getCurrentDirectory
-    restylers <- asks $ cRestylers . appConfig
+    config@Config{..} <- asks appConfig
 
-    for_ restylers $ \r@Restyler{..} -> do
-        paths <- liftIO $ restylePaths r allPaths
+    for_ cRestylers $ \r@Restyler{..} -> do
+        paths <- liftIO $ restylePaths config r allPaths
         unless (null paths) $ do
             logInfoN $ "Restyling " <> tshow paths <> " via " <> T.pack rName
             logDebugN $ tshow $ "docker" : dockerArguments cwd r paths

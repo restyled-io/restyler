@@ -42,6 +42,7 @@ import System.Directory (doesFileExist)
 data Config = Config
     { cEnabled :: Bool
     , cRestylers :: [Restyler]
+    , cInclude :: [Include]
     }
     deriving (Eq, Show)
 
@@ -58,6 +59,7 @@ defaultConfig = Config
                    , unsafeNamedRestyler "rubocop"
                    , unsafeNamedRestyler "rustfmt"
                    ]
+    , cInclude = ["**/*"]
     }
 
 allRestylers :: [Restyler]
@@ -171,10 +173,12 @@ instance FromJSON Config where
     parseJSON (Array v) = Config
         <$> pure (cEnabled defaultConfig)
         <*> mapM parseJSON (V.toList v)
+        <*> pure (cInclude defaultConfig)
     parseJSON (Object o) = Config
         -- Use default values if un-specified
         <$> o .:? "enabled" .!= cEnabled defaultConfig
         <*> o .:? "restylers" .!= cRestylers defaultConfig
+        <*> o .:? "include" .!= cInclude defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
 
 -- | Load from @'configPath'@ if it exists, otherwise '@defaultConfig'
@@ -219,10 +223,10 @@ instance FromJSON Restyler where
     parseJSON (String t) = namedRestyler t
     parseJSON v = typeMismatch "Name or named with override object" v
 
-restylePaths :: Restyler -> [FilePath] -> IO [FilePath]
-restylePaths Restyler {..} = filterM $ \path ->
+restylePaths :: Config -> Restyler -> [FilePath] -> IO [FilePath]
+restylePaths Config {..} Restyler {..} = filterM $ \path ->
     (||)
-        <$> pure (includePath rInclude path)
+        <$> pure (includePath (cInclude ++ rInclude) path)
         <*> anyM (path `hasInterpreter`) rInterpreters
 
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool

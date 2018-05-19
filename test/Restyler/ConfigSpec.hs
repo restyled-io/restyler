@@ -23,6 +23,7 @@ spec = do
             , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
                            , unsafeNamedRestyler "prettier"
                            ]
+            , cInclude = ["**/*"]
             }
 
     it "has a setting for globally disabling" $ do
@@ -31,6 +32,21 @@ spec = do
                 ["---", "enabled: false", "restylers:", "- stylish-haskell"]
 
         fmap cEnabled result `shouldBe` Right False
+
+    it "has a setting for global include/excludes" $ do
+        let
+            result = decodeEither $ C8.unlines
+                [ "---"
+                , "enabled: false"
+                , "restylers:"
+                , "  - stylish-haskell"
+                , "include:"
+                , "  - \"haskell/**/*\""
+                , "  - '!*.tmp'"
+                ]
+
+        fmap cInclude result
+            `shouldBe` Right [Include "haskell/**/*", Negated "*.tmp"]
 
     it "allows re-configuring includes" $ do
         let
@@ -68,6 +84,7 @@ spec = do
                                  { rInclude = [Include "**/*.lhs"]
                                  }
                            ]
+            , cInclude = ["**/*"]
             }
 
     it "has good errors for unknown name" $ do
