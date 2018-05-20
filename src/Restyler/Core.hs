@@ -37,9 +37,9 @@ restyle paths = do
 callRestylers :: [FilePath] -> AppM Config ()
 callRestylers allPaths = do
     cwd <- liftIO getCurrentDirectory
-    config@Config{..} <- asks appConfig
+    config@Config {..} <- asks appConfig
 
-    for_ cRestylers $ \r@Restyler{..} -> do
+    for_ cRestylers $ \r@Restyler {..} -> do
         paths <- liftIO $ restylePaths config r allPaths
         unless (null paths) $ do
             logInfoN $ "Restyling " <> tshow paths <> " via " <> T.pack rName
