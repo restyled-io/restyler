@@ -29,7 +29,7 @@ Thanks,
 [Restyled.io][]
 
 [restyled.io]: https://restyled.io
-[documentation]: https://restyled.io/docs#disabling
+[documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
 |]
 
 commentCTA :: PullRequest -> Text
