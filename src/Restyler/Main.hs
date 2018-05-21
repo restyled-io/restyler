@@ -76,17 +76,13 @@ checkoutPullRequest = do
     pullRequest@PullRequest {..} <- asks appConfig
     logInfoN $ "Checking out PR: " <> tshow pullRequest
 
-    localRef <- if pullRequestIsFork pullRequest
-        then do
-            logInfoN "Fetching virtual ref for forked PR"
-            fetchOrigin
-                ("pull/" <> tshow pullRequestNumber <> "/head")
-                (pullRequestLocalHeadRef pullRequest)
-        else do
-            logDebugN "Checking out local PR head"
-            pure $ pullRequestHeadRef pullRequest
+    when (pullRequestIsFork pullRequest) $ do
+        logInfoN "Fetching virtual ref for forked PR"
+        fetchOrigin
+            ("pull/" <> tshow pullRequestNumber <> "/head")
+            (pullRequestLocalHeadRef pullRequest)
 
-    checkoutBranch False localRef
+    checkoutBranch False $ pullRequestLocalHeadRef pullRequest
 
 runRestyler :: AppM PullRequest Bool
 runRestyler = do

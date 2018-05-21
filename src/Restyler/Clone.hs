@@ -38,12 +38,10 @@ changedPaths branch =
 commitAll :: MonadIO m => Text -> m ()
 commitAll msg = callProcess "git" ["commit", "-am", T.unpack msg]
 
-fetchOrigin :: MonadIO m => Text -> Text -> m Text
-fetchOrigin remoteRef localRef = do
-    callProcess
-        "git"
-        ["fetch", "origin", T.unpack $ remoteRef <> ":" <> localRef]
-    pure localRef
+fetchOrigin :: MonadIO m => Text -> Text -> m ()
+fetchOrigin remoteRef localRef = callProcess
+    "git"
+    ["fetch", "origin", T.unpack $ remoteRef <> ":" <> localRef]
 
 pushOrigin :: MonadIO m => Text -> m ()
 pushOrigin branch = callProcess "git" ["push", "origin", T.unpack branch]
