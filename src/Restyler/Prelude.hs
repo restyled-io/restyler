@@ -12,6 +12,7 @@ import Prelude as X hiding
 import Control.Error.Util as X (hush, note)
 import Control.Exception.Safe as X
 import Control.Monad as X
+import Control.Monad.IO.Class as X
 import Data.Foldable as X
 import Data.Maybe as X hiding (fromJust)
 import Data.Proxy as X

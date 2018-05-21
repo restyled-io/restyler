@@ -34,11 +34,9 @@ restylerMain = do
 
         unlessM runRestyler $ do
             logInfoN "No style differences found"
-            me <- runGitHubThrow oAccessToken userInfoCurrent
-            logInfoN $ "Clearing comments left by " <> tshow (userName me)
             pullRequest <- asks appConfig
             runGitHubThrow oAccessToken $ do
-                clearRestyledComments me pullRequest
+                clearRestyledComments pullRequest
                 void $ sendPullRequestStatus pullRequest NoDifferencesStatus
             liftIO exitSuccess
 

@@ -13,7 +13,6 @@ module Restyler.Clone
 import Restyler.Prelude
 
 import qualified Data.Text as T
-import Restyler.App
 import UnliftIO hiding (handleIO)
 import UnliftIO.Directory (withCurrentDirectory)
 import UnliftIO.Process (callProcess, readProcess)

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Restyler.Comments
     ( leaveRestyledComment
     , clearRestyledComments
@@ -5,6 +7,7 @@ module Restyler.Comments
 
 import Restyler.Prelude
 
+import qualified Data.Text as T
 import GitHub.Client
 import GitHub.Data
 import Restyler.PullRequest
@@ -15,16 +18,22 @@ leaveRestyledComment pullRequest = createComment
     (pullRequestRepoName pullRequest)
     (pullRequestIssueId pullRequest)
 
-clearRestyledComments :: User -> PullRequest -> GitHubRW ()
-clearRestyledComments me pullRequest = do
+clearRestyledComments :: PullRequest -> GitHubRW ()
+clearRestyledComments pullRequest = do
     comments <- getComments
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
 
-    for_ comments $ \comment ->
-        when (simpleUserLogin (issueCommentUser comment) == userLogin me)
-            $ deleteComment
-                  (pullRequestOwnerName pullRequest)
-                  (pullRequestRepoName pullRequest)
-                  (mkId Proxy $ issueCommentId comment)
+    for_ comments $ \comment -> when (isRestyledComment comment) $ deleteComment
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        (mkId Proxy $ issueCommentId comment)
+
+isRestyledComment :: IssueComment -> Bool
+isRestyledComment =
+    isRestyledBot . untagName . simpleUserLogin . issueCommentUser
+  where
+    isRestyledBot :: Text -> Bool
+    isRestyledBot =
+        (&&) <$> ("restyled-io" `T.isPrefixOf`) <*> ("[bot]" `T.isSuffixOf`)

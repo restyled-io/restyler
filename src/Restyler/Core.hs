@@ -7,7 +7,6 @@ module Restyler.Core
 
 import Restyler.Prelude
 
-import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Data.List (isPrefixOf)
 import qualified Data.Text as T

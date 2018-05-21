@@ -19,7 +19,7 @@ sendPullRequestStatus pullRequest =
     createStatus
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
-            (mkName Proxy $ pullRequestHeadRef pullRequest)
+            (mkName Proxy $ pullRequestCommitSha $ pullRequestHead pullRequest)
         . statusToStatus
 
 statusToStatus :: PullRequestStatus -> NewStatus
@@ -27,5 +27,5 @@ statusToStatus NoDifferencesStatus = NewStatus
     { newStatusState = StatusSuccess
     , newStatusTargetUrl = Nothing
     , newStatusDescription = Just "No differences"
-    , newStatusContext = Nothing
+    , newStatusContext = Just "restyled"
     }
