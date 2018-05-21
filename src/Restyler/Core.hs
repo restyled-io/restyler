@@ -5,13 +5,11 @@ module Restyler.Core
     ( restyle
     ) where
 
-import Control.Monad (unless)
+import Restyler.Prelude
+
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import Data.Foldable (for_)
 import Data.List (isPrefixOf)
-import Data.Monoid ((<>))
-import Data.Text (Text)
 import qualified Data.Text as T
 import Restyler.App
 import Restyler.Config
@@ -67,6 +65,3 @@ dockerArguments dir Restyler {..} paths =
     prependIfRelative path
         | any (`isPrefixOf` path) ["/", "./", "../"] = path
         | otherwise = "./" <> path
-
-tshow :: Show a => a -> Text
-tshow = T.pack . show

@@ -10,9 +10,8 @@ module Restyler.Clone
     , branchHeadMessage
     ) where
 
-import Control.Exception.Safe (MonadCatch, handleIO)
-import Data.Semigroup ((<>))
-import Data.Text (Text)
+import Restyler.Prelude
+
 import qualified Data.Text as T
 import Restyler.App
 import UnliftIO hiding (handleIO)

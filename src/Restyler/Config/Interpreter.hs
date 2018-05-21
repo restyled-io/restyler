@@ -6,13 +6,11 @@ module Restyler.Config.Interpreter
     , hasInterpreter
     ) where
 
-import Control.Error.Util (hush)
-import Control.Exception.Safe (handleIO)
+import Restyler.Prelude
+
 import Data.Aeson
-import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Safe (headMay)
 import System.FilePath (takeFileName)
 
 data Interpreter

@@ -5,9 +5,8 @@ module Restyler.Options
     , parseOptions
     ) where
 
-import Control.Monad ((<=<))
-import Data.Semigroup ((<>))
-import Data.Text (Text)
+import Restyler.Prelude
+
 import qualified Env
 import GitHub.Data
 import Options.Applicative

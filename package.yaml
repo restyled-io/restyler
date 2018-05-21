@@ -35,6 +35,11 @@ library:
     - unordered-containers
     - vector
     - yaml
+  default-extensions:
+    # I don't like putting extensions in the packaging and prefer to see them in
+    # the modules where they are used. However, this extension must be here to
+    # avoid forgetting it and nudge me to use Restyler.Prelude everywhere.
+    - NoImplicitPrelude
 
 executables:
   restyler:

@@ -5,6 +5,8 @@ module Restyler.Config.Include
     , includePath
     ) where
 
+import Restyler.Prelude
+
 import Data.Aeson
 import Data.List (foldl')
 import Data.String (IsString(..))

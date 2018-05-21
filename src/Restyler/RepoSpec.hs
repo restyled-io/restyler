@@ -3,12 +3,14 @@ module Restyler.RepoSpec
     , parseRepoSpec
     ) where
 
+import Restyler.Prelude
+
 import Data.Bifunctor (first)
 import Data.Char (isSpace)
-import Data.Proxy
 import qualified Data.Text as T
 import Data.Void
 import GitHub.Data
+import qualified Prelude as Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
@@ -30,7 +32,7 @@ parser =
     RepoSpec
         <$> (mkName Proxy . T.pack <$> manyTill nonSpace (char '/'))
         <*> (mkName Proxy . T.pack <$> manyTill nonSpace (char '#'))
-        <*> (mkId Proxy . read <$> some digitChar)
+        <*> (mkId Proxy . Unsafe.read <$> some digitChar)
 
 nonSpace :: Parser Char
 nonSpace = satisfy $ not . isSpace

@@ -8,6 +8,8 @@ module Restyler.App
     , module Control.Monad.Reader
     ) where
 
+import Restyler.Prelude
+
 import Control.Monad.Logger
 import Control.Monad.Reader
 import qualified Env

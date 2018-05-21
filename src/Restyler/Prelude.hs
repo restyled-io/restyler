@@ -3,17 +3,22 @@ module Restyler.Prelude
     , module Restyler.Prelude
     ) where
 
+--------------------------------------------------------------------------------
+-- Safe(r) re-exports
+--------------------------------------------------------------------------------
+import Prelude as X hiding
+    (head, init, last, maximum, minimum, pred, read, succ, tail)
 
---------------------------------------------------------------------------------
--- Safer re-exports (TODO: NoImplicitPrelude, Safe, etc)
---------------------------------------------------------------------------------
+import Control.Error.Util as X (hush, note)
+import Control.Exception.Safe as X
 import Control.Monad as X
 import Data.Foldable as X
-import Data.Maybe as X
+import Data.Maybe as X hiding (fromJust)
 import Data.Proxy as X
 import Data.Semigroup as X ((<>))
 import Data.Text as X (Text)
 import Data.Traversable as X
+import Safe as X
 
 --------------------------------------------------------------------------------
 -- Globally-useful utilities

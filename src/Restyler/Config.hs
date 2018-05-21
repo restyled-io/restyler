@@ -24,14 +24,13 @@ module Restyler.Config
     , unsafeNamedRestyler
     ) where
 
-import Control.Monad (MonadPlus, filterM)
+import Restyler.Prelude
+
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import Data.Bifunctor (first)
 import qualified Data.HashMap.Lazy as HM
 import Data.List (find)
-import Data.Semigroup ((<>))
-import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import Data.Yaml

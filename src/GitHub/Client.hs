@@ -7,6 +7,10 @@
 -- actions required in this codebase. See @"GitHub.Endpoints.Installations"@ for
 -- getting a token using GitHub Apps authentication.
 --
+-- N.B. This module should stay low-level and not rely on anything in the
+-- Restyler namespace. Compositions of this and domain-specific code should
+-- happen in other modules.
+--
 module GitHub.Client
     ( GitHubRW
     , GitHubRA
@@ -19,6 +23,8 @@ module GitHub.Client
     , createPullRequest
     , userInfoCurrent
     ) where
+
+import Prelude
 
 import Control.Exception.Safe (MonadThrow, throwString)
 import Control.Monad.Except
