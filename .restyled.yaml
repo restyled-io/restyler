@@ -1,7 +1,9 @@
 ---
-- stylish-haskell
-- brittany:
-    include:
-      - "**/*.hs"
-      - "!src/Restyler/Content.hs"  # Avoid HsSpliceExp{}
-      - "!test/core/**/*"
+auto: true
+restylers:
+  - stylish-haskell
+  - brittany:
+      include:
+        - "**/*.hs"
+        - "!src/Restyler/Content.hs"  # Avoid HsSpliceExp{}
+        - "!test/core/**/*"

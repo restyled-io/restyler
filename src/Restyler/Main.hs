@@ -13,6 +13,7 @@ import GitHub.Client
 import GitHub.Data
 import Restyler.App
 import Restyler.Clone
+import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Options
 import Restyler.PullRequest
@@ -33,6 +34,10 @@ restylerMain = do
 
         unlessM runRestyler $ do
             logInfoN "No style differences found"
+            liftIO exitSuccess
+
+        whenM tryAutoPush $ do
+            logInfoN "Pushed to original PR"
             liftIO exitSuccess
 
         whenM tryUpdateBranch $ do
@@ -77,6 +82,18 @@ runRestyler = do
 
     hBranch <- asks $ pullRequestLocalHeadRef . appConfig
     not . null <$> changedPaths hBranch
+
+tryAutoPush :: AppM PullRequest Bool
+tryAutoPush = do
+    isAuto <- either (const False) cAuto <$> liftIO loadConfig
+    pullRequest <- asks appConfig
+
+    if isAuto && not (pullRequestIsFork pullRequest)
+        then do
+            commitAll Content.commitMessage
+            pushOrigin $ pullRequestHeadRef pullRequest
+            pure True
+        else pure False
 
 tryUpdateBranch :: AppM PullRequest Bool
 tryUpdateBranch = do

@@ -41,6 +41,7 @@ import System.Directory (doesFileExist)
 
 data Config = Config
     { cEnabled :: Bool
+    , cAuto :: Bool
     , cRestylers :: [Restyler]
     }
     deriving (Eq, Show)
@@ -48,6 +49,7 @@ data Config = Config
 defaultConfig :: Config
 defaultConfig = Config
     { cEnabled = True
+    , cAuto = False
     , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
                    , unsafeNamedRestyler "prettier"
                    , unsafeNamedRestyler "shfmt"
@@ -168,12 +170,13 @@ unsafeNamedRestyler :: Text -> Restyler
 unsafeNamedRestyler = either error id . namedRestyler
 
 instance FromJSON Config where
-    parseJSON (Array v) = Config
-        <$> pure (cEnabled defaultConfig)
-        <*> mapM parseJSON (V.toList v)
+    parseJSON (Array v) = do
+        restylers <- mapM parseJSON (V.toList v)
+        pure defaultConfig { cRestylers = restylers }
     parseJSON (Object o) = Config
         -- Use default values if un-specified
         <$> o .:? "enabled" .!= cEnabled defaultConfig
+        <*> o .:? "auto" .!= cAuto defaultConfig
         <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
 
