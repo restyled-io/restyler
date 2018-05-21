@@ -55,7 +55,7 @@ restylerMain = do
         logInfoN $ "Opened Restyled PR "
             <> toPathPart oOwner <> "/"
             <> toPathPart oRepo <> "#"
-            <> toPathPart (pullRequestId restylePr)
+            <> tshow (pullRequestNumber restylePr)
 
 restyledCommentBody :: PullRequest -> PullRequest -> Text
 restyledCommentBody originalPr =
