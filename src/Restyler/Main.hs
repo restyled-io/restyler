@@ -16,6 +16,7 @@ import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Options
 import Restyler.PullRequest
+import Restyler.PullRequest.Status
 import System.Exit (exitSuccess)
 import UnliftIO.Directory (doesFileExist)
 import UnliftIO.Process (callProcess)
@@ -36,7 +37,9 @@ restylerMain = do
             me <- runGitHubThrow oAccessToken userInfoCurrent
             logInfoN $ "Clearing comments left by " <> tshow (userName me)
             pullRequest <- asks appConfig
-            runGitHubThrow oAccessToken $ clearRestyledComments me pullRequest
+            runGitHubThrow oAccessToken $ do
+                clearRestyledComments me pullRequest
+                void $ sendPullRequestStatus pullRequest NoDifferencesStatus
             liftIO exitSuccess
 
         whenM tryAutoPush $ do

@@ -21,6 +21,7 @@ module GitHub.Client
     , deleteComment
     , getPullRequest
     , createPullRequest
+    , createStatus
     , userInfoCurrent
     ) where
 
@@ -80,6 +81,10 @@ getPullRequest o r = singleton . pullRequestR o r
 -- | @'createPullRequestR'@ lifted to @'GitHubRW'@
 createPullRequest :: Name Owner -> Name Repo -> CreatePullRequest -> GitHubRW PullRequest
 createPullRequest o r = singleton . createPullRequestR o r
+
+-- | @'createStatus'@ lifted to @'GitHubRW'@
+createStatus :: Name Owner -> Name Repo -> Name Commit -> NewStatus -> GitHubRW Status
+createStatus o r i = singleton . createStatusR o r i
 
 -- | @'getCommentsR'@ lifted to @'GitHubRW'@
 --
