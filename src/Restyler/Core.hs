@@ -36,7 +36,7 @@ callRestylers allPaths = do
     cwd <- liftIO getCurrentDirectory
     restylers <- asks $ cRestylers . appConfig
 
-    for_ restylers $ \r@Restyler{..} -> do
+    for_ restylers $ \r@Restyler {..} -> do
         paths <- liftIO $ restylePaths r allPaths
         unless (null paths) $ do
             logInfoN $ "Restyling " <> tshow paths <> " via " <> T.pack rName

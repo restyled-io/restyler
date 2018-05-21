@@ -24,48 +24,54 @@ import UnliftIO.Process (callProcess)
 restylerMain :: IO ()
 restylerMain = do
     Options {..} <- parseOptions
+    pullRequest <- runGitHubThrow oAccessToken
+        $ getPullRequest oOwner oRepo oPullRequest
 
-    app <- loadApp =<< runGitHubThrow
-        oAccessToken
-        (getPullRequest oOwner oRepo oPullRequest)
+    let
+        errorHandler ex = do
+            runGitHubThrow oAccessToken $ void $ sendPullRequestStatus
+                pullRequest
+                ErrorStatus
+            throw ex
 
-    withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $ runApp app $ do
-        checkoutPullRequest
+    handleAny errorHandler $ do
+        app <- loadApp pullRequest
+        withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $ runApp app $ do
+            checkoutPullRequest
 
-        unlessM runRestyler $ do
-            logInfoN "No style differences found"
-            pullRequest <- asks appConfig
-            runGitHubThrow oAccessToken $ do
-                clearRestyledComments pullRequest
-                void $ sendPullRequestStatus pullRequest NoDifferencesStatus
-            liftIO exitSuccess
+            unlessM runRestyler $ do
+                logInfoN "No style differences found"
+                runGitHubThrow oAccessToken $ do
+                    clearRestyledComments pullRequest
+                    void $ sendPullRequestStatus pullRequest NoDifferencesStatus
+                liftIO exitSuccess
 
-        whenM tryAutoPush $ do
-            logInfoN "Pushed to original PR"
-            liftIO exitSuccess
+            whenM tryAutoPush $ do
+                logInfoN "Pushed to original PR"
+                liftIO exitSuccess
 
-        whenM tryUpdateBranch $ do
-            logInfoN "Updated existing branch, skipping PR & comment"
-            liftIO exitSuccess
+            whenM tryUpdateBranch $ do
+                logInfoN "Updated existing branch, skipping PR & comment"
+                liftIO exitSuccess
 
-        originalPr <- asks appConfig
-        restyledPr <- runGitHubThrow oAccessToken $ do
-            pr <- createPullRequest
-                (pullRequestOwnerName originalPr)
-                (pullRequestRepoName originalPr)
-                (restyledCreatePullRequest originalPr)
+            originalPr <- asks appConfig
+            restyledPr <- runGitHubThrow oAccessToken $ do
+                pr <- createPullRequest
+                    (pullRequestOwnerName originalPr)
+                    (pullRequestRepoName originalPr)
+                    (restyledCreatePullRequest originalPr)
 
-            pr <$ leaveRestyledComment
-                originalPr
-                (restyledCommentBody originalPr pr)
+                pr <$ leaveRestyledComment
+                    originalPr
+                    (restyledCommentBody originalPr pr)
 
-        logInfoN
-            $ "Opened Restyled PR "
-            <> toPathPart (pullRequestOwnerName restyledPr)
-            <> "/"
-            <> toPathPart (pullRequestRepoName restyledPr)
-            <> "#"
-            <> tshow (pullRequestNumber restyledPr)
+            logInfoN
+                $ "Opened Restyled PR "
+                <> toPathPart (pullRequestOwnerName restyledPr)
+                <> "/"
+                <> toPathPart (pullRequestRepoName restyledPr)
+                <> "#"
+                <> tshow (pullRequestNumber restyledPr)
 
 restyledCommentBody :: PullRequest -> PullRequest -> Text
 restyledCommentBody originalPr = if pullRequestIsFork originalPr

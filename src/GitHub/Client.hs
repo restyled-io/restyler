@@ -66,22 +66,26 @@ runGitHubThrow token m = do
 --
 -- Renamed to reduce clashing.
 --
-getPullRequest :: Name Owner -> Name Repo -> Id PullRequest -> GitHubRW PullRequest
+getPullRequest
+    :: Name Owner -> Name Repo -> Id PullRequest -> GitHubRW PullRequest
 getPullRequest o r = singleton . pullRequestR o r
 
 -- | @'createPullRequestR'@ lifted to @'GitHubRW'@
-createPullRequest :: Name Owner -> Name Repo -> CreatePullRequest -> GitHubRW PullRequest
+createPullRequest
+    :: Name Owner -> Name Repo -> CreatePullRequest -> GitHubRW PullRequest
 createPullRequest o r = singleton . createPullRequestR o r
 
 -- | @'createStatus'@ lifted to @'GitHubRW'@
-createStatus :: Name Owner -> Name Repo -> Name Commit -> NewStatus -> GitHubRW Status
+createStatus
+    :: Name Owner -> Name Repo -> Name Commit -> NewStatus -> GitHubRW Status
 createStatus o r i = singleton . createStatusR o r i
 
 -- | @'getCommentsR'@ lifted to @'GitHubRW'@
 --
 -- Renamed to reduce clashing.
 --
-getComments :: Name Owner -> Name Repo -> Id Issue -> GitHubRW (Vector IssueComment)
+getComments
+    :: Name Owner -> Name Repo -> Id Issue -> GitHubRW (Vector IssueComment)
 getComments o r i = singleton $ commentsR o r i FetchAll
 
 -- | @'createCommentR'@ lifted to @'GitHubRW'@
