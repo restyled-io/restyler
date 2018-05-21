@@ -45,16 +45,23 @@ restylerMain = do
             liftIO exitSuccess
 
         createPr <- asks $ restyledCreatePullRequest . appConfig
+        commentBody <- asks $ restyledCommentBody . appConfig
         restylePr <- runGitHubThrow oAccessToken $ do
             pr <- createPullRequest oOwner oRepo createPr
             pr <$ createComment oOwner oRepo
                 (asIssueId oPullRequest)
-                (Content.commentBody pr)
+                (commentBody pr)
 
         logInfoN $ "Opened Restyled PR "
             <> toPathPart oOwner <> "/"
             <> toPathPart oRepo <> "#"
             <> toPathPart (pullRequestId restylePr)
+
+restyledCommentBody :: PullRequest -> PullRequest -> Text
+restyledCommentBody originalPr =
+    if pullRequestIsFork originalPr
+        then Content.commentBodyFork
+        else Content.commentBody
 
 checkoutPullRequest :: AppM PullRequest ()
 checkoutPullRequest = do
