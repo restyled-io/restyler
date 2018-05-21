@@ -80,7 +80,7 @@ checkoutPullRequest = do
         then do
             logInfoN "Fetching virtual ref for forked PR"
             fetchOrigin
-                ("pull/" <> toPathPart pullRequestId <> "/head")
+                ("pull/" <> tshow pullRequestNumber <> "/head")
                 (pullRequestLocalHeadRef pullRequest)
         else do
             logDebugN "Checking out local PR head"
