@@ -66,6 +66,7 @@ pullRequestLocalHeadRef pullRequest@PullRequest {..}
 pullRequestRestyledRef :: PullRequest -> Text
 pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
 
+-- | A @'CreatePullRequest'@ type for restyling the given PR
 restyledCreatePullRequest :: PullRequest -> CreatePullRequest
 restyledCreatePullRequest pullRequest@PullRequest {..} = CreatePullRequest
     { createPullRequestTitle = pullRequestTitle <> " (Restyled)"
