@@ -48,25 +48,28 @@ restylerMain = do
             liftIO exitSuccess
 
         originalPr <- asks appConfig
-
-        let
-            createPr = restyledCreatePullRequest originalPr
-            commentBody = restyledCommentBody originalPr
-
         restyledPr <- runGitHubThrow oAccessToken $ do
-            pr <- createPullRequest oOwner oRepo createPr
-            pr <$ leaveRestyledComment originalPr (commentBody pr)
+            pr <- createPullRequest
+                (pullRequestOwnerName originalPr)
+                (pullRequestRepoName originalPr)
+                (restyledCreatePullRequest originalPr)
 
-        logInfoN $ "Opened Restyled PR "
-            <> toPathPart oOwner <> "/"
-            <> toPathPart oRepo <> "#"
+            pr <$ leaveRestyledComment
+                originalPr
+                (restyledCommentBody originalPr pr)
+
+        logInfoN
+            $ "Opened Restyled PR "
+            <> toPathPart (pullRequestOwnerName restyledPr)
+            <> "/"
+            <> toPathPart (pullRequestRepoName restyledPr)
+            <> "#"
             <> tshow (pullRequestNumber restyledPr)
 
 restyledCommentBody :: PullRequest -> PullRequest -> Text
-restyledCommentBody originalPr =
-    if pullRequestIsFork originalPr
-        then Content.commentBodyFork
-        else Content.commentBody
+restyledCommentBody originalPr = if pullRequestIsFork originalPr
+    then Content.commentBodyFork
+    else Content.commentBody
 
 checkoutPullRequest :: AppM PullRequest ()
 checkoutPullRequest = do
