@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+
 -- |
 --
 -- Custom Monad for running GitHub API actions, and lifted versions of the API
@@ -7,11 +9,15 @@
 --
 module GitHub.Client
     ( GitHubRW
+    , GitHubRA
     , runGitHub
     , runGitHubThrow
+    , getComments
     , createComment
-    , createPullRequest
+    , deleteComment
     , getPullRequest
+    , createPullRequest
+    , userInfoCurrent
     ) where
 
 import Control.Exception.Safe (MonadThrow, throwString)
@@ -19,17 +25,24 @@ import Control.Monad.Except
 import Control.Monad.Operational
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
+import Data.Vector (Vector)
 import GitHub
 import GitHub.Endpoints.Issues.Comments (createCommentR)
 import GitHub.Endpoints.PullRequests (createPullRequestR, pullRequestR)
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 
+-- | Monad for running GitHub API action
+type GitHub k = Program (Request (k :: RW))
+
 -- | Monad for running Read/Write GitHub API actions
-type GitHubRW = Program (Request 'RW)
+type GitHubRW = GitHub 'RW
+
+-- | Monad for running Read-Authenticated GitHub API actions
+type GitHubRA = GitHub 'RA
 
 -- | Run GitHub API actions and return an error or the result
-runGitHub :: MonadIO m => Text -> GitHubRW a -> m (Either Error a)
+runGitHub :: MonadIO m => Text -> GitHub (k :: RW) a -> m (Either Error a)
 runGitHub token m = runExceptT $ do
     mgr <- liftIO $ newManager tlsManagerSettings
     go mgr m
@@ -46,7 +59,7 @@ runGitHub token m = runExceptT $ do
 --
 -- Actually most useful in a CLI application with overall IO error-handling.
 --
-runGitHubThrow :: (MonadIO m, MonadThrow m) => Text -> GitHubRW a -> m a
+runGitHubThrow :: (MonadIO m, MonadThrow m) => Text -> GitHub (k :: RW) a -> m a
 runGitHubThrow token m = do
     result <- runGitHub token m
     either (throwString . ("GitHub Error: " ++) . show) pure result
@@ -62,6 +75,21 @@ getPullRequest o r = singleton . pullRequestR o r
 createPullRequest :: Name Owner -> Name Repo -> CreatePullRequest -> GitHubRW PullRequest
 createPullRequest o r = singleton . createPullRequestR o r
 
+-- | @'getCommentsR'@ lifted to @'GitHubRW'@
+--
+-- Renamed to reduce clashing.
+--
+getComments :: Name Owner -> Name Repo -> Id Issue -> GitHubRW (Vector IssueComment)
+getComments o r i = singleton $ commentsR o r i FetchAll
+
 -- | @'createCommentR'@ lifted to @'GitHubRW'@
 createComment :: Name Owner -> Name Repo -> Id Issue -> Text -> GitHubRW Comment
 createComment o r i = singleton . createCommentR o r i
+
+-- | @'deleteComment'@ lifted to @'GitHubRW'@
+deleteComment :: Name Owner -> Name Repo -> Id Comment -> GitHubRW ()
+deleteComment o r = singleton . deleteCommentR o r
+
+-- | @'userInfoCurrent'@ lifted to @'GitHubRA'@
+userInfoCurrent :: GitHubRA User
+userInfoCurrent = singleton userInfoCurrentR

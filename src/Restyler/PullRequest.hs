@@ -4,8 +4,11 @@
 
 module Restyler.PullRequest
     ( pullRequestOwner
+    , pullRequestOwnerName
     , pullRequestRepo
+    , pullRequestRepoName
     , pullRequestRepoURL
+    , pullRequestIssueId
     , pullRequestIsFork
     , pullRequestBaseRef
     , pullRequestHeadRef
@@ -14,14 +17,16 @@ module Restyler.PullRequest
     , restyledCreatePullRequest
     ) where
 
-import Data.Maybe (fromMaybe)
-import Data.Semigroup ((<>))
-import Data.Text (Text)
+import Restyler.Prelude
+
 import GHC.Stack
 import GitHub.Data
 
 pullRequestOwner :: PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
+
+pullRequestOwnerName :: PullRequest -> Name Owner
+pullRequestOwnerName = simpleOwnerLogin . repoOwner . pullRequestRepo
 
 pullRequestRepo :: HasCallStack => PullRequest -> Repo
 pullRequestRepo =
@@ -30,11 +35,17 @@ pullRequestRepo =
         . pullRequestCommitRepo
         . pullRequestBase
 
+pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
+pullRequestRepoName = repoName . pullRequestRepo
+
 pullRequestRepoURL :: PullRequest -> Text
 pullRequestRepoURL pullRequest = "https://github.com/" <> owner <> "/" <> repo
   where
     owner = untagName $ simpleOwnerLogin $ pullRequestOwner pullRequest
     repo = untagName $ repoName $ pullRequestRepo pullRequest
+
+pullRequestIssueId :: PullRequest -> Id Issue
+pullRequestIssueId = mkId Proxy . pullRequestNumber
 
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork pullRequest =

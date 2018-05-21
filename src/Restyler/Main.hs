@@ -5,14 +5,13 @@ module Restyler.Main
     ( restylerMain
     ) where
 
-import Data.Proxy
-import Data.Semigroup ((<>))
-import Data.Text (Text)
-import qualified Data.Text as T
+import Restyler.Prelude
+
 import GitHub.Client
 import GitHub.Data
 import Restyler.App
 import Restyler.Clone
+import Restyler.Comments
 import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Options
@@ -34,6 +33,10 @@ restylerMain = do
 
         unlessM runRestyler $ do
             logInfoN "No style differences found"
+            me <- runGitHubThrow oAccessToken userInfoCurrent
+            logInfoN $ "Clearing comments left by " <> tshow (userName me)
+            pullRequest <- asks appConfig
+            runGitHubThrow oAccessToken $ clearRestyledComments me pullRequest
             liftIO exitSuccess
 
         whenM tryAutoPush $ do
@@ -44,18 +47,20 @@ restylerMain = do
             logInfoN "Updated existing branch, skipping PR & comment"
             liftIO exitSuccess
 
-        createPr <- asks $ restyledCreatePullRequest . appConfig
-        commentBody <- asks $ restyledCommentBody . appConfig
-        restylePr <- runGitHubThrow oAccessToken $ do
+        originalPr <- asks appConfig
+
+        let
+            createPr = restyledCreatePullRequest originalPr
+            commentBody = restyledCommentBody originalPr
+
+        restyledPr <- runGitHubThrow oAccessToken $ do
             pr <- createPullRequest oOwner oRepo createPr
-            pr <$ createComment oOwner oRepo
-                (asIssueId oPullRequest)
-                (commentBody pr)
+            pr <$ leaveRestyledComment originalPr (commentBody pr)
 
         logInfoN $ "Opened Restyled PR "
             <> toPathPart oOwner <> "/"
             <> toPathPart oRepo <> "#"
-            <> tshow (pullRequestNumber restylePr)
+            <> tshow (pullRequestNumber restyledPr)
 
 restyledCommentBody :: PullRequest -> PullRequest -> Text
 restyledCommentBody originalPr =
@@ -122,19 +127,3 @@ remoteURL token owner repo =
         <> "/"
         <> untagName repo
         <> ".git"
-
-asIssueId :: Id PullRequest -> Id Issue
-asIssueId = mkId Proxy . untagId
-
-whenM :: Monad m => m Bool -> m () -> m ()
-whenM condition action = do
-    result <- condition
-    when result action
-
-unlessM :: Monad m => m Bool -> m () -> m ()
-unlessM condition action = do
-    result <- condition
-    unless result action
-
-tshow :: Show a => a -> Text
-tshow = T.pack . show
