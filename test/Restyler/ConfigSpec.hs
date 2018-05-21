@@ -18,9 +18,8 @@ spec = do
             result = decodeEither
                 $ C8.unlines ["---", "- stylish-haskell", "- prettier"]
 
-        result `shouldBe` Right Config
-            { cEnabled = True
-            , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
+        result `shouldBe` Right defaultConfig
+            { cRestylers = [ unsafeNamedRestyler "stylish-haskell"
                            , unsafeNamedRestyler "prettier"
                            ]
             }
@@ -62,9 +61,8 @@ spec = do
 
         result1 `shouldBe` result2
         result2 `shouldBe` result3
-        result3 `shouldBe` Right Config
-            { cEnabled = True
-            , cRestylers = [ (unsafeNamedRestyler "stylish-haskell")
+        result3 `shouldBe` Right defaultConfig
+            { cRestylers = [ (unsafeNamedRestyler "stylish-haskell")
                                  { rInclude = [Include "**/*.lhs"]
                                  }
                            ]
