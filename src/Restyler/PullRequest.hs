@@ -72,11 +72,10 @@ restyledCreatePullRequest pullRequest@PullRequest {..} = CreatePullRequest
     { createPullRequestTitle = pullRequestTitle <> " (Restyled)"
     , createPullRequestBody = ""
     , createPullRequestHead = pullRequestRestyledRef pullRequest
-    , createPullRequestBase =
-        -- We can't open a PR in their fork, so we open a PR in our own
-        -- repository against the base branch. It'll have their changes
-        -- and our restyling as separate commits.
-                              if pullRequestIsFork pullRequest
+    -- We can't open a PR in their fork, so we open a PR in our own repository
+    -- against the base branch. It'll have their changes and our restyling as
+    -- separate commits.
+    , createPullRequestBase = if pullRequestIsFork pullRequest
         then pullRequestBaseRef pullRequest
         else pullRequestHeadRef pullRequest
     }
