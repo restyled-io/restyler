@@ -13,6 +13,7 @@ import Restyler.PullRequest
 
 data PullRequestStatus
     = NoDifferencesStatus
+    | ErrorStatus
 
 sendPullRequestStatus :: PullRequest -> PullRequestStatus -> GitHubRW Status
 sendPullRequestStatus pullRequest =
@@ -28,4 +29,11 @@ statusToStatus NoDifferencesStatus = NewStatus
     , newStatusTargetUrl = Nothing
     , newStatusDescription = Just "No differences"
     , newStatusContext = Just "restyled"
+    }
+statusToStatus ErrorStatus = NewStatus
+    { newStatusState = StatusError
+    , newStatusTargetUrl = Just
+        (URL "https://github.com/restyled-io/restyled.io/wiki/Restyler-Errors")
+    , newStatusDescription = Just "Restyling failed"
+    , newStatusContext = Nothing
     }
