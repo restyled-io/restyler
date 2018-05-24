@@ -28,7 +28,7 @@ restyle paths = do
             logWarnN "Restyler disabled by config"
             liftIO exitSuccess
 
-        logDebugN $ "Paths: " <> tshow paths
+        logDebugN $ "Changed paths: " <> tshow paths
         callRestylers paths
 
 callRestylers :: [FilePath] -> AppM Config ()
