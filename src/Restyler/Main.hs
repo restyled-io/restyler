@@ -18,6 +18,7 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import System.Exit (exitSuccess)
+import System.IO (hPrint, stderr)
 import UnliftIO.Directory (doesFileExist)
 import UnliftIO.Process (callProcess)
 
@@ -27,7 +28,15 @@ restylerMain = do
     pullRequest <- runGitHubThrow oAccessToken
         $ getPullRequest oOwner oRepo oPullRequest
 
-    run oAccessToken pullRequest
+    run oAccessToken pullRequest `catchAny` \ex -> do
+        for_ oJobUrl $ \jobUrl ->
+            -- best-effort
+            handleAny (hPrint stderr)
+                $ runGitHubThrow oAccessToken
+                $ void
+                $ sendPullRequestStatus pullRequest
+                $ ErrorStatus jobUrl
+        throw ex
 
 run :: Text -> PullRequest -> IO ()
 run accessToken pullRequest = do

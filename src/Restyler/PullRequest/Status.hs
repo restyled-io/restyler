@@ -13,6 +13,7 @@ import Restyler.PullRequest
 
 data PullRequestStatus
     = NoDifferencesStatus
+    | ErrorStatus URL
 
 sendPullRequestStatus :: PullRequest -> PullRequestStatus -> GitHubRW Status
 sendPullRequestStatus pullRequest =
@@ -27,5 +28,11 @@ statusToStatus NoDifferencesStatus = NewStatus
     { newStatusState = StatusSuccess
     , newStatusTargetUrl = Nothing
     , newStatusDescription = Just "No differences"
+    , newStatusContext = Just "restyled"
+    }
+statusToStatus (ErrorStatus url) = NewStatus
+    { newStatusState = StatusError
+    , newStatusTargetUrl = Just url
+    , newStatusDescription = Just "Error restyling"
     , newStatusContext = Just "restyled"
     }
