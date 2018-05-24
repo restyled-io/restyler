@@ -96,7 +96,7 @@ checkoutPullRequest = do
     logInfoN
         $ "Checking out "
         <> toPathPart (pullRequestOwnerName pullRequest)
-        <> "/" <> toPathPart (pullRequestOwnerName pullRequest)
+        <> "/" <> toPathPart (pullRequestRepoName pullRequest)
         <> "#" <> tshow pullRequestNumber
 
     when (pullRequestIsFork pullRequest) $ do
