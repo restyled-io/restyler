@@ -24,18 +24,27 @@ import UnliftIO.Process (callProcess)
 restylerMain :: IO ()
 restylerMain = do
     Options {..} <- parseOptions
+    pullRequest <- runGitHubThrow oAccessToken
+        $ getPullRequest oOwner oRepo oPullRequest
 
-    app <- loadApp =<< runGitHubThrow
-        oAccessToken
-        (getPullRequest oOwner oRepo oPullRequest)
+    run oAccessToken pullRequest
 
-    withinClonedRepo (remoteURL oAccessToken oOwner oRepo) $ runApp app $ do
+run :: Text -> PullRequest -> IO ()
+run accessToken pullRequest = do
+    app <- loadApp pullRequest
+
+    let
+        cloneUrl = remoteURL
+            accessToken
+            (pullRequestOwnerName pullRequest)
+            (pullRequestRepoName pullRequest)
+
+    withinClonedRepo cloneUrl $ runApp app $ do
         checkoutPullRequest
 
         unlessM runRestyler $ do
             logInfoN "No style differences found"
-            pullRequest <- asks appConfig
-            runGitHubThrow oAccessToken $ do
+            runGitHubThrow accessToken $ do
                 clearRestyledComments pullRequest
                 void $ sendPullRequestStatus pullRequest NoDifferencesStatus
             liftIO exitSuccess
@@ -49,7 +58,7 @@ restylerMain = do
             liftIO exitSuccess
 
         originalPr <- asks appConfig
-        restyledPr <- runGitHubThrow oAccessToken $ do
+        restyledPr <- runGitHubThrow accessToken $ do
             pr <- createPullRequest
                 (pullRequestOwnerName originalPr)
                 (pullRequestRepoName originalPr)
