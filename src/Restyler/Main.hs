@@ -93,7 +93,11 @@ restyledCommentBody originalPr = if pullRequestIsFork originalPr
 checkoutPullRequest :: AppM PullRequest ()
 checkoutPullRequest = do
     pullRequest@PullRequest {..} <- asks appConfig
-    logInfoN $ "Checking out PR: " <> tshow pullRequest
+    logInfoN
+        $ "Checking out "
+        <> toPathPart (pullRequestOwnerName pullRequest)
+        <> "/" <> toPathPart (pullRequestOwnerName pullRequest)
+        <> "#" <> tshow pullRequestNumber
 
     when (pullRequestIsFork pullRequest) $ do
         logInfoN "Fetching virtual ref for forked PR"
