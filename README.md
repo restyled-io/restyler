@@ -32,14 +32,6 @@ Requires [stack](https://docs.haskellstack.org/en/stable/README/).
 make test
 ```
 
-### Core
-
-Exercises every Restyler against local fixtures:
-
-```console
-make test.core
-```
-
 ### Integration
 
 End-to-end test that restyles a public Pull Request in our `demo` Repository:
