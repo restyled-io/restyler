@@ -6,7 +6,7 @@ DOCKER_PASSWORD ?= x
 
 all: setup build lint test
 
-release: clean build lint test test.core image.build image.release
+release: clean build lint test image.build image.release
 
 .PHONY: setup
 setup:
@@ -24,17 +24,12 @@ build:
 
 .PHONY: lint
 lint:
-	@# Use an explicit list to avoid test/core
-	hlint app core src test/SpecHelper.hs test/Restyler
+	hlint app core src test
 	weeder .
 
 .PHONY: test
 test:
 	stack test
-
-.PHONY: test.core
-test.core:
-	cram test/core
 
 .PHONY: test.integration
 test.integration: image.build
