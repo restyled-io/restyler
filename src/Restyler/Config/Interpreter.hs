@@ -6,7 +6,7 @@ module Restyler.Config.Interpreter
     , hasInterpreter
     ) where
 
-import Restyler.Prelude
+import Restyler.Prelude.NoApp
 
 import Data.Aeson
 import qualified Data.Text as T
@@ -22,7 +22,7 @@ data Interpreter
 
 instance FromJSON Interpreter where
     parseJSON = withText "Interpreter"
-        $ either fail pure . readInterpreter . T.unpack
+        $ either fail pure . readInterpreter . unpack
 
 hasInterpreter :: FilePath -> Interpreter -> IO Bool
 path `hasInterpreter` interpreter = do
@@ -32,7 +32,7 @@ path `hasInterpreter` interpreter = do
 getInterpreter :: FilePath -> IO (Maybe Interpreter)
 getInterpreter path = handleIO (const $ pure Nothing) $ do
     mline <- headMay . T.lines <$> T.readFile path
-    pure $ parseInterpreter . T.unpack . T.strip =<< mline
+    pure $ parseInterpreter . unpack . T.strip =<< mline
 
 parseInterpreter :: String -> Maybe Interpreter
 parseInterpreter ('#':'!':rest) = hush $ readInterpreter =<<

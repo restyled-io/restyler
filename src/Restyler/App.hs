@@ -1,38 +1,52 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
+
 module Restyler.App
     ( App(..)
     , AppM
     , runApp
-    , loadApp
-    , module Control.Monad.Logger
-    , module Control.Monad.Reader
-    ) where
+    , liftIOApp
 
-import Restyler.Prelude
+    -- * Errors
+    , AppError(..)
+    , mapAppError
+    )
+where
 
-import Control.Monad.Logger
-import Control.Monad.Reader
-import qualified Env
-import System.IO
+import Restyler.Prelude.NoApp
 
-data App c = App
-    { appConfig :: c
-    , appLogLevel :: LogLevel
+import GitHub.Data (Error, PullRequest)
+import Restyler.Config (Config)
+
+data App = App
+    { appLogLevel :: LogLevel
+    , appAccessToken :: Text
+    , appPullRequest :: PullRequest
+    , appConfig :: Config
     }
 
-type AppM c = ReaderT (App c) (LoggingT IO)
+type AppM = ReaderT App (LoggingT (ExceptT AppError IO))
 
-loadApp :: c -> IO (App c)
-loadApp c = Env.parse id $ App
-    <$> pure c
-    <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
+data AppError
+    = PullRequestFetchError Error
+    | PullRequestCloneError IOException
+    | ConfigurationError String
+    | GitHubError Error
+    | OtherError IOException
+    deriving Show
 
-runApp :: App c -> AppM c a -> IO a
-runApp app@App{..} action = do
-    -- Ensure output alwyas works correctly in Docker
-    hSetBuffering stdout LineBuffering
-    hSetBuffering stderr LineBuffering
-
+runApp :: App -> AppM a -> ExceptT AppError IO a
+runApp app@App {..} action =
     runStdoutLoggingT
         $ filterLogger (\_ level -> level >= appLogLevel)
         $ runReaderT action app
+
+-- | @'liftIO'@, but catch @'IOException'@s into @'AppError'@s
+--
+-- Strive to always use this.
+--
+liftIOApp :: IO a -> AppM a
+liftIOApp = either (throwError . OtherError) pure <=< tryIO . liftIO
+
+mapAppError :: (AppError -> AppError) -> AppM a -> AppM a
+mapAppError f = (`catchError` throwError . f)

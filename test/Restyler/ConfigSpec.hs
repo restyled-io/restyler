@@ -10,6 +10,7 @@ import qualified Data.ByteString.Char8 as C8
 import Data.List (isInfixOf)
 import Data.Yaml (decodeEither)
 import Restyler.Config
+import Restyler.Config.Include
 
 spec :: Spec
 spec = do

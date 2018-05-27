@@ -14,24 +14,23 @@ library:
   dependencies:
     - Glob
     - aeson
+    - bytestring
     - directory
     - envparse
     - errors
     - filepath
     - github
-    - http-client
     - http-client-tls
     - megaparsec
     - monad-logger
     - mtl
-    - operational
     - optparse-applicative
     - process
     - safe
     - safe-exceptions
     - shakespeare
+    - temporary
     - text
-    - unliftio
     - unordered-containers
     - vector
     - yaml
@@ -53,17 +52,6 @@ executables:
     dependencies:
       - restyler
 
-  restyler-core:
-    main: main.hs
-    source-dirs: core
-    ghc-options:
-      - -Wall
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - restyler
-
 tests:
   test:
     main: Spec.hs
@@ -74,7 +62,6 @@ tests:
       - directory
       - github
       - hspec
-      - process
       - restyler
       - temporary
       - text

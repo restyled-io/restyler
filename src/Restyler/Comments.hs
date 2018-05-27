@@ -3,37 +3,61 @@
 module Restyler.Comments
     ( leaveRestyledComment
     , clearRestyledComments
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
 import qualified Data.Text as T
-import GitHub.Client
-import GitHub.Data
+import qualified Data.Vector as V
+import GitHub
+import qualified Restyler.Content as Content
+import Restyler.GitHub
 import Restyler.PullRequest
 
-leaveRestyledComment :: PullRequest -> Text -> GitHubRW Comment
-leaveRestyledComment pullRequest = createComment
-    (pullRequestOwnerName pullRequest)
-    (pullRequestRepoName pullRequest)
-    (pullRequestIssueId pullRequest)
+leaveRestyledComment :: PullRequest -> AppM ()
+leaveRestyledComment restyledPr = do
+    pullRequest <- asks appPullRequest
 
-clearRestyledComments :: PullRequest -> GitHubRW ()
-clearRestyledComments pullRequest = do
-    comments <- getComments
+    let
+        restyledCommentBody = if pullRequestIsFork pullRequest
+            then Content.commentBodyFork
+            else Content.commentBody
+
+    runGitHub_ $ createCommentR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
+        (restyledCommentBody restyledPr)
 
-    for_ comments $ \comment -> when (isRestyledComment comment) $ deleteComment
+clearRestyledComments :: AppM ()
+clearRestyledComments = do
+    pullRequest <- asks appPullRequest
+
+    comments <- runGitHub $ commentsR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
-        (mkId Proxy $ issueCommentId comment)
+        (pullRequestIssueId pullRequest)
+        FetchAll
+
+    for_ (V.filter isRestyledComment comments) $ \comment -> do
+        logDebugN
+            $ "Deleting comment "
+            <> tshow (issueCommentId comment)
+            <> " by "
+            <> commentUserName comment
+
+        runGitHub_ $ deleteCommentR
+            (pullRequestOwnerName pullRequest)
+            (pullRequestRepoName pullRequest)
+            (mkId Proxy $ issueCommentId comment)
+
+commentUserName :: IssueComment -> Text
+commentUserName = untagName . simpleUserLogin . issueCommentUser
 
 isRestyledComment :: IssueComment -> Bool
-isRestyledComment =
-    isRestyledBot . untagName . simpleUserLogin . issueCommentUser
-  where
-    isRestyledBot :: Text -> Bool
-    isRestyledBot =
-        (&&) <$> ("restyled-io" `T.isPrefixOf`) <*> ("[bot]" `T.isSuffixOf`)
+isRestyledComment = isRestyledBotUserName . commentUserName
+
+isRestyledBotUserName :: Text -> Bool
+isRestyledBotUserName =
+    (&&) <$> ("restyled-io" `T.isPrefixOf`) <*> ("[bot]" `T.isSuffixOf`)

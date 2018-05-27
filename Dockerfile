@@ -15,7 +15,6 @@ COPY package.yaml /src/
 RUN stack install --dependencies-only
 
 COPY app /src/app
-COPY core /src/core
 COPY src /src/src
 COPY LICENSE /src/
 RUN stack install
@@ -25,7 +24,6 @@ FROM fpco/stack-run:lts
 MAINTAINER Pat Brisbin <pbrisbin@gmail.com>
 ENV LANG en_US.UTF-8
 COPY --from=builder /root/.local/bin/restyler /bin/restyler
-COPY --from=builder /root/.local/bin/restyler-core /bin/restyler-core
 
 # Install docker
 ENV DOCKER_ARCHIVE docker-17.03.1-ce.tgz

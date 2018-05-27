@@ -6,4 +6,3 @@ restylers:
       include:
         - "**/*.hs"
         - "!src/Restyler/Content.hs"  # Avoid HsSpliceExp{}
-        - "!test/core/**/*"

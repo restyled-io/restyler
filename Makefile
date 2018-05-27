@@ -24,7 +24,7 @@ build:
 
 .PHONY: lint
 lint:
-	hlint app core src test
+	hlint app src test
 	weeder .
 
 .PHONY: test

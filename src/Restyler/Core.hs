@@ -3,45 +3,35 @@
 
 module Restyler.Core
     ( restyle
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
-import Control.Monad.Logger
-import Data.List (isPrefixOf)
-import qualified Data.Text as T
-import Restyler.App
-import Restyler.Config
-import System.Directory (getCurrentDirectory)
-import System.Exit (die, exitSuccess)
-import System.Process (callProcess)
+restyle :: [Restyler] -> [FilePath] -> AppM ()
+restyle restylers allPaths = do
+    cwd <- getCurrentDirectory
 
-restyle :: [FilePath] -> IO ()
-restyle paths = do
-    app <- loadApp =<< either (die . show) pure =<< loadConfig
+    logDebugN $ "All paths: " <> tshow allPaths
+    logDebugN $ "Current working directory: " <> pack cwd
+    logDebugN $ "Restylers: " <> tshow (map rName restylers)
 
-    runApp app $ do
-        config <- asks appConfig
-        logDebugN $ "Loaded config: " <> tshow config
+    for_ restylers $ \r@Restyler {..} -> do
+        paths <- filterM (shouldRestyle r) allPaths
 
-        unless (cEnabled config) $ do
-            logWarnN "Restyler disabled by config"
-            liftIO exitSuccess
-
-        logDebugN $ "Changed paths: " <> tshow paths
-        callRestylers paths
-
-callRestylers :: [FilePath] -> AppM Config ()
-callRestylers allPaths = do
-    cwd <- liftIO getCurrentDirectory
-    restylers <- asks $ cRestylers . appConfig
-
-    for_ restylers $ \r@Restyler{..} -> do
-        paths <- liftIO $ restylePaths r allPaths
         unless (null paths) $ do
-            logInfoN $ "Restyling " <> tshow paths <> " via " <> T.pack rName
-            logDebugN $ tshow $ "docker" : dockerArguments cwd r paths
-            liftIO $ callProcess "docker" $ dockerArguments cwd r paths
+            logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
+            callProcess "docker" $ dockerArguments cwd r paths
+
+shouldRestyle :: Restyler -> FilePath -> AppM Bool
+shouldRestyle restyler path =
+    (&&) <$> doesFileExist path <*> shouldInclude restyler path
+
+shouldInclude :: Restyler -> FilePath -> AppM Bool
+shouldInclude Restyler {..} path =
+    liftIOApp
+        $ (includePath rInclude path ||)
+        <$> anyM (path `hasInterpreter`) rInterpreters
 
 dockerArguments :: FilePath -> Restyler -> [FilePath] -> [String]
 dockerArguments dir Restyler {..} paths =
