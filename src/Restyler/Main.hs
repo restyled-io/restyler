@@ -1,151 +1,102 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Main
     ( restylerMain
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
-import GitHub.Client
-import GitHub.Data
-import Restyler.App
-import Restyler.Clone
+import Restyler.App.Run
 import Restyler.Comments
-import Restyler.Config
-import qualified Restyler.Content as Content
+import Restyler.Core
+import Restyler.Git
+import Restyler.GitHub
 import Restyler.Options
 import Restyler.PullRequest
+import Restyler.PullRequest.Restyled
 import Restyler.PullRequest.Status
-import System.Exit (exitSuccess)
-import System.IO (hPrint, stderr)
-import UnliftIO.Directory (doesFileExist)
-import UnliftIO.Process (callProcess)
+import System.Exit (die, exitSuccess)
+import System.IO (BufferMode(..), hSetBuffering, stderr, stdout)
+import System.IO.Temp (withSystemTempDirectory)
 
 restylerMain :: IO ()
 restylerMain = do
-    Options {..} <- parseOptions
-    pullRequest <- runGitHubThrow oAccessToken
-        $ getPullRequest oOwner oRepo oPullRequest
+    -- Ensure output always works correctly in Docker
+    hSetBuffering stdout LineBuffering
+    hSetBuffering stderr LineBuffering
 
-    run oAccessToken pullRequest `catchAny` \ex -> do
-        for_ oJobUrl $ \jobUrl ->
-            -- best-effort
-            handleAny (hPrint stderr)
-                $ runGitHubThrow oAccessToken
-                $ void
-                $ sendPullRequestStatus pullRequest
-                $ ErrorStatus jobUrl
-        throw ex
+    options <- parseOptions
 
-run :: Text -> PullRequest -> IO ()
-run accessToken pullRequest = do
-    app <- loadApp pullRequest
+    withTempDirectory $ \path -> runExceptT $ do
+        app <- bootstrapApp options path
 
-    let
-        cloneUrl = remoteURL
-            accessToken
-            (pullRequestOwnerName pullRequest)
-            (pullRequestRepoName pullRequest)
+        runApp app $ run `catchError` \ex -> do
+            traverse_ sendPullRequestStatusError $ oJobUrl options
+            throwError ex
 
-    withinClonedRepo cloneUrl $ runApp app $ do
-        checkoutPullRequest
+withTempDirectory :: (FilePath -> IO (Either AppError a)) -> IO a
+withTempDirectory f = do
+    result <- tryIO $ withSystemTempDirectory "restyler-" f
+    innerResult <- either (exitWithAppError . OtherError) pure result
+    either exitWithAppError pure innerResult
 
-        unlessM runRestyler $ do
-            logInfoN "No style differences found"
-            runGitHubThrow accessToken $ do
-                clearRestyledComments pullRequest
-                void $ sendPullRequestStatus pullRequest NoDifferencesStatus
-            liftIO exitSuccess
+run :: AppM ()
+run = do
+    unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
 
-        whenM tryAutoPush $ do
-            logInfoN "Pushed to original PR"
-            liftIO exitSuccess
+    unlessM runRestyler $ do
+        clearRestyledComments
+        sendPullRequestStatus NoDifferencesStatus
+        exitWithInfo "No style differences found"
 
-        whenM tryUpdateBranch $ do
-            logInfoN "Updated existing branch, skipping PR & comment"
-            liftIO exitSuccess
+    whenM isAutoPush $ do
+        updateOriginalPullRequest
+        exitWithInfo "Pushed to original PR"
 
-        originalPr <- asks appConfig
-        restyledPr <- runGitHubThrow accessToken $ do
-            pr <- createPullRequest
-                (pullRequestOwnerName originalPr)
-                (pullRequestRepoName originalPr)
-                (restyledCreatePullRequest originalPr)
+    whenM restyledPullRequestExists $ do
+        updateRestyledPullRequest
+        exitWithInfo "Pushed to existing restyled branch"
 
-            pr <$ leaveRestyledComment
-                originalPr
-                (restyledCommentBody originalPr pr)
+    leaveRestyledComment =<< createRestyledPullRequest
+    logInfoN "Restyling successful"
 
-        logInfoN
-            $ "Opened Restyled PR "
-            <> toPathPart (pullRequestOwnerName restyledPr)
-            <> "/"
-            <> toPathPart (pullRequestRepoName restyledPr)
-            <> "#"
-            <> tshow (pullRequestNumber restyledPr)
+configEnabled :: AppM Bool
+configEnabled = asks $ cEnabled . appConfig
 
-restyledCommentBody :: PullRequest -> PullRequest -> Text
-restyledCommentBody originalPr = if pullRequestIsFork originalPr
-    then Content.commentBodyFork
-    else Content.commentBody
-
-checkoutPullRequest :: AppM PullRequest ()
-checkoutPullRequest = do
-    pullRequest@PullRequest {..} <- asks appConfig
-    logInfoN
-        $ "Checking out "
-        <> toPathPart (pullRequestOwnerName pullRequest)
-        <> "/" <> toPathPart (pullRequestRepoName pullRequest)
-        <> "#" <> tshow pullRequestNumber
-
-    when (pullRequestIsFork pullRequest) $ do
-        logInfoN "Fetching virtual ref for forked PR"
-        fetchOrigin
-            ("pull/" <> tshow pullRequestNumber <> "/head")
-            (pullRequestLocalHeadRef pullRequest)
-
-    checkoutBranch False $ pullRequestLocalHeadRef pullRequest
-
-runRestyler :: AppM PullRequest Bool
+runRestyler :: AppM Bool
 runRestyler = do
-    callProcess "restyler-core"
-        =<< filterM doesFileExist
-        =<< changedPaths
-        =<< asks (pullRequestBaseRef . appConfig)
+    config <- asks appConfig
+    pullRequest <- asks appPullRequest
+    pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
+    restyle (cRestylers config) pullRequestPaths
+    not . null <$> changedPaths (pullRequestLocalHeadRef pullRequest)
 
-    hBranch <- asks $ pullRequestLocalHeadRef . appConfig
-    not . null <$> changedPaths hBranch
+isAutoPush :: AppM Bool
+isAutoPush = do
+    isAuto <- asks $ cAuto . appConfig
+    pullRequest <- asks appPullRequest
+    pure $ isAuto && not (pullRequestIsFork pullRequest)
 
-tryAutoPush :: AppM PullRequest Bool
-tryAutoPush = do
-    isAuto <- either (const False) cAuto <$> liftIO loadConfig
-    pullRequest <- asks appConfig
+exitWithAppError :: AppError -> IO a
+exitWithAppError = \case
+    PullRequestFetchError e -> die $ format
+        [ "We had trouble fetching your Pull Request from GitHub:"
+        , showGitHubError e
+        ]
+    PullRequestCloneError e ->
+        die $ format
+            ["We had trouble cloning your Pull Request branch:" <> show e]
+    ConfigurationError msg ->
+        die $ format ["We had trouble with your " <> configPath <> ":", msg]
+    GitHubError e -> die $ format
+        ["We had trouble communicating with GitHub:", showGitHubError e]
+    OtherError e ->
+        die $ format ["We encounted an unexpected exception:", show e]
+    where format = ("[Error] " <>) . dropWhileEnd isSpace . unlines
 
-    if isAuto && not (pullRequestIsFork pullRequest)
-        then do
-            commitAll Content.commitMessage
-            pushOrigin $ pullRequestHeadRef pullRequest
-            pure True
-        else pure False
-
-tryUpdateBranch :: AppM PullRequest Bool
-tryUpdateBranch = do
-    rBranch <- asks $ pullRequestRestyledRef . appConfig
-    checkoutBranch True rBranch
-    commitAll Content.commitMessage
-    mBranchMessage <- branchHeadMessage ("origin/" <> rBranch)
-
-    if mBranchMessage == Just Content.commitMessage
-        then True <$ forcePushOrigin rBranch
-        else False <$ pushOrigin rBranch
-
-remoteURL :: Text -> Name Owner -> Name Repo -> Text
-remoteURL token owner repo =
-    "https://x-access-token:"
-        <> token
-        <> "@github.com/"
-        <> untagName owner
-        <> "/"
-        <> untagName repo
-        <> ".git"
+exitWithInfo :: Text -> AppM ()
+exitWithInfo msg = do
+    logInfoN msg
+    liftIOApp exitSuccess

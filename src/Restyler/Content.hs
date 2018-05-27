@@ -7,7 +7,8 @@ module Restyler.Content
     , commentBodyFork
     ) where
 
-import Data.Text (Text)
+import Restyler.Prelude
+
 import GitHub.Data (PullRequest(..))
 import Restyler.PullRequest
 import Text.Shakespeare.Text (st)

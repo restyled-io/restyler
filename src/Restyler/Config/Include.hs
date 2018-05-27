@@ -5,12 +5,10 @@ module Restyler.Config.Include
     , includePath
     ) where
 
-import Restyler.Prelude
+import Restyler.Prelude.NoApp
 
 import Data.Aeson
-import Data.List (foldl')
 import Data.String (IsString(..))
-import qualified Data.Text as T
 import System.FilePath.Glob (Pattern, compile, match)
 
 data Include
@@ -19,7 +17,7 @@ data Include
     deriving (Eq, Show)
 
 instance FromJSON Include where
-    parseJSON = withText "Include pattern" $ pure . fromString . T.unpack
+    parseJSON = withText "Include pattern" $ pure . fromString . unpack
 
 instance IsString Include where
     fromString ('!':rest) = Negated $ compile rest

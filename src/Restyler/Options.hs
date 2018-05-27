@@ -3,7 +3,8 @@
 module Restyler.Options
     ( Options(..)
     , parseOptions
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
@@ -14,30 +15,35 @@ import Restyler.RepoSpec
 
 data Options = Options
     { oAccessToken :: Text
+    , oLogLevel :: LogLevel
     , oOwner :: Name Owner
     , oRepo :: Name Repo
-    , oPullRequest :: Id PullRequest
+    , oPullRequest :: Int
     , oJobUrl :: Maybe URL
     }
 
 parseOptions :: IO Options
 parseOptions = do
-    accessToken <-
-        Env.parse id
-        $ Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
-        $ Env.help "GitHub access token with write access to the repository"
-
+    (accessToken, logLevel) <- Env.parse id envParser
     (mJobUrl, RepoSpec {..}) <-
         execParser $ info (optionsParser <**> helper) $ fullDesc <> progDesc
             "Restyle a GitHub Pull Request"
 
     pure Options
         { oAccessToken = accessToken
+        , oLogLevel = logLevel
         , oOwner = rsOwner
         , oRepo = rsRepo
         , oPullRequest = rsPullRequest
         , oJobUrl = mJobUrl
         }
+
+-- brittany-disable-next-binding
+envParser :: Env.Parser Env.Error (Text, LogLevel)
+envParser = (,)
+    <$> Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
+        (Env.help "GitHub access token with write access to the repository")
+    <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
 
 -- brittany-disable-next-binding
 optionsParser :: Parser (Maybe URL, RepoSpec)

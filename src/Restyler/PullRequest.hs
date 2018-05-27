@@ -3,79 +3,93 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.PullRequest
-    ( pullRequestOwner
-    , pullRequestOwnerName
-    , pullRequestRepo
+    ( pullRequestOwnerName
     , pullRequestRepoName
+    , pullRequestRepoSpec
     , pullRequestRepoURL
     , pullRequestIssueId
     , pullRequestIsFork
     , pullRequestBaseRef
     , pullRequestHeadRef
+    , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
     , pullRequestRestyledRef
-    , restyledCreatePullRequest
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
 import GHC.Stack
 import GitHub.Data
-
-pullRequestOwner :: PullRequest -> SimpleOwner
-pullRequestOwner = repoOwner . pullRequestRepo
+import Restyler.RepoSpec
 
 pullRequestOwnerName :: PullRequest -> Name Owner
-pullRequestOwnerName = simpleOwnerLogin . repoOwner . pullRequestRepo
-
-pullRequestRepo :: HasCallStack => PullRequest -> Repo
-pullRequestRepo =
-    -- We always expect a repo on our PRs
-    fromMaybe (error "Pull Request without Repository")
-        . pullRequestCommitRepo
-        . pullRequestBase
+pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
 
-pullRequestRepoURL :: PullRequest -> Text
+pullRequestRepoSpec :: HasCallStack => PullRequest -> RepoSpec
+pullRequestRepoSpec pullRequest = RepoSpec
+    { rsOwner = pullRequestOwnerName pullRequest
+    , rsRepo = pullRequestRepoName pullRequest
+    , rsPullRequest = pullRequestNumber pullRequest
+    }
+
+pullRequestRepoURL :: HasCallStack => PullRequest -> Text
 pullRequestRepoURL pullRequest = "https://github.com/" <> owner <> "/" <> repo
   where
-    owner = untagName $ simpleOwnerLogin $ pullRequestOwner pullRequest
-    repo = untagName $ repoName $ pullRequestRepo pullRequest
+    owner = untagName $ pullRequestOwnerName pullRequest
+    repo = untagName $ pullRequestRepoName pullRequest
 
+-- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
 pullRequestIssueId = mkId Proxy . pullRequestNumber
 
+-- brittany-disable-next-binding
 pullRequestIsFork :: PullRequest -> Bool
-pullRequestIsFork pullRequest =
-    pullRequestCommitRepo (pullRequestHead pullRequest)
-        /= pullRequestCommitRepo (pullRequestBase pullRequest)
+pullRequestIsFork = (/=)
+    <$> pullRequestHeadRepo
+    <*> pullRequestBaseRepo
 
 pullRequestBaseRef :: PullRequest -> Text
-pullRequestBaseRef PullRequest {..} = pullRequestCommitRef pullRequestBase
+pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
 
 pullRequestHeadRef :: PullRequest -> Text
-pullRequestHeadRef PullRequest {..} = pullRequestCommitRef pullRequestHead
+pullRequestHeadRef = pullRequestCommitRef . pullRequestHead
+
+-- brittany-disable-next-binding
+pullRequestRemoteHeadRef :: PullRequest -> Text
+pullRequestRemoteHeadRef pullRequest@PullRequest {..}
+    | pullRequestIsFork pullRequest =
+        "pull/" <> tshow pullRequestNumber <> "/head"
+    | otherwise = pullRequestCommitRef pullRequestHead
 
 pullRequestLocalHeadRef :: PullRequest -> Text
 pullRequestLocalHeadRef pullRequest@PullRequest {..}
-    | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestId
+    | pullRequestIsFork pullRequest = "pull-" <> tshow pullRequestNumber
     | otherwise = pullRequestCommitRef pullRequestHead
 
 pullRequestRestyledRef :: PullRequest -> Text
 pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
 
--- | A @'CreatePullRequest'@ type for restyling the given PR
-restyledCreatePullRequest :: PullRequest -> CreatePullRequest
-restyledCreatePullRequest pullRequest@PullRequest {..} = CreatePullRequest
-    { createPullRequestTitle = pullRequestTitle <> " (Restyled)"
-    , createPullRequestBody = ""
-    , createPullRequestHead = pullRequestRestyledRef pullRequest
-    -- We can't open a PR in their fork, so we open a PR in our own repository
-    -- against the base branch. It'll have their changes and our restyling as
-    -- separate commits.
-    , createPullRequestBase = if pullRequestIsFork pullRequest
-        then pullRequestBaseRef pullRequest
-        else pullRequestHeadRef pullRequest
-    }
+--------------------------------------------------------------------------------
+-- Internal functions below this point
+--------------------------------------------------------------------------------
+
+pullRequestOwner :: PullRequest -> SimpleOwner
+pullRequestOwner = repoOwner . pullRequestRepo
+
+-- |
+--
+-- N.B. Partial, we assume a Repo always exists
+--
+pullRequestRepo :: HasCallStack => PullRequest -> Repo
+pullRequestRepo =
+    fromJustNote "Pull Request without Repository" . pullRequestBaseRepo
+
+pullRequestBaseRepo :: PullRequest -> Maybe Repo
+pullRequestBaseRepo = pullRequestCommitRepo . pullRequestBase
+
+pullRequestHeadRepo :: PullRequest -> Maybe Repo
+pullRequestHeadRepo = pullRequestCommitRepo . pullRequestHead
