@@ -33,7 +33,7 @@ restylerMain = do
         app <- bootstrapApp options path
 
         runApp app $ run `catchError` \ex -> do
-            traverse_ sendPullRequestStatusError $ oJobUrl options
+            traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
             throwError ex
 
 withTempDirectory :: (FilePath -> IO (Either AppError a)) -> IO a
