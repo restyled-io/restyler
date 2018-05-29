@@ -3,7 +3,7 @@
 module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
-    , sendPullRequestStatusError
+    , sendPullRequestStatus_
     )
 where
 
@@ -27,15 +27,14 @@ sendPullRequestStatus status = do
         (mkName Proxy $ pullRequestCommitSha $ pullRequestHead pullRequest)
         (statusToStatus status)
 
-sendPullRequestStatusError :: URL -> AppM ()
-sendPullRequestStatusError url =
-    sendPullRequestStatus (ErrorStatus url)
-        `catchErrorWarn` "Unable to send PR errored status"
-    where
-    -- The assumption is we're always calling this in the context of an
-    -- error-handler, so if we ourselves throw an error we shouldn't mask
-    -- whatever we're handling.
-          f `catchErrorWarn` msg = f `catchError` const (logWarnN msg)
+-- | @'sendPullRequestStatus'@ but ignore any exceptions
+--
+-- This is useful for emitting the Errored status, where we wouldn't want an
+-- exception here to muddy the debugging of the error we're reporting.
+--
+sendPullRequestStatus_ :: PullRequestStatus -> AppM ()
+sendPullRequestStatus_ status = sendPullRequestStatus status
+    `catchError` \_ -> logWarnN "Error sending PR status"
 
 statusToStatus :: PullRequestStatus -> NewStatus
 statusToStatus NoDifferencesStatus = NewStatus
