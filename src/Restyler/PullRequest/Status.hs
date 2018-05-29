@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
@@ -21,12 +22,15 @@ data PullRequestStatus
 
 sendPullRequestStatus :: PullRequestStatus -> AppM ()
 sendPullRequestStatus status = do
-    pullRequest <- asks appPullRequest
-    runGitHub_ $ createStatusR
-        (pullRequestOwnerName pullRequest)
-        (pullRequestRepoName pullRequest)
-        (mkName Proxy $ pullRequestCommitSha $ pullRequestHead pullRequest)
-        (statusToStatus status)
+    statusConfig <- asks $ cStatusesConfig . appConfig
+
+    when (shouldSendStatus statusConfig status) $ do
+        pullRequest <- asks appPullRequest
+        runGitHub_ $ createStatusR
+            (pullRequestOwnerName pullRequest)
+            (pullRequestRepoName pullRequest)
+            (mkName Proxy $ pullRequestCommitSha $ pullRequestHead pullRequest)
+            (statusToStatus status)
 
 -- | @'sendPullRequestStatus'@ but ignore any exceptions
 --
@@ -36,6 +40,11 @@ sendPullRequestStatus status = do
 sendPullRequestStatus_ :: PullRequestStatus -> AppM ()
 sendPullRequestStatus_ status = sendPullRequestStatus status
     `catchError` \_ -> logWarnN "Error sending PR status"
+
+shouldSendStatus :: StatusesConfig -> PullRequestStatus -> Bool
+shouldSendStatus StatusesConfig{..} NoDifferencesStatus = scNoDifferences
+shouldSendStatus StatusesConfig{..} (DifferencesStatus _) = scDifferences
+shouldSendStatus StatusesConfig{..} (ErrorStatus _) = scError
 
 statusToStatus :: PullRequestStatus -> NewStatus
 statusToStatus NoDifferencesStatus = NewStatus

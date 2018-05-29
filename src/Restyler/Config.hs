@@ -4,6 +4,7 @@
 module Restyler.Config
     ( Config(..)
     , configPath
+    , StatusesConfig(..)
     , Restyler(..)
 
     -- * Exported for use in tests
@@ -17,6 +18,7 @@ import Restyler.Prelude.NoApp
 
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
+import qualified Data.Aeson.Types as Aeson
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Vector as V
 import Restyler.Config.Include
@@ -25,6 +27,7 @@ import Restyler.Config.Interpreter
 data Config = Config
     { cEnabled :: Bool
     , cAuto :: Bool
+    , cStatusesConfig :: StatusesConfig
     , cRestylers :: [Restyler]
     }
     deriving (Eq, Show)
@@ -37,6 +40,7 @@ instance FromJSON Config where
         -- Use default values if un-specified
         <$> o .:? "enabled" .!= cEnabled defaultConfig
         <*> o .:? "auto" .!= cAuto defaultConfig
+        <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
         <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
 
@@ -47,6 +51,7 @@ defaultConfig :: Config
 defaultConfig = Config
     { cEnabled = True
     , cAuto = False
+    , cStatusesConfig = defaultStatusesConfig
     , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
                    , unsafeNamedRestyler "prettier"
                    , unsafeNamedRestyler "shfmt"
@@ -57,6 +62,34 @@ defaultConfig = Config
                    , unsafeNamedRestyler "rubocop"
                    , unsafeNamedRestyler "rustfmt"
                    ]
+    }
+
+data StatusesConfig = StatusesConfig
+    { scDifferences :: Bool
+    , scNoDifferences :: Bool
+    , scError :: Bool
+    }
+    deriving (Eq, Show)
+
+instance FromJSON StatusesConfig where
+    parseJSON (Object o) = do
+        let StatusesConfig{..} = defaultStatusesConfig
+        StatusesConfig
+            <$> o .:? "differences" .!= scDifferences
+            <*> o .:? "no-differences" .!= scNoDifferences
+            <*> o .:? "error" .!= scError
+    parseJSON (Aeson.Bool b) = pure StatusesConfig
+        { scDifferences = b
+        , scNoDifferences = b
+        , scError = b
+        }
+    parseJSON x = typeMismatch "Boolean or Statuses Configuration" x
+
+defaultStatusesConfig :: StatusesConfig
+defaultStatusesConfig = StatusesConfig
+    { scDifferences = True
+    , scNoDifferences = True
+    , scError = True
     }
 
 data Restyler = Restyler
