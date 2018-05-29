@@ -15,6 +15,7 @@ import Restyler.RepoSpec
 
 data Options = Options
     { oAccessToken :: Text
+    -- ^ Personal or Installation access token
     , oLogLevel :: LogLevel
     , oOwner :: Name Owner
     , oRepo :: Name Repo
@@ -22,6 +23,17 @@ data Options = Options
     , oJobUrl :: Maybe URL
     }
 
+-- | Parse required environment variables and command-line options
+--
+-- Environment variables:
+--
+-- - @DEBUG=1@
+-- - @GITHUB_ACCESS_TOKEN=@ (required)
+--
+-- Usage:
+--
+-- > restyler [--job-url <url>@] <owner>/<repo>#<number>
+--
 parseOptions :: IO Options
 parseOptions = do
     (accessToken, logLevel) <- Env.parse id envParser

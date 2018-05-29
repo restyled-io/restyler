@@ -15,6 +15,7 @@ import qualified Restyler.Content as Content
 import Restyler.GitHub
 import Restyler.PullRequest
 
+-- | Leave a comment on the original PR, mentioning the given Restyled PR
 leaveRestyledComment :: PullRequest -> AppM ()
 leaveRestyledComment restyledPr = do
     pullRequest <- asks appPullRequest
@@ -30,6 +31,7 @@ leaveRestyledComment restyledPr = do
         (pullRequestIssueId pullRequest)
         (restyledCommentBody restyledPr)
 
+-- | Locate any comments left by us on the origin PR and delete them
 clearRestyledComments :: AppM ()
 clearRestyledComments = do
     pullRequest <- asks appPullRequest

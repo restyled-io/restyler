@@ -1,3 +1,7 @@
+-- | Consolidated imports
+--
+-- See @"Restyler.Prelude.NoApp"@ for core functionality.
+--
 module Restyler.Prelude
     ( module X
     )

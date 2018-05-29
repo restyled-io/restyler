@@ -21,6 +21,14 @@ import System.Exit (die, exitSuccess)
 import System.IO (BufferMode(..), hSetBuffering, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
 
+-- | The main entrypoint for the restyler CLI
+--
+-- Parses command-line options, creates a temporary working directory and runs
+-- the restyling process. Application errors are reported to @stderr@ before a
+-- non-zero exit.
+--
+-- See @'parseOptions'@ for usage information.
+--
 restylerMain :: IO ()
 restylerMain = do
     -- Ensure output always works correctly in Docker

@@ -13,9 +13,11 @@ import GitHub.Data (PullRequest(..))
 import Restyler.PullRequest
 import Text.Shakespeare.Text (st)
 
+-- | Simple for now: @Restyled@
 commitMessage :: Text
 commitMessage = "Restyled"
 
+-- | The comment to leave about a restyled Pull Request
 commentBody :: PullRequest -> Text
 commentBody pullRequest = [st|
 Hi there!
@@ -36,6 +38,7 @@ Thanks,
 [documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
 |]
 
+-- | The more complicated comment to leave when we restyled PRs from forks
 commentBodyFork :: PullRequest -> Text
 commentBodyFork pullRequest = [st|
 Hi there!

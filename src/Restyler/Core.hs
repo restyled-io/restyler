@@ -8,24 +8,21 @@ where
 
 import Restyler.Prelude
 
+-- | Run the main restyling process
 restyle :: [Restyler] -> [FilePath] -> AppM ()
 restyle restylers allPaths = do
     cwd <- getCurrentDirectory
+    existingPaths <- filterM doesFileExist allPaths
 
-    logDebugN $ "All paths: " <> tshow allPaths
-    logDebugN $ "Current working directory: " <> pack cwd
     logDebugN $ "Restylers: " <> tshow (map rName restylers)
+    logDebugN $ "Paths: " <> tshow existingPaths
 
     for_ restylers $ \r@Restyler {..} -> do
-        paths <- filterM (shouldRestyle r) allPaths
+        paths <- filterM (shouldInclude r) existingPaths
 
         unless (null paths) $ do
             logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
             callProcess "docker" $ dockerArguments cwd r paths
-
-shouldRestyle :: Restyler -> FilePath -> AppM Bool
-shouldRestyle restyler path =
-    (&&) <$> doesFileExist path <*> shouldInclude restyler path
 
 shouldInclude :: Restyler -> FilePath -> AppM Bool
 shouldInclude Restyler {..} path =

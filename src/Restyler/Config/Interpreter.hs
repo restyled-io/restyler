@@ -25,6 +25,7 @@ instance FromJSON Interpreter where
     parseJSON = withText "Interpreter"
         $ either fail pure . readInterpreter . unpack
 
+-- | Does that path start with a /shebang/ for the given @'Interpreter'@
 hasInterpreter :: FilePath -> Interpreter -> IO Bool
 path `hasInterpreter` interpreter = do
     minterpreter <- getInterpreter path

@@ -17,9 +17,13 @@ import Restyler.PullRequest
 
 data PullRequestStatus
     = NoDifferencesStatus
+    -- ^ We found no differences after restyling
     | DifferencesStatus PullRequest
+    -- ^ We found differences and opened a restyled @'PullRequest'@
     | ErrorStatus URL
+    -- ^ We encountered an error and can link to a Job
 
+-- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus :: PullRequestStatus -> AppM ()
 sendPullRequestStatus status = do
     statusConfig <- asks $ cStatusesConfig . appConfig

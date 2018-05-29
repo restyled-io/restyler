@@ -31,6 +31,10 @@ lint:
 test:
 	stack test
 
+.PHONY: docs
+docs:
+	stack --work-dir .stack-work-docs build --haddock
+
 .PHONY: test.integration
 test.integration: image.build
 	docker run --rm \

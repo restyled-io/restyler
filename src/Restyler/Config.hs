@@ -24,11 +24,16 @@ import qualified Data.Vector as V
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 
+-- | Top-level configuration object
 data Config = Config
     { cEnabled :: Bool
+    -- ^ Do anything at all?
     , cAuto :: Bool
+    -- ^ Just push the restyling, don't comment?
     , cStatusesConfig :: StatusesConfig
+    -- ^ Send PR statuses?
     , cRestylers :: [Restyler]
+    -- ^ What restylers to run
     }
     deriving (Eq, Show)
 
@@ -44,9 +49,17 @@ instance FromJSON Config where
         <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
 
+-- | @.restyled.yaml@
 configPath :: FilePath
 configPath = ".restyled.yaml"
 
+-- | Default configuration
+--
+-- - Enabled
+-- - Not Auto
+-- - Send statuses
+-- - Run most restylers
+--
 defaultConfig :: Config
 defaultConfig = Config
     { cEnabled = True
@@ -55,10 +68,14 @@ defaultConfig = Config
     , cRestylers = defaultRestylers
     }
 
+-- | Configuration for sending PR statuses
 data StatusesConfig = StatusesConfig
     { scDifferences :: Bool
+    -- ^ Send a failure status when there were differences
     , scNoDifferences :: Bool
+    -- ^ Send a success status when there were no differences
     , scError :: Bool
+    -- ^ Send a failure status when there were errors
     }
     deriving (Eq, Show)
 
@@ -83,13 +100,20 @@ defaultStatusesConfig = StatusesConfig
     , scError = True
     }
 
+-- | How to run a given restyler
 data Restyler = Restyler
     { rName :: String
+    -- ^ Unique name for this restyler, not configurable
     , rCommand :: String
+    -- ^ Command to run, usually the name, not configurable
     , rArguments :: [String]
+    -- ^ Arguments to pass before the paths
     , rInclude :: [Include]
+    -- ^ Patterns to match for files to restyle
     , rInterpreters :: [Interpreter]
+    -- ^ Interpreters to check for
     , rSupportsArgSep :: Bool
+    -- ^ Can we pass @--@ between arguments and paths
     }
     deriving (Eq, Show)
 

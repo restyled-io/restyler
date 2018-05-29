@@ -7,8 +7,8 @@ where
 --------------------------------------------------------------------------------
 -- Safe(r) re-exports
 --------------------------------------------------------------------------------
-import Prelude as X
-    hiding (head, init, last, maximum, minimum, pred, read, succ, tail)
+import Prelude as X hiding
+    (head, init, last, maximum, minimum, pred, read, succ, tail)
 
 import Control.Error.Util as X (hush, note)
 import Control.Exception.Safe as X
@@ -36,27 +36,40 @@ import Safe as X
 --------------------------------------------------------------------------------
 import qualified Data.Text as T
 
+-- | @'any'@ lifted to @'Monad'@
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM _ [] = pure False
 anyM p (x : xs) = p x >>= \r -> if r then pure True else anyM p xs
 
+-- | @'when'@ with a monadic condition
+--
+-- > x <- someMonadicConditional
+-- > when x $ do
+-- >     someMonadicAction
+-- >
+-- > whenM someMonadicConditional someMonadicAction
+--
 whenM :: Monad m => m Bool -> m () -> m ()
 whenM condition action = do
     result <- condition
     when result action
 
+-- | Same for @'unless'@
 unlessM :: Monad m => m Bool -> m () -> m ()
 unlessM condition action = do
     result <- condition
     unless result action
 
+-- | Like @'hush'@, but for @'MonadError' e m@ instead of @'Either'@
 hushM :: MonadError e m => m a -> m (Maybe a)
 hushM f = fmap Just f `catchError` const (pure Nothing)
 
+-- | @'Show'@ as @'Text'@
 tshow :: Show a => a -> Text
 tshow = T.pack . show
 
 infixl 4 <$$>
 
+-- | @'fmap'@ for doubly-wrapped values
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 f <$$> a = fmap f <$> a

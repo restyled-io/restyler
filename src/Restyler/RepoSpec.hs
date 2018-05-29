@@ -6,8 +6,8 @@
 -- This shortened format is useful for passing a Pull Request as a command-line
 -- argument, or showing it in log messages.
 --
--- N.B. this should probably be called @PullRequestSpec@, or perhaps in-lined
--- into @"Restyler.PullRequest"@.
+-- __N.B.__: this should probably be called @PullRequestSpec@, or perhaps
+-- in-lined into @"Restyler.PullRequest"@.
 --
 module Restyler.RepoSpec
     ( RepoSpec(..)
@@ -30,7 +30,7 @@ data RepoSpec = RepoSpec
     }
     deriving (Eq, Show)
 
--- | Parse @<owner>\/<name>#<number>@ into a @'RepoSpec'@
+-- | Parse @\<owner>\/\<name>#\<number>@ into a @'RepoSpec'@
 parseRepoSpec :: String -> Either String RepoSpec
 parseRepoSpec = first parseErrorPretty . parse parser "<input>"
 

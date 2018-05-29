@@ -16,6 +16,7 @@ import GitHub.Data
 import GitHub.Request
 import Network.HTTP.Client.TLS
 
+-- | Run a GitHub @'Request'@
 runGitHub :: Request k a -> AppM a
 runGitHub req = do
     logDebugN $ "GitHub request: " <> showGitHubRequest req
@@ -26,6 +27,7 @@ runGitHub req = do
 
     either (throwError . GitHubError) pure result
 
+-- | @'runGitHub'@ but discard the result
 runGitHub_ :: Request k a -> AppM ()
 runGitHub_ = void . runGitHub
 

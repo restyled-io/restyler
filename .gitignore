@@ -1,4 +1,5 @@
 *.cabal
 *.t.err
 .stack-work
+.stack-work-docs
 keys
