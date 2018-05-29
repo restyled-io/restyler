@@ -59,7 +59,9 @@ run = do
         updateRestyledPullRequest
         exitWithInfo "Pushed to existing restyled branch"
 
-    leaveRestyledComment =<< createRestyledPullRequest
+    restyledPr <- createRestyledPullRequest
+    leaveRestyledComment restyledPr
+    sendPullRequestStatus $ DifferencesStatus restyledPr
     logInfoN "Restyling successful"
 
 configEnabled :: AppM Bool

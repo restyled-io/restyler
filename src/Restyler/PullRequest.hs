@@ -7,6 +7,7 @@ module Restyler.PullRequest
     , pullRequestRepoName
     , pullRequestRepoSpec
     , pullRequestRepoURL
+    , pullRequestURL
     , pullRequestIssueId
     , pullRequestIsFork
     , pullRequestBaseRef
@@ -41,6 +42,11 @@ pullRequestRepoURL pullRequest = "https://github.com/" <> owner <> "/" <> repo
   where
     owner = untagName $ pullRequestOwnerName pullRequest
     repo = untagName $ pullRequestRepoName pullRequest
+
+pullRequestURL :: HasCallStack => PullRequest -> Text
+pullRequestURL pullRequest =
+    pullRequestRepoURL pullRequest <> "/pull/" <> tshow
+        (pullRequestNumber pullRequest)
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
