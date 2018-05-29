@@ -42,9 +42,9 @@ sendPullRequestStatus_ status = sendPullRequestStatus status
     `catchError` \_ -> logWarnN "Error sending PR status"
 
 shouldSendStatus :: StatusesConfig -> PullRequestStatus -> Bool
-shouldSendStatus StatusesConfig{..} NoDifferencesStatus = scNoDifferences
-shouldSendStatus StatusesConfig{..} (DifferencesStatus _) = scDifferences
-shouldSendStatus StatusesConfig{..} (ErrorStatus _) = scError
+shouldSendStatus StatusesConfig {..} NoDifferencesStatus = scNoDifferences
+shouldSendStatus StatusesConfig {..} (DifferencesStatus _) = scDifferences
+shouldSendStatus StatusesConfig {..} (ErrorStatus _) = scError
 
 statusToStatus :: PullRequestStatus -> NewStatus
 statusToStatus NoDifferencesStatus = NewStatus
