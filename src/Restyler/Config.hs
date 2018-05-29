@@ -52,16 +52,7 @@ defaultConfig = Config
     { cEnabled = True
     , cAuto = False
     , cStatusesConfig = defaultStatusesConfig
-    , cRestylers = [ unsafeNamedRestyler "stylish-haskell"
-                   , unsafeNamedRestyler "prettier"
-                   , unsafeNamedRestyler "shfmt"
-                   , unsafeNamedRestyler "astyle"
-                   , unsafeNamedRestyler "autopep8"
-                   , unsafeNamedRestyler "php-cs-fixer"
-                   , unsafeNamedRestyler "elm-format"
-                   , unsafeNamedRestyler "rubocop"
-                   , unsafeNamedRestyler "rustfmt"
-                   ]
+    , cRestylers = defaultRestylers
     }
 
 data StatusesConfig = StatusesConfig
@@ -72,12 +63,12 @@ data StatusesConfig = StatusesConfig
     deriving (Eq, Show)
 
 instance FromJSON StatusesConfig where
-    parseJSON (Object o) = do
-        let StatusesConfig{..} = defaultStatusesConfig
-        StatusesConfig
-            <$> o .:? "differences" .!= scDifferences
-            <*> o .:? "no-differences" .!= scNoDifferences
-            <*> o .:? "error" .!= scError
+    parseJSON (Object o) = StatusesConfig
+        <$> o .:? "differences" .!= scDifferences
+        <*> o .:? "no-differences" .!= scNoDifferences
+        <*> o .:? "error" .!= scError
+      where
+        StatusesConfig{..} = defaultStatusesConfig
     parseJSON (Aeson.Bool b) = pure StatusesConfig
         { scDifferences = b
         , scNoDifferences = b
@@ -103,21 +94,32 @@ data Restyler = Restyler
     deriving (Eq, Show)
 
 instance FromJSON Restyler where
+    parseJSON (String t) = namedRestyler t
     parseJSON v@(Object o) = case HM.toList o of
         [(k, v')] -> withObject "Override object"
             (\o' -> do
                 Restyler{..} <- namedRestyler k
-                Restyler -- Named + overrides
-                    <$> pure (unpack k)
-                    <*> pure rCommand
-                    <*> o' .:? "arguments" .!= rArguments
+                Restyler (unpack k) rCommand -- Named + overrides
+                    <$> o' .:? "arguments" .!= rArguments
                     <*> o' .:? "include" .!= rInclude
                     <*> o' .:? "interpreters" .!= rInterpreters
                     <*> pure rSupportsArgSep
             ) v'
         _ -> typeMismatch "Name with override object" v
-    parseJSON (String t) = namedRestyler t
     parseJSON v = typeMismatch "Name or named with override object" v
+
+defaultRestylers :: [Restyler]
+defaultRestylers =
+    [ unsafeNamedRestyler "stylish-haskell"
+    , unsafeNamedRestyler "prettier"
+    , unsafeNamedRestyler "shfmt"
+    , unsafeNamedRestyler "astyle"
+    , unsafeNamedRestyler "autopep8"
+    , unsafeNamedRestyler "php-cs-fixer"
+    , unsafeNamedRestyler "elm-format"
+    , unsafeNamedRestyler "rubocop"
+    , unsafeNamedRestyler "rustfmt"
+    ]
 
 allRestylers :: [Restyler]
 allRestylers =
