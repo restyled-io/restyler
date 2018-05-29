@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-missing-fields #-}</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- | A Shakespearean module for CoffeeScript, introducing type-safe,</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- compile-time variable and url interpolation. It is exactly the same as</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- &quot;Text.Julius&quot;, except that the template is first compiled to Javascript with</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- the system tool @coffee@.</span><span>
+</span><a name="line-9"></a><span class="hs-comment">--</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- To use this module, @coffee@ must be installed on your system.</span><span>
+</span><a name="line-11"></a><span class="hs-comment">--</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- @#{...}@ is the Shakespearean standard for variable interpolation, but</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- CoffeeScript already uses that sequence for string interpolation. Therefore,</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- Shakespearean interpolation is introduced with @%{...}@.</span><span>
+</span><a name="line-15"></a><span class="hs-comment">--</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- If you interpolate variables,</span><span>
+</span><a name="line-17"></a><span class="hs-comment">-- the template is first wrapped with a function containing javascript variables representing shakespeare variables,</span><span>
+</span><a name="line-18"></a><span class="hs-comment">-- then compiled with @coffee@,</span><span>
+</span><a name="line-19"></a><span class="hs-comment">-- and then the value of the variables are applied to the function.</span><span>
+</span><a name="line-20"></a><span class="hs-comment">-- This means that in production the template can be compiled</span><span>
+</span><a name="line-21"></a><span class="hs-comment">-- once at compile time and there will be no dependency in your production</span><span>
+</span><a name="line-22"></a><span class="hs-comment">-- system on @coffee@. </span><span>
+</span><a name="line-23"></a><span class="hs-comment">--</span><span>
+</span><a name="line-24"></a><span class="hs-comment">-- Your code:</span><span>
+</span><a name="line-25"></a><span class="hs-comment">--</span><span>
+</span><a name="line-26"></a><span class="hs-comment">-- &gt;   b = 1</span><span>
+</span><a name="line-27"></a><span class="hs-comment">-- &gt;   console.log(#{a} + b)</span><span>
+</span><a name="line-28"></a><span class="hs-comment">--</span><span>
+</span><a name="line-29"></a><span class="hs-comment">-- Function wrapper added to your coffeescript code:</span><span>
+</span><a name="line-30"></a><span class="hs-comment">--</span><span>
+</span><a name="line-31"></a><span class="hs-comment">-- &gt; ((shakespeare_var_a) =&gt;</span><span>
+</span><a name="line-32"></a><span class="hs-comment">-- &gt;   b = 1</span><span>
+</span><a name="line-33"></a><span class="hs-comment">-- &gt;   console.log(shakespeare_var_a + b)</span><span>
+</span><a name="line-34"></a><span class="hs-comment">-- &gt; )</span><span>
+</span><a name="line-35"></a><span class="hs-comment">--</span><span>
+</span><a name="line-36"></a><span class="hs-comment">-- This is then compiled down to javascript, and the variables are applied:</span><span>
+</span><a name="line-37"></a><span class="hs-comment">--</span><span>
+</span><a name="line-38"></a><span class="hs-comment">-- &gt; ;(function(shakespeare_var_a){</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- &gt;   var b = 1;</span><span>
+</span><a name="line-40"></a><span class="hs-comment">-- &gt;   console.log(shakespeare_var_a + b);</span><span>
+</span><a name="line-41"></a><span class="hs-comment">-- &gt; })(#{a});</span><span>
+</span><a name="line-42"></a><span class="hs-comment">--</span><span>
+</span><a name="line-43"></a><span class="hs-comment">--</span><span>
+</span><a name="line-44"></a><span class="hs-comment">-- Further reading:</span><span>
+</span><a name="line-45"></a><span class="hs-comment">--</span><span>
+</span><a name="line-46"></a><span class="hs-comment">-- 1. Shakespearean templates: &lt;http://www.yesodweb.com/book/templates&gt;</span><span>
+</span><a name="line-47"></a><span class="hs-comment">--</span><span>
+</span><a name="line-48"></a><span class="hs-comment">-- 2. CoffeeScript: &lt;http://coffeescript.org/&gt;</span><span>
+</span><a name="line-49"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Coffee</span><span>
+</span><a name="line-50"></a><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- * Functions</span><span>
+</span><a name="line-51"></a><span>      </span><span class="hs-comment">-- ** Template-Reading Functions</span><span>
+</span><a name="line-52"></a><span>      </span><span class="hs-comment">-- | These QuasiQuoter and Template Haskell methods return values of</span><span>
+</span><a name="line-53"></a><span>      </span><span class="hs-comment">-- type @'JavascriptUrl' url@. See the Yesod book for details.</span><span>
+</span><a name="line-54"></a><span>      </span><a href="Text.Coffee.html#coffee"><span class="hs-identifier hs-var">coffee</span></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Text.Coffee.html#coffeeFile"><span class="hs-identifier hs-var">coffeeFile</span></a><span>
+</span><a name="line-56"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Text.Coffee.html#coffeeFileReload"><span class="hs-identifier hs-var">coffeeFileReload</span></a><span>
+</span><a name="line-57"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Text.Coffee.html#coffeeFileDebug"><span class="hs-identifier hs-var">coffeeFileDebug</span></a><span>
+</span><a name="line-58"></a><span>
+</span><a name="line-59"></a><span class="hs-cpp">#ifdef TEST_EXPORT</span><span>
+</span><a name="line-60"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">coffeeSettings</span><span>
+</span><a name="line-61"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-62"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-63"></a><span>
+</span><a name="line-64"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Quote</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">QuasiQuoter</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-65"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Syntax</span><span>
+</span><a name="line-66"></a><span class="hs-keyword">import</span><span> </span><a href="Text.Shakespeare.html"><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Shakespeare</span></a><span>
+</span><a name="line-67"></a><span class="hs-keyword">import</span><span> </span><a href="Text.Julius.html"><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Julius</span></a><span>
+</span><a name="line-68"></a><span>
+</span><a name="line-69"></a><span class="hs-identifier">coffeeSettings</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><a href="Text.Shakespeare.html#ShakespeareSettings"><span class="hs-identifier hs-type">ShakespeareSettings</span></a><span>
+</span><a name="line-70"></a><a name="coffeeSettings"><a href="Text.Coffee.html#coffeeSettings"><span class="hs-identifier">coffeeSettings</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-71"></a><span>  </span><a name="local-6989586621679172708"><a href="#local-6989586621679172708"><span class="hs-identifier">jsettings</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="Text.Julius.html#javascriptSettings"><span class="hs-identifier hs-var">javascriptSettings</span></a><span>
+</span><a name="line-72"></a><span>  </span><span class="hs-identifier hs-var">return</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><a href="#local-6989586621679172708"><span class="hs-identifier hs-var">jsettings</span></a><span> </span><span class="hs-special">{</span><span> </span><span class="hs-identifier">varChar</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-char">'%'</span><span>
+</span><a name="line-73"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">preConversion</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">Just</span><span> </span><a href="Text.Shakespeare.html#PreConvert"><span class="hs-identifier hs-var">PreConvert</span></a><span> </span><span class="hs-special">{</span><span>
+</span><a name="line-74"></a><span>      </span><span class="hs-identifier">preConvert</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="Text.Shakespeare.html#ReadProcess"><span class="hs-identifier hs-var">ReadProcess</span></a><span> </span><span class="hs-string">&quot;coffee&quot;</span><span> </span><span class="hs-special">[</span><span class="hs-string">&quot;-spb&quot;</span><span class="hs-special">]</span><span>
+</span><a name="line-75"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">preEscapeIgnoreBalanced</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;'\&quot;`&quot;</span><span>     </span><span class="hs-comment">-- don't insert backtacks for variable already inside strings or backticks.</span><span>
+</span><a name="line-76"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">preEscapeIgnoreLine</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;#&quot;</span><span>            </span><span class="hs-comment">-- ignore commented lines</span><span>
+</span><a name="line-77"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">wrapInsertion</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">Just</span><span> </span><a href="Text.Shakespeare.html#WrapInsertion"><span class="hs-identifier hs-var">WrapInsertion</span></a><span> </span><span class="hs-special">{</span><span> </span><span>
+</span><a name="line-78"></a><span>        </span><span class="hs-identifier">wrapInsertionIndent</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">Just</span><span> </span><span class="hs-string">&quot;  &quot;</span><span>
+</span><a name="line-79"></a><span>      </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">wrapInsertionStartBegin</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;(&quot;</span><span>
+</span><a name="line-80"></a><span>      </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">wrapInsertionSeparator</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;, &quot;</span><span>
+</span><a name="line-81"></a><span>      </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">wrapInsertionStartClose</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;) =&gt;&quot;</span><span>
+</span><a name="line-82"></a><span>      </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">wrapInsertionEnd</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;&quot;</span><span>
+</span><a name="line-83"></a><span>      </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">wrapInsertionAddParens</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-84"></a><span>      </span><span class="hs-special">}</span><span>
+</span><a name="line-85"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-86"></a><span>  </span><span class="hs-special">}</span><span>
+</span><a name="line-87"></a><span>
+</span><a name="line-88"></a><span class="hs-comment">-- | Read inline, quasiquoted CoffeeScript.</span><span>
+</span><a name="line-89"></a><span class="hs-identifier">coffee</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">QuasiQuoter</span><span>
+</span><a name="line-90"></a><a name="coffee"><a href="Text.Coffee.html#coffee"><span class="hs-identifier">coffee</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">QuasiQuoter</span><span> </span><span class="hs-special">{</span><span> </span><span class="hs-identifier">quoteExp</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621679172709"><a href="#local-6989586621679172709"><span class="hs-identifier">s</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-91"></a><span>    </span><a name="local-6989586621679172710"><a href="#local-6989586621679172710"><span class="hs-identifier">rs</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="Text.Coffee.html#coffeeSettings"><span class="hs-identifier hs-var">coffeeSettings</span></a><span>
+</span><a name="line-92"></a><span>    </span><span class="hs-identifier">quoteExp</span><span> </span><span class="hs-special">(</span><a href="Text.Shakespeare.html#shakespeare"><span class="hs-identifier hs-var">shakespeare</span></a><span> </span><a href="#local-6989586621679172710"><span class="hs-identifier hs-var">rs</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679172709"><span class="hs-identifier hs-var">s</span></a><span>
+</span><a name="line-93"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-94"></a><span>
+</span><a name="line-95"></a><span class="hs-comment">-- | Read in a CoffeeScript template file. This function reads the file once, at</span><span>
+</span><a name="line-96"></a><span class="hs-comment">-- compile time.</span><span>
+</span><a name="line-97"></a><span class="hs-identifier">coffeeFile</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">FilePath</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-98"></a><a name="coffeeFile"><a href="Text.Coffee.html#coffeeFile"><span class="hs-identifier">coffeeFile</span></a></a><span> </span><a name="local-6989586621679172711"><a href="#local-6989586621679172711"><span class="hs-identifier">fp</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-99"></a><span>    </span><a name="local-6989586621679172712"><a href="#local-6989586621679172712"><span class="hs-identifier">rs</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="Text.Coffee.html#coffeeSettings"><span class="hs-identifier hs-var">coffeeSettings</span></a><span>
+</span><a name="line-100"></a><span>    </span><a href="Text.Shakespeare.html#shakespeareFile"><span class="hs-identifier hs-var">shakespeareFile</span></a><span> </span><a href="#local-6989586621679172712"><span class="hs-identifier hs-var">rs</span></a><span> </span><a href="#local-6989586621679172711"><span class="hs-identifier hs-var">fp</span></a><span>
+</span><a name="line-101"></a><span>
+</span><a name="line-102"></a><span class="hs-comment">-- | Read in a CoffeeScript template file. This impure function uses</span><span>
+</span><a name="line-103"></a><span class="hs-comment">-- unsafePerformIO to re-read the file on every call, allowing for rapid</span><span>
+</span><a name="line-104"></a><span class="hs-comment">-- iteration.</span><span>
+</span><a name="line-105"></a><span class="hs-identifier">coffeeFileReload</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">FilePath</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-106"></a><a name="coffeeFileReload"><a href="Text.Coffee.html#coffeeFileReload"><span class="hs-identifier">coffeeFileReload</span></a></a><span> </span><a name="local-6989586621679172713"><a href="#local-6989586621679172713"><span class="hs-identifier">fp</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-107"></a><span>    </span><a name="local-6989586621679172714"><a href="#local-6989586621679172714"><span class="hs-identifier">rs</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="Text.Coffee.html#coffeeSettings"><span class="hs-identifier hs-var">coffeeSettings</span></a><span>
+</span><a name="line-108"></a><span>    </span><a href="Text.Shakespeare.html#shakespeareFileReload"><span class="hs-identifier hs-var">shakespeareFileReload</span></a><span> </span><a href="#local-6989586621679172714"><span class="hs-identifier hs-var">rs</span></a><span> </span><a href="#local-6989586621679172713"><span class="hs-identifier hs-var">fp</span></a><span>
+</span><a name="line-109"></a><span>
+</span><a name="line-110"></a><span class="hs-comment">-- | Deprecated synonym for 'coffeeFileReload'</span><span>
+</span><a name="line-111"></a><span class="hs-identifier">coffeeFileDebug</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">FilePath</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-112"></a><a name="coffeeFileDebug"><a href="Text.Coffee.html#coffeeFileDebug"><span class="hs-identifier">coffeeFileDebug</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Text.Coffee.html#coffeeFileReload"><span class="hs-identifier hs-var">coffeeFileReload</span></a><span>
+</span><a name="line-113"></a><span class="hs-pragma">{-# DEPRECATED coffeeFileDebug &quot;Please use coffeeFileReload instead.&quot; #-}</span><span>
+</span><a name="line-114"></a></pre></body></html>

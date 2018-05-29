@@ -34,6 +34,10 @@ test:
 .PHONY: docs
 docs:
 	stack --work-dir .stack-work-docs build --haddock
+	rsync -avz --delete \
+	  $$(stack path --work-dir .stack-work-docs --local-doc-root)/ \
+	  docs/
+
 
 .PHONY: test.integration
 test.integration: image.build

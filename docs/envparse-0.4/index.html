@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>envparse-0.4: Parse environment variables</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+window.onload = function () {pageLoad();};
+//]]>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">envparse-0.4: Parse environment variables</p></div><div id="content"><div id="description"><h1>envparse-0.4: Parse environment variables</h1><div class="doc"><p>Here's a simple example of a program that uses <code>envparse</code>'s parser:</p><pre>module Main (main) where
+
+import Control.Monad (unless)
+import Env
+
+data Hello = Hello { name :: String, quiet :: Bool }
+
+hello :: IO Hello
+hello = Env.parse (header &quot;envparse example&quot;) $
+  Hello &lt;$&gt; var (str &lt;=&lt; nonempty) &quot;NAME&quot;  (help &quot;Target for the greeting&quot;)
+        &lt;*&gt; switch                 &quot;QUIET&quot; (help &quot;Whether to actually print the greeting&quot;)
+ 
+main :: IO ()
+main = do
+  Hello {name, quiet} &lt;- hello
+  unless quiet $
+    putStrLn (&quot;Hello, &quot; ++ name ++ &quot;!&quot;)
+</pre><p>The <code>NAME</code> environment variable is mandatory and contains the name of the person to
+greet. <code>QUIET</code>, on the other hand, is an optional boolean flag, false by default, that
+decides whether the greeting should be silent.</p><p>If the <code>NAME</code> variable is undefined in the environment then running the program will
+result in the following help text:</p><pre>envparse example
+ 
+Available environment variables:
+ 
+  NAME                   Target for the greeting
+  QUIET                  Whether to actually print the
+                         greeting
+ 
+Parsing errors:
+ 
+  NAME is unset
+</pre></div></div><div id="module-list"><p class="caption">Signatures</p></div><div id="module-list"><p class="caption">Modules</p><ul><li><span class="module"><span id="control.n.1" class="collapser" onclick="toggleSection('n.1')">&nbsp;</span><a href="Env.html">Env</a></span><ul id="section.n.1" class="show"><li><span class="module"><a href="Env-Generic.html">Env.Generic</a></span></li><li><span id="control.n.1.2" class="module collapser" onclick="toggleSection('n.1.2')">Internal</span><ul id="section.n.1.2" class="show"><li><span class="module"><a href="Env-Internal-Error.html">Env.Internal.Error</a></span></li><li><span class="module"><a href="Env-Internal-Free.html">Env.Internal.Free</a></span></li><li><span class="module"><a href="Env-Internal-Help.html">Env.Internal.Help</a></span></li><li><span class="module"><a href="Env-Internal-Parser.html">Env.Internal.Parser</a></span></li><li><span class="module"><a href="Env-Internal-Val.html">Env.Internal.Val</a></span></li></ul></li></ul></li></ul></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.18.1</p></div></body></html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Control.DeepSeq.Generics</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+window.onload = function () {pageLoad();};
+//]]>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/Control.DeepSeq.Generics.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">deepseq-generics-0.2.0.0: GHC.Generics-based Control.DeepSeq.rnf implementation</p></div><div id="content"><div id="module-header"><table class="info"><tr><th valign="top">Copyright</th><td>(c) 2012 Herbert Valerio Riedel</td></tr><tr><th>License</th><td>BSD-style (see the LICENSE file)</td></tr><tr><th>Maintainer</th><td>Herbert Valerio Riedel &lt;hvr@gnu.org&gt;</td></tr><tr><th>Stability</th><td>stable</td></tr><tr><th>Portability</th><td>GHC</td></tr><tr><th>Safe Haskell</th><td>Safe</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Control.DeepSeq.Generics</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p><strong>NOTE</strong>: Starting with <code>deepseq-1.4.0.0</code>, <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#t:NFData">NFData</a></code> gained support
+ for generic derivation via <code>DefaultSignatures</code>. The new default
+ <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#v:rnf">rnf</a></code> method implementation is then equivalent to</p><pre>instance NFData MyType where
+  <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#v:rnf">rnf</a></code> = <code><a href="Control-DeepSeq-Generics.html#v:genericRnfV1">genericRnfV1</a></code>
+</pre><p>See documentation of <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#v:rnf">rnf</a></code> for more details on how to use the new
+ built-in <code><a href="../base-4.10.1.0/GHC-Generics.html#t:Generic">Generic</a></code> support.</p></div></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"><li class="src short"><a href="#v:genericRnf">genericRnf</a> :: (<a href="../base-4.10.1.0/GHC-Generics.html#t:Generic">Generic</a> a, GNFData (<a href="../base-4.10.1.0/GHC-Generics.html#t:Rep">Rep</a> a)) =&gt; a -&gt; ()</li><li class="src short"><a href="#v:genericRnfV1">genericRnfV1</a> :: (<a href="../base-4.10.1.0/GHC-Generics.html#t:Generic">Generic</a> a, GNFDataV1 (<a href="../base-4.10.1.0/GHC-Generics.html#t:Rep">Rep</a> a)) =&gt; a -&gt; ()</li></ul></div><div id="interface"><h1>Documentation</h1><div class="top"><p class="src"><a id="v:genericRnf" class="def">genericRnf</a> :: (<a href="../base-4.10.1.0/GHC-Generics.html#t:Generic">Generic</a> a, GNFData (<a href="../base-4.10.1.0/GHC-Generics.html#t:Rep">Rep</a> a)) =&gt; a -&gt; () <a href="src/Control.DeepSeq.Generics.html#genericRnf" class="link">Source</a> <a href="#v:genericRnf" class="selflink">#</a></p><div class="doc"><p><a href="../base-4.10.1.0/GHC-Generics.html">GHC.Generics</a>-based <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#v:rnf">rnf</a></code> implementation</p><p>This provides a generic <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#v:rnf">rnf</a></code> implementation for one type at a
+ time. If the type of the value <code><a href="Control-DeepSeq-Generics.html#v:genericRnf">genericRnf</a></code> is asked to reduce to
+ NF contains values of other types, those types have to provide
+ <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#t:NFData">NFData</a></code> instances. This also means that recursive types can only
+ be used with <code><a href="Control-DeepSeq-Generics.html#v:genericRnf">genericRnf</a></code> if a <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#t:NFData">NFData</a></code> instance has been defined
+ as well (see examples below).</p><p>The typical usage for <code><a href="Control-DeepSeq-Generics.html#v:genericRnf">genericRnf</a></code> is for reducing boilerplate code
+ when defining <code><a href="../deepseq-1.4.3.0/Control-DeepSeq.html#t:NFData">NFData</a></code> instances for ordinary algebraic
+ datatypes. See the code below for some simple usage examples:</p><pre>{-# LANGUAGE DeriveGeneric #-}
+
+import Control.DeepSeq
+import Control.DeepSeq.Generics (genericRnf)
+import GHC.Generics
+
+-- simple record
+data Foo = Foo AccountId Name Address
+         deriving Generic
+
+type Address      = [String]
+type Name         = String
+newtype AccountId = AccountId Int
+
+instance NFData AccountId
+instance NFData Foo where rnf = genericRnf
+
+-- recursive list-like type
+data N = Z | S N deriving Generic
+
+instance NFData N where rnf = genericRnf
+
+-- parametric &amp; recursive type
+data Bar a = Bar0 | Bar1 a | Bar2 (Bar a)
+           deriving Generic
+
+instance NFData a =&gt; NFData (Bar a) where rnf = genericRnf</pre><p><strong>NOTE</strong>: The <code>GNFData</code> type-class showing up in the type-signature is
+           used internally and not exported.</p></div></div><div class="top"><p class="src"><a id="v:genericRnfV1" class="def">genericRnfV1</a> :: (<a href="../base-4.10.1.0/GHC-Generics.html#t:Generic">Generic</a> a, GNFDataV1 (<a href="../base-4.10.1.0/GHC-Generics.html#t:Rep">Rep</a> a)) =&gt; a -&gt; () <a href="src/Control.DeepSeq.Generics.html#genericRnfV1" class="link">Source</a> <a href="#v:genericRnfV1" class="selflink">#</a></p><div class="doc"><p>Variant of <code><a href="Control-DeepSeq-Generics.html#v:genericRnf">genericRnf</a></code> which supports derivation for uninhabited types.</p><p>For instance, the type</p><pre>data TagFoo deriving Generic</pre><p>would cause a compile-time error with <code><a href="Control-DeepSeq-Generics.html#v:genericRnf">genericRnf</a></code>, but with
+ <code><a href="Control-DeepSeq-Generics.html#v:genericRnfV1">genericRnfV1</a></code> the error is deferred to run-time:</p><pre>Prelude&gt; genericRnf (undefined :: TagFoo)
+
+&lt;interactive&gt;:1:1:
+    No instance for (GNFData V1) arising from a use of `genericRnf'
+    Possible fix: add an instance declaration for (GNFData V1)
+    In the expression: genericRnf (undefined :: TagFoo)
+    In an equation for `it': it = genericRnf (undefined :: TagFoo)
+
+Prelude&gt; genericRnfV1 (undefined :: TagFoo)
+*** Exception: Control.DeepSeq.Generics.genericRnfV1: uninhabited type</pre><p><code><a href="Control-DeepSeq-Generics.html#v:genericRnfV1">genericRnfV1</a></code> corresponds to <code>deepseq-1.4.0.0</code>'s default <code>rnf</code>
+ method implementation.</p><p><strong>NOTE</strong>: The <code>GNFDataV1</code> type-class showing up in the type-signature is
+           used internally and not exported.</p><p><em>Since: 0.1.1.0</em></p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.18.1</p></div></body></html>

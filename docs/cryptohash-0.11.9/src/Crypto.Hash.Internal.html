@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE PackageImports #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- Module      : Crypto.Hash.Internal</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  : Vincent Hanquez &lt;vincent@snarc.org&gt;</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability : unknown</span><span>
+</span><a name="line-10"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Crypto</span><span class="hs-operator">.</span><span class="hs-identifier">Hash</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span>
+</span><a name="line-11"></a><span>    </span><span class="hs-special">(</span><span> </span><a href="Crypto.Hash.Internal.html#unsafeDoIO"><span class="hs-identifier hs-var">unsafeDoIO</span></a><span>
+</span><a name="line-12"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Crypto.Hash.Internal.html#digestToByteString"><span class="hs-identifier hs-var">digestToByteString</span></a><span>
+</span><a name="line-13"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Crypto.Hash.Internal.html#digestToByteStringWitness"><span class="hs-identifier hs-var">digestToByteStringWitness</span></a><span>
+</span><a name="line-14"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-15"></a><span>
+</span><a name="line-16"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Unsafe</span><span>
+</span><a name="line-17"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteArray</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">convert</span><span class="hs-special">)</span><span>
+</span><a name="line-18"></a><span class="hs-keyword">import</span><span> </span><span class="hs-string">&quot;cryptonite&quot;</span><span> </span><a href="Crypto.Hash.html"><span class="hs-identifier">Crypto</span><span class="hs-operator">.</span><span class="hs-identifier">Hash</span></a><span>
+</span><a name="line-19"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">ByteString</span><span class="hs-special">)</span><span>
+</span><a name="line-20"></a><span>
+</span><a name="line-21"></a><span class="hs-comment">-- | perform io for hashes that do allocation and ffi.</span><span>
+</span><a name="line-22"></a><span class="hs-comment">-- unsafeDupablePerformIO is used when possible as the</span><span>
+</span><a name="line-23"></a><span class="hs-comment">-- computation is pure and the output is directly linked</span><span>
+</span><a name="line-24"></a><span class="hs-comment">-- to the input. we also do not modify anything after it has</span><span>
+</span><a name="line-25"></a><span class="hs-comment">-- been returned to the user.</span><span>
+</span><a name="line-26"></a><span class="hs-identifier">unsafeDoIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><a href="#local-6989586621679024079"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679024079"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-27"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt; 704</span><span>
+</span><a name="line-28"></a><a name="unsafeDoIO"><a href="Crypto.Hash.Internal.html#unsafeDoIO"><span class="hs-identifier">unsafeDoIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafeDupablePerformIO</span><span>
+</span><a name="line-29"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-30"></a><span class="hs-identifier">unsafeDoIO</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafePerformIO</span><span>
+</span><a name="line-31"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-identifier">digestToByteString</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">HashAlgorithm</span><span> </span><a href="#local-6989586621679024078"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Digest</span><span> </span><a href="#local-6989586621679024078"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">ByteString</span><span>
+</span><a name="line-34"></a><a name="digestToByteString"><a href="Crypto.Hash.Internal.html#digestToByteString"><span class="hs-identifier">digestToByteString</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">convert</span><span>
+</span><a name="line-35"></a><span>
+</span><a name="line-36"></a><span class="hs-identifier">digestToByteStringWitness</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">HashAlgorithm</span><span> </span><a href="#local-6989586621679023674"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621679023674"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Digest</span><span> </span><a href="#local-6989586621679023674"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">ByteString</span><span>
+</span><a name="line-37"></a><a name="digestToByteStringWitness"><a href="Crypto.Hash.Internal.html#digestToByteStringWitness"><span class="hs-identifier">digestToByteStringWitness</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">convert</span><span>
+</span><a name="line-38"></a><span>
+</span><a name="line-39"></a></pre></body></html>

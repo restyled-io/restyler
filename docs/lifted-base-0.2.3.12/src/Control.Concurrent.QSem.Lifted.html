@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-deprecations #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-5"></a><span>
+</span><a name="line-6"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE Safe #-}</span><span>
+</span><a name="line-8"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-9"></a><span>
+</span><a name="line-10"></a><span class="hs-comment">{- |
+Module      :  Control.Concurrent.QSem.Lifted
+Copyright   :  Liyang HU, Bas van Dijk
+License     :  BSD-style
+
+Maintainer  :  Bas van Dijk &lt;v.dijk.bas@gmail.com&gt;
+Stability   :  experimental
+
+This is a wrapped version of &quot;Control.Concurrent.QSem&quot; with types
+generalised from 'IO' to all monads in 'MonadBase'.
+-}</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Concurrent</span><span class="hs-operator">.</span><span class="hs-identifier">QSem</span><span class="hs-operator">.</span><span class="hs-identifier">Lifted</span><span>
+</span><a name="line-23"></a><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">QSem</span><span>
+</span><a name="line-24"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Control.Concurrent.QSem.Lifted.html#newQSem"><span class="hs-identifier hs-var">newQSem</span></a><span>
+</span><a name="line-25"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Control.Concurrent.QSem.Lifted.html#waitQSem"><span class="hs-identifier hs-var">waitQSem</span></a><span>
+</span><a name="line-26"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Control.Concurrent.QSem.Lifted.html#signalQSem"><span class="hs-identifier hs-var">signalQSem</span></a><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-28"></a><span>
+</span><a name="line-29"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-30"></a><span class="hs-comment">-- Imports</span><span>
+</span><a name="line-31"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-comment">-- from base:</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Concurrent</span><span class="hs-operator">.</span><span class="hs-identifier">QSem</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">QSem</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Concurrent</span><span class="hs-operator">.</span><span class="hs-identifier">QSem</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">QSem</span><span>
+</span><a name="line-36"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Int</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">.</span><span class="hs-special">)</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span>
+</span><a name="line-40"></a><span class="hs-comment">-- from transformers-base:</span><span>
+</span><a name="line-41"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Base</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">MonadBase</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">liftBase</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span>
+</span><a name="line-43"></a><span class="hs-cpp">#include &quot;inlinable.h&quot;</span><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-46"></a><span class="hs-comment">-- * QSems</span><span>
+</span><a name="line-47"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span class="hs-comment">-- | Generalized version of 'QSem.newQSem'.</span><span>
+</span><a name="line-50"></a><span class="hs-identifier">newQSem</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">MonadBase</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><a href="#local-6989586621679028152"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679028152"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-identifier hs-type">QSem</span><span>
+</span><a name="line-51"></a><a name="newQSem"><a href="Control.Concurrent.QSem.Lifted.html#newQSem"><span class="hs-identifier">newQSem</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">liftBase</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">QSem</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">newQSem</span><span>
+</span><a name="line-52"></a><span class="hs-pragma">{-# INLINABLE newQSem #-}</span><span>
+</span><a name="line-53"></a><span>
+</span><a name="line-54"></a><span class="hs-comment">-- | Generalized version of 'QSem.waitQSem'.</span><span>
+</span><a name="line-55"></a><span class="hs-identifier">waitQSem</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">MonadBase</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><a href="#local-6989586621679028151"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">QSem</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679028151"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-56"></a><a name="waitQSem"><a href="Control.Concurrent.QSem.Lifted.html#waitQSem"><span class="hs-identifier">waitQSem</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">liftBase</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">QSem</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">waitQSem</span><span>
+</span><a name="line-57"></a><span class="hs-pragma">{-# INLINABLE waitQSem #-}</span><span>
+</span><a name="line-58"></a><span>
+</span><a name="line-59"></a><span class="hs-comment">-- | Generalized version of 'QSem.signalQSem'.</span><span>
+</span><a name="line-60"></a><span class="hs-identifier">signalQSem</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">MonadBase</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><a href="#local-6989586621679028150"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">QSem</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679028150"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-61"></a><a name="signalQSem"><a href="Control.Concurrent.QSem.Lifted.html#signalQSem"><span class="hs-identifier">signalQSem</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">liftBase</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">QSem</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">signalQSem</span><span>
+</span><a name="line-62"></a><span class="hs-pragma">{-# INLINABLE signalQSem #-}</span><span>
+</span><a name="line-63"></a></pre></body></html>

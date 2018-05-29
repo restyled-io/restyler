@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{-|
+
+Module      : URI.ByteString
+Description : ByteString URI Parser and Serializer
+Copyright   : (c) Soostone Inc., 2014-2015
+                  Michael Xavier, 2014-2015
+License     : BSD3
+Maintainer  : michael.xavier@soostone.com
+Stability   : experimental
+
+URI.ByteString aims to be an RFC3986 compliant URI parser that uses
+efficient ByteStrings for parsing and representing the data. This
+module provides a URI datatype as well as a parser and serializer.
+
+Note that this library is an early release and may have issues. It is
+currently being used in production and no issues have been
+encountered, however. Please report any issues encountered to the
+issue tracker.
+
+This module also provides analogs to Lens over the various types in
+this library. These are written in a generic way to avoid a dependency
+on any particular lens library. You should be able to use these with a
+number of packages including lens and lens-family-core.
+
+-}</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">URI</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-special">(</span><span class="hs-comment">-- * URI-related types</span><span>
+</span><a name="line-28"></a><span>      </span><a href="URI.ByteString.Types.html#Scheme"><span class="hs-identifier hs-type">Scheme</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#Host"><span class="hs-identifier hs-type">Host</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#Port"><span class="hs-identifier hs-type">Port</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#Authority"><span class="hs-identifier hs-type">Authority</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#UserInfo"><span class="hs-identifier hs-type">UserInfo</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#Query"><span class="hs-identifier hs-type">Query</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#URIRef"><span class="hs-identifier hs-type">URIRef</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#Absolute"><span class="hs-identifier hs-type">Absolute</span></a><span>
+</span><a name="line-36"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#Relative"><span class="hs-identifier hs-type">Relative</span></a><span>
+</span><a name="line-37"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#SchemaError"><span class="hs-identifier hs-type">SchemaError</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#URIParseError"><span class="hs-identifier hs-type">URIParseError</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#URIParserOptions"><span class="hs-identifier hs-type">URIParserOptions</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#strictURIParserOptions"><span class="hs-identifier hs-var">strictURIParserOptions</span></a><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#laxURIParserOptions"><span class="hs-identifier hs-var">laxURIParserOptions</span></a><span>
+</span><a name="line-42"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#URINormalizationOptions"><span class="hs-identifier hs-type">URINormalizationOptions</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-43"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#noNormalization"><span class="hs-identifier hs-var">noNormalization</span></a><span>
+</span><a name="line-44"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#rfc3986Normalization"><span class="hs-identifier hs-var">rfc3986Normalization</span></a><span>
+</span><a name="line-45"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#httpNormalization"><span class="hs-identifier hs-var">httpNormalization</span></a><span>
+</span><a name="line-46"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#aggressiveNormalization"><span class="hs-identifier hs-var">aggressiveNormalization</span></a><span>
+</span><a name="line-47"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#httpDefaultPorts"><span class="hs-identifier hs-var">httpDefaultPorts</span></a><span>
+</span><a name="line-48"></a><span>    </span><span class="hs-comment">-- * Operations</span><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#toAbsolute"><span class="hs-identifier hs-var">toAbsolute</span></a><span>
+</span><a name="line-50"></a><span>    </span><span class="hs-comment">-- * Parsing</span><span>
+</span><a name="line-51"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#parseURI"><span class="hs-identifier hs-var">parseURI</span></a><span>
+</span><a name="line-52"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#parseRelativeRef"><span class="hs-identifier hs-var">parseRelativeRef</span></a><span>
+</span><a name="line-53"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#uriParser"><span class="hs-identifier hs-var">uriParser</span></a><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#relativeRefParser"><span class="hs-identifier hs-var">relativeRefParser</span></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-comment">-- * Serializing</span><span>
+</span><a name="line-56"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#serializeURIRef"><span class="hs-identifier hs-var">serializeURIRef</span></a><span>
+</span><a name="line-57"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#serializeURIRef%27"><span class="hs-identifier hs-var">serializeURIRef'</span></a><span>
+</span><a name="line-58"></a><span>    </span><span class="hs-comment">-- ** Normalized Serialization</span><span>
+</span><a name="line-59"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#normalizeURIRef"><span class="hs-identifier hs-var">normalizeURIRef</span></a><span>
+</span><a name="line-60"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#normalizeURIRef%27"><span class="hs-identifier hs-var">normalizeURIRef'</span></a><span>
+</span><a name="line-61"></a><span>    </span><span class="hs-comment">-- * Low level utility functions</span><span>
+</span><a name="line-62"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#urlDecode"><span class="hs-identifier hs-var">urlDecode</span></a><span>
+</span><a name="line-63"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#urlDecodeQuery"><span class="hs-identifier hs-var">urlDecodeQuery</span></a><span>
+</span><a name="line-64"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#urlEncodeQuery"><span class="hs-identifier hs-var">urlEncodeQuery</span></a><span>
+</span><a name="line-65"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#urlEncodePath"><span class="hs-identifier hs-var">urlEncodePath</span></a><span>
+</span><a name="line-66"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#urlEncode"><span class="hs-identifier hs-var">urlEncode</span></a><span>
+</span><a name="line-67"></a><span>    </span><span class="hs-comment">-- * Lenses</span><span>
+</span><a name="line-68"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'Scheme'</span><span>
+</span><a name="line-69"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#schemeBSL"><span class="hs-identifier hs-var">schemeBSL</span></a><span>
+</span><a name="line-70"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'Host'</span><span>
+</span><a name="line-71"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#hostBSL"><span class="hs-identifier hs-var">hostBSL</span></a><span>
+</span><a name="line-72"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'Port'</span><span>
+</span><a name="line-73"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#portNumberL"><span class="hs-identifier hs-var">portNumberL</span></a><span>
+</span><a name="line-74"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'Authority'</span><span>
+</span><a name="line-75"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#authorityUserInfoL"><span class="hs-identifier hs-var">authorityUserInfoL</span></a><span>
+</span><a name="line-76"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#authorityHostL"><span class="hs-identifier hs-var">authorityHostL</span></a><span>
+</span><a name="line-77"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#authorityPortL"><span class="hs-identifier hs-var">authorityPortL</span></a><span>
+</span><a name="line-78"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'UserInfo'</span><span>
+</span><a name="line-79"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uiUsernameL"><span class="hs-identifier hs-var">uiUsernameL</span></a><span>
+</span><a name="line-80"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uiPasswordL"><span class="hs-identifier hs-var">uiPasswordL</span></a><span>
+</span><a name="line-81"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'Query'</span><span>
+</span><a name="line-82"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#queryPairsL"><span class="hs-identifier hs-var">queryPairsL</span></a><span>
+</span><a name="line-83"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'URIRef'</span><span>
+</span><a name="line-84"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uriSchemeL"><span class="hs-identifier hs-var">uriSchemeL</span></a><span>
+</span><a name="line-85"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#authorityL"><span class="hs-identifier hs-var">authorityL</span></a><span>
+</span><a name="line-86"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#pathL"><span class="hs-identifier hs-var">pathL</span></a><span>
+</span><a name="line-87"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#queryL"><span class="hs-identifier hs-var">queryL</span></a><span>
+</span><a name="line-88"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#fragmentL"><span class="hs-identifier hs-var">fragmentL</span></a><span>
+</span><a name="line-89"></a><span>    </span><span class="hs-comment">-- ** Lenses over 'URIParserOptions'</span><span>
+</span><a name="line-90"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#upoValidQueryCharL"><span class="hs-identifier hs-var">upoValidQueryCharL</span></a><span>
+</span><a name="line-91"></a><span>    </span><span class="hs-comment">-- ** Deprecated</span><span>
+</span><a name="line-92"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#URI"><span class="hs-identifier hs-type">URI</span></a><span>
+</span><a name="line-93"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Types.html#RelativeRef"><span class="hs-identifier hs-type">RelativeRef</span></a><span>
+</span><a name="line-94"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#serializeURI"><span class="hs-identifier hs-var">serializeURI</span></a><span>
+</span><a name="line-95"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#serializeURI%27"><span class="hs-identifier hs-var">serializeURI'</span></a><span>
+</span><a name="line-96"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#serializeRelativeRef"><span class="hs-identifier hs-var">serializeRelativeRef</span></a><span>
+</span><a name="line-97"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Internal.html#serializeRelativeRef%27"><span class="hs-identifier hs-var">serializeRelativeRef'</span></a><span>
+</span><a name="line-98"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uriAuthorityL"><span class="hs-identifier hs-var">uriAuthorityL</span></a><span>
+</span><a name="line-99"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uriPathL"><span class="hs-identifier hs-var">uriPathL</span></a><span>
+</span><a name="line-100"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uriQueryL"><span class="hs-identifier hs-var">uriQueryL</span></a><span>
+</span><a name="line-101"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#uriFragmentL"><span class="hs-identifier hs-var">uriFragmentL</span></a><span>
+</span><a name="line-102"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#rrAuthorityL"><span class="hs-identifier hs-var">rrAuthorityL</span></a><span>
+</span><a name="line-103"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#rrPathL"><span class="hs-identifier hs-var">rrPathL</span></a><span>
+</span><a name="line-104"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#rrQueryL"><span class="hs-identifier hs-var">rrQueryL</span></a><span>
+</span><a name="line-105"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="URI.ByteString.Lens.html#rrFragmentL"><span class="hs-identifier hs-var">rrFragmentL</span></a><span>
+</span><a name="line-106"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-107"></a><span>
+</span><a name="line-108"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-109"></a><span class="hs-keyword">import</span><span>           </span><a href="URI.ByteString.Internal.html"><span class="hs-identifier">URI</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-110"></a><span class="hs-keyword">import</span><span>           </span><a href="URI.ByteString.Lens.html"><span class="hs-identifier">URI</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span></a><span>
+</span><a name="line-111"></a><span class="hs-keyword">import</span><span>           </span><a href="URI.ByteString.Types.html"><span class="hs-identifier">URI</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span></a><span>
+</span><a name="line-112"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-113"></a></pre></body></html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-4"></a><span>
+</span><a name="line-5"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 710</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE Safe #-}</span><span>
+</span><a name="line-7"></a><span class="hs-cpp">#elif __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE Trustworthy #-}</span><span>
+</span><a name="line-9"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-10"></a><span>
+</span><a name="line-11"></a><span class="hs-comment">{- |
+Module      :  Foreign.Marshal.Utils.Lifted
+Copyright   :  Bas van Dijk, Anders Kaseorg, Michael Steele
+License     :  BSD-style
+
+Maintainer  :  Bas van Dijk &lt;v.dijk.bas@gmail.com&gt;
+Stability   :  experimental
+Portability :  non-portable (extended exceptions)
+
+This is a wrapped version of &quot;Foreign.Marshal.Utils&quot; with types generalized
+from 'IO' to all monads in either 'MonadBase' or 'MonadBaseControl'.
+-}</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">Marshal</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span><span class="hs-operator">.</span><span class="hs-identifier">Lifted</span><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Foreign.Marshal.Utils.Lifted.html#with"><span class="hs-identifier hs-var">with</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-comment">-- from base:</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Foreign</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">F</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span>     </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">.</span><span class="hs-special">)</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-comment">-- from monad-control:</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Trans</span><span class="hs-operator">.</span><span class="hs-identifier">Control</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">MonadBaseControl</span><span>
+</span><a name="line-35"></a><span>                                   </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">liftBaseOp</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-comment">-- |Generalized version of 'F.with'.</span><span>
+</span><a name="line-38"></a><span class="hs-comment">--</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- Note, when the given function throws an exception any monadic side</span><span>
+</span><a name="line-40"></a><span class="hs-comment">-- effects in @m@ will be discarded.</span><span>
+</span><a name="line-41"></a><span class="hs-identifier">with</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">MonadBaseControl</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><a href="#local-6989586621679035783"><span class="hs-identifier hs-type">m</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">F</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Storable</span><span> </span><a href="#local-6989586621679035784"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span>     </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621679035784"><span class="hs-identifier hs-type">a</span></a><span>                </span><span class="hs-comment">-- ^ value to be poked</span><span>
+</span><a name="line-43"></a><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">F</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Ptr</span><span> </span><a href="#local-6989586621679035784"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679035783"><span class="hs-identifier hs-type">m</span></a><span> </span><a href="#local-6989586621679035785"><span class="hs-identifier hs-type">b</span></a><span class="hs-special">)</span><span> </span><span class="hs-comment">-- ^ computation to run</span><span>
+</span><a name="line-44"></a><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679035783"><span class="hs-identifier hs-type">m</span></a><span> </span><a href="#local-6989586621679035785"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-45"></a><a name="with"><a href="Foreign.Marshal.Utils.Lifted.html#with"><span class="hs-identifier">with</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">liftBaseOp</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">F</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">with</span><span>
+</span><a name="line-46"></a><span class="hs-pragma">{-# INLINEABLE with #-}</span><span>
+</span><a name="line-47"></a></pre></body></html>
