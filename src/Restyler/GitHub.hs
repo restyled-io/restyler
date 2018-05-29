@@ -42,10 +42,8 @@ showGitHubRequest (SimpleQuery (PagedQuery ps qs fc)) = mconcat
     , "?" <> T.intercalate "&" (queryParts qs)
     , " (" <> tshow fc <> ")"
     ]
-showGitHubRequest (SimpleQuery (Command m ps _body)) = mconcat
-    [ "[" <> T.toUpper (tshow m) <> "] "
-    , "/" <> T.intercalate "/" ps
-    ]
+showGitHubRequest (SimpleQuery (Command m ps _body)) =
+    mconcat ["[" <> T.toUpper (tshow m) <> "] ", "/" <> T.intercalate "/" ps]
 showGitHubRequest (StatusQuery _ _) = "<status query>"
 showGitHubRequest (HeaderQuery _ _) = "<header query>"
 showGitHubRequest (RedirectQuery _) = "<redirect query>"
@@ -62,5 +60,4 @@ showGitHubError (JsonError e) = "Malformed response: " <> unpack e
 showGitHubError (UserError e) = "User error: " <> unpack e
 
 queryParts :: QueryString -> [Text]
-queryParts = map $ \(k, mv) ->
-    decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv
+queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv

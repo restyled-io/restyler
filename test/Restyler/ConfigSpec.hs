@@ -2,7 +2,8 @@
 
 module Restyler.ConfigSpec
     ( spec
-    ) where
+    )
+where
 
 import SpecHelper
 
@@ -20,9 +21,10 @@ spec = do
                 $ C8.unlines ["---", "- stylish-haskell", "- prettier"]
 
         result `shouldBe` Right defaultConfig
-            { cRestylers = [ unsafeNamedRestyler "stylish-haskell"
-                           , unsafeNamedRestyler "prettier"
-                           ]
+            { cRestylers =
+                [ unsafeNamedRestyler "stylish-haskell"
+                , unsafeNamedRestyler "prettier"
+                ]
             }
 
     it "has a setting for globally disabling" $ do
@@ -33,8 +35,7 @@ spec = do
         fmap cEnabled result `shouldBe` Right False
 
     it "allows re-configuring includes" $ do
-        let
-            result1 =
+        let result1 =
                 decodeEither
                     $ C8.unlines
                           [ "---"
@@ -63,15 +64,15 @@ spec = do
         result1 `shouldBe` result2
         result2 `shouldBe` result3
         result3 `shouldBe` Right defaultConfig
-            { cRestylers = [ (unsafeNamedRestyler "stylish-haskell")
-                                 { rInclude = [Include "**/*.lhs"]
-                                 }
-                           ]
+            { cRestylers =
+                [ (unsafeNamedRestyler "stylish-haskell")
+                      { rInclude = [Include "**/*.lhs"]
+                      }
+                ]
             }
 
     it "has good errors for unknown name" $ do
-        let
-            result1 = decodeEither $ C8.unlines ["---", "- uknown-name"]
+        let result1 = decodeEither $ C8.unlines ["---", "- uknown-name"]
 
             result2 = decodeEither $ C8.unlines
                 ["---", "- uknown-name:", "    arguments:", "    - --foo"]

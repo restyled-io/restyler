@@ -1,6 +1,7 @@
 module Restyler.Prelude
     ( module X
-    ) where
+    )
+where
 
 import Restyler.App as X
 import Restyler.Config as X

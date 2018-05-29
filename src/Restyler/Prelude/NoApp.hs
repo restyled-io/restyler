@@ -1,13 +1,14 @@
 module Restyler.Prelude.NoApp
     ( module X
     , module Restyler.Prelude.NoApp
-    ) where
+    )
+where
 
 --------------------------------------------------------------------------------
 -- Safe(r) re-exports
 --------------------------------------------------------------------------------
-import Prelude as X hiding
-    (head, init, last, maximum, minimum, pred, read, succ, tail)
+import Prelude as X
+    hiding (head, init, last, maximum, minimum, pred, read, succ, tail)
 
 import Control.Error.Util as X (hush, note)
 import Control.Exception.Safe as X

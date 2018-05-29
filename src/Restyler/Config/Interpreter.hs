@@ -4,7 +4,8 @@
 module Restyler.Config.Interpreter
     ( Interpreter(..)
     , hasInterpreter
-    ) where
+    )
+where
 
 import Restyler.Prelude.NoApp
 
@@ -35,8 +36,8 @@ getInterpreter path = handleIO (const $ pure Nothing) $ do
     pure $ parseInterpreter . unpack . T.strip =<< mline
 
 parseInterpreter :: String -> Maybe Interpreter
-parseInterpreter ('#':'!':rest) = hush $ readInterpreter =<<
-    case words rest of
+parseInterpreter ('#' : '!' : rest) =
+    hush $ readInterpreter =<< case words rest of
         [exec] -> pure $ takeFileName exec
         ["/usr/bin/env", arg] -> pure arg
         _ -> Left "Unexpected shebang length"
