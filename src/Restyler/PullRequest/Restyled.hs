@@ -33,20 +33,18 @@ createRestyledPullRequest = do
     commitAll Content.commitMessage
     pushOrigin $ pullRequestRestyledRef pullRequest
 
-    pr <-
-        runGitHub
-        $ createPullRequestR
-              (pullRequestOwnerName pullRequest)
-              (pullRequestRepoName pullRequest)
-        $ CreatePullRequest
-              { createPullRequestTitle = pullRequestTitle pullRequest
-                  <> " (Restyled)"
-              , createPullRequestBody = ""
-              , createPullRequestHead = pullRequestRestyledRef pullRequest
-              , createPullRequestBase = if pullRequestIsFork pullRequest
-                  then pullRequestBaseRef pullRequest
-                  else pullRequestHeadRef pullRequest
-              }
+    pr <- runGitHub $ createPullRequestR
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        CreatePullRequest
+            { createPullRequestTitle = pullRequestTitle pullRequest
+                <> " (Restyled)"
+            , createPullRequestBody = ""
+            , createPullRequestHead = pullRequestRestyledRef pullRequest
+            , createPullRequestBase = if pullRequestIsFork pullRequest
+                then pullRequestBaseRef pullRequest
+                else pullRequestHeadRef pullRequest
+            }
 
     pr <$ logInfoN
         ("Opened Restyled PR " <> showRepoSpec (pullRequestRepoSpec pr))
