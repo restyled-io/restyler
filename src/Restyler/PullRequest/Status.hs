@@ -16,6 +16,7 @@ import Restyler.PullRequest
 
 data PullRequestStatus
     = NoDifferencesStatus
+    | DifferencesStatus PullRequest
     | ErrorStatus URL
 
 sendPullRequestStatus :: PullRequestStatus -> AppM ()
@@ -41,6 +42,12 @@ statusToStatus NoDifferencesStatus = NewStatus
     { newStatusState = StatusSuccess
     , newStatusTargetUrl = Nothing
     , newStatusDescription = Just "No differences"
+    , newStatusContext = Just "restyled"
+    }
+statusToStatus (DifferencesStatus pullRequest) = NewStatus
+    { newStatusState = StatusFailure
+    , newStatusTargetUrl = Just $ URL $ pullRequestURL pullRequest
+    , newStatusDescription = Just "Restyling found differences"
     , newStatusContext = Just "restyled"
     }
 statusToStatus (ErrorStatus url) = NewStatus
