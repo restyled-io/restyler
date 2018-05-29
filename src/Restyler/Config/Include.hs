@@ -3,7 +3,8 @@
 module Restyler.Config.Include
     ( Include(..)
     , includePath
-    ) where
+    )
+where
 
 import Restyler.Prelude.NoApp
 

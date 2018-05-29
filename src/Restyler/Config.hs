@@ -10,7 +10,8 @@ module Restyler.Config
     , defaultConfig
     , namedRestyler
     , unsafeNamedRestyler
-    ) where
+    )
+where
 
 import Restyler.Prelude.NoApp
 
