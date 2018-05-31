@@ -1,7 +1,8 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.PullRequest.Status
+module Restyler.Model.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
     , sendPullRequestStatus_
@@ -10,10 +11,11 @@ where
 
 import Restyler.Prelude
 
-import GitHub.Data
-import GitHub.Endpoints.Repos.Statuses
-import Restyler.GitHub
-import Restyler.PullRequest
+import Restyler.App
+import Restyler.Capabilities.GitHub
+import Restyler.Model.Config
+import Restyler.Model.PullRequest
+import Restyler.Model.StatusesConfig
 
 data PullRequestStatus
     = NoDifferencesStatus
@@ -24,13 +26,14 @@ data PullRequestStatus
     -- ^ We encountered an error and can link to a Job
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
-sendPullRequestStatus :: PullRequestStatus -> AppM ()
+sendPullRequestStatus
+    :: (MonadGitHub m, MonadReader App m) => PullRequestStatus -> m ()
 sendPullRequestStatus status = do
     statusConfig <- asks $ cStatusesConfig . appConfig
 
     when (shouldSendStatus statusConfig status) $ do
         pullRequest <- asks appPullRequest
-        runGitHub_ $ createStatusR
+        createStatus
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkName Proxy $ pullRequestCommitSha $ pullRequestHead pullRequest)
@@ -41,7 +44,10 @@ sendPullRequestStatus status = do
 -- This is useful for emitting the Errored status, where we wouldn't want an
 -- exception here to muddy the debugging of the error we're reporting.
 --
-sendPullRequestStatus_ :: PullRequestStatus -> AppM ()
+sendPullRequestStatus_
+    :: (MonadGitHub m, MonadError AppError m, MonadLogger m, MonadReader App m)
+    => PullRequestStatus
+    -> m ()
 sendPullRequestStatus_ status = sendPullRequestStatus status
     `catchError` \_ -> logWarnN "Error sending PR status"
 

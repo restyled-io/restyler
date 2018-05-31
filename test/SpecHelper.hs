@@ -3,12 +3,17 @@
 
 module SpecHelper
     ( module X
-    ) where
+    )
+where
 
 import Test.Hspec as X
 
+import Data.Char (isSpace)
 import Data.Proxy
-import GitHub.Data (Id, mkId)
+import qualified Data.Text as T
+import Data.Text.Arbitrary ()
+import GitHub.Data (Id, Name, mkId, mkName)
+import Test.QuickCheck
 
 instance Num (Id a) where
     -- Just so we can type literals for Ids in Specs
@@ -19,3 +24,10 @@ instance Num (Id a) where
     (*) = error "NO"
     abs = error "NO"
     signum = error "NO"
+
+instance Arbitrary (Name a) where
+    arbitrary = mkName Proxy <$> arbitrary `suchThat` T.all goodChar
+      where
+        goodChar c
+            | isSpace c = False
+            | otherwise = c `notElem` ['/', '#']

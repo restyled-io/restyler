@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.ConfigSpec
+module Restyler.Model.ConfigSpec
     ( spec
     )
 where
@@ -10,8 +10,9 @@ import SpecHelper
 import qualified Data.ByteString.Char8 as C8
 import Data.List (isInfixOf)
 import Data.Yaml (decodeEither)
-import Restyler.Config
-import Restyler.Config.Include
+import Restyler.Model.Config
+import Restyler.Model.Include
+import Restyler.Model.Restyler
 
 spec :: Spec
 spec = do

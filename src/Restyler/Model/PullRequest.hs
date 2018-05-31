@@ -2,11 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.PullRequest
+module Restyler.Model.PullRequest
     ( pullRequestOwnerName
     , pullRequestRepoName
-    , pullRequestRepoSpec
     , pullRequestRepoURL
+    , pullRequestSpec
     , pullRequestURL
     , pullRequestIssueId
     , pullRequestIsFork
@@ -21,8 +21,7 @@ where
 import Restyler.Prelude
 
 import GHC.Stack
-import GitHub.Data
-import Restyler.RepoSpec
+import Restyler.Model.PullRequestSpec
 
 pullRequestOwnerName :: PullRequest -> Name Owner
 pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
@@ -30,11 +29,11 @@ pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
 
-pullRequestRepoSpec :: HasCallStack => PullRequest -> RepoSpec
-pullRequestRepoSpec pullRequest = RepoSpec
-    { rsOwner = pullRequestOwnerName pullRequest
-    , rsRepo = pullRequestRepoName pullRequest
-    , rsPullRequest = pullRequestNumber pullRequest
+pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
+pullRequestSpec pullRequest = PullRequestSpec
+    { prsOwner = pullRequestOwnerName pullRequest
+    , prsRepo = pullRequestRepoName pullRequest
+    , prsPullRequest = pullRequestNumber pullRequest
     }
 
 pullRequestRepoURL :: HasCallStack => PullRequest -> Text

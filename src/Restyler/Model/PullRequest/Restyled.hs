@@ -1,6 +1,7 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.PullRequest.Restyled
+module Restyler.Model.PullRequest.Restyled
     ( restyledPullRequestExists
     , createRestyledPullRequest
     , updateRestyledPullRequest
@@ -10,21 +11,23 @@ where
 
 import Restyler.Prelude
 
-import GitHub
+import Restyler.App
+import Restyler.Capabilities.Git
+import Restyler.Capabilities.GitHub
 import qualified Restyler.Content as Content
-import Restyler.Git
-import Restyler.GitHub
-import Restyler.PullRequest
-import Restyler.RepoSpec
+import Restyler.Model.PullRequest
+import Restyler.Model.PullRequestSpec
 
 -- | See if a branch exists with our name and message
-restyledPullRequestExists :: AppM Bool
+restyledPullRequestExists :: (MonadGit m, MonadReader App m) => m Bool
 restyledPullRequestExists = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
     (== Just Content.commitMessage) <$> branchHeadMessage ("origin/" <> rBranch)
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
-createRestyledPullRequest :: AppM PullRequest
+createRestyledPullRequest
+    :: (MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m)
+    => m PullRequest
 createRestyledPullRequest = do
     pullRequest <- asks appPullRequest
     let rBranch = pullRequestRestyledRef pullRequest
@@ -33,7 +36,7 @@ createRestyledPullRequest = do
     commitAll Content.commitMessage
     pushOrigin $ pullRequestRestyledRef pullRequest
 
-    pr <- runGitHub $ createPullRequestR
+    pr <- createPullRequest
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         CreatePullRequest
@@ -47,10 +50,10 @@ createRestyledPullRequest = do
             }
 
     pr <$ logInfoN
-        ("Opened Restyled PR " <> showRepoSpec (pullRequestRepoSpec pr))
+        ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
 -- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: AppM ()
+updateRestyledPullRequest :: (MonadGit m, MonadReader App m) => m ()
 updateRestyledPullRequest = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
     checkoutBranch True rBranch
@@ -58,7 +61,7 @@ updateRestyledPullRequest = do
     forcePushOrigin rBranch
 
 -- | Commit and push to current branch
-updateOriginalPullRequest :: AppM ()
+updateOriginalPullRequest :: (MonadGit m, MonadReader App m) => m ()
 updateOriginalPullRequest = do
     commitAll Content.commitMessage
     pushOrigin . pullRequestHeadRef =<< asks appPullRequest
