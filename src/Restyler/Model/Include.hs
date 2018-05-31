@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Config.Include
+module Restyler.Model.Include
     ( Include(..)
     , includePath
     )
 where
 
-import Restyler.Prelude.NoApp
+import Restyler.Prelude
 
 import Data.Aeson
 import Data.String (IsString(..))

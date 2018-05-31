@@ -7,10 +7,9 @@ module Restyler.Content
     , commentBodyFork
     ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding (commentBody)
 
-import GitHub.Data (PullRequest(..))
-import Restyler.PullRequest
+import Restyler.Model.PullRequest
 import Text.Shakespeare.Text (st)
 
 -- | Simple for now: @Restyled@

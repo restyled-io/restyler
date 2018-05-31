@@ -9,9 +9,8 @@ where
 import Restyler.Prelude
 
 import qualified Env
-import GitHub.Data
 import Options.Applicative
-import Restyler.RepoSpec
+import Restyler.Model.PullRequestSpec
 
 data Options = Options
     { oAccessToken :: Text
@@ -37,16 +36,16 @@ data Options = Options
 parseOptions :: IO Options
 parseOptions = do
     (accessToken, logLevel) <- Env.parse id envParser
-    (mJobUrl, RepoSpec {..}) <-
+    (mJobUrl, PullRequestSpec {..}) <-
         execParser $ info (optionsParser <**> helper) $ fullDesc <> progDesc
             "Restyle a GitHub Pull Request"
 
     pure Options
         { oAccessToken = accessToken
         , oLogLevel = logLevel
-        , oOwner = rsOwner
-        , oRepo = rsRepo
-        , oPullRequest = rsPullRequest
+        , oOwner = prsOwner
+        , oRepo = prsRepo
+        , oPullRequest = prsPullRequest
         , oJobUrl = mJobUrl
         }
 
@@ -58,14 +57,14 @@ envParser = (,)
     <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
 
 -- brittany-disable-next-binding
-optionsParser :: Parser (Maybe URL, RepoSpec)
+optionsParser :: Parser (Maybe URL, PullRequestSpec)
 optionsParser = (,)
     <$> optional (URL <$> strOption
         (  long "job-url"
         <> metavar "URL"
         <> help "Link to Job on restyled.io"
         ))
-    <*> argument (eitherReader parseRepoSpec)
+    <*> argument (eitherReader parseSpec)
         (  metavar "<owner>/<name>#<number>"
         <> help "Repository and Pull Request to restyle"
         )

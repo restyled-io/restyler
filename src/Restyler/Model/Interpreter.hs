@@ -1,17 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Restyler.Config.Interpreter
+module Restyler.Model.Interpreter
     ( Interpreter(..)
     , hasInterpreter
     )
 where
 
-import Restyler.Prelude.NoApp
+import Restyler.Prelude
 
 import Data.Aeson
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import System.FilePath (takeFileName)
 
 data Interpreter
@@ -26,16 +25,13 @@ instance FromJSON Interpreter where
         $ either fail pure . readInterpreter . unpack
 
 -- | Does that path start with a /shebang/ for the given @'Interpreter'@
-hasInterpreter :: FilePath -> Interpreter -> IO Bool
-path `hasInterpreter` interpreter = do
-    minterpreter <- getInterpreter path
-    pure $ minterpreter == Just interpreter
+hasInterpreter :: Text -> Interpreter -> Bool
+contents `hasInterpreter` interpreter = fromMaybe False $ do
+    line <- headMay $ T.lines contents
+    foundInterpreter <- parseInterpreter . unpack $ T.strip line
+    pure $ foundInterpreter == interpreter
 
-getInterpreter :: FilePath -> IO (Maybe Interpreter)
-getInterpreter path = handleIO (const $ pure Nothing) $ do
-    mline <- headMay . T.lines <$> T.readFile path
-    pure $ parseInterpreter . unpack . T.strip =<< mline
-
+-- | TODO: Megaparsec?
 parseInterpreter :: String -> Maybe Interpreter
 parseInterpreter ('#' : '!' : rest) =
     hush $ readInterpreter =<< case words rest of

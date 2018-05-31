@@ -1,6 +1,7 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Comments
+module Restyler.Model.Comment
     ( leaveRestyledComment
     , clearRestyledComments
     )
@@ -10,13 +11,14 @@ import Restyler.Prelude
 
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import GitHub
+import Restyler.App
+import Restyler.Capabilities.GitHub
 import qualified Restyler.Content as Content
-import Restyler.GitHub
-import Restyler.PullRequest
+import Restyler.Model.PullRequest
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
-leaveRestyledComment :: PullRequest -> AppM ()
+leaveRestyledComment
+    :: (MonadGitHub m, MonadReader App m) => PullRequest -> m ()
 leaveRestyledComment restyledPr = do
     pullRequest <- asks appPullRequest
 
@@ -25,22 +27,22 @@ leaveRestyledComment restyledPr = do
             then Content.commentBodyFork
             else Content.commentBody
 
-    runGitHub_ $ createCommentR
+    createComment
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
         (restyledCommentBody restyledPr)
 
 -- | Locate any comments left by us on the origin PR and delete them
-clearRestyledComments :: AppM ()
+clearRestyledComments
+    :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
 clearRestyledComments = do
     pullRequest <- asks appPullRequest
 
-    comments <- runGitHub $ commentsR
+    comments <- getComments
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
-        FetchAll
 
     for_ (V.filter isRestyledComment comments) $ \comment -> do
         logDebugN
@@ -49,7 +51,7 @@ clearRestyledComments = do
             <> " by "
             <> commentUserName comment
 
-        runGitHub_ $ deleteCommentR
+        deleteComment
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkId Proxy $ issueCommentId comment)

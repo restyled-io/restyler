@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -8,16 +9,20 @@ where
 
 import Restyler.Prelude
 
+import Restyler.App
 import Restyler.App.Run
-import Restyler.Comments
-import Restyler.Core
-import Restyler.Git
-import Restyler.GitHub
+import Restyler.Capabilities.Docker
+import Restyler.Capabilities.Git
+import Restyler.Capabilities.GitHub
+import Restyler.Capabilities.System
+import Restyler.Model.Comment
+import Restyler.Model.Config
+import Restyler.Model.PullRequest
+import Restyler.Model.PullRequest.Restyled
+import Restyler.Model.PullRequest.Status
+import Restyler.Model.Restyler (runRestylers)
 import Restyler.Options
-import Restyler.PullRequest
-import Restyler.PullRequest.Restyled
-import Restyler.PullRequest.Status
-import System.Exit (die, exitSuccess)
+import System.Exit (die)
 import System.IO (BufferMode(..), hSetBuffering, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
 
@@ -50,11 +55,19 @@ withTempDirectory f = do
     innerResult <- either (exitWithAppError . OtherError) pure result
     either exitWithAppError pure innerResult
 
-run :: AppM ()
+run
+    :: ( MonadSystem m
+       , MonadDocker m
+       , MonadGit m
+       , MonadGitHub m
+       , MonadLogger m
+       , MonadReader App m
+       )
+    => m ()
 run = do
     unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
 
-    unlessM runRestyler $ do
+    unlessM restyle $ do
         clearRestyledComments
         sendPullRequestStatus NoDifferencesStatus
         exitWithInfo "No style differences found"
@@ -72,18 +85,25 @@ run = do
     sendPullRequestStatus $ DifferencesStatus restyledPr
     logInfoN "Restyling successful"
 
-configEnabled :: AppM Bool
+configEnabled :: MonadReader App m => m Bool
 configEnabled = asks $ cEnabled . appConfig
 
-runRestyler :: AppM Bool
-runRestyler = do
+restyle
+    :: ( MonadSystem m
+       , MonadDocker m
+       , MonadGit m
+       , MonadLogger m
+       , MonadReader App m
+       )
+    => m Bool
+restyle = do
     config <- asks appConfig
     pullRequest <- asks appPullRequest
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
-    restyle (cRestylers config) pullRequestPaths
+    runRestylers (cRestylers config) pullRequestPaths
     not . null <$> changedPaths (pullRequestLocalHeadRef pullRequest)
 
-isAutoPush :: AppM Bool
+isAutoPush :: MonadReader App m => m Bool
 isAutoPush = do
     isAuto <- asks $ cAuto . appConfig
     pullRequest <- asks appPullRequest
@@ -104,9 +124,19 @@ exitWithAppError = \case
         ["We had trouble communicating with GitHub:", showGitHubError e]
     OtherError e ->
         die $ format ["We encounted an unexpected exception:", show e]
-    where format = ("[Error] " <>) . dropWhileEnd isSpace . unlines
+  where
+    format = ("[Error] " <>) . dropWhileEnd isSpace . unlines
 
-exitWithInfo :: Text -> AppM ()
+    -- This relies on @'HttpException'@ not leaking anything sensitive for
+    -- our use-cases, which is true for now (e.g. it masks @Authorization@
+    -- headers).
+    showGitHubError :: Error -> String
+    showGitHubError (HTTPError e) = "HTTP exception: " <> show e
+    showGitHubError (ParseError e) = "Unable to parse response: " <> unpack e
+    showGitHubError (JsonError e) = "Malformed response: " <> unpack e
+    showGitHubError (UserError e) = "User error: " <> unpack e
+
+exitWithInfo :: (MonadSystem m, MonadLogger m) => Text -> m ()
 exitWithInfo msg = do
     logInfoN msg
-    liftIOApp exitSuccess
+    exitSuccess

@@ -1,104 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.Config
-    ( Config(..)
-    , configPath
-    , StatusesConfig(..)
-    , Restyler(..)
-
-    -- * Exported for use in tests
-    , defaultConfig
+module Restyler.Model.Restyler
+    ( Restyler(..)
+    , defaultRestylers
+    , allRestylers
     , namedRestyler
     , unsafeNamedRestyler
+
+    -- * Running
+    , runRestylers
     )
 where
 
-import Restyler.Prelude.NoApp
+import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
-import qualified Data.Aeson.Types as Aeson
 import qualified Data.HashMap.Lazy as HM
-import qualified Data.Vector as V
-import Restyler.Config.Include
-import Restyler.Config.Interpreter
-
--- | Top-level configuration object
-data Config = Config
-    { cEnabled :: Bool
-    -- ^ Do anything at all?
-    , cAuto :: Bool
-    -- ^ Just push the restyling, don't comment?
-    , cStatusesConfig :: StatusesConfig
-    -- ^ Send PR statuses?
-    , cRestylers :: [Restyler]
-    -- ^ What restylers to run
-    }
-    deriving (Eq, Show)
-
-instance FromJSON Config where
-    parseJSON (Array v) = do
-        restylers <- mapM parseJSON (V.toList v)
-        pure defaultConfig { cRestylers = restylers }
-    parseJSON (Object o) = Config
-        -- Use default values if un-specified
-        <$> o .:? "enabled" .!= cEnabled defaultConfig
-        <*> o .:? "auto" .!= cAuto defaultConfig
-        <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
-        <*> o .:? "restylers" .!= cRestylers defaultConfig
-    parseJSON v = typeMismatch "Config object or list of restylers" v
-
--- | @.restyled.yaml@
-configPath :: FilePath
-configPath = ".restyled.yaml"
-
--- | Default configuration
---
--- - Enabled
--- - Not Auto
--- - Send statuses
--- - Run most restylers
---
-defaultConfig :: Config
-defaultConfig = Config
-    { cEnabled = True
-    , cAuto = False
-    , cStatusesConfig = defaultStatusesConfig
-    , cRestylers = defaultRestylers
-    }
-
--- | Configuration for sending PR statuses
-data StatusesConfig = StatusesConfig
-    { scDifferences :: Bool
-    -- ^ Send a failure status when there were differences
-    , scNoDifferences :: Bool
-    -- ^ Send a success status when there were no differences
-    , scError :: Bool
-    -- ^ Send a failure status when there were errors
-    }
-    deriving (Eq, Show)
-
-instance FromJSON StatusesConfig where
-    parseJSON (Object o) = StatusesConfig
-        <$> o .:? "differences" .!= scDifferences
-        <*> o .:? "no-differences" .!= scNoDifferences
-        <*> o .:? "error" .!= scError
-      where
-        StatusesConfig{..} = defaultStatusesConfig
-    parseJSON (Aeson.Bool b) = pure StatusesConfig
-        { scDifferences = b
-        , scNoDifferences = b
-        , scError = b
-        }
-    parseJSON x = typeMismatch "Boolean or Statuses Configuration" x
-
-defaultStatusesConfig :: StatusesConfig
-defaultStatusesConfig = StatusesConfig
-    { scDifferences = True
-    , scNoDifferences = True
-    , scError = True
-    }
+import Restyler.Capabilities.Docker
+import Restyler.Capabilities.System
+import Restyler.Model.Include
+import Restyler.Model.Interpreter
 
 -- | How to run a given restyler
 data Restyler = Restyler
@@ -251,3 +174,49 @@ namedRestyler name = case find ((== name) . pack . rName) allRestylers of
 
 unsafeNamedRestyler :: Text -> Restyler
 unsafeNamedRestyler = either error id . namedRestyler
+
+runRestylers
+    :: (Monad m, MonadSystem m, MonadDocker m, MonadLogger m)
+    => [Restyler]
+    -> [FilePath]
+    -> m ()
+runRestylers restylers allPaths = do
+    cwd <- getCurrentDirectory
+    existingPaths <- filterM doesFileExist allPaths
+
+    logDebugN $ "Restylers: " <> tshow (map rName restylers)
+    logDebugN $ "Paths: " <> tshow existingPaths
+
+    for_ restylers $ \r@Restyler {..} -> do
+        paths <- filterM (shouldInclude r) existingPaths
+
+        unless (null paths) $ do
+            logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
+            dockerRun
+                $ runOptions cwd rName rCommand
+                <> pathArguments rSupportsArgSep paths
+
+shouldInclude :: (Monad m, MonadSystem m) => Restyler -> FilePath -> m Bool
+shouldInclude Restyler {..} path
+    | includePath rInclude path = pure True
+    | otherwise = do
+        contents <- readFile path
+        pure $ any (contents `hasInterpreter`) rInterpreters
+
+pathArguments :: Bool -> [FilePath] -> [String]
+pathArguments True = ("--" :) . map prependIfRelative
+pathArguments False = map prependIfRelative
+
+-- | Some Restylers won't assume @foo@ means @.\/foo@, unless told
+prependIfRelative :: FilePath -> FilePath
+prependIfRelative path
+    | any (`isPrefixOf` path) ["/", "./", "../"] = path
+    | otherwise = "./" <> path
+
+-- brittany-disable-next-binding
+runOptions :: FilePath -> String -> String -> [String]
+runOptions dir name command =
+    [ "--rm", "--net", "none"
+    , "--volume", dir <> ":/code"
+    , "restyled/restyler-" <> name, command
+    ]

@@ -1,45 +1,64 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.App.Run
-    ( bootstrapApp
+    ( runApp
+    , bootstrapApp
     )
 where
 
 import Restyler.Prelude
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
 import qualified Data.Yaml as Yaml
-import GitHub
-import Restyler.Git
-import Restyler.GitHub
+import Restyler.App
+import Restyler.Capabilities.Git
+import Restyler.Capabilities.GitHub
+import Restyler.Capabilities.System
+import Restyler.Model.Config
+import Restyler.Model.PullRequest
+import Restyler.Model.PullRequestSpec
 import Restyler.Options
-import Restyler.PullRequest
-import Restyler.RepoSpec
+
+-- | Run an @'AppT'@ action for real
+--
+-- N.B. This unwraps only as far as @'ExceptT'@ so that it can be composed
+-- together with @'bootstrapApp'@ and receive overall error-handling after.
+--
+-- See @"Restyler.Main"@.
+--
+runApp :: MonadIO m => App -> AppT m a -> ExceptT AppError m a
+runApp app@App {..} =
+    runStdoutLoggingT
+        . filterLogger (\_ level -> level >= appLogLevel)
+        . flip runReaderT app
+        . runAppT
 
 -- | Bootstrap the initial @'App'@ type
 --
 -- We want to have the @'PullRequest'@ and @'Config'@ in our application
 -- environment, so we need them to construct an @'App'@. However, it's valuable
--- to use our normal @'AppM'@ actions to interact with GitHub or call processes
--- so we get the same logging and error-handling there.
+-- to use our normal @'AppT'@ instances to interact with GitHub or call
+-- processes so we get the same logging and error-handling there.
 --
--- So this function builds a partial @'App'@ type, then uses it to run @'AppM'@
--- actions to add the rest of the data before returning it.
+-- So this function uses a partial @'App'@ value and @'runApp'@ to build the
+-- rest of it.
+--
+-- If the actions given to @'runApp'@ here try to access @'appPullRequest'@ or
+-- @'appConfig'@, they will fail. So it's important those actions aren't
+-- refactored away from this module, where that assumption is less obvious.
 --
 bootstrapApp :: Options -> FilePath -> ExceptT AppError IO App
 bootstrapApp Options {..} path = runApp app $ do
     pullRequest <-
-        mapAppError toPullRequestFetchError
-        $ runGitHub
-        $ pullRequestR oOwner oRepo
-        $ mkId Proxy oPullRequest
+        mapAppError toPullRequestFetchError $ getPullRequest oOwner oRepo $ mkId
+            Proxy
+            oPullRequest
 
     setupClone pullRequest path
 
-    let spec = pullRequestRepoSpec pullRequest
-    logInfoN $ "Restyling PR " <> showRepoSpec spec
+    let spec = pullRequestSpec pullRequest
+    logInfoN $ "Restyling PR " <> showSpec spec
 
     config <- loadConfig
     logDebugN $ "Loaded config: " <> tshow config
@@ -54,7 +73,11 @@ bootstrapApp Options {..} path = runApp app $ do
         , appConfig = error "Bootstrap appConfig forced"
         }
 
-setupClone :: PullRequest -> FilePath -> AppM ()
+setupClone
+    :: (MonadSystem m, MonadError AppError m, MonadGit m, MonadReader App m)
+    => PullRequest
+    -> FilePath
+    -> m ()
 setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
     token <- asks appAccessToken
 
@@ -77,18 +100,18 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
             <> ".git"
 
 -- | Load @.restyled.yaml@
-loadConfig :: AppM Config
+loadConfig :: (MonadSystem m, MonadError AppError m) => m Config
 loadConfig = do
     exists <- doesFileExist configPath
 
-    if exists
-        then decodeConfig =<< liftIOApp (BS.readFile configPath)
-        else pure defaultConfig
+    if exists then decodeConfig =<< readFile configPath else pure defaultConfig
 
 -- | Decode the configuration content, or throw an @'AppError'@
-decodeConfig :: ByteString -> AppM Config
+decodeConfig :: MonadError AppError m => Text -> m Config
 decodeConfig =
-    either (throwError . ConfigurationError) pure . Yaml.decodeEither
+    either (throwError . ConfigurationError) pure
+        . Yaml.decodeEither
+        . encodeUtf8
 
 toPullRequestFetchError :: AppError -> AppError
 toPullRequestFetchError (GitHubError e) = PullRequestFetchError e
