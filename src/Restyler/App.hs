@@ -33,7 +33,7 @@ import Restyler.Capabilities.System
 import Restyler.Model.Config
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
-import qualified System.Process as Process
+import System.Process
 
 -- | Application environment
 data App = App
@@ -53,8 +53,14 @@ data AppError
     -- ^ We couldn't clone or checkout the PR's branch
     | ConfigurationError String
     -- ^ We couldn't load a @.restyled.yaml@
+    | DockerError IOException
+    -- ^ Error running a @docker@ operation
+    | GitError IOException
+    -- ^ Error running a @git@ operation
     | GitHubError Error
     -- ^ We encountered a GitHub API error during restyling
+    | SystemError IOException
+    -- ^ Trouble reading a file or etc
     | OtherError IOException
     -- ^ A minor escape hatch for @'IOException'@s
     deriving Show
@@ -75,42 +81,47 @@ newtype AppT m a = AppT
         , MonadLogger
         )
 
--- | Ensures all @'IOException'@s are handled in the @'MonadError'@ context
-instance MonadIO m => MonadIO (AppT m) where
-    liftIO f = AppT $ do
-        result <- liftIO $ tryIO f
-        either (throwError . OtherError) pure result
+-- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
+appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
+appIO err f = AppT $ do
+    result <- liftIO $ tryIO f
+    either (throwError . err) pure result
 
 instance MonadIO m => MonadGit (AppT m) where
     cloneRepository url dir = do
-        -- N.B. Re-implements @'Restyler.Process.callProcss'@ to avoid logging the
-        -- access-token present in the clone URL.
-        logDebugN $ "callProcess: " <> tshow ["git", "clone", masked, dir]
-        liftIO $ Process.callProcess "git" ["clone", unpack url, dir]
+        logDebugN $ "git clone " <> tshow [masked, dir]
+        appIO GitError $ callProcess "git" ["clone", unpack url, dir]
       where
         masked = T.unpack $ scheme <> "://<creds>" <> T.dropWhile (/= '@') rest
         (scheme, rest) = T.breakOn "://" url
 
-    checkoutBranch b branch =
-        callProcess "git" $ ["checkout"] ++ [ "-b" | b ] ++ [unpack branch]
+    checkoutBranch b branch = do
+        logDebugN $ "git checkout " <> branch
+        appIO GitError $ callProcess "git" $ ["checkout"] ++ [ "-b" | b ] ++ [unpack branch]
 
-    changedPaths branch =
-        lines <$> readProcess "git" ["diff", "--name-only", unpack branch] ""
+    changedPaths branch = do
+        logDebugN $ "git diff --name-only " <> branch
+        appIO GitError $ lines <$> readProcess "git" ["diff", "--name-only", unpack branch] ""
 
-    commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
+    commitAll msg = do
+        logDebugN "git commit"
+        appIO GitError $ callProcess "git" ["commit", "-am", unpack msg]
 
-    fetchOrigin remoteRef localRef =
-        callProcess "git" ["fetch", "origin", unpack $ remoteRef <> ":" <> localRef]
+    fetchOrigin remoteRef localRef = do
+        logDebugN $ "git fetch origin " <> remoteRef <> ":" <> localRef
+        appIO GitError $ callProcess "git" ["fetch", "origin", unpack $ remoteRef <> ":" <> localRef]
 
-    pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
+    pushOrigin branch = do
+        logDebugN $ "git push origin " <> branch
+        appIO GitError $ callProcess "git" ["push", "origin", unpack branch]
 
-    forcePushOrigin branch =
-        callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
+    forcePushOrigin branch = do
+        logDebugN $ "git push origin " <> branch
+        appIO GitError $ callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
 
-    branchHeadMessage branch = strip . pack <$$> readProcessMay
-        "git"
-        ["log", "-n", "1", "--format=%B", unpack branch]
-        ""
+    branchHeadMessage branch = do
+        logDebugN $ "git log -n 1 --format=%B " <> branch
+        strip . pack <$$> hushM (appIO GitError $ readProcess "git" ["log", "-n", "1", "--format=%B", unpack branch] "")
 
 instance MonadIO m => MonadGitHub (AppT m) where
     getPullRequest owner name num = runGitHub $ pullRequestR owner name num
@@ -133,45 +144,37 @@ instance MonadIO m => MonadGitHub (AppT m) where
 instance MonadIO m => MonadSystem (AppT m) where
     getCurrentDirectory = do
         logDebugN "getCurrentDirectory"
-        liftIO Directory.getCurrentDirectory
+        appIO SystemError Directory.getCurrentDirectory
 
     doesFileExist path = do
         logDebugN $ "doesFileExist: " <> tshow path
-        liftIO $ Directory.doesFileExist path
+        appIO SystemError $ Directory.doesFileExist path
 
     setCurrentDirectory path = do
         logDebugN "setCurrentDirectory"
-        liftIO $ Directory.setCurrentDirectory path
+        appIO SystemError $ Directory.setCurrentDirectory path
 
     readFile path = do
         logDebugN "readFile"
-        liftIO $ T.readFile path
+        appIO SystemError $ T.readFile path
 
-    exitSuccess = liftIO Exit.exitSuccess
+    exitSuccess = appIO SystemError Exit.exitSuccess
 
 instance MonadIO m => MonadDocker (AppT m) where
-    dockerRun = callProcess "docker" . ("run" :)
+    dockerRun args = do
+        logDebugN $ "docker run" <> tshow args
+        appIO DockerError $ callProcess "docker" $ "run" : args
 
-callProcess :: MonadIO m => String -> [String] -> AppT m ()
-callProcess cmd args = do
-    logDebugN $ "callProcess: " <> tshow (cmd : args)
-    liftIO $ Process.callProcess cmd args
-
-readProcess :: MonadIO m => String -> [String] -> String -> AppT m String
-readProcess cmd args stdin = do
-    logDebugN $ "readProcess: " <> tshow (cmd : args)
-    liftIO $ Process.readProcess cmd args stdin
-
-readProcessMay
-    :: MonadIO m => String -> [String] -> String -> AppT m (Maybe String)
-readProcessMay cmd args = hushM . readProcess cmd args
+-- readProcessMay
+--     :: MonadIO m => String -> [String] -> String -> AppT m (Maybe String)
+-- readProcessMay cmd args = hushM . readProcess cmd args
 
 -- | Run a GitHub @'Request'@
 runGitHub :: MonadIO m => Request k a -> AppT m a
 runGitHub req = do
     logDebugN $ "GitHub request: " <> showGitHubRequest req
     auth <- asks $ OAuth . encodeUtf8 . appAccessToken
-    result <- liftIO $ do
+    result <- appIO OtherError $ do
         mgr <- getGlobalManager
         executeRequestWithMgr mgr auth req
 
