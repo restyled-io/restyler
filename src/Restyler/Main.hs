@@ -120,8 +120,14 @@ exitWithAppError = \case
             ["We had trouble cloning your Pull Request branch:" <> show e]
     ConfigurationError msg ->
         die $ format ["We had trouble with your " <> configPath <> ":", msg]
+    DockerError e ->
+        die $ format ["We had trouble running a docker command:", show e]
+    GitError e ->
+        die $ format ["We had trouble running a git command:", show e]
     GitHubError e -> die $ format
         ["We had trouble communicating with GitHub:", showGitHubError e]
+    SystemError e ->
+        die $ format ["We had trouble running a system command:", show e]
     OtherError e ->
         die $ format ["We encountered an unexpected exception:", show e]
   where
