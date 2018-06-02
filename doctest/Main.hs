@@ -1,4 +1,7 @@
-module Main (main) where
+module Main
+    ( main
+    )
+where
 
 import Test.DocTest
 

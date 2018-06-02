@@ -49,8 +49,7 @@ createRestyledPullRequest = do
                 else pullRequestHeadRef pullRequest
             }
 
-    pr <$ logInfoN
-        ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
+    pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
 -- | Commit and force-push to the (existing) restyled branch
 updateRestyledPullRequest :: (MonadGit m, MonadReader App m) => m ()

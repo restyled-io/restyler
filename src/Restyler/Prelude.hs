@@ -7,8 +7,18 @@ where
 --------------------------------------------------------------------------------
 -- Safe(r) re-exports
 --------------------------------------------------------------------------------
-import Prelude as X hiding
-    (head, init, last, maximum, minimum, pred, read, readFile, succ, tail)
+import Prelude as X
+    hiding ( head
+    , init
+    , last
+    , maximum
+    , minimum
+    , pred
+    , read
+    , readFile
+    , succ
+    , tail
+    )
 
 import Control.Error.Util as X (hush, note)
 import Control.Exception.Safe as X
