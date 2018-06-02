@@ -21,12 +21,14 @@ data App c = App
 type AppM c = ReaderT (App c) (LoggingT IO)
 
 loadApp :: c -> IO (App c)
-loadApp c = Env.parse id $ App
-    <$> pure c
-    <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
+loadApp c =
+    Env.parse id
+        $ App
+        <$> pure c
+        <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
 
 runApp :: App c -> AppM c a -> IO a
-runApp app@App{..} action = do
+runApp app@App {..} action = do
     -- Ensure output alwyas works correctly in Docker
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
