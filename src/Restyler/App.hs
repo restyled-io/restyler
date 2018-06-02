@@ -162,12 +162,8 @@ instance MonadIO m => MonadSystem (AppT m) where
 
 instance MonadIO m => MonadDocker (AppT m) where
     dockerRun args = do
-        logDebugN $ "docker run" <> tshow args
+        logDebugN $ "docker run " <> tshow args
         appIO DockerError $ callProcess "docker" $ "run" : args
-
--- readProcessMay
---     :: MonadIO m => String -> [String] -> String -> AppT m (Maybe String)
--- readProcessMay cmd args = hushM . readProcess cmd args
 
 -- | Run a GitHub @'Request'@
 runGitHub :: MonadIO m => Request k a -> AppT m a
