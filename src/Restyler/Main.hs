@@ -123,7 +123,7 @@ exitWithAppError = \case
     GitHubError e -> die $ format
         ["We had trouble communicating with GitHub:", showGitHubError e]
     OtherError e ->
-        die $ format ["We encounted an unexpected exception:", show e]
+        die $ format ["We encountered an unexpected exception:", show e]
   where
     format = ("[Error] " <>) . dropWhileEnd isSpace . unlines
 
