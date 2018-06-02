@@ -14,10 +14,12 @@ library:
   dependencies:
     - Glob
     - aeson
+    - ansi-terminal
     - bytestring
     - directory
     - envparse
     - errors
+    - fast-logger
     - filepath
     - github
     - http-client-tls
@@ -28,6 +30,7 @@ library:
     - process
     - safe
     - safe-exceptions
+    - scanner
     - shakespeare
     - temporary
     - text

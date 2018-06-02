@@ -194,6 +194,7 @@ runRestylers restylers allPaths = do
             logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
             dockerRun
                 $ runOptions cwd rName rCommand
+                <> rArguments
                 <> pathArguments rSupportsArgSep paths
 
 shouldInclude :: (Monad m, MonadSystem m) => Restyler -> FilePath -> m Bool

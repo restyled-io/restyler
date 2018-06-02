@@ -15,6 +15,7 @@ import Restyler.App
 import Restyler.Capabilities.Git
 import Restyler.Capabilities.GitHub
 import Restyler.Capabilities.System
+import Restyler.Logger
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequestSpec
@@ -28,11 +29,7 @@ import Restyler.Options
 -- See @"Restyler.Main"@.
 --
 runApp :: MonadIO m => App -> AppT m a -> ExceptT AppError m a
-runApp app@App {..} =
-    runStdoutLoggingT
-        . filterLogger (\_ level -> level >= appLogLevel)
-        . flip runReaderT app
-        . runAppT
+runApp app = runAppLoggingT app . flip runReaderT app . runAppT
 
 -- | Bootstrap the initial @'App'@ type
 --
@@ -68,6 +65,7 @@ bootstrapApp Options {..} path = runApp app $ do
     app :: App
     app = App
         { appLogLevel = oLogLevel
+        , appLogColor = oLogColor
         , appAccessToken = oAccessToken
         , appPullRequest = error "Bootstrap appPullRequest forced"
         , appConfig = error "Bootstrap appConfig forced"
