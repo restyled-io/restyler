@@ -118,5 +118,7 @@ toPullRequestFetchError (GitHubError e) = PullRequestFetchError e
 toPullRequestFetchError e = e
 
 toPullRequestCloneError :: AppError -> AppError
+toPullRequestCloneError (GitError e) = PullRequestCloneError e
+toPullRequestCloneError (SystemError e) = PullRequestCloneError e
 toPullRequestCloneError (OtherError e) = PullRequestCloneError e
 toPullRequestCloneError e = e
