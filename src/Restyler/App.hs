@@ -38,6 +38,7 @@ import System.Process
 -- | Application environment
 data App = App
     { appLogLevel :: LogLevel
+    , appLogColor :: Bool
     , appAccessToken :: Text
     , appPullRequest :: PullRequest
     -- ^ The @'PullRequest'@ we are restyling
