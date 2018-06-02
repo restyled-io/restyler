@@ -3,7 +3,9 @@
 .dockerignore
 .git
 .stack-work
+.stack-work-docs
 Dockerfile
 Makefile
+docs
 tags
 test
