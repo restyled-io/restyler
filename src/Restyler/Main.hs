@@ -52,7 +52,7 @@ restylerMain = do
 withTempDirectory :: (FilePath -> IO (Either AppError a)) -> IO a
 withTempDirectory f = do
     result <- tryIO $ withSystemTempDirectory "restyler-" f
-    innerResult <- either (exitWithAppError . OtherError) pure result
+    innerResult <- either (exitWithAppError . SystemError) pure result
     either exitWithAppError pure innerResult
 
 run
