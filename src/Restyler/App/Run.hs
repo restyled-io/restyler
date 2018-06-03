@@ -47,15 +47,22 @@ runApp app = runAppLoggingT app . flip runReaderT app . runAppT
 --
 bootstrapApp :: Options -> FilePath -> ExceptT AppError IO App
 bootstrapApp Options {..} path = runApp app $ do
-    pullRequest <-
-        mapAppError toPullRequestFetchError $ getPullRequest oOwner oRepo $ mkId
-            Proxy
-            oPullRequest
+    pullRequest <- if oFake
+        then pure $ error $ unlines
+            [ "\n\nAborting because --fake was given and you reached a point"
+            , "where an actual PullRequest was needed"
+            ]
+        else do
+            pullRequest <-
+                mapAppError toPullRequestFetchError
+                $ getPullRequest oOwner oRepo
+                $ mkId Proxy oPullRequest
 
-    setupClone pullRequest path
+            setupClone pullRequest path
 
-    let spec = pullRequestSpec pullRequest
-    logInfoN $ "Restyling PR " <> showSpec spec
+            let spec = pullRequestSpec pullRequest
+            logInfoN $ "Restyling PR " <> showSpec spec
+            pure pullRequest
 
     config <- loadConfig
     logDebugN $ "Loaded config: " <> tshow config
