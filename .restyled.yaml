@@ -1,5 +1,11 @@
 ---
-auto: true
+remote_files:
+  # yamllint disable-line rule:line-length
+  - url: https://raw.githubusercontent.com/pbrisbin/dotfiles/master/config/brittany/config.yaml
+    path: brittany.yaml
+  # yamllint disable-line rule:line-length
+  - url: https://raw.githubusercontent.com/pbrisbin/dotfiles/master/stylish-haskell.yaml
+    path: .stylish-haskell.yaml
 restylers:
   - stylish-haskell
   - brittany:
