@@ -152,11 +152,11 @@ instance MonadIO m => MonadSystem (AppT m) where
         appIO SystemError $ Directory.doesFileExist path
 
     setCurrentDirectory path = do
-        logDebugN "setCurrentDirectory"
+        logDebugN $ "setCurrentDirectory: " <> tshow path
         appIO SystemError $ Directory.setCurrentDirectory path
 
     readFile path = do
-        logDebugN "readFile"
+        logDebugN $ "readFile: " <> tshow path
         appIO SystemError $ T.readFile path
 
     exitSuccess = appIO SystemError Exit.exitSuccess
