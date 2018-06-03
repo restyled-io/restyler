@@ -7,8 +7,8 @@ where
 --------------------------------------------------------------------------------
 -- Safe(r) re-exports
 --------------------------------------------------------------------------------
-import Prelude as X
-    hiding ( head
+import Prelude as X hiding
+    ( head
     , init
     , last
     , maximum
