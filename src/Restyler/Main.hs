@@ -14,6 +14,7 @@ import Restyler.App.Run
 import Restyler.Capabilities.Docker
 import Restyler.Capabilities.Git
 import Restyler.Capabilities.GitHub
+import Restyler.Capabilities.RemoteFile
 import Restyler.Capabilities.System
 import Restyler.Model.Comment
 import Restyler.Model.Config
@@ -62,10 +63,13 @@ run
        , MonadGitHub m
        , MonadLogger m
        , MonadReader App m
+       , MonadRemoteFile m
        )
     => m ()
 run = do
     unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
+
+    traverse_ fetchRemoteFile =<< asks (cRemoteFiles . appConfig)
 
     unlessM restyle $ do
         clearRestyledComments
@@ -128,6 +132,8 @@ exitWithAppError = \case
         ["We had trouble communicating with GitHub:", showGitHubError e]
     SystemError e ->
         die $ format ["We had trouble running a system command:", show e]
+    RemoteFileError e ->
+        die $ format ["We had trouble fetching a remote file:", show e]
     OtherError e ->
         die $ format ["We encountered an unexpected exception:", show e]
   where

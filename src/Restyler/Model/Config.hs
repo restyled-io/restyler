@@ -12,6 +12,7 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
+import Restyler.Model.RemoteFile
 import Restyler.Model.Restyler
 import Restyler.Model.StatusesConfig
 
@@ -21,6 +22,8 @@ data Config = Config
     -- ^ Do anything at all?
     , cAuto :: Bool
     -- ^ Just push the restyling, don't comment?
+    , cRemoteFiles :: [RemoteFile]
+    -- ^ Any remote configuration files to fetch before restyling
     , cStatusesConfig :: StatusesConfig
     -- ^ Send PR statuses?
     , cRestylers :: [Restyler]
@@ -36,6 +39,7 @@ instance FromJSON Config where
         -- Use default values if un-specified
         <$> o .:? "enabled" .!= cEnabled defaultConfig
         <*> o .:? "auto" .!= cAuto defaultConfig
+        <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
         <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
         <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
@@ -51,6 +55,7 @@ defaultConfig :: Config
 defaultConfig = Config
     { cEnabled = True
     , cAuto = False
+    , cRemoteFiles = []
     , cStatusesConfig = defaultStatusesConfig
     , cRestylers = defaultRestylers
     }

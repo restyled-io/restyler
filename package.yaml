@@ -14,8 +14,10 @@ library:
   dependencies:
     - Glob
     - aeson
+    - aeson-casing
     - ansi-terminal
     - bytestring
+    - conduit
     - directory
     - envparse
     - errors
@@ -23,6 +25,7 @@ library:
     - filepath
     - github
     - http-client-tls
+    - http-conduit
     - megaparsec
     - monad-logger
     - mtl

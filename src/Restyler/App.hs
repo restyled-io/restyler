@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.App
     (
@@ -19,6 +20,7 @@ where
 
 import Restyler.Prelude
 
+import Conduit (runResourceT, sinkFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import GitHub.Endpoints.Issues.Comments
@@ -26,11 +28,14 @@ import GitHub.Endpoints.PullRequests
 import GitHub.Endpoints.Repos.Statuses
 import GitHub.Request
 import Network.HTTP.Client.TLS
+import Network.HTTP.Simple hiding (Request)
 import Restyler.Capabilities.Docker
 import Restyler.Capabilities.Git
 import Restyler.Capabilities.GitHub
+import Restyler.Capabilities.RemoteFile
 import Restyler.Capabilities.System
 import Restyler.Model.Config
+import Restyler.Model.RemoteFile
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
 import System.Process
@@ -62,6 +67,8 @@ data AppError
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
     -- ^ Trouble reading a file or etc
+    | RemoteFileError IOException
+    -- ^ Trouble performing some HTTP request
     | OtherError IOException
     -- ^ A minor escape hatch for @'IOException'@s
     deriving Show
@@ -165,6 +172,14 @@ instance MonadIO m => MonadDocker (AppT m) where
     dockerRun args = do
         logDebugN $ "docker run " <> tshow args
         appIO DockerError $ callProcess "docker" $ "run" : args
+
+instance MonadIO m => MonadRemoteFile (AppT m) where
+    fetchRemoteFile RemoteFile{..} = do
+        let url = getUrl rfUrl
+        logInfoN $ "Fetching " <> tshow rfPath <> " from " <> tshow url
+        appIO RemoteFileError $ do
+            request <- parseRequest $ unpack url
+            runResourceT $ httpSink request $ \_ -> sinkFile rfPath
 
 -- | Run a GitHub @'Request'@
 runGitHub :: MonadIO m => Request k a -> AppT m a
