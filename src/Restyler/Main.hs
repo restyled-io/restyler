@@ -125,7 +125,7 @@ exitWithAppError = \case
     ConfigurationError msg ->
         die $ format ["We had trouble with your " <> configPath <> ":", msg]
     DockerError e ->
-        die $ format ["We had trouble running a docker command:", show e]
+        die $ format ["The restyler container exited non-zero:", show e]
     GitError e ->
         die $ format ["We had trouble running a git command:", show e]
     GitHubError e -> die $ format
