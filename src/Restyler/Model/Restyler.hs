@@ -152,7 +152,7 @@ allRestylers =
     , Restyler
         { rName = "rubocop"
         , rCommand = "rubocop"
-        , rArguments = ["--auto-correct"]
+        , rArguments = ["--auto-correct", "--fail-level fatal"]
         , rInclude = ["**/*.rb"]
         , rInterpreters = [Ruby]
         , rSupportsArgSep = True
