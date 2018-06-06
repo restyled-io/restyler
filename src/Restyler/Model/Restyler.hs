@@ -66,6 +66,7 @@ defaultRestylers =
     , unsafeNamedRestyler "elm-format"
     , unsafeNamedRestyler "rubocop"
     , unsafeNamedRestyler "rustfmt"
+    , unsafeNamedRestyler "terraform"
     ]
 
 allRestylers :: [Restyler]
@@ -162,6 +163,14 @@ allRestylers =
         , rCommand = "rustfmt"
         , rArguments = []
         , rInclude = ["**/*.rs"]
+        , rInterpreters = []
+        , rSupportsArgSep = True
+        }
+    , Restyler
+        { rName = "terraform"
+        , rCommand = "terraform-fmt-multi"
+        , rArguments = []
+        , rInclude = ["**/*.tf"]
         , rInterpreters = []
         , rSupportsArgSep = True
         }
