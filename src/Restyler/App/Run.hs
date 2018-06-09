@@ -64,20 +64,25 @@ bootstrapApp Options {..} path = runApp app $ do
             logInfoN $ "Restyling PR " <> showSpec spec
             pure pullRequest
 
+    mRestyledPullRequest <- if oFake
+        then pure Nothing
+        else do
+            mRestyledPullRequest <- findPullRequest
+                oOwner
+                oRepo
+                (pullRequestRestyledBase pullRequest)
+                (pullRequestRestyledRef pullRequest)
+            for_ mRestyledPullRequest $ \restyledPullRequest ->
+                logInfoN $ "Existing restyled PR: " <> showSpec PullRequestSpec
+                    { prsOwner = oOwner
+                    , prsRepo = oRepo
+                    , prsPullRequest = simplePullRequestNumber
+                        restyledPullRequest
+                    }
+            pure mRestyledPullRequest
+
     config <- loadConfig
     logDebugN $ "Loaded config: " <> tshow config
-
-    mRestyledPullRequest <- findPullRequest
-        oOwner
-        oRepo
-        (pullRequestRestyledBase pullRequest)
-        (pullRequestRestyledRef pullRequest)
-    for_ mRestyledPullRequest $ \restyledPullRequest ->
-        logInfoN $ "Existing restyled PR: " <> showSpec PullRequestSpec
-            { prsOwner = oOwner
-            , prsRepo = oRepo
-            , prsPullRequest = simplePullRequestNumber restyledPullRequest
-            }
 
     pure app
         { appPullRequest = pullRequest
