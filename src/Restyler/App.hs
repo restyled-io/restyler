@@ -23,6 +23,7 @@ import Restyler.Prelude
 import Conduit (runResourceT, sinkFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified Data.Vector as V
 import GitHub.Endpoints.Issues.Comments
 import GitHub.Endpoints.PullRequests
 import GitHub.Endpoints.Repos.Statuses
@@ -133,6 +134,11 @@ instance MonadIO m => MonadGit (AppT m) where
 
 instance MonadIO m => MonadGitHub (AppT m) where
     getPullRequest owner name num = runGitHub $ pullRequestR owner name num
+
+    findPullRequest owner name base head = do
+        results <- runGitHub $ pullRequestsForR owner name
+            (optionsBase base <> optionsHead head) FetchAll
+        pure $ results V.!? 0
 
     createPullRequest owner name create =
         runGitHub $ createPullRequestR owner name create
