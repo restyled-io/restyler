@@ -50,6 +50,8 @@ data App = App
     -- ^ The @'PullRequest'@ we are restyling
     , appConfig :: Config
     -- ^ Configuration loaded from @.restyled.yaml@
+    , appRestyledPullRequest :: Maybe SimplePullRequest
+    -- ^ Existing restyled @'PullRequest'@ if it exists
     }
 
 -- | All possible application error conditions

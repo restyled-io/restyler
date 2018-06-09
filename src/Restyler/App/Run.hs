@@ -67,7 +67,23 @@ bootstrapApp Options {..} path = runApp app $ do
     config <- loadConfig
     logDebugN $ "Loaded config: " <> tshow config
 
-    pure app { appPullRequest = pullRequest, appConfig = config }
+    mRestyledPullRequest <- findPullRequest
+        oOwner
+        oRepo
+        (pullRequestRestyledBase pullRequest)
+        (pullRequestRestyledRef pullRequest)
+    for_ mRestyledPullRequest $ \restyledPullRequest ->
+        logInfoN $ "Existing restyled PR: " <> showSpec PullRequestSpec
+            { prsOwner = oOwner
+            , prsRepo = oRepo
+            , prsPullRequest = simplePullRequestNumber restyledPullRequest
+            }
+
+    pure app
+        { appPullRequest = pullRequest
+        , appConfig = config
+        , appRestyledPullRequest = mRestyledPullRequest
+        }
   where
     app :: App
     app = App
@@ -76,6 +92,7 @@ bootstrapApp Options {..} path = runApp app $ do
         , appAccessToken = oAccessToken
         , appPullRequest = error "Bootstrap appPullRequest forced"
         , appConfig = error "Bootstrap appConfig forced"
+        , appRestyledPullRequest = Nothing
         }
 
 setupClone
