@@ -14,6 +14,7 @@ module Restyler.Model.PullRequest
     , pullRequestHeadRef
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
+    , pullRequestRestyledBase
     , pullRequestRestyledRef
     )
 where
@@ -73,6 +74,11 @@ pullRequestLocalHeadRef :: PullRequest -> Text
 pullRequestLocalHeadRef pullRequest@PullRequest {..}
     | pullRequestIsFork pullRequest = "pull-" <> tshow pullRequestNumber
     | otherwise = pullRequestCommitRef pullRequestHead
+
+pullRequestRestyledBase :: PullRequest -> Text
+pullRequestRestyledBase pullRequest
+    | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
+    | otherwise = pullRequestHeadRef pullRequest
 
 pullRequestRestyledRef :: PullRequest -> Text
 pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef

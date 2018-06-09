@@ -44,9 +44,7 @@ createRestyledPullRequest = do
                 <> " (Restyled)"
             , createPullRequestBody = ""
             , createPullRequestHead = pullRequestRestyledRef pullRequest
-            , createPullRequestBase = if pullRequestIsFork pullRequest
-                then pullRequestBaseRef pullRequest
-                else pullRequestHeadRef pullRequest
+            , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
 
     pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
