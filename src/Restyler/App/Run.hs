@@ -56,20 +56,7 @@ bootstrapApp Options {..} path = runApp app $ do
 
     mRestyledPullRequest <- if oFake
         then pure Nothing
-        else do
-            mRestyledPullRequest <- findPullRequest
-                oOwner
-                oRepo
-                (pullRequestRestyledBase pullRequest)
-                (pullRequestRestyledRef pullRequest)
-            for_ mRestyledPullRequest $ \restyledPullRequest ->
-                logInfoN $ "Existing restyled PR: " <> showSpec PullRequestSpec
-                    { prsOwner = oOwner
-                    , prsRepo = oRepo
-                    , prsPullRequest = simplePullRequestNumber
-                        restyledPullRequest
-                    }
-            pure mRestyledPullRequest
+        else loadRestyledPullRequest pullRequest
 
     config <- loadConfig
     logDebugN $ "Loaded config: " <> tshow config
@@ -141,7 +128,26 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
             <> untagName (pullRequestRepoName pullRequest)
             <> ".git"
 
---loadRestyledPullRequest
+loadRestyledPullRequest
+    :: (MonadLogger m, MonadGitHub m)
+    => PullRequest
+    -> m (Maybe SimplePullRequest)
+loadRestyledPullRequest pullRequest = do
+    mRestyledPullRequest <- findPullRequest
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        (pullRequestRestyledBase pullRequest)
+        (pullRequestRestyledRef pullRequest)
+
+    for mRestyledPullRequest $ \restyledPullRequest -> do
+        let
+            spec = PullRequestSpec
+                { prsOwner = pullRequestOwnerName pullRequest
+                , prsRepo = pullRequestRepoName pullRequest
+                , prsPullRequest = simplePullRequestNumber restyledPullRequest
+                }
+        logInfoN $ "Existing restyled PR: " <> showSpec spec
+        pure restyledPullRequest
 
 -- | Load @.restyled.yaml@
 loadConfig :: (MonadSystem m, MonadError AppError m) => m Config
