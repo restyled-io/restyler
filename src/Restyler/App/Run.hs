@@ -52,17 +52,7 @@ bootstrapApp Options {..} path = runApp app $ do
             [ "\n\nAborting because --fake was given and you reached a point"
             , "where an actual PullRequest was needed"
             ]
-        else do
-            pullRequest <-
-                mapAppError toPullRequestFetchError
-                $ getPullRequest oOwner oRepo
-                $ mkId Proxy oPullRequest
-
-            setupClone pullRequest path
-
-            let spec = pullRequestSpec pullRequest
-            logInfoN $ "Restyling PR " <> showSpec spec
-            pure pullRequest
+        else setupPullRequest path oOwner oRepo oPullRequest
 
     mRestyledPullRequest <- if oFake
         then pure Nothing
@@ -100,6 +90,31 @@ bootstrapApp Options {..} path = runApp app $ do
         , appRestyledPullRequest = Nothing
         }
 
+setupPullRequest
+    :: ( MonadLogger m
+       , MonadReader App m
+       , MonadGit m
+       , MonadSystem m
+       , MonadGitHub m
+       , MonadError AppError m
+       )
+    => FilePath
+    -> Name Owner
+    -> Name Repo
+    -> Int
+    -> m PullRequest
+setupPullRequest path owner repo num = do
+    pullRequest <-
+        mapAppError toPullRequestFetchError $ getPullRequest owner repo $ mkId
+            Proxy
+            num
+
+    setupClone pullRequest path
+
+    let spec = pullRequestSpec pullRequest
+    logInfoN $ "Restyling PR " <> showSpec spec
+    pure pullRequest
+
 setupClone
     :: (MonadSystem m, MonadError AppError m, MonadGit m, MonadReader App m)
     => PullRequest
@@ -125,6 +140,8 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
             <> "/"
             <> untagName (pullRequestRepoName pullRequest)
             <> ".git"
+
+--loadRestyledPullRequest
 
 -- | Load @.restyled.yaml@
 loadConfig :: (MonadSystem m, MonadError AppError m) => m Config
