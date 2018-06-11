@@ -145,6 +145,9 @@ instance MonadIO m => MonadGitHub (AppT m) where
     createPullRequest owner name create =
         runGitHub $ createPullRequestR owner name create
 
+    updatePullRequest owner name id' edit =
+        runGitHub $ updatePullRequestR owner name id' edit
+
     getComments owner name id' = runGitHub $ commentsR owner name id' FetchAll
 
     createComment owner name id' body = runGitHub_ $ createCommentR

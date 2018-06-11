@@ -5,6 +5,7 @@ module Restyler.Model.PullRequest.Restyled
     ( restyledPullRequestExists
     , createRestyledPullRequest
     , updateRestyledPullRequest
+    , closeRestyledPullRequest
     , updateOriginalPullRequest
     )
 where
@@ -56,6 +57,38 @@ updateRestyledPullRequest = do
     checkoutBranch True rBranch
     commitAll Content.commitMessage
     forcePushOrigin rBranch
+
+-- | Close the Restyled PR, if we know of it
+--
+-- TODO: delete the branch
+--
+closeRestyledPullRequest
+    :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+closeRestyledPullRequest = do
+    -- We have to use the Owner/Repo from the main PR since SimplePullRequest
+    -- doesn't give us much.
+    (pullRequest, mRestyledPr) <- asks
+        (appPullRequest &&& appRestyledPullRequest)
+
+    for_ mRestyledPr $ \restyledPr -> do
+        let spec = PullRequestSpec
+                { prsOwner = pullRequestOwnerName pullRequest
+                , prsRepo = pullRequestRepoName pullRequest
+                , prsPullRequest = simplePullRequestNumber restyledPr
+                }
+        logInfoN $ "Closing restyled PR: " <> showSpec spec
+
+        updatePullRequest
+            (pullRequestOwnerName pullRequest)
+            (pullRequestRepoName pullRequest)
+            (mkId Proxy $ simplePullRequestNumber restyledPr)
+            EditPullRequest
+                { editPullRequestTitle = Nothing
+                , editPullRequestBody = Nothing
+                , editPullRequestState = Just StateClosed
+                , editPullRequestBase = Nothing
+                , editPullRequestMaintainerCanModify = Nothing
+                }
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: (MonadGit m, MonadReader App m) => m ()
