@@ -8,18 +8,9 @@ where
 -- Safe(r) re-exports
 --------------------------------------------------------------------------------
 import Prelude as X hiding
-    ( head
-    , init
-    , last
-    , maximum
-    , minimum
-    , pred
-    , read
-    , readFile
-    , succ
-    , tail
-    )
+    (head, init, last, maximum, minimum, pred, read, readFile, succ, tail)
 
+import Control.Arrow as X ((&&&), (***))
 import Control.Error.Util as X (hush, note)
 import Control.Exception.Safe as X
 import Control.Monad as X

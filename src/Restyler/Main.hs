@@ -73,6 +73,7 @@ run = do
 
     unlessM restyle $ do
         clearRestyledComments
+        closeRestyledPullRequest
         sendPullRequestStatus NoDifferencesStatus
         exitWithInfo "No style differences found"
 
