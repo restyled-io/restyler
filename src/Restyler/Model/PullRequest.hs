@@ -5,9 +5,8 @@
 module Restyler.Model.PullRequest
     ( pullRequestOwnerName
     , pullRequestRepoName
-    , pullRequestRepoURL
+    , pullRequestCloneUrl
     , pullRequestSpec
-    , pullRequestURL
     , pullRequestIssueId
     , pullRequestIsFork
     , pullRequestBaseRef
@@ -30,23 +29,16 @@ pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
 
+pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
+pullRequestCloneUrl pullRequest = fromMaybe (repoUrl repo) $ repoCloneUrl repo
+    where repo = pullRequestRepo pullRequest
+
 pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
 pullRequestSpec pullRequest = PullRequestSpec
     { prsOwner = pullRequestOwnerName pullRequest
     , prsRepo = pullRequestRepoName pullRequest
     , prsPullRequest = pullRequestNumber pullRequest
     }
-
-pullRequestRepoURL :: HasCallStack => PullRequest -> Text
-pullRequestRepoURL pullRequest = "https://github.com/" <> owner <> "/" <> repo
-  where
-    owner = untagName $ pullRequestOwnerName pullRequest
-    repo = untagName $ pullRequestRepoName pullRequest
-
-pullRequestURL :: HasCallStack => PullRequest -> Text
-pullRequestURL pullRequest =
-    pullRequestRepoURL pullRequest <> "/pull/" <> tshow
-        (pullRequestNumber pullRequest)
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
