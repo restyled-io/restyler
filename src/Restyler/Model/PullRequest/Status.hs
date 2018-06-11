@@ -20,7 +20,7 @@ import Restyler.Model.StatusesConfig
 data PullRequestStatus
     = NoDifferencesStatus
     -- ^ We found no differences after restyling
-    | DifferencesStatus PullRequest
+    | DifferencesStatus URL
     -- ^ We found differences and opened a restyled @'PullRequest'@
     | ErrorStatus URL
     -- ^ We encountered an error and can link to a Job
@@ -63,9 +63,9 @@ statusToStatus NoDifferencesStatus = NewStatus
     , newStatusDescription = Just "No differences"
     , newStatusContext = Just "restyled"
     }
-statusToStatus (DifferencesStatus pullRequest) = NewStatus
+statusToStatus (DifferencesStatus url) = NewStatus
     { newStatusState = StatusFailure
-    , newStatusTargetUrl = Just $ URL $ pullRequestURL pullRequest
+    , newStatusTargetUrl = Just url
     , newStatusDescription = Just "Restyling found differences"
     , newStatusContext = Just "restyled"
     }

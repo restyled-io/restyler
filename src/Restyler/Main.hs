@@ -78,6 +78,12 @@ run = do
 
     whenM isAutoPush $ do
         updateOriginalPullRequest
+        traverse_
+                (sendPullRequestStatus
+                . DifferencesStatus
+                . simplePullRequestUrl
+                )
+            =<< asks appRestyledPullRequest
         exitWithInfo "Pushed to original PR"
 
     whenM restyledPullRequestExists $ do
@@ -86,7 +92,7 @@ run = do
 
     restyledPr <- createRestyledPullRequest
     leaveRestyledComment restyledPr
-    sendPullRequestStatus $ DifferencesStatus restyledPr
+    sendPullRequestStatus $ DifferencesStatus $ pullRequestUrl restyledPr
     logInfoN "Restyling successful"
 
 configEnabled :: MonadReader App m => m Bool

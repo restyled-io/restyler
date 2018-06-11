@@ -56,7 +56,7 @@ If you're interested in incorporating the style fixes in this PR, you can do
 that locally with something like:
 
 ```console
-git remote add upstream #{pullRequestRepoURL pullRequest}
+git remote add upstream #{getUrl $ pullRequestCloneUrl pullRequest}
 git fetch upstream pull/#{pullRequestNumber pullRequest}/head
 git merge --ff-only FETCH_HEAD
 git push
