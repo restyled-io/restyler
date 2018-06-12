@@ -21,10 +21,6 @@ whenM :: Monad m => m Bool -> m () -> m ()
 -- | Same for <tt><a>unless</a></tt>
 unlessM :: Monad m => m Bool -> m () -> m ()
 
--- | Like <tt><a>hush</a></tt>, but for <tt><a>MonadError</a> e m</tt>
---   instead of <tt><a>Either</a></tt>
-hushM :: MonadError e m => m a -> m (Maybe a)
-
 -- | <tt><a>Show</a></tt> as <tt><a>Text</a></tt>
 tshow :: Show a => a -> Text
 
@@ -51,6 +47,24 @@ instance GHC.Show.Show Restyler.Model.StatusesConfig.StatusesConfig
 instance GHC.Classes.Eq Restyler.Model.StatusesConfig.StatusesConfig
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.StatusesConfig.StatusesConfig
 
+module Restyler.Model.RemoteFile
+
+-- | A remote (configuration) file, to fetch before restyling
+data RemoteFile
+RemoteFile :: URL -> FilePath -> RemoteFile
+
+-- | Re-using GitHub's URL type
+[rfUrl] :: RemoteFile -> URL
+[rfPath] :: RemoteFile -> FilePath
+instance GHC.Generics.Generic Restyler.Model.RemoteFile.RemoteFile
+instance GHC.Show.Show Restyler.Model.RemoteFile.RemoteFile
+instance GHC.Classes.Eq Restyler.Model.RemoteFile.RemoteFile
+instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.RemoteFile.RemoteFile
+
+module Restyler.Capabilities.RemoteFile
+class MonadRemoteFile m
+fetchRemoteFile :: MonadRemoteFile m => RemoteFile -> m ()
+
 
 -- | String specification of a Repository's Pull Request
 --   
@@ -74,7 +88,7 @@ instance GHC.Classes.Eq Restyler.Model.PullRequestSpec.PullRequestSpec
 
 module Restyler.Options
 data Options
-Options :: Text -> LogLevel -> Bool -> Name Owner -> Name Repo -> Int -> Maybe URL -> Options
+Options :: Text -> LogLevel -> Bool -> Name Owner -> Name Repo -> Int -> Maybe URL -> Bool -> Options
 
 -- | Personal or Installation access token
 [oAccessToken] :: Options -> Text
@@ -84,6 +98,7 @@ Options :: Text -> LogLevel -> Bool -> Name Owner -> Name Repo -> Int -> Maybe U
 [oRepo] :: Options -> Name Repo
 [oPullRequest] :: Options -> Int
 [oJobUrl] :: Options -> Maybe URL
+[oFake] :: Options -> Bool
 
 -- | Parse required environment variables and command-line options
 --   
@@ -93,9 +108,8 @@ parseOptions :: IO Options
 module Restyler.Model.PullRequest
 pullRequestOwnerName :: PullRequest -> Name Owner
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
-pullRequestRepoURL :: HasCallStack => PullRequest -> Text
+pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
 pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
-pullRequestURL :: HasCallStack => PullRequest -> Text
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
@@ -104,6 +118,7 @@ pullRequestBaseRef :: PullRequest -> Text
 pullRequestHeadRef :: PullRequest -> Text
 pullRequestRemoteHeadRef :: PullRequest -> Text
 pullRequestLocalHeadRef :: PullRequest -> Text
+pullRequestRestyledBase :: PullRequest -> Text
 pullRequestRestyledRef :: PullRequest -> Text
 
 module Restyler.Model.Interpreter
@@ -165,7 +180,9 @@ exitSuccess :: MonadSystem m => m a
 module Restyler.Capabilities.GitHub
 class MonadGitHub m
 getPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> m PullRequest
+findPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Text -> Text -> m (Maybe SimplePullRequest)
 createPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> CreatePullRequest -> m PullRequest
+updatePullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> EditPullRequest -> m PullRequest
 getComments :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> m (Vector IssueComment)
 createComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> Text -> m ()
 deleteComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Comment -> m ()
@@ -209,11 +226,6 @@ pushOrigin :: MonadGit m => Text -> m ()
 --   </pre>
 forcePushOrigin :: MonadGit m => Text -> m ()
 
--- | <pre>
---   git log -n 1 --format=%B &lt;branch&gt;
---   </pre>
-branchHeadMessage :: MonadGit m => Text -> m (Maybe Text)
-
 module Restyler.Capabilities.Docker
 class MonadDocker m
 dockerRun :: MonadDocker m => [String] -> m ()
@@ -222,10 +234,13 @@ module Restyler.Model.Restyler
 
 -- | How to run a given restyler
 data Restyler
-Restyler :: String -> String -> [String] -> [Include] -> [Interpreter] -> Bool -> Restyler
+Restyler :: String -> String -> String -> [String] -> [Include] -> [Interpreter] -> Bool -> Bool -> Restyler
 
 -- | Unique name for this restyler, not configurable
 [rName] :: Restyler -> String
+
+-- | Docker image for this restyler, not configurable
+[rImage] :: Restyler -> String
 
 -- | Command to run, usually the name, not configurable
 [rCommand] :: Restyler -> String
@@ -241,6 +256,9 @@ Restyler :: String -> String -> [String] -> [Include] -> [Interpreter] -> Bool -
 
 -- | Can we pass <tt>--</tt> between arguments and paths
 [rSupportsArgSep] :: Restyler -> Bool
+
+-- | Can we pass multiple paths at once
+[rSupportsMultiplePaths] :: Restyler -> Bool
 defaultRestylers :: [Restyler]
 allRestylers :: [Restyler]
 namedRestyler :: MonadPlus m => Text -> m Restyler
@@ -254,13 +272,16 @@ module Restyler.Model.Config
 
 -- | Top-level configuration object
 data Config
-Config :: Bool -> Bool -> StatusesConfig -> [Restyler] -> Config
+Config :: Bool -> Bool -> [RemoteFile] -> StatusesConfig -> [Restyler] -> Config
 
 -- | Do anything at all?
 [cEnabled] :: Config -> Bool
 
 -- | Just push the restyling, don't comment?
 [cAuto] :: Config -> Bool
+
+-- | Any remote configuration files to fetch before restyling
+[cRemoteFiles] :: Config -> [RemoteFile]
 
 -- | Send PR statuses?
 [cStatusesConfig] :: Config -> StatusesConfig
@@ -290,7 +311,7 @@ module Restyler.App
 
 -- | Application environment
 data App
-App :: LogLevel -> Bool -> Text -> PullRequest -> Config -> App
+App :: LogLevel -> Bool -> Text -> PullRequest -> Config -> Maybe SimplePullRequest -> App
 [appLogLevel] :: App -> LogLevel
 [appLogColor] :: App -> Bool
 [appAccessToken] :: App -> Text
@@ -300,6 +321,9 @@ App :: LogLevel -> Bool -> Text -> PullRequest -> Config -> App
 
 -- | Configuration loaded from <tt>.restyled.yaml</tt>
 [appConfig] :: App -> Config
+
+-- | Existing restyled <tt><a>PullRequest</a></tt> if it exists
+[appRestyledPullRequest] :: App -> Maybe SimplePullRequest
 data AppT m a
 runAppT :: AppT m a -> ReaderT App (LoggingT (ExceptT AppError m)) a
 
@@ -327,6 +351,9 @@ GitHubError :: Error -> AppError
 -- | Trouble reading a file or etc
 SystemError :: IOException -> AppError
 
+-- | Trouble performing some HTTP request
+RemoteFileError :: IOException -> AppError
+
 -- | A minor escape hatch for <tt><a>IOException</a></tt>s
 OtherError :: IOException -> AppError
 
@@ -343,6 +370,7 @@ instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.Git.MonadGit 
 instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.GitHub.MonadGitHub (Restyler.App.AppT m)
 instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.System.MonadSystem (Restyler.App.AppT m)
 instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.Docker.MonadDocker (Restyler.App.AppT m)
+instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.RemoteFile.MonadRemoteFile (Restyler.App.AppT m)
 
 module Restyler.Model.PullRequest.Status
 data PullRequestStatus
@@ -351,7 +379,7 @@ data PullRequestStatus
 NoDifferencesStatus :: PullRequestStatus
 
 -- | We found differences and opened a restyled <tt><a>PullRequest</a></tt>
-DifferencesStatus :: PullRequest -> PullRequestStatus
+DifferencesStatus :: URL -> PullRequestStatus
 
 -- | We encountered an error and can link to a Job
 ErrorStatus :: URL -> PullRequestStatus
@@ -367,14 +395,16 @@ sendPullRequestStatus_ :: (MonadGitHub m, MonadError AppError m, MonadLogger m, 
 
 module Restyler.Model.PullRequest.Restyled
 
--- | See if a branch exists with our name and message
-restyledPullRequestExists :: (MonadGit m, MonadReader App m) => m Bool
-
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest :: (MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m) => m PullRequest
 
 -- | Commit and force-push to the (existing) restyled branch
 updateRestyledPullRequest :: (MonadGit m, MonadReader App m) => m ()
+
+-- | Close the Restyled PR, if we know of it
+--   
+--   TODO: delete the branch
+closeRestyledPullRequest :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: (MonadGit m, MonadReader App m) => m ()
