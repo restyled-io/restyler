@@ -26,6 +26,3 @@ class MonadGit m where
 
     -- | @git push --force-with-lease origin \<branch>@
     forcePushOrigin :: Text -> m ()
-
-    -- | @git log -n 1 --format=%B \<branch>@
-    branchHeadMessage :: Text -> m (Maybe Text)

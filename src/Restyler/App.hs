@@ -130,10 +130,6 @@ instance MonadIO m => MonadGit (AppT m) where
         logDebugN $ "git push origin " <> branch
         appIO GitError $ callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
 
-    branchHeadMessage branch = do
-        logDebugN $ "git log -n 1 --format=%B " <> branch
-        strip . pack <$$> hushM (appIO GitError $ readProcess "git" ["log", "-n", "1", "--format=%B", unpack branch] "")
-
 instance MonadIO m => MonadGitHub (AppT m) where
     getPullRequest owner name num = runGitHub $ pullRequestR owner name num
 

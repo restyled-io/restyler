@@ -2,8 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Restyler.Model.PullRequest.Restyled
-    ( restyledPullRequestExists
-    , createRestyledPullRequest
+    ( createRestyledPullRequest
     , updateRestyledPullRequest
     , closeRestyledPullRequest
     , updateOriginalPullRequest
@@ -18,12 +17,6 @@ import Restyler.Capabilities.GitHub
 import qualified Restyler.Content as Content
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequestSpec
-
--- | See if a branch exists with our name and message
-restyledPullRequestExists :: (MonadGit m, MonadReader App m) => m Bool
-restyledPullRequestExists = do
-    rBranch <- asks $ pullRequestRestyledRef . appPullRequest
-    (== Just Content.commitMessage) <$> branchHeadMessage ("origin/" <> rBranch)
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest

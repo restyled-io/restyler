@@ -81,20 +81,17 @@ run = do
         updateOriginalPullRequest
         exitWithInfo "Pushed to original PR"
 
-    -- TODO: incorporate appRestyledPullRequest as this conditional
-    whenM restyledPullRequestExists $ do
-        updateRestyledPullRequest
-        traverse_
-                (sendPullRequestStatus
-                . DifferencesStatus
-                . simplePullRequestUrl
-                )
-            =<< asks appRestyledPullRequest
-        exitWithInfo "Pushed to existing restyled branch"
+    mRestyledPr <- asks appRestyledPullRequest
+    restyledUrl <- case mRestyledPr of
+        Just restyledPr -> do
+            updateRestyledPullRequest
+            pure $ simplePullRequestUrl restyledPr
+        Nothing -> do
+            restyledPr <- createRestyledPullRequest
+            leaveRestyledComment restyledPr
+            pure $ pullRequestUrl restyledPr
 
-    restyledPr <- createRestyledPullRequest
-    leaveRestyledComment restyledPr
-    sendPullRequestStatus $ DifferencesStatus $ pullRequestUrl restyledPr
+    sendPullRequestStatus $ DifferencesStatus restyledUrl
     logInfoN "Restyling successful"
 
 configEnabled :: MonadReader App m => m Bool

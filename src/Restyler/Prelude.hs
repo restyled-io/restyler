@@ -57,10 +57,6 @@ unlessM condition action = do
     result <- condition
     unless result action
 
--- | Like @'hush'@, but for @'MonadError' e m@ instead of @'Either'@
-hushM :: MonadError e m => m a -> m (Maybe a)
-hushM f = fmap Just f `catchError` const (pure Nothing)
-
 -- | @'Show'@ as @'Text'@
 tshow :: Show a => a -> Text
 tshow = T.pack . show
