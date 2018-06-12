@@ -79,16 +79,17 @@ run = do
 
     whenM isAutoPush $ do
         updateOriginalPullRequest
+        exitWithInfo "Pushed to original PR"
+
+    -- TODO: incorporate appRestyledPullRequest as this conditional
+    whenM restyledPullRequestExists $ do
+        updateRestyledPullRequest
         traverse_
                 (sendPullRequestStatus
                 . DifferencesStatus
                 . simplePullRequestUrl
                 )
             =<< asks appRestyledPullRequest
-        exitWithInfo "Pushed to original PR"
-
-    whenM restyledPullRequestExists $ do
-        updateRestyledPullRequest
         exitWithInfo "Pushed to existing restyled branch"
 
     restyledPr <- createRestyledPullRequest
