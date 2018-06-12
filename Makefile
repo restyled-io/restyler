@@ -46,7 +46,7 @@ test.integration: image.build
 	  --env GITHUB_ACCESS_TOKEN \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
-	  "$(LOCAL_IMAGE)" --color=always "restyled-io/demo#1"
+	  "$(LOCAL_IMAGE)" --color=always "restyled-io/restylers#3"
 
 .PHONY: install
 install:
