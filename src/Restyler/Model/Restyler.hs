@@ -37,6 +37,8 @@ data Restyler = Restyler
     -- ^ Interpreters to check for
     , rSupportsArgSep :: Bool
     -- ^ Can we pass @--@ between arguments and paths
+    , rSupportsMultiplePaths :: Bool
+    -- ^ Can we pass multiple paths at once
     }
     deriving (Eq, Show)
 
@@ -51,6 +53,7 @@ instance FromJSON Restyler where
                     <*> o' .:? "include" .!= rInclude
                     <*> o' .:? "interpreters" .!= rInterpreters
                     <*> pure rSupportsArgSep
+                    <*> pure rSupportsMultiplePaths
             ) v'
         _ -> typeMismatch "Name with override object" v
     parseJSON v = typeMismatch "Name or named with override object" v
@@ -78,6 +81,7 @@ allRestylers =
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "prettier"
@@ -86,14 +90,16 @@ allRestylers =
         , rInclude = ["**/*.js", "**/*.jsx"]
         , rInterpreters = []
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "hindent"
-        , rCommand = "hindent-inplace"
+        , rCommand = "hindent"
         , rArguments = []
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
-        , rSupportsArgSep = True
+        , rSupportsArgSep = False
+        , rSupportsMultiplePaths = False
         }
     , Restyler
         { rName = "brittany"
@@ -102,6 +108,7 @@ allRestylers =
         , rInclude = ["**/*.hs"]
         , rInterpreters = []
         , rSupportsArgSep = False
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "shfmt"
@@ -110,6 +117,7 @@ allRestylers =
         , rInclude = ["**/*.sh", "**/*.bash"]
         , rInterpreters = [Sh, Bash]
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "astyle"
@@ -125,6 +133,7 @@ allRestylers =
                      ]
         , rInterpreters = []
         , rSupportsArgSep = False
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "autopep8"
@@ -133,14 +142,16 @@ allRestylers =
         , rInclude = ["**/*.py"]
         , rInterpreters = [Python]
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "php-cs-fixer"
-        , rCommand = "php-cs-fixer-multi"
-        , rArguments = []
+        , rCommand = "php-cs-fixer"
+        , rArguments = ["fix"]
         , rInclude = ["**/*.php"]
         , rInterpreters = []
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = False
         }
     , Restyler
         { rName = "elm-format"
@@ -149,6 +160,7 @@ allRestylers =
         , rInclude = ["**/*.elm"]
         , rInterpreters = []
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "rubocop"
@@ -157,6 +169,7 @@ allRestylers =
         , rInclude = ["**/*.rb"]
         , rInterpreters = [Ruby]
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "rustfmt"
@@ -165,14 +178,16 @@ allRestylers =
         , rInclude = ["**/*.rs"]
         , rInterpreters = []
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = True
         }
     , Restyler
         { rName = "terraform"
-        , rCommand = "terraform-fmt-multi"
-        , rArguments = []
+        , rCommand = "terraform"
+        , rArguments = ["fmt"]
         , rInclude = ["**/*.tf"]
         , rInterpreters = []
         , rSupportsArgSep = True
+        , rSupportsMultiplePaths = False
         }
     ]
 
@@ -196,18 +211,33 @@ runRestylers restylers allPaths = do
     logDebugN $ "Restylers: " <> tshow (map rName restylers)
     logDebugN $ "Paths: " <> tshow existingPaths
 
-    for_ restylers $ \r@Restyler {..} -> do
-        paths <- filterM (shouldInclude r) existingPaths
+    for_ restylers $ \r ->
+        runRestyler cwd r =<< filterM (r `shouldRestyle`) existingPaths
 
-        unless (null paths) $ do
-            logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
-            dockerRun
-                $ runOptions cwd rName rCommand
-                <> rArguments
-                <> pathArguments rSupportsArgSep paths
+-- brittany-disable-next-binding
+runRestyler
+    :: (Monad m, MonadDocker m, MonadLogger m)
+    => FilePath -- ^ Working directory
+    -> Restyler -- ^ Restyler to run
+    -> [FilePath] -- ^ Paths, expected to be pre-filtered
+    -> m ()
+runRestyler _ _ [] = pure ()
+runRestyler cwd Restyler{..} paths
+    | rSupportsMultiplePaths = do
+        logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
+        dockerRun
+            $ runOptions cwd rName rCommand
+            <> rArguments
+            <> pathArguments rSupportsArgSep paths
+    | otherwise = for_ paths $ \path -> do
+        logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
+        dockerRun
+            $ runOptions cwd rName rCommand
+            <> rArguments
+            <> pathArguments rSupportsArgSep [path]
 
-shouldInclude :: (Monad m, MonadSystem m) => Restyler -> FilePath -> m Bool
-shouldInclude Restyler {..} path
+shouldRestyle :: (Monad m, MonadSystem m) => Restyler -> FilePath -> m Bool
+Restyler {..} `shouldRestyle` path
     | includePath rInclude path = pure True
     | otherwise = do
         contents <- readFile path
