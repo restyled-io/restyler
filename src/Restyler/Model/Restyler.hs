@@ -27,6 +27,8 @@ import Restyler.Model.Interpreter
 data Restyler = Restyler
     { rName :: String
     -- ^ Unique name for this restyler, not configurable
+    , rImage :: String
+    -- ^ Docker image for this restyler, not configurable
     , rCommand :: String
     -- ^ Command to run, usually the name, not configurable
     , rArguments :: [String]
@@ -48,7 +50,7 @@ instance FromJSON Restyler where
         [(k, v')] -> withObject "Override object"
             (\o' -> do
                 Restyler{..} <- namedRestyler k
-                Restyler (unpack k) rCommand -- Named + overrides
+                Restyler (unpack k) rImage rCommand -- Named + overrides
                     <$> o' .:? "arguments" .!= rArguments
                     <*> o' .:? "include" .!= rInclude
                     <*> o' .:? "interpreters" .!= rInterpreters
@@ -76,6 +78,7 @@ allRestylers :: [Restyler]
 allRestylers =
     [ Restyler
         { rName = "stylish-haskell"
+        , rImage = "restyled/restyler-stylish-haskell:c0ba83d"
         , rCommand = "stylish-haskell"
         , rArguments = ["--inplace"]
         , rInclude = ["**/*.hs"]
@@ -85,6 +88,7 @@ allRestylers =
         }
     , Restyler
         { rName = "prettier"
+        , rImage = "restyled/restyler-prettier"
         , rCommand = "prettier"
         , rArguments = ["--write"]
         , rInclude = ["**/*.js", "**/*.jsx"]
@@ -94,6 +98,7 @@ allRestylers =
         }
     , Restyler
         { rName = "hindent"
+        , rImage = "restyled/restyler-hindent"
         , rCommand = "hindent"
         , rArguments = []
         , rInclude = ["**/*.hs"]
@@ -103,6 +108,7 @@ allRestylers =
         }
     , Restyler
         { rName = "brittany"
+        , rImage = "restyled/restyler-brittany"
         , rCommand = "brittany"
         , rArguments = ["--write-mode", "inplace"]
         , rInclude = ["**/*.hs"]
@@ -112,6 +118,7 @@ allRestylers =
         }
     , Restyler
         { rName = "shfmt"
+        , rImage = "restyled/restyler-shfmt"
         , rCommand = "shfmt"
         , rArguments = ["-w"]
         , rInclude = ["**/*.sh", "**/*.bash"]
@@ -121,6 +128,7 @@ allRestylers =
         }
     , Restyler
         { rName = "astyle"
+        , rImage = "restyled/restyler-astyle"
         , rCommand = "astyle"
         , rArguments = []
         , rInclude = [ "**/*.c" -- C
@@ -137,6 +145,7 @@ allRestylers =
         }
     , Restyler
         { rName = "autopep8"
+        , rImage = "restyled/restyler-autopep8"
         , rCommand = "autopep8"
         , rArguments = ["--in-place"]
         , rInclude = ["**/*.py"]
@@ -146,6 +155,7 @@ allRestylers =
         }
     , Restyler
         { rName = "php-cs-fixer"
+        , rImage = "restyled/restyler-php-cs-fixer"
         , rCommand = "php-cs-fixer"
         , rArguments = ["fix"]
         , rInclude = ["**/*.php"]
@@ -155,6 +165,7 @@ allRestylers =
         }
     , Restyler
         { rName = "elm-format"
+        , rImage = "restyled/restyler-elm-format"
         , rCommand = "elm-format"
         , rArguments = ["--yes"]
         , rInclude = ["**/*.elm"]
@@ -164,6 +175,7 @@ allRestylers =
         }
     , Restyler
         { rName = "rubocop"
+        , rImage = "restyled/restyler-rubocop"
         , rCommand = "rubocop"
         , rArguments = ["--auto-correct", "--fail-level", "fatal"]
         , rInclude = ["**/*.rb"]
@@ -173,6 +185,7 @@ allRestylers =
         }
     , Restyler
         { rName = "rustfmt"
+        , rImage = "restyled/restyler-rustfmt"
         , rCommand = "rustfmt"
         , rArguments = []
         , rInclude = ["**/*.rs"]
@@ -182,6 +195,7 @@ allRestylers =
         }
     , Restyler
         { rName = "terraform"
+        , rImage = "restyled/restyler-terraform"
         , rCommand = "terraform"
         , rArguments = ["fmt"]
         , rInclude = ["**/*.tf"]
@@ -226,13 +240,13 @@ runRestyler cwd Restyler{..} paths
     | rSupportsMultiplePaths = do
         logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
         dockerRun
-            $ runOptions cwd rName rCommand
+            $ runOptions cwd rImage rCommand
             <> rArguments
             <> pathArguments rSupportsArgSep paths
     | otherwise = for_ paths $ \path -> do
         logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
         dockerRun
-            $ runOptions cwd rName rCommand
+            $ runOptions cwd rImage rCommand
             <> rArguments
             <> pathArguments rSupportsArgSep [path]
 
@@ -255,8 +269,8 @@ prependIfRelative path
 
 -- brittany-disable-next-binding
 runOptions :: FilePath -> String -> String -> [String]
-runOptions dir name command =
+runOptions dir image command =
     [ "--rm", "--net", "none"
     , "--volume", dir <> ":/code"
-    , "restyled/restyler-" <> name, command
+    , image, command
     ]
