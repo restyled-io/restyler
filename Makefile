@@ -4,6 +4,8 @@ RELEASE_IMAGE ?= $(LOCAL_IMAGE)
 DOCKER_USERNAME ?= x
 DOCKER_PASSWORD ?= x
 
+INTEGRATION_PULL_REQUEST ?= restyled-io/restylers#3
+
 all: setup build lint test
 
 release: clean build lint test image.build image.release
@@ -46,7 +48,7 @@ test.integration: image.build
 	  --env GITHUB_ACCESS_TOKEN \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
-	  "$(LOCAL_IMAGE)" --color=always "restyled-io/restylers#3"
+	  "$(LOCAL_IMAGE)" --color=always "$(INTEGRATION_PULL_REQUEST)"
 
 .PHONY: install
 install:
