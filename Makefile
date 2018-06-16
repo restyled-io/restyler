@@ -4,7 +4,7 @@ RELEASE_IMAGE ?= $(LOCAL_IMAGE)
 DOCKER_USERNAME ?= x
 DOCKER_PASSWORD ?= x
 
-INTEGRATION_PULL_REQUEST ?= restyled-io/restylers#3
+INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#3
 
 all: setup build lint test
 
