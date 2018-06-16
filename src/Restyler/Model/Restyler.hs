@@ -26,8 +26,13 @@ data Restyler = Restyler
     -- ^ Unique name for this restyler, not configurable
     , rImage :: String
     -- ^ Docker image for this restyler, not configurable
-    , rCommand :: String
+    , rCommand :: [String]
     -- ^ Command to run, usually the name, not configurable
+    --
+    -- If there are arguments that are __always__ required, such as a
+    -- sub-command or an inplace flag, they should be present here. This is to
+    -- avoid users accidentally overriding them out and being confused.
+    --
     , rArguments :: [String]
     -- ^ Arguments to pass before the paths
     , rInclude :: [Include]
@@ -101,11 +106,11 @@ allRestylers :: [Restyler]
 allRestylers =
     [ (baseRestyler "stylish-haskell")
         { rImage = "restyled/restyler-stylish-haskell:c0ba83d"
-        , rArguments = ["--inplace"]
+        , rCommand = ["stylish-haskell", "--inplace"]
         , rInclude = ["**/*.hs"]
         }
     , (baseRestyler "prettier")
-        { rArguments = ["--write"]
+        { rCommand = ["prettier", "--write"]
         , rInclude = ["**/*.js", "**/*.jsx"]
         }
     , (baseRestyler "hindent")
@@ -114,12 +119,12 @@ allRestylers =
         , rSupportsMultiplePaths = False
         }
     , (baseRestyler "brittany")
-        { rArguments = ["--write-mode", "inplace"]
+        { rCommand = ["brittany", "--write-mode", "inplace"]
         , rInclude = ["**/*.hs"]
         , rSupportsArgSep = False
         }
     , (baseRestyler "shfmt")
-        { rArguments = ["-w"]
+        { rCommand = ["shfmt", "-w"]
         , rInclude = ["**/*.sh", "**/*.bash"]
         , rInterpreters = [Sh, Bash]
         }
@@ -136,27 +141,30 @@ allRestylers =
         , rSupportsArgSep = False
         }
     , (baseRestyler "autopep8")
-        { rArguments = ["--in-place"]
+        { rCommand = ["autopep8", "--in-place"]
         , rInclude = ["**/*.py"]
         , rInterpreters = [Python]
         }
     , (baseRestyler "php-cs-fixer")
-        { rArguments = ["fix"]
+        { rCommand = ["php-cs-fixer", "fix"]
         , rInclude = ["**/*.php"]
         , rSupportsMultiplePaths = False
         }
     , (baseRestyler "elm-format")
-        { rArguments = ["--yes"]
+        { rCommand = ["elm-format", "--yes"]
         , rInclude = ["**/*.elm"]
         }
     , (baseRestyler "rubocop")
-        { rArguments = ["--auto-correct", "--fail-level", "fatal"]
+        -- required to operate correctly
+        { rCommand = ["rubocop", "--auto-correct"]
+        -- almost certainly desired, but not necessarily
+        , rArguments = ["--fail-level", "fatal"]
         , rInclude = ["**/*.rb"]
         , rInterpreters = [Ruby]
         }
     , (baseRestyler "rustfmt") { rInclude = ["**/*.rs"] }
     , (baseRestyler "terraform")
-        { rArguments = ["fmt"]
+        { rCommand = ["terraform", "fmt"]
         , rInclude = ["**/*.tf"]
         , rSupportsMultiplePaths = False
         }
@@ -174,7 +182,7 @@ baseRestyler :: String -> Restyler
 baseRestyler name = Restyler
     { rName = name
     , rImage = "restyled/restyler-" <> name
-    , rCommand = name
+    , rCommand = [name]
     , rArguments = []
     , rInclude = ["**/*"]
     , rInterpreters = []

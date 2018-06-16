@@ -7,6 +7,7 @@ module Restyler.Model.Restyler.Run
 
 import Restyler.Prelude
 
+import Data.List (nub)
 import Restyler.Capabilities.Docker
 import Restyler.Capabilities.System
 import Restyler.Model.Include
@@ -61,14 +62,7 @@ dockerRunRestyler Restyler {..} paths = do
     cwd <- getCurrentDirectory
 
     dockerRun
-        $ [ "--rm"
-          , "--net"
-          , "none"
-          , "--volume"
-          , cwd <> ":/code"
-          , rImage
-          , rCommand
-          ]
-        <> rArguments
+        $ ["--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
+        <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]
         <> map ("./" <>) paths
