@@ -17,12 +17,18 @@ import Restyler.Capabilities.GitHub
 import qualified Restyler.Content as Content
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequestSpec
+import Restyler.Model.Restyler
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest
     :: (MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m)
-    => m PullRequest
-createRestyledPullRequest = do
+    => [Restyler]
+    -- ^ Restylers that ran to produce this diff
+    --
+    -- Currently ignored. This will be used in the PR body soon.
+    --
+    -> m PullRequest
+createRestyledPullRequest _restylers = do
     pullRequest <- asks appPullRequest
     let rBranch = pullRequestRestyledRef pullRequest
 
@@ -64,7 +70,8 @@ closeRestyledPullRequest = do
         (appPullRequest &&& appRestyledPullRequest)
 
     for_ mRestyledPr $ \restyledPr -> do
-        let spec = PullRequestSpec
+        let
+            spec = PullRequestSpec
                 { prsOwner = pullRequestOwnerName pullRequest
                 , prsRepo = pullRequestRepoName pullRequest
                 , prsPullRequest = simplePullRequestNumber restyledPr

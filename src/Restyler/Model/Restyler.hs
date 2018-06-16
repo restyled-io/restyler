@@ -7,19 +7,13 @@ module Restyler.Model.Restyler
     , allRestylers
     , namedRestyler
     , unsafeNamedRestyler
-
-    -- * Running
-    , runRestylers
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.HashMap.Lazy as HM
-import Restyler.Capabilities.Docker
-import Restyler.Capabilities.System
 import Restyler.Model.Include
 import Restyler.Model.Interpreter
 
@@ -212,65 +206,3 @@ namedRestyler name = case find ((== name) . pack . rName) allRestylers of
 
 unsafeNamedRestyler :: Text -> Restyler
 unsafeNamedRestyler = either error id . namedRestyler
-
-runRestylers
-    :: (Monad m, MonadSystem m, MonadDocker m, MonadLogger m)
-    => [Restyler]
-    -> [FilePath]
-    -> m ()
-runRestylers restylers allPaths = do
-    cwd <- getCurrentDirectory
-    existingPaths <- filterM doesFileExist allPaths
-
-    logDebugN $ "Restylers: " <> tshow (map rName restylers)
-    logDebugN $ "Paths: " <> tshow existingPaths
-
-    for_ restylers $ \r ->
-        runRestyler cwd r =<< filterM (r `shouldRestyle`) existingPaths
-
--- brittany-disable-next-binding
-runRestyler
-    :: (Monad m, MonadDocker m, MonadLogger m)
-    => FilePath -- ^ Working directory
-    -> Restyler -- ^ Restyler to run
-    -> [FilePath] -- ^ Paths, expected to be pre-filtered
-    -> m ()
-runRestyler _ _ [] = pure ()
-runRestyler cwd Restyler{..} paths
-    | rSupportsMultiplePaths = do
-        logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
-        dockerRun
-            $ runOptions cwd rImage rCommand
-            <> rArguments
-            <> pathArguments rSupportsArgSep paths
-    | otherwise = for_ paths $ \path -> do
-        logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
-        dockerRun
-            $ runOptions cwd rImage rCommand
-            <> rArguments
-            <> pathArguments rSupportsArgSep [path]
-
-shouldRestyle :: (Monad m, MonadSystem m) => Restyler -> FilePath -> m Bool
-Restyler {..} `shouldRestyle` path
-    | includePath rInclude path = pure True
-    | otherwise = do
-        contents <- readFile path
-        pure $ any (contents `hasInterpreter`) rInterpreters
-
-pathArguments :: Bool -> [FilePath] -> [String]
-pathArguments True = ("--" :) . map prependIfRelative
-pathArguments False = map prependIfRelative
-
--- | Some Restylers won't assume @foo@ means @.\/foo@, unless told
-prependIfRelative :: FilePath -> FilePath
-prependIfRelative path
-    | any (`isPrefixOf` path) ["/", "./", "../"] = path
-    | otherwise = "./" <> path
-
--- brittany-disable-next-binding
-runOptions :: FilePath -> String -> String -> [String]
-runOptions dir image command =
-    [ "--rm", "--net", "none"
-    , "--volume", dir <> ":/code"
-    , image, command
-    ]

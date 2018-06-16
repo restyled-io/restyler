@@ -21,11 +21,20 @@ import Restyler.Model.Config
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequest.Restyled
 import Restyler.Model.PullRequest.Status
-import Restyler.Model.Restyler (runRestylers)
+import Restyler.Model.Restyler
+import Restyler.Model.Restyler.Run
 import Restyler.Options
 import System.Exit (die)
 import System.IO (BufferMode(..), hSetBuffering, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
+
+data RestyleResult = RestyleResult
+    { rrRestylersRan :: [Restyler]
+    , rrChangedPaths :: [FilePath]
+    }
+
+wasRestyled :: RestyleResult -> Bool
+wasRestyled = not . null . rrChangedPaths
 
 -- | The main entrypoint for the restyler CLI
 --
@@ -71,7 +80,8 @@ run = do
 
     traverse_ fetchRemoteFile =<< asks (cRemoteFiles . appConfig)
 
-    unlessM restyle $ do
+    result <- restyle
+    unless (wasRestyled result) $ do
         clearRestyledComments
         closeRestyledPullRequest
         sendPullRequestStatus NoDifferencesStatus
@@ -87,7 +97,7 @@ run = do
             updateRestyledPullRequest
             pure $ simplePullRequestUrl restyledPr
         Nothing -> do
-            restyledPr <- createRestyledPullRequest
+            restyledPr <- createRestyledPullRequest $ rrRestylersRan result
             leaveRestyledComment restyledPr
             pure $ pullRequestUrl restyledPr
 
@@ -104,13 +114,15 @@ restyle
        , MonadLogger m
        , MonadReader App m
        )
-    => m Bool
+    => m RestyleResult
 restyle = do
     config <- asks appConfig
     pullRequest <- asks appPullRequest
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
-    runRestylers (cRestylers config) pullRequestPaths
-    not . null <$> changedPaths (pullRequestLocalHeadRef pullRequest)
+
+    RestyleResult
+        <$> runRestylers (cRestylers config) pullRequestPaths
+        <*> changedPaths (pullRequestLocalHeadRef pullRequest)
 
 isAutoPush :: MonadReader App m => m Bool
 isAutoPush = do
@@ -127,8 +139,11 @@ exitWithAppError = \case
     PullRequestCloneError e ->
         die $ format
             ["We had trouble cloning your Pull Request branch:" <> show e]
-    ConfigurationError msg ->
-        die $ format ["We had trouble with your " <> configPath <> ":", msg]
+    ConfigurationError msg -> die $ format
+        [ "We had trouble with your " <> configPath <> ":"
+        , msg
+        , "Please see https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
+        ]
     DockerError e ->
         die $ format ["The restyler container exited non-zero:", show e]
     GitError e ->
