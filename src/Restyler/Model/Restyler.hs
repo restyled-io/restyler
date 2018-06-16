@@ -54,6 +54,21 @@ instance FromJSON Restyler where
         _ -> typeMismatch "Name with override object" v
     parseJSON v = typeMismatch "Name or named with override object" v
 
+instance ToJSON Restyler where
+    toJSON Restyler{..} = object
+        [ pack rName .= object
+            [ "arguments" .= rArguments
+            , "include" .= rInclude
+            , "interpreters" .= rInterpreters
+            , "internal" .= object
+                [ "image" .= rImage
+                , "command" .= rCommand
+                , "supports_arg_sep" .= rSupportsArgSep
+                , "supports_multiple_paths" .= rSupportsMultiplePaths
+                ]
+            ]
+        ]
+
 defaultRestylers :: [Restyler]
 defaultRestylers =
     [ unsafeNamedRestyler "stylish-haskell"

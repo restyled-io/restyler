@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Restyler.Model.Config
@@ -10,8 +11,10 @@ where
 import Restyler.Prelude
 
 import Data.Aeson
+import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
+import GHC.Generics
 import Restyler.Model.RemoteFile
 import Restyler.Model.Restyler
 import Restyler.Model.StatusesConfig
@@ -29,7 +32,7 @@ data Config = Config
     , cRestylers :: [Restyler]
     -- ^ What restylers to run
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
 
 instance FromJSON Config where
     parseJSON (Array v) = do
@@ -43,6 +46,10 @@ instance FromJSON Config where
         <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
         <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
+
+instance ToJSON Config where
+    toJSON = genericToJSON $ aesonPrefix snakeCase
+    toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 -- | Default configuration
 --

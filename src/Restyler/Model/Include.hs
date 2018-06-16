@@ -10,7 +10,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.String (IsString(..))
-import System.FilePath.Glob (Pattern, compile, match)
+import System.FilePath.Glob (Pattern, compile, decompile, match)
 
 data Include
     = Include Pattern
@@ -21,6 +21,10 @@ data Include
 
 instance FromJSON Include where
     parseJSON = withText "Include pattern" $ pure . fromString . unpack
+
+instance ToJSON Include where
+    toJSON (Include p) = toJSON $ pack $ decompile p
+    toJSON (Negated p) = toJSON $ "!" <> pack (decompile p)
 
 instance IsString Include where
     fromString ('!':rest) = Negated $ compile rest

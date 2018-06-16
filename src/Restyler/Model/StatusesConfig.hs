@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -10,8 +11,10 @@ where
 import Restyler.Prelude
 
 import Data.Aeson
+import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Aeson.Types as Aeson
+import GHC.Generics
 
 -- | Configuration for sending PR statuses
 data StatusesConfig = StatusesConfig
@@ -22,7 +25,7 @@ data StatusesConfig = StatusesConfig
     , scError :: Bool
     -- ^ Send a failure status when there were errors
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
 
 instance FromJSON StatusesConfig where
     parseJSON (Object o) = StatusesConfig
@@ -37,6 +40,12 @@ instance FromJSON StatusesConfig where
         , scError = b
         }
     parseJSON x = typeMismatch "Boolean or Statuses Configuration" x
+
+instance ToJSON StatusesConfig where
+    -- N.B. this is incorrect because I stupidly made this one kebab-case, but
+    -- we only use this instance for DEBUG printing, so it's fine for now.
+    toJSON = genericToJSON $ aesonPrefix snakeCase
+    toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 defaultStatusesConfig :: StatusesConfig
 defaultStatusesConfig = StatusesConfig

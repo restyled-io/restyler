@@ -24,6 +24,10 @@ instance FromJSON Interpreter where
     parseJSON = withText "Interpreter"
         $ either fail pure . readInterpreter . unpack
 
+instance ToJSON Interpreter where
+    -- N.B. this may not always work, but it works for now
+    toJSON = toJSON . T.toLower . tshow
+
 -- | Does that path start with a /shebang/ for the given @'Interpreter'@
 hasInterpreter :: Text -> Interpreter -> Bool
 contents `hasInterpreter` interpreter = fromMaybe False $ do

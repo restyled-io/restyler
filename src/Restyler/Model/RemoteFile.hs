@@ -19,3 +19,7 @@ data RemoteFile = RemoteFile
 
 instance FromJSON RemoteFile where
     parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+instance ToJSON RemoteFile where
+    toJSON = genericToJSON $ aesonPrefix snakeCase
+    toEncoding = genericToEncoding $ aesonPrefix snakeCase

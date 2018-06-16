@@ -59,7 +59,7 @@ bootstrapApp Options {..} path = runApp app $ do
         else loadRestyledPullRequest pullRequest
 
     config <- loadConfig
-    logDebugN $ "Loaded config: " <> tshow config
+    logDebugN $ "Parsed configuration:\n" <> decodeUtf8 (Yaml.encode config)
 
     pure app
         { appPullRequest = pullRequest
