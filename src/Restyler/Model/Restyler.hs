@@ -99,131 +99,65 @@ defaultRestylers =
 
 allRestylers :: [Restyler]
 allRestylers =
-    [ Restyler
-        { rName = "stylish-haskell"
-        , rImage = "restyled/restyler-stylish-haskell:c0ba83d"
-        , rCommand = "stylish-haskell"
+    [ (baseRestyler "stylish-haskell")
+        { rImage = "restyled/restyler-stylish-haskell:c0ba83d"
         , rArguments = ["--inplace"]
         , rInclude = ["**/*.hs"]
-        , rInterpreters = []
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "prettier"
-        , rImage = "restyled/restyler-prettier"
-        , rCommand = "prettier"
-        , rArguments = ["--write"]
+    , (baseRestyler "prettier")
+        { rArguments = ["--write"]
         , rInclude = ["**/*.js", "**/*.jsx"]
-        , rInterpreters = []
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "hindent"
-        , rImage = "restyled/restyler-hindent"
-        , rCommand = "hindent"
-        , rArguments = []
-        , rInclude = ["**/*.hs"]
-        , rInterpreters = []
+    , (baseRestyler "hindent")
+        { rInclude = ["**/*.hs"]
         , rSupportsArgSep = False
         , rSupportsMultiplePaths = False
         }
-    , Restyler
-        { rName = "brittany"
-        , rImage = "restyled/restyler-brittany"
-        , rCommand = "brittany"
-        , rArguments = ["--write-mode", "inplace"]
+    , (baseRestyler "brittany")
+        { rArguments = ["--write-mode", "inplace"]
         , rInclude = ["**/*.hs"]
-        , rInterpreters = []
         , rSupportsArgSep = False
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "shfmt"
-        , rImage = "restyled/restyler-shfmt"
-        , rCommand = "shfmt"
-        , rArguments = ["-w"]
+    , (baseRestyler "shfmt")
+        { rArguments = ["-w"]
         , rInclude = ["**/*.sh", "**/*.bash"]
         , rInterpreters = [Sh, Bash]
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "astyle"
-        , rImage = "restyled/restyler-astyle"
-        , rCommand = "astyle"
-        , rArguments = []
-        , rInclude = [ "**/*.c" -- C
-                     , "**/*.cpp" -- C++
-                     , "**/*.cs" -- C#
-                     , "**/*.h" -- C/C++/C#/Objective-C
-                     , "**/*.java" -- Java
-                     , "**/*.m" -- Objective-C
-                     , "**/*.mm" -- Objective-C++
-                     ]
-        , rInterpreters = []
+    , (baseRestyler "astyle")
+        { rInclude =
+            [ "**/*.c" -- C
+            , "**/*.cpp" -- C++
+            , "**/*.cs" -- C#
+            , "**/*.h" -- C/C++/C#/Objective-C
+            , "**/*.java" -- Java
+            , "**/*.m" -- Objective-C
+            , "**/*.mm" -- Objective-C++
+            ]
         , rSupportsArgSep = False
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "autopep8"
-        , rImage = "restyled/restyler-autopep8"
-        , rCommand = "autopep8"
-        , rArguments = ["--in-place"]
+    , (baseRestyler "autopep8")
+        { rArguments = ["--in-place"]
         , rInclude = ["**/*.py"]
         , rInterpreters = [Python]
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "php-cs-fixer"
-        , rImage = "restyled/restyler-php-cs-fixer"
-        , rCommand = "php-cs-fixer"
-        , rArguments = ["fix"]
+    , (baseRestyler "php-cs-fixer")
+        { rArguments = ["fix"]
         , rInclude = ["**/*.php"]
-        , rInterpreters = []
-        , rSupportsArgSep = True
         , rSupportsMultiplePaths = False
         }
-    , Restyler
-        { rName = "elm-format"
-        , rImage = "restyled/restyler-elm-format"
-        , rCommand = "elm-format"
-        , rArguments = ["--yes"]
+    , (baseRestyler "elm-format")
+        { rArguments = ["--yes"]
         , rInclude = ["**/*.elm"]
-        , rInterpreters = []
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "rubocop"
-        , rImage = "restyled/restyler-rubocop"
-        , rCommand = "rubocop"
-        , rArguments = ["--auto-correct", "--fail-level", "fatal"]
+    , (baseRestyler "rubocop")
+        { rArguments = ["--auto-correct", "--fail-level", "fatal"]
         , rInclude = ["**/*.rb"]
         , rInterpreters = [Ruby]
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
         }
-    , Restyler
-        { rName = "rustfmt"
-        , rImage = "restyled/restyler-rustfmt"
-        , rCommand = "rustfmt"
-        , rArguments = []
-        , rInclude = ["**/*.rs"]
-        , rInterpreters = []
-        , rSupportsArgSep = True
-        , rSupportsMultiplePaths = True
-        }
-    , Restyler
-        { rName = "terraform"
-        , rImage = "restyled/restyler-terraform"
-        , rCommand = "terraform"
-        , rArguments = ["fmt"]
+    , (baseRestyler "rustfmt") { rInclude = ["**/*.rs"] }
+    , (baseRestyler "terraform")
+        { rArguments = ["fmt"]
         , rInclude = ["**/*.tf"]
-        , rInterpreters = []
-        , rSupportsArgSep = True
         , rSupportsMultiplePaths = False
         }
     ]
@@ -235,3 +169,15 @@ namedRestyler name = case find ((== name) . pack . rName) allRestylers of
 
 unsafeNamedRestyler :: Text -> Restyler
 unsafeNamedRestyler = either error id . namedRestyler
+
+baseRestyler :: String -> Restyler
+baseRestyler name = Restyler
+    { rName = name
+    , rImage = "restyled/restyler-" <> name
+    , rCommand = name
+    , rArguments = []
+    , rInclude = ["**/*"]
+    , rInterpreters = []
+    , rSupportsArgSep = True
+    , rSupportsMultiplePaths = True
+    }
