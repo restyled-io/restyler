@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -12,8 +13,10 @@ module Restyler.Model.Restyler
 import Restyler.Prelude
 
 import Data.Aeson
+import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.HashMap.Lazy as HM
+import GHC.Generics
 import Restyler.Model.Include
 import Restyler.Model.Interpreter
 
@@ -38,19 +41,30 @@ data Restyler = Restyler
     }
     deriving (Eq, Show)
 
+-- | Only those attributes that are settable in user configuration
+data RestylerOverrides = RestylerOverrides
+    { roArguments :: Maybe [String]
+    , roInclude :: Maybe [Include]
+    , roInterpreters :: Maybe [Interpreter]
+    }
+    deriving (Generic)
+
+instance FromJSON RestylerOverrides where
+    parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+fromRestylerOverrides :: MonadPlus m => Text -> RestylerOverrides -> m Restyler
+fromRestylerOverrides name RestylerOverrides {..} = do
+    restyler <- namedRestyler name
+    pure restyler
+        { rArguments = fromMaybe (rArguments restyler) roArguments
+        , rInclude = fromMaybe (rInclude restyler) roInclude
+        , rInterpreters = fromMaybe (rInterpreters restyler) roInterpreters
+        }
+
 instance FromJSON Restyler where
     parseJSON (String t) = namedRestyler t
     parseJSON v@(Object o) = case HM.toList o of
-        [(k, v')] -> withObject "Override object"
-            (\o' -> do
-                Restyler{..} <- namedRestyler k
-                Restyler (unpack k) rImage rCommand -- Named + overrides
-                    <$> o' .:? "arguments" .!= rArguments
-                    <*> o' .:? "include" .!= rInclude
-                    <*> o' .:? "interpreters" .!= rInterpreters
-                    <*> pure rSupportsArgSep
-                    <*> pure rSupportsMultiplePaths
-            ) v'
+        [(k, v')] -> fromRestylerOverrides k =<< parseJSON v'
         _ -> typeMismatch "Name with override object" v
     parseJSON v = typeMismatch "Name or named with override object" v
 
