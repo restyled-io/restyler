@@ -29,8 +29,10 @@ pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
 
 pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
-pullRequestCloneUrl pullRequest = fromMaybe (repoUrl repo) $ repoCloneUrl repo
-    where repo = pullRequestRepo pullRequest
+pullRequestCloneUrl =
+    fromJustNote "Pull Request without clone URL"
+        . repoCloneUrl
+        . pullRequestRepo
 
 pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
 pullRequestSpec pullRequest = PullRequestSpec
