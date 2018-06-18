@@ -66,7 +66,8 @@ withTempDirectory f = do
     either exitWithAppError pure innerResult
 
 run
-    :: ( MonadSystem m
+    :: ( HasCallStack
+       , MonadSystem m
        , MonadDocker m
        , MonadGit m
        , MonadGitHub m

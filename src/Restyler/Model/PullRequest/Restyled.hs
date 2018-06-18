@@ -21,7 +21,12 @@ import Restyler.Model.Restyler
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest
-    :: (MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m)
+    :: ( HasCallStack
+       , MonadGit m
+       , MonadGitHub m
+       , MonadLogger m
+       , MonadReader App m
+       )
     => [Restyler]
     -- ^ Restylers that ran to produce this diff
     --

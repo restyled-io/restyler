@@ -38,7 +38,7 @@ Thanks,
 |]
 
 -- | The more complicated comment to leave when we restyled PRs from forks
-commentBodyFork :: PullRequest -> Text
+commentBodyFork :: HasCallStack => PullRequest -> Text
 commentBodyFork pullRequest = [st|
 Hi there!
 

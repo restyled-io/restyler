@@ -45,7 +45,7 @@ runApp app = runAppLoggingT app . flip runReaderT app . runAppT
 -- @'appConfig'@, they will fail. So it's important those actions aren't
 -- refactored away from this module, where that assumption is less obvious.
 --
-bootstrapApp :: Options -> FilePath -> ExceptT AppError IO App
+bootstrapApp :: HasCallStack => Options -> FilePath -> ExceptT AppError IO App
 bootstrapApp Options {..} path = runApp app $ do
     pullRequest <- if oFake
         then pure $ error $ unlines
@@ -78,7 +78,8 @@ bootstrapApp Options {..} path = runApp app $ do
         }
 
 setupPullRequest
-    :: ( MonadLogger m
+    :: ( HasCallStack
+       , MonadLogger m
        , MonadReader App m
        , MonadGit m
        , MonadSystem m
@@ -103,7 +104,12 @@ setupPullRequest path owner repo num = do
     pure pullRequest
 
 setupClone
-    :: (MonadSystem m, MonadError AppError m, MonadGit m, MonadReader App m)
+    :: ( HasCallStack
+       , MonadSystem m
+       , MonadError AppError m
+       , MonadGit m
+       , MonadReader App m
+       )
     => PullRequest
     -> FilePath
     -> m ()
@@ -129,7 +135,7 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
             <> ".git"
 
 loadRestyledPullRequest
-    :: (MonadLogger m, MonadGitHub m)
+    :: (HasCallStack, MonadLogger m, MonadGitHub m)
     => PullRequest
     -> m (Maybe SimplePullRequest)
 loadRestyledPullRequest pullRequest = do

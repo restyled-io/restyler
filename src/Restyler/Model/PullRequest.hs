@@ -20,7 +20,6 @@ where
 
 import Restyler.Prelude
 
-import GHC.Stack
 import Restyler.Model.PullRequestSpec
 
 pullRequestOwnerName :: PullRequest -> Name Owner

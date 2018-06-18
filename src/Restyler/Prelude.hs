@@ -30,6 +30,8 @@ import Data.Text.Encoding as X
 import Data.Traversable as X
 import Data.Vector as X (Vector)
 import Data.Void as X
+import GHC.Generics as X
+import GHC.Stack as X
 import GitHub.Data as X hiding (command)
 import Safe as X
 

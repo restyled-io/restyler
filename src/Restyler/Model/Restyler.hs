@@ -16,7 +16,6 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.HashMap.Lazy as HM
-import GHC.Generics
 import Restyler.Model.Include
 import Restyler.Model.Interpreter
 

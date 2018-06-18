@@ -8,7 +8,6 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import GHC.Generics
 
 -- | A remote (configuration) file, to fetch before restyling
 data RemoteFile = RemoteFile

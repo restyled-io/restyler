@@ -18,7 +18,7 @@ import Restyler.Model.PullRequest
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
 leaveRestyledComment
-    :: (MonadGitHub m, MonadReader App m) => PullRequest -> m ()
+    :: (HasCallStack, MonadGitHub m, MonadReader App m) => PullRequest -> m ()
 leaveRestyledComment restyledPr = do
     pullRequest <- asks appPullRequest
 
@@ -35,7 +35,7 @@ leaveRestyledComment restyledPr = do
 
 -- | Locate any comments left by us on the origin PR and delete them
 clearRestyledComments
-    :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+    :: (HasCallStack, MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
 clearRestyledComments = do
     pullRequest <- asks appPullRequest
 

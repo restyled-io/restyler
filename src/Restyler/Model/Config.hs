@@ -14,7 +14,6 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
-import GHC.Generics
 import Restyler.Model.RemoteFile
 import Restyler.Model.Restyler
 import Restyler.Model.StatusesConfig
