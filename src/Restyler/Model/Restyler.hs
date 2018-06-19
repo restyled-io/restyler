@@ -123,7 +123,8 @@ allRestylers =
         , rSupportsArgSep = False
         }
     , (baseRestyler "shfmt")
-        { rCommand = ["shfmt", "-w"]
+        { rImage = "restyled/restyler-shfmt:95f0cfe"
+        , rCommand = ["shfmt", "-w"]
         , rInclude = ["**/*.sh", "**/*.bash"]
         , rInterpreters = [Sh, Bash]
         }
