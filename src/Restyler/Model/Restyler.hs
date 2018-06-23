@@ -134,7 +134,7 @@ allRestylers =
             , "**/*.cpp" -- C++
             , "**/*.cs" -- C#
             , "**/*.h" -- C/C++/C#/Objective-C
-            , "**/*.java" -- Java
+            --, "**/*.java" -- Leave Java to google-java-format
             , "**/*.m" -- Objective-C
             , "**/*.mm" -- Objective-C++
             ]
@@ -172,6 +172,12 @@ allRestylers =
         { rImage = "restyled/restyler-dfmt:f3b58e0"
         , rCommand = ["dfmt", "--inplace"]
         , rInclude = ["**/*.d"]
+        }
+    , (baseRestyler "google-java-format")
+        { rImage = "restyled/restyler-google-java-format:39b1d8f"
+        , rCommand = ["google-java-format", "--replace"]
+        , rInclude = ["**/*.java"]
+        , rSupportsArgSep = False
         }
     ]
 
