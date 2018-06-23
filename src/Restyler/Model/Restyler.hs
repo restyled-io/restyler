@@ -168,6 +168,11 @@ allRestylers =
         , rInclude = ["**/*.tf"]
         , rSupportsMultiplePaths = False
         }
+    , (baseRestyler "dfmt")
+        { rImage = "restyled/restyler-dfmt:f3b58e0"
+        , rCommand = ["dfmt", "--inplace"]
+        , rInclude = ["**/*.d"]
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
