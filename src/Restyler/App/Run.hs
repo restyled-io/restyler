@@ -143,7 +143,7 @@ loadRestyledPullRequest pullRequest = do
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestRestyledBase pullRequest)
-        (pullRequestRestyledRef pullRequest)
+        headParameter
 
     for mRestyledPullRequest $ \restyledPullRequest -> do
         let
@@ -154,6 +154,17 @@ loadRestyledPullRequest pullRequest = do
                 }
         logInfoN $ "Existing restyled PR: " <> showSpec spec
         pure restyledPullRequest
+  where
+    -- N.B. we're assuming here that we'll never solve the problem of opening
+    -- the Restyled PR in the forked repository, so the argument for the head
+    -- parameter (user:branch) will always have the source repository owner as
+    -- the user. Surprisingly, if this parameter is invalid (e.g. no user: part)
+    -- it is ignored, and we just end up thinking the first PR in the repo is
+    -- the Restyled PR!
+    headParameter =
+        toPathPart (pullRequestOwnerName pullRequest)
+            <> ":"
+            <> pullRequestRestyledRef pullRequest
 
 -- | Load @.restyled.yaml@
 loadConfig :: (MonadSystem m, MonadError AppError m) => m Config
