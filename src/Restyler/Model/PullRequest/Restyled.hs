@@ -39,7 +39,12 @@ createRestyledPullRequest _restylers = do
 
     checkoutBranch True rBranch
     commitAll Content.commitMessage
-    pushOrigin $ pullRequestRestyledRef pullRequest
+
+    -- N.B. we always force-push. There are various edge-cases that could mean
+    -- an "-restyled" branch already exists and 99% of the time we can be sure
+    -- it's ours. Force-pushing doesn't hurt when it's not needed (provided we
+    -- know it's our branch, of course).
+    forcePushOrigin $ pullRequestRestyledRef pullRequest
 
     pr <- createPullRequest
         (pullRequestOwnerName pullRequest)
