@@ -96,11 +96,11 @@ run = do
     restyledUrl <- case mRestyledPr of
         Just restyledPr -> do
             updateRestyledPullRequest
-            pure $ simplePullRequestUrl restyledPr
+            pure $ simplePullRequestHtmlUrl restyledPr
         Nothing -> do
             restyledPr <- createRestyledPullRequest $ rrRestylersRan result
             leaveRestyledComment restyledPr
-            pure $ pullRequestUrl restyledPr
+            pure $ pullRequestHtmlUrl restyledPr
 
     sendPullRequestStatus $ DifferencesStatus restyledUrl
     logInfoN "Restyling successful"
