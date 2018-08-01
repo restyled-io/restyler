@@ -1,8 +1,6 @@
-
 module Restyler.Capabilities.Git
     ( MonadGit(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
