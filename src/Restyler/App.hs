@@ -111,8 +111,12 @@ instance MonadIO m => MonadGit (AppT m) where
         appIO GitError $ callProcess "git" $ ["checkout"] ++ [ "-b" | b ] ++ [unpack branch]
 
     changedPaths branch = do
-        logDebugN $ "git diff --name-only " <> branch
-        appIO GitError $ lines <$> readProcess "git" ["diff", "--name-only", unpack branch] ""
+        logDebugN $ "git merge-base " <> branch <> " HEAD"
+        output <- appIO GitError $ lines <$> readProcess "git" ["merge-base", unpack branch, "HEAD"] ""
+
+        let ref = maybe branch pack $ listToMaybe output
+        logDebugN $ "git diff --name-only " <> ref
+        appIO GitError $ lines <$> readProcess "git" ["diff", "--name-only", unpack ref] ""
 
     commitAll msg = do
         logDebugN "git commit"
