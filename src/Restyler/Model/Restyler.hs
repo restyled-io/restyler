@@ -118,7 +118,8 @@ allRestylers =
         , rSupportsMultiplePaths = False
         }
     , (baseRestyler "brittany")
-        { rCommand = ["brittany", "--write-mode", "inplace"]
+        { rImage = "restyled/restyler-brittany:749acd1"
+        , rCommand = ["brittany", "--write-mode", "inplace"]
         , rInclude = ["**/*.hs"]
         , rSupportsArgSep = False
         }
