@@ -43,9 +43,11 @@ StatusesConfig :: Bool -> Bool -> Bool -> StatusesConfig
 -- | Send a failure status when there were errors
 [scError] :: StatusesConfig -> Bool
 defaultStatusesConfig :: StatusesConfig
+instance GHC.Generics.Generic Restyler.Model.StatusesConfig.StatusesConfig
 instance GHC.Show.Show Restyler.Model.StatusesConfig.StatusesConfig
 instance GHC.Classes.Eq Restyler.Model.StatusesConfig.StatusesConfig
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.StatusesConfig.StatusesConfig
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.StatusesConfig.StatusesConfig
 
 module Restyler.Model.RemoteFile
 
@@ -60,6 +62,7 @@ instance GHC.Generics.Generic Restyler.Model.RemoteFile.RemoteFile
 instance GHC.Show.Show Restyler.Model.RemoteFile.RemoteFile
 instance GHC.Classes.Eq Restyler.Model.RemoteFile.RemoteFile
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.RemoteFile.RemoteFile
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.RemoteFile.RemoteFile
 
 module Restyler.Capabilities.RemoteFile
 class MonadRemoteFile m
@@ -134,6 +137,7 @@ hasInterpreter :: Text -> Interpreter -> Bool
 instance GHC.Show.Show Restyler.Model.Interpreter.Interpreter
 instance GHC.Classes.Eq Restyler.Model.Interpreter.Interpreter
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Interpreter.Interpreter
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.Interpreter.Interpreter
 
 module Restyler.Model.Include
 data Include
@@ -156,85 +160,14 @@ includePath :: [Include] -> FilePath -> Bool
 instance GHC.Show.Show Restyler.Model.Include.Include
 instance GHC.Classes.Eq Restyler.Model.Include.Include
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Include.Include
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.Include.Include
 instance Data.String.IsString Restyler.Model.Include.Include
-
-module Restyler.Content
-
--- | Simple for now: <tt>Restyled</tt>
-commitMessage :: Text
-
--- | The comment to leave about a restyled Pull Request
-commentBody :: PullRequest -> Text
-
--- | The more complicated comment to leave when we restyled PRs from forks
-commentBodyFork :: PullRequest -> Text
-
-module Restyler.Capabilities.System
-class MonadSystem m
-doesFileExist :: MonadSystem m => FilePath -> m Bool
-getCurrentDirectory :: MonadSystem m => m FilePath
-setCurrentDirectory :: MonadSystem m => FilePath -> m ()
-readFile :: MonadSystem m => FilePath -> m Text
-exitSuccess :: MonadSystem m => m a
-
-module Restyler.Capabilities.GitHub
-class MonadGitHub m
-getPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> m PullRequest
-findPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Text -> Text -> m (Maybe SimplePullRequest)
-createPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> CreatePullRequest -> m PullRequest
-updatePullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> EditPullRequest -> m PullRequest
-getComments :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> m (Vector IssueComment)
-createComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> Text -> m ()
-deleteComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Comment -> m ()
-createStatus :: MonadGitHub m => Name Owner -> Name Repo -> Name Commit -> NewStatus -> m ()
-
-module Restyler.Capabilities.Git
-class MonadGit m
-
--- | <pre>
---   git clone &lt;url&gt; &lt;directory&gt;
---   </pre>
-cloneRepository :: MonadGit m => Text -> FilePath -> m ()
-
--- | <pre>
---   git checkout [-b] &lt;branch&gt;
---   </pre>
-checkoutBranch :: MonadGit m => Bool -> Text -> m ()
-
--- | <pre>
---   git diff --name-only &lt;branch&gt;
---   </pre>
-changedPaths :: MonadGit m => Text -> m [FilePath]
-
--- | <pre>
---   git commit --all --message &lt;message&gt;
---   </pre>
-commitAll :: MonadGit m => Text -> m ()
-
--- | <pre>
---   git fetch origin &lt;remote&gt;:&lt;local&gt;
---   </pre>
-fetchOrigin :: MonadGit m => Text -> Text -> m ()
-
--- | <pre>
---   git push origin &lt;branch&gt;
---   </pre>
-pushOrigin :: MonadGit m => Text -> m ()
-
--- | <pre>
---   git push --force-with-lease origin &lt;branch&gt;
---   </pre>
-forcePushOrigin :: MonadGit m => Text -> m ()
-
-module Restyler.Capabilities.Docker
-class MonadDocker m
-dockerRun :: MonadDocker m => [String] -> m ()
 
 module Restyler.Model.Restyler
 
 -- | How to run a given restyler
 data Restyler
-Restyler :: String -> String -> String -> [String] -> [Include] -> [Interpreter] -> Bool -> Bool -> Restyler
+Restyler :: String -> String -> [String] -> [String] -> [Include] -> [Interpreter] -> Bool -> Bool -> Restyler
 
 -- | Unique name for this restyler, not configurable
 [rName] :: Restyler -> String
@@ -243,7 +176,11 @@ Restyler :: String -> String -> String -> [String] -> [Include] -> [Interpreter]
 [rImage] :: Restyler -> String
 
 -- | Command to run, usually the name, not configurable
-[rCommand] :: Restyler -> String
+--   
+--   If there are arguments that are <b>always</b> required, such as a
+--   sub-command or an inplace flag, they should be present here. This is
+--   to avoid users accidentally overriding them out and being confused.
+[rCommand] :: Restyler -> [String]
 
 -- | Arguments to pass before the paths
 [rArguments] :: Restyler -> [String]
@@ -263,10 +200,12 @@ defaultRestylers :: [Restyler]
 allRestylers :: [Restyler]
 namedRestyler :: MonadPlus m => Text -> m Restyler
 unsafeNamedRestyler :: Text -> Restyler
-runRestylers :: (Monad m, MonadSystem m, MonadDocker m, MonadLogger m) => [Restyler] -> [FilePath] -> m ()
+instance GHC.Generics.Generic Restyler.Model.Restyler.RestylerOverrides
 instance GHC.Show.Show Restyler.Model.Restyler.Restyler
 instance GHC.Classes.Eq Restyler.Model.Restyler.Restyler
+instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Restyler.RestylerOverrides
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Restyler.Restyler
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.Restyler.Restyler
 
 module Restyler.Model.Config
 
@@ -303,9 +242,90 @@ defaultConfig :: Config
 --   .restyled.yaml
 --   </pre>
 configPath :: FilePath
+instance GHC.Generics.Generic Restyler.Model.Config.Config
 instance GHC.Show.Show Restyler.Model.Config.Config
 instance GHC.Classes.Eq Restyler.Model.Config.Config
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Config.Config
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.Config.Config
+
+module Restyler.Content
+
+-- | Simple for now: <tt>Restyled</tt>
+commitMessage :: Text
+
+-- | The comment to leave about a restyled Pull Request
+commentBody :: PullRequest -> Text
+
+-- | The more complicated comment to leave when we restyled PRs from forks
+commentBodyFork :: HasCallStack => PullRequest -> Text
+
+module Restyler.Capabilities.System
+class MonadSystem m
+doesFileExist :: MonadSystem m => FilePath -> m Bool
+getCurrentDirectory :: MonadSystem m => m FilePath
+setCurrentDirectory :: MonadSystem m => FilePath -> m ()
+readFile :: MonadSystem m => FilePath -> m Text
+exitSuccess :: MonadSystem m => m a
+
+module Restyler.Capabilities.GitHub
+class MonadGitHub m
+getPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> m PullRequest
+findPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Text -> Text -> m (Maybe SimplePullRequest)
+createPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> CreatePullRequest -> m PullRequest
+updatePullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> EditPullRequest -> m PullRequest
+getComments :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> m (Vector IssueComment)
+createComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> Text -> m ()
+deleteComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Comment -> m ()
+createStatus :: MonadGitHub m => Name Owner -> Name Repo -> Name Commit -> NewStatus -> m ()
+
+module Restyler.Capabilities.Git
+class MonadGit m
+
+-- | <pre>
+--   git clone &lt;url&gt; &lt;directory&gt;
+--   </pre>
+cloneRepository :: MonadGit m => Text -> FilePath -> m ()
+
+-- | <pre>
+--   git checkout [-b] &lt;branch&gt;
+--   </pre>
+checkoutBranch :: MonadGit m => Bool -> Text -> m ()
+
+-- | <pre>
+--   git diff --name-only $(git merge-base &lt;branch&gt; HEAD)
+--   </pre>
+changedPaths :: MonadGit m => Text -> m [FilePath]
+
+-- | <pre>
+--   git commit --all --message &lt;message&gt;
+--   </pre>
+commitAll :: MonadGit m => Text -> m ()
+
+-- | <pre>
+--   git fetch origin &lt;remote&gt;:&lt;local&gt;
+--   </pre>
+fetchOrigin :: MonadGit m => Text -> Text -> m ()
+
+-- | <pre>
+--   git push origin &lt;branch&gt;
+--   </pre>
+pushOrigin :: MonadGit m => Text -> m ()
+
+-- | <pre>
+--   git push --force-with-lease origin &lt;branch&gt;
+--   </pre>
+forcePushOrigin :: MonadGit m => Text -> m ()
+
+module Restyler.Capabilities.Docker
+class MonadDocker m
+dockerRun :: MonadDocker m => [String] -> m ()
+
+module Restyler.Model.Restyler.Run
+
+-- | Runs the given <tt><a>Restyler</a></tt>s over the files
+--   
+--   Returns the subset of <tt>'Restyler</tt>'s that were actually invoked.
+runRestylers :: (Monad m, MonadSystem m, MonadDocker m, MonadLogger m) => [Restyler] -> [FilePath] -> m [Restyler]
 
 module Restyler.App
 
@@ -396,7 +416,7 @@ sendPullRequestStatus_ :: (MonadGitHub m, MonadError AppError m, MonadLogger m, 
 module Restyler.Model.PullRequest.Restyled
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
-createRestyledPullRequest :: (MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m) => m PullRequest
+createRestyledPullRequest :: (HasCallStack, MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m) => [Restyler] -> m PullRequest
 
 -- | Commit and force-push to the (existing) restyled branch
 updateRestyledPullRequest :: (MonadGit m, MonadReader App m) => m ()
@@ -412,10 +432,10 @@ updateOriginalPullRequest :: (MonadGit m, MonadReader App m) => m ()
 module Restyler.Model.Comment
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
-leaveRestyledComment :: (MonadGitHub m, MonadReader App m) => PullRequest -> m ()
+leaveRestyledComment :: (HasCallStack, MonadGitHub m, MonadReader App m) => PullRequest -> m ()
 
 -- | Locate any comments left by us on the origin PR and delete them
-clearRestyledComments :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+clearRestyledComments :: (HasCallStack, MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
 
 module Restyler.Logger
 runAppLoggingT :: MonadIO m => App -> LoggingT m a -> m a
@@ -446,7 +466,7 @@ runApp :: MonadIO m => App -> AppT m a -> ExceptT AppError m a
 --   <tt><a>appPullRequest</a></tt> or <tt><a>appConfig</a></tt>, they will
 --   fail. So it's important those actions aren't refactored away from this
 --   module, where that assumption is less obvious.
-bootstrapApp :: Options -> FilePath -> ExceptT AppError IO App
+bootstrapApp :: HasCallStack => Options -> FilePath -> ExceptT AppError IO App
 
 module Restyler.Main
 
