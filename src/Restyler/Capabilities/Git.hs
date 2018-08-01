@@ -13,7 +13,7 @@ class MonadGit m where
     -- | @git checkout [-b] \<branch>@
     checkoutBranch :: Bool -> Text -> m ()
 
-    -- | @git diff --name-only $(git merge-base \<branch>) HEAD@
+    -- | @git diff --name-only $(git merge-base \<branch> HEAD)@
     changedPaths :: Text -> m [FilePath]
 
     -- | @git commit --all --message \<message>@
