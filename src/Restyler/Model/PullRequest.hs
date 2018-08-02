@@ -45,7 +45,6 @@ pullRequestSpec pullRequest = PullRequestSpec
 pullRequestIssueId :: PullRequest -> Id Issue
 pullRequestIssueId = mkId Proxy . pullRequestNumber
 
--- brittany-disable-next-binding
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork = (/=) <$> pullRequestHeadRepo <*> pullRequestBaseRepo
 
@@ -55,7 +54,6 @@ pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
 pullRequestHeadRef :: PullRequest -> Text
 pullRequestHeadRef = pullRequestCommitRef . pullRequestHead
 
--- brittany-disable-next-binding
 pullRequestRemoteHeadRef :: PullRequest -> Text
 pullRequestRemoteHeadRef pullRequest@PullRequest {..}
     | pullRequestIsFork pullRequest
