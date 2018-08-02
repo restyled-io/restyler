@@ -9,6 +9,7 @@ module Restyler.Model.PullRequest
     , pullRequestSpec
     , pullRequestIssueId
     , pullRequestIsFork
+    , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
     , pullRequestHeadRef
     , pullRequestRemoteHeadRef
@@ -47,6 +48,10 @@ pullRequestIssueId = mkId Proxy . pullRequestNumber
 
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork = (/=) <$> pullRequestHeadRepo <*> pullRequestBaseRepo
+
+pullRequestIsNonDefaultBranch :: HasCallStack => PullRequest -> Bool
+pullRequestIsNonDefaultBranch =
+    (/=) <$> pullRequestBaseRef <*> pullRequestDefaultBranch
 
 pullRequestBaseRef :: PullRequest -> Text
 pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
@@ -94,3 +99,7 @@ pullRequestBaseRepo = pullRequestCommitRepo . pullRequestBase
 
 pullRequestHeadRepo :: PullRequest -> Maybe Repo
 pullRequestHeadRepo = pullRequestCommitRepo . pullRequestHead
+
+pullRequestDefaultBranch :: PullRequest -> Text
+pullRequestDefaultBranch =
+    fromMaybe "master" . (repoDefaultBranch <=< pullRequestBaseRepo)

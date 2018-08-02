@@ -119,6 +119,10 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
     cloneRepository (cloneUrl token) dir
     setCurrentDirectory dir
 
+    when (pullRequestIsNonDefaultBranch pullRequest) $ fetchOrigin
+        (pullRequestBaseRef pullRequest)
+        (pullRequestBaseRef pullRequest)
+
     when (pullRequestIsFork pullRequest) $ fetchOrigin
         (pullRequestRemoteHeadRef pullRequest)
         (pullRequestLocalHeadRef pullRequest)
