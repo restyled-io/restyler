@@ -109,8 +109,9 @@ allRestylers =
         , rInclude = ["**/*.hs"]
         }
     , (baseRestyler "prettier")
-        { rCommand = ["prettier", "--write"]
-        , rInclude = ["**/*.js", "**/*.jsx"]
+        { rImage = "restyled/restyler-prettier:8cd304f"
+        , rCommand = ["prettier", "--write"]
+        , rInclude = ["**/*.js", "**/*.jsx", "**/*.yml", "**/*.yaml"]
         }
     , (baseRestyler "hindent")
         { rInclude = ["**/*.hs"]
