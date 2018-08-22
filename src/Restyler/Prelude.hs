@@ -19,7 +19,7 @@ import Control.Monad.Logger as X
 import Control.Monad.Reader as X
 import Data.Bifunctor as X
 import Data.Char as X (isSpace)
-import Data.Foldable as X
+import Data.Foldable as X hiding (maximumBy, minimumBy)
 import Data.List as X
     (dropWhileEnd, find, foldl', isInfixOf, isPrefixOf, isSuffixOf)
 import Data.Maybe as X hiding (fromJust)
@@ -38,6 +38,7 @@ import Safe as X
 --------------------------------------------------------------------------------
 -- Globally-useful utilities
 --------------------------------------------------------------------------------
+import qualified Data.Foldable as F
 import qualified Data.Text as T
 
 -- | @'when'@ with a monadic condition
@@ -68,3 +69,11 @@ infixl 4 <$$>
 -- | @'fmap'@ for doubly-wrapped values
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 f <$$> a = fmap f <$> a
+
+minimumBy :: (a -> a -> Ordering) -> [a] -> Maybe a
+minimumBy _ [] = Nothing
+minimumBy f xs = Just $ F.minimumBy f xs
+
+maximumBy :: (a -> a -> Ordering) -> [a] -> Maybe a
+maximumBy _ [] = Nothing
+maximumBy f xs = Just $ F.maximumBy f xs

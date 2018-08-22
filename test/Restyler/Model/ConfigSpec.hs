@@ -86,9 +86,30 @@ spec = do
                 , "    - --foo"
                 ]
 
-        result1 `shouldSatisfy` hasError "Unknown restyler name: uknown-name"
-        result2 `shouldSatisfy` hasError "Unknown restyler name: uknown-name"
-        result3 `shouldSatisfy` hasError "Unknown restyler name: uknown-name"
+        result1 `shouldSatisfy` hasError "Unexpected restyler \"uknown-name\""
+        result2 `shouldSatisfy` hasError "Unexpected restyler \"uknown-name\""
+        result3 `shouldSatisfy` hasError "Unexpected restyler \"uknown-name\""
+
+    it "provides suggestions for close matches" $ do
+        let result1 = decodeEither $ C8.unlines ["---", "- hindex"]
+
+            result2 =
+                decodeEither $ C8.unlines
+                    ["---", "- hindex:", "    arguments:", "    - --foo"]
+
+            result3 =
+                decodeEither
+                    $ C8.unlines
+                          [ "---"
+                          , "restylers:"
+                          , "- hindex:"
+                          , "    arguments:"
+                          , "    - --foo"
+                          ]
+
+        result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
+        result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
+        result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
 hasError :: String -> Either String Config -> Bool
 hasError msg (Left err) = msg `isInfixOf` err

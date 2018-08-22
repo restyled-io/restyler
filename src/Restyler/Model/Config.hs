@@ -14,6 +14,7 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
+import Restyler.Model.Config.ExpectedKeys
 import Restyler.Model.RemoteFile
 import Restyler.Model.Restyler
 import Restyler.Model.StatusesConfig
@@ -37,13 +38,15 @@ instance FromJSON Config where
     parseJSON (Array v) = do
         restylers <- mapM parseJSON (V.toList v)
         pure defaultConfig { cRestylers = restylers }
-    parseJSON (Object o) = Config
-        -- Use default values if un-specified
-        <$> o .:? "enabled" .!= cEnabled defaultConfig
-        <*> o .:? "auto" .!= cAuto defaultConfig
-        <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
-        <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
-        <*> o .:? "restylers" .!= cRestylers defaultConfig
+    parseJSON (Object o) = do
+        validateObjectKeys
+            ["enabled", "auto", "remote_files", "statuses", "restylers"] o
+        Config
+            <$> o .:? "enabled" .!= cEnabled defaultConfig
+            <*> o .:? "auto" .!= cAuto defaultConfig
+            <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
+            <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
+            <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
 
 instance ToJSON Config where

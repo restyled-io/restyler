@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Restyler.Model.RemoteFile
     ( RemoteFile(..)
@@ -8,6 +9,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
+import Restyler.Model.Config.ExpectedKeys
 
 -- | A remote (configuration) file, to fetch before restyling
 data RemoteFile = RemoteFile
@@ -17,7 +19,11 @@ data RemoteFile = RemoteFile
     deriving (Eq, Show, Generic)
 
 instance FromJSON RemoteFile where
-    parseJSON = genericParseJSON $ aesonPrefix snakeCase
+    parseJSON = withObject "RemoteFile" $ \o -> do
+        validateObjectKeys ["url", "path"] o
+        RemoteFile
+            <$> o .: "url"
+            <*> o .: "path"
 
 instance ToJSON RemoteFile where
     toJSON = genericToJSON $ aesonPrefix snakeCase
