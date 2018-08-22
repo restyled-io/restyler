@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -13,9 +12,9 @@ module Restyler.Model.Restyler
 import Restyler.Prelude
 
 import Data.Aeson
-import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.HashMap.Lazy as HM
+import Restyler.Model.Config.ExpectedKeys
 import Restyler.Model.Include
 import Restyler.Model.Interpreter
 
@@ -51,10 +50,14 @@ data RestylerOverrides = RestylerOverrides
     , roInclude :: Maybe [Include]
     , roInterpreters :: Maybe [Interpreter]
     }
-    deriving (Generic)
 
 instance FromJSON RestylerOverrides where
-    parseJSON = genericParseJSON $ aesonPrefix snakeCase
+    parseJSON = withObject "Restyler" $ \o -> do
+        validateObjectKeys ["arguments", "include", "interpreters"] o
+        RestylerOverrides
+            <$> o .:? "arguments"
+            <*> o .:? "include"
+            <*> o .:? "interpreters"
 
 fromRestylerOverrides :: MonadPlus m => Text -> RestylerOverrides -> m Restyler
 fromRestylerOverrides name RestylerOverrides {..} = do
@@ -184,9 +187,10 @@ allRestylers =
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
-namedRestyler name = case find ((== name) . pack . rName) allRestylers of
-    Nothing -> fail $ unpack $ "Unknown restyler name: " <> name <> "."
-    Just r -> pure r
+namedRestyler =
+    either fail pure
+        . validateExpectedKeyBy "restyler" rName allRestylers
+        . unpack
 
 unsafeNamedRestyler :: Text -> Restyler
 unsafeNamedRestyler = either error id . namedRestyler

@@ -14,6 +14,7 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Aeson.Types as Aeson
+import Restyler.Model.Config.ExpectedKeys
 
 -- | Configuration for sending PR statuses
 data StatusesConfig = StatusesConfig
@@ -27,10 +28,12 @@ data StatusesConfig = StatusesConfig
     deriving (Eq, Show, Generic)
 
 instance FromJSON StatusesConfig where
-    parseJSON (Object o) = StatusesConfig
-        <$> o .:? "differences" .!= scDifferences
-        <*> o .:? "no-differences" .!= scNoDifferences
-        <*> o .:? "error" .!= scError
+    parseJSON (Object o) = do
+        validateObjectKeys ["differences", "no-differences", "error"] o
+        StatusesConfig
+            <$> o .:? "differences" .!= scDifferences
+            <*> o .:? "no-differences" .!= scNoDifferences
+            <*> o .:? "error" .!= scError
       where
         StatusesConfig{..} = defaultStatusesConfig
     parseJSON (Aeson.Bool b) = pure StatusesConfig
