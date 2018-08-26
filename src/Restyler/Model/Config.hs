@@ -27,6 +27,8 @@ data Config = Config
     -- ^ Just push the restyling, don't comment?
     , cRemoteFiles :: [RemoteFile]
     -- ^ Any remote configuration files to fetch before restyling
+    , cCommentsEnabled :: Bool
+    -- ^ Leave Comments?
     , cStatusesConfig :: StatusesConfig
     -- ^ Send PR statuses?
     , cRestylers :: [Restyler]
@@ -40,11 +42,12 @@ instance FromJSON Config where
         pure defaultConfig { cRestylers = restylers }
     parseJSON (Object o) = do
         validateObjectKeys
-            ["enabled", "auto", "remote_files", "statuses", "restylers"] o
+            ["enabled", "auto", "remote_files", "comments", "statuses", "restylers"] o
         Config
             <$> o .:? "enabled" .!= cEnabled defaultConfig
             <*> o .:? "auto" .!= cAuto defaultConfig
             <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
+            <*> o .:? "comments" .!= cCommentsEnabled defaultConfig
             <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
             <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
@@ -57,6 +60,7 @@ instance ToJSON Config where
 --
 -- - Enabled
 -- - Not Auto
+-- - Leave comments
 -- - Send statuses
 -- - Run most restylers
 --
@@ -65,6 +69,7 @@ defaultConfig = Config
     { cEnabled = True
     , cAuto = False
     , cRemoteFiles = []
+    , cCommentsEnabled = True
     , cStatusesConfig = defaultStatusesConfig
     , cRestylers = defaultRestylers
     }

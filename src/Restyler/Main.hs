@@ -99,7 +99,7 @@ run = do
             pure $ simplePullRequestHtmlUrl restyledPr
         Nothing -> do
             restyledPr <- createRestyledPullRequest $ rrRestylersRan result
-            leaveRestyledComment restyledPr
+            whenM commentsEnabled $ leaveRestyledComment restyledPr
             pure $ pullRequestHtmlUrl restyledPr
 
     sendPullRequestStatus $ DifferencesStatus restyledUrl
@@ -107,6 +107,9 @@ run = do
 
 configEnabled :: MonadReader App m => m Bool
 configEnabled = asks $ cEnabled . appConfig
+
+commentsEnabled :: MonadReader App m => m Bool
+commentsEnabled = asks $ cCommentsEnabled . appConfig
 
 restyle
     :: ( MonadSystem m
