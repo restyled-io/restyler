@@ -4,6 +4,9 @@ RELEASE_IMAGE ?= $(LOCAL_IMAGE)
 DOCKER_USERNAME ?= x
 DOCKER_PASSWORD ?= x
 
+INTEGRATION_MEMORY ?= 448M
+INTEGRATION_MEMORY_RESERVATION ?= 392M
+
 INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#3
 
 all: setup build lint test
@@ -48,6 +51,8 @@ test.integration: image.build
 	  --env GITHUB_ACCESS_TOKEN \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
+	  --memory $(INTEGRATION_MEMORY) \
+	  --memory-reservation $(INTEGRATION_MEMORY_RESERVATION) \
 	  "$(LOCAL_IMAGE)" --color=always "$(INTEGRATION_PULL_REQUEST)"
 
 .PHONY: install
