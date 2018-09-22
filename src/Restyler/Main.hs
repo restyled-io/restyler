@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Main
     ( restylerMain
@@ -16,6 +17,7 @@ import Restyler.Model.Config
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequest.Restyled
 import Restyler.Model.PullRequest.Status
+import Restyler.Model.RemoteFile
 import Restyler.Model.Restyler
 import Restyler.Model.Restyler.Run
 import Restyler.Options
@@ -64,7 +66,9 @@ run :: (HasCallStack, MonadIO m) => AppT m ()
 run = do
     unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
 
-    traverse_ fetchRemoteFile =<< asks (cRemoteFiles . appConfig)
+    remoteFiles <- asks (cRemoteFiles . appConfig)
+    logInfoN $ "Fetching " <> tshow (length remoteFiles) <> " remote file(s)"
+    for_ remoteFiles $ \RemoteFile {..} -> downloadFile (getUrl rfUrl) rfPath
 
     result <- restyle
     unless (wasRestyled result) $ do

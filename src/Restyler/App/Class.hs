@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.App.Class
     ( MonadApp(..)
@@ -30,7 +29,6 @@ import GitHub.Request
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Type
-import Restyler.Model.RemoteFile
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.Process as Process
@@ -58,13 +56,6 @@ class Functor m => MonadApp m where
     readProcess :: String -> [String] -> String -> m String
 
     downloadFile :: Text -> FilePath -> m ()
-
-    -- |
-    --
-    -- TODO: Move this
-    --
-    fetchRemoteFile :: RemoteFile -> m ()
-    fetchRemoteFile RemoteFile {..} = downloadFile (getUrl rfUrl) rfPath
 
 instance MonadIO m => MonadApp (AppT m) where
     runGitHub req = do
@@ -111,13 +102,6 @@ instance MonadIO m => MonadApp (AppT m) where
         appIO HttpError $ do
             request <- parseRequest $ unpack url
             runResourceT $ httpSink request $ \_ -> sinkFile path
-
-    fetchRemoteFile RemoteFile {..} = downloadFile (getUrl rfUrl) rfPath
-        -- let url = getUrl rfUrl
-        -- logInfoN $ "Fetching " <> tshow rfPath <> " from " <> tshow url
-        -- appIO RemoteFileError $ do
-        --     request <- parseRequest $ unpack url
-        --     runResourceT $ httpSink request $ \_ -> sinkFile rfPath
 
 -- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
 appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
