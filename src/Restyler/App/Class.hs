@@ -1,23 +1,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.App.Class
-    ( runGitHub
-    , runGitHub_
-    , getCurrentDirectory
-    , setCurrentDirectory
-    , doesFileExist
-    , readFile
-    , exitSuccess
-    , callProcess
-    , readProcess
-    , fetchRemoteFile
+    ( MonadApp(..)
 
     -- * Re-exports
+    -- |
+    --
+    -- This is useful because it defines what GitHub APIs we use and takes care
+    -- of the hidings we'd otherwise need to do at every import site.
+    --
     , module GitHub.Endpoints.Issues.Comments
     , module GitHub.Endpoints.PullRequests
     , module GitHub.Endpoints.Repos.Statuses
@@ -40,20 +35,95 @@ import qualified System.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
--- | Run a GitHub @'Request'@
-runGitHub :: MonadIO m => Request k a -> AppT m a
-runGitHub req = do
-    logDebugN $ "GitHub request: " <> showGitHubRequest req
-    auth <- asks $ OAuth . encodeUtf8 . appAccessToken
-    result <- appIO OtherError $ do
-        mgr <- getGlobalManager
-        executeRequestWithMgr mgr auth req
+class Functor m => MonadApp m where
+    -- | Run a GitHub @'Request'@
+    runGitHub :: Request k a -> m a
 
-    either (throwError . GitHubError) pure result
+    -- | @'runGitHub'@ but discard the result
+    runGitHub_ :: Request k a -> m ()
+    runGitHub_ = void . runGitHub
 
--- | @'runGitHub'@ but discard the result
-runGitHub_ :: MonadIO m => Request k a -> AppT m ()
-runGitHub_ = void . runGitHub
+    getCurrentDirectory :: m FilePath
+
+    setCurrentDirectory :: FilePath -> m ()
+
+    doesFileExist :: FilePath -> m Bool
+
+    readFile :: FilePath -> m Text
+
+    exitSuccess :: m ()
+
+    callProcess :: String -> [String] -> m ()
+
+    readProcess :: String -> [String] -> String -> m String
+
+    downloadFile :: Text -> FilePath -> m ()
+
+    -- |
+    --
+    -- TODO: Move this
+    --
+    fetchRemoteFile :: RemoteFile -> m ()
+    fetchRemoteFile RemoteFile {..} = downloadFile (getUrl rfUrl) rfPath
+
+instance MonadIO m => MonadApp (AppT m) where
+    runGitHub req = do
+        logDebugN $ "GitHub request: " <> showGitHubRequest req
+        auth <- asks $ OAuth . encodeUtf8 . appAccessToken
+        result <- appIO OtherError $ do
+            mgr <- getGlobalManager
+            executeRequestWithMgr mgr auth req
+        either (throwError . GitHubError) pure result
+
+    getCurrentDirectory = do
+        logDebugN "getCurrentDirectory"
+        appIO SystemError Directory.getCurrentDirectory
+
+    setCurrentDirectory path = do
+        logDebugN $ "setCurrentDirectory: " <> tshow path
+        appIO SystemError $ Directory.setCurrentDirectory path
+
+    doesFileExist path = do
+        logDebugN $ "doesFileExist: " <> tshow path
+        appIO SystemError $ Directory.doesFileExist path
+
+    readFile path = do
+        logDebugN $ "readFile: " <> tshow path
+        appIO SystemError $ T.readFile path
+
+    exitSuccess = do
+        logDebugN "exitSuccess"
+        appIO SystemError Exit.exitSuccess
+
+    callProcess cmd args = do
+        -- N.B. this injects access tokens into the logs when calling git-clone, but
+        -- that's OK because it's DEBUG and they're short-lived anyway.
+        logDebugN $ pack $ "call: " <> cmd <> " " <> show args
+        appIO SystemError $ Process.callProcess cmd args
+
+    readProcess cmd args stdin = do
+        logDebugN $ pack $ "read: " <> cmd <> " " <> show args
+        output <- appIO SystemError $ Process.readProcess cmd args stdin
+        output <$ logDebugN ("output: " <> pack output)
+
+    downloadFile url path = do
+        logDebugN $ "HTTP GET: " <> tshow url <> " => " <> tshow path
+        appIO HttpError $ do
+            request <- parseRequest $ unpack url
+            runResourceT $ httpSink request $ \_ -> sinkFile path
+
+    fetchRemoteFile RemoteFile {..} = downloadFile (getUrl rfUrl) rfPath
+        -- let url = getUrl rfUrl
+        -- logInfoN $ "Fetching " <> tshow rfPath <> " from " <> tshow url
+        -- appIO RemoteFileError $ do
+        --     request <- parseRequest $ unpack url
+        --     runResourceT $ httpSink request $ \_ -> sinkFile rfPath
+
+-- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
+appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
+appIO err f = AppT $ do
+    result <- liftIO $ tryIO f
+    either (throwError . err) pure result
 
 -- | Show a GitHub @'Request'@, useful for debugging
 -- brittany-disable-next-binding
@@ -79,55 +149,3 @@ showGitHubRequest (RedirectQuery _) = "<redirect query>"
 
 queryParts :: QueryString -> [Text]
 queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv
-
-getCurrentDirectory :: MonadIO m => AppT m FilePath
-getCurrentDirectory = do
-    logDebugN "getCurrentDirectory"
-    appIO SystemError Directory.getCurrentDirectory
-
-doesFileExist :: MonadIO m => FilePath -> AppT m Bool
-doesFileExist path = do
-    logDebugN $ "doesFileExist: " <> tshow path
-    appIO SystemError $ Directory.doesFileExist path
-
-setCurrentDirectory :: MonadIO m => FilePath -> AppT m ()
-setCurrentDirectory path = do
-    logDebugN $ "setCurrentDirectory: " <> tshow path
-    appIO SystemError $ Directory.setCurrentDirectory path
-
-readFile :: MonadIO m => FilePath -> AppT m Text
-readFile path = do
-    logDebugN $ "readFile: " <> tshow path
-    appIO SystemError $ T.readFile path
-
-exitSuccess :: MonadIO m => AppT m ()
-exitSuccess = do
-    logDebugN "exitSuccess"
-    appIO SystemError Exit.exitSuccess
-
-fetchRemoteFile :: MonadIO m => RemoteFile -> AppT m ()
-fetchRemoteFile RemoteFile {..} = do
-    let url = getUrl rfUrl
-    logInfoN $ "Fetching " <> tshow rfPath <> " from " <> tshow url
-    appIO RemoteFileError $ do
-        request <- parseRequest $ unpack url
-        runResourceT $ httpSink request $ \_ -> sinkFile rfPath
-
-callProcess :: MonadIO m => String -> [String] -> AppT m ()
-callProcess cmd args = do
-    -- N.B. this injects access tokens into the logs when calling git-clone, but
-    -- that's OK because it's DEBUG and they're short-lived anyway.
-    logDebugN $ pack $ "call: " <> cmd <> " " <> show args
-    appIO SystemError $ Process.callProcess cmd args
-
-readProcess :: MonadIO m => String -> [String] -> String -> AppT m String
-readProcess cmd args stdin = do
-    logDebugN $ pack $ "read: " <> cmd <> " " <> show args
-    output <- appIO SystemError $ Process.readProcess cmd args stdin
-    output <$ logDebugN ("output: " <> pack output)
-
--- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
-appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
-appIO err f = AppT $ do
-    result <- liftIO $ tryIO f
-    either (throwError . err) pure result

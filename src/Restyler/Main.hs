@@ -139,8 +139,8 @@ exitWithAppError = \case
         ["We had trouble communicating with GitHub:", showGitHubError e]
     SystemError e ->
         die $ format ["We had trouble running a system command:", show e]
-    RemoteFileError e ->
-        die $ format ["We had trouble fetching a remote file:", show e]
+    HttpError e ->
+        die $ format ["We had trouble performing an HTTP request:", show e]
     OtherError e ->
         die $ format ["We encountered an unexpected exception:", show e]
   where

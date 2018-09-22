@@ -41,7 +41,7 @@ data AppError
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
     -- ^ Trouble reading a file or etc
-    | RemoteFileError IOException
+    | HttpError IOException
     -- ^ Trouble performing some HTTP request
     | OtherError IOException
     -- ^ A minor escape hatch for @'IOException'@s
