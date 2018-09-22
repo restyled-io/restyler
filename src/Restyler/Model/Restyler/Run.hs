@@ -49,9 +49,8 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
 dockerRunRestyler :: MonadIO m => Restyler -> [FilePath] -> AppT m ()
 dockerRunRestyler Restyler {..} paths = do
     cwd <- getCurrentDirectory
-
-    dockerRun
-        $ ["--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
+    callProcess "docker"
+        $ ["run", "--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]
         <> map ("./" <>) paths

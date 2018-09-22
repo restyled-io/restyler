@@ -108,7 +108,7 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
         (pullRequestRemoteHeadRef pullRequest)
         (pullRequestLocalHeadRef pullRequest)
 
-    checkoutBranch False $ pullRequestLocalHeadRef pullRequest
+    checkoutBranch $ pullRequestLocalHeadRef pullRequest
   where
     cloneUrl token =
         "https://x-access-token:"
@@ -170,7 +170,16 @@ toPullRequestFetchError (GitHubError e) = PullRequestFetchError e
 toPullRequestFetchError e = e
 
 toPullRequestCloneError :: AppError -> AppError
-toPullRequestCloneError (GitError e) = PullRequestCloneError e
 toPullRequestCloneError (SystemError e) = PullRequestCloneError e
 toPullRequestCloneError (OtherError e) = PullRequestCloneError e
 toPullRequestCloneError e = e
+
+cloneRepository :: MonadIO m => Text -> FilePath -> AppT m ()
+cloneRepository url dir = callProcess "git" ["clone", unpack url, dir]
+
+fetchOrigin :: MonadIO m => Text -> Text -> AppT m ()
+fetchOrigin remoteRef localRef =
+    callProcess "git" ["fetch", "origin", unpack $ remoteRef <> ":" <> localRef]
+
+checkoutBranch :: MonadIO m => Text -> AppT m ()
+checkoutBranch branch = callProcess "git" ["checkout", unpack branch]

@@ -30,7 +30,7 @@ createRestyledPullRequest _restylers = do
     pullRequest <- asks appPullRequest
     let rBranch = pullRequestRestyledRef pullRequest
 
-    checkoutBranch True rBranch
+    checkoutNewBranch rBranch
     commitAll Content.commitMessage
 
     -- N.B. we always force-push. There are various edge-cases that could mean
@@ -56,7 +56,7 @@ createRestyledPullRequest _restylers = do
 updateRestyledPullRequest :: MonadIO m => AppT m ()
 updateRestyledPullRequest = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
-    checkoutBranch True rBranch
+    checkoutNewBranch rBranch
     commitAll Content.commitMessage
     forcePushOrigin rBranch
 
@@ -97,3 +97,17 @@ updateOriginalPullRequest :: MonadIO m => AppT m ()
 updateOriginalPullRequest = do
     commitAll Content.commitMessage
     pushOrigin . pullRequestHeadRef =<< asks appPullRequest
+
+pushOrigin :: MonadIO m => Text -> AppT m ()
+pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
+
+commitAll :: MonadIO m => Text -> AppT m ()
+commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
+
+forcePushOrigin :: MonadIO m => Text -> AppT m ()
+forcePushOrigin branch =
+    callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
+
+checkoutNewBranch :: MonadIO m => Text -> AppT m ()
+checkoutNewBranch branch =
+    callProcess "git" ["checkout", "-b", unpack branch]

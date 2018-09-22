@@ -106,6 +106,13 @@ restyle = do
         <$> runRestylers (cRestylers config) pullRequestPaths
         <*> changedPaths (pullRequestLocalHeadRef pullRequest)
 
+changedPaths :: MonadIO m => Text -> AppT m [FilePath]
+changedPaths branch = do
+    output <- lines
+        <$> readProcess "git" ["merge-base", unpack branch, "HEAD"] ""
+    let ref = maybe branch pack $ listToMaybe output
+    lines <$> readProcess "git" ["diff", "--name-only", unpack ref] ""
+
 isAutoPush :: Monad m => AppT m Bool
 isAutoPush = do
     isAuto <- asks $ cAuto . appConfig
@@ -128,8 +135,6 @@ exitWithAppError = \case
         ]
     DockerError e ->
         die $ format ["The restyler container exited non-zero:", show e]
-    GitError e ->
-        die $ format ["We had trouble running a git command:", show e]
     GitHubError e -> die $ format
         ["We had trouble communicating with GitHub:", showGitHubError e]
     SystemError e ->

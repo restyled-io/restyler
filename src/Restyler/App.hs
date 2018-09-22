@@ -17,15 +17,6 @@ module Restyler.App
     , mapAppError
 
     -- * Effects
-    -- ** Git
-    , cloneRepository
-    , checkoutBranch
-    , changedPaths
-    , commitAll
-    , fetchOrigin
-    , pushOrigin
-    , forcePushOrigin
-
     -- ** GitHub
     , getPullRequest
     , findPullRequest
@@ -42,7 +33,8 @@ module Restyler.App
     , setCurrentDirectory
     , readFile
     , exitSuccess
-    , dockerRun
+    , callProcess
+    , readProcess
 
     -- * HTTP
     , fetchRemoteFile
@@ -66,7 +58,7 @@ import Restyler.Model.Config
 import Restyler.Model.RemoteFile
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
-import System.Process
+import qualified System.Process as Process
 
 -- | Application environment
 data App = App
@@ -91,8 +83,6 @@ data AppError
     -- ^ We couldn't load a @.restyled.yaml@
     | DockerError IOException
     -- ^ Error running a @docker@ operation
-    | GitError IOException
-    -- ^ Error running a @git@ operation
     | GitHubError Error
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
@@ -118,62 +108,6 @@ newtype AppT m a = AppT
         , MonadReader App
         , MonadLogger
         )
-
-cloneRepository :: MonadIO m => Text -> FilePath -> AppT m ()
-cloneRepository url dir = do
-    logDebugN $ "git clone " <> tshow [masked, dir]
-    appIO GitError $ callProcess "git" ["clone", unpack url, dir]
-  where
-    masked = T.unpack $ scheme <> "://<creds>" <> T.dropWhile (/= '@') rest
-    (scheme, rest) = T.breakOn "://" url
-
-checkoutBranch :: MonadIO m => Bool -> Text -> AppT m ()
-checkoutBranch b branch = do
-    logDebugN $ "git checkout " <> branch
-    appIO GitError
-        $ callProcess "git"
-        $ ["checkout"]
-        ++ [ "-b" | b ]
-        ++ [unpack branch]
-
-changedPaths :: MonadIO m => Text -> AppT m [FilePath]
-changedPaths branch = do
-    logDebugN $ "git merge-base " <> branch <> " HEAD"
-    output <- appIO GitError $ lines <$> readProcess
-        "git"
-        ["merge-base", unpack branch, "HEAD"]
-        ""
-
-    let ref = maybe branch pack $ listToMaybe output
-    logDebugN $ "git diff --name-only " <> ref
-    appIO GitError $ lines <$> readProcess
-        "git"
-        ["diff", "--name-only", unpack ref]
-        ""
-
-commitAll :: MonadIO m => Text -> AppT m ()
-commitAll msg = do
-    logDebugN "git commit"
-    appIO GitError $ callProcess "git" ["commit", "-am", unpack msg]
-
-fetchOrigin :: MonadIO m => Text -> Text -> AppT m ()
-fetchOrigin remoteRef localRef = do
-    logDebugN $ "git fetch origin " <> remoteRef <> ":" <> localRef
-    appIO GitError $ callProcess
-        "git"
-        ["fetch", "origin", unpack $ remoteRef <> ":" <> localRef]
-
-pushOrigin :: MonadIO m => Text -> AppT m ()
-pushOrigin branch = do
-    logDebugN $ "git push origin " <> branch
-    appIO GitError $ callProcess "git" ["push", "origin", unpack branch]
-
-forcePushOrigin :: MonadIO m => Text -> AppT m ()
-forcePushOrigin branch = do
-    logDebugN $ "git push origin " <> branch
-    appIO GitError $ callProcess
-        "git"
-        ["push", "--force-with-lease", "origin", unpack branch]
 
 getPullRequest
     :: MonadIO m
@@ -266,11 +200,6 @@ readFile path = do
 exitSuccess :: MonadIO m => AppT m ()
 exitSuccess = appIO SystemError Exit.exitSuccess
 
-dockerRun :: MonadIO m => [String] -> AppT m ()
-dockerRun args = do
-    logDebugN $ "docker run " <> tshow args
-    appIO DockerError $ callProcess "docker" $ "run" : args
-
 fetchRemoteFile :: MonadIO m => RemoteFile -> AppT m ()
 fetchRemoteFile RemoteFile {..} = do
     let url = getUrl rfUrl
@@ -278,6 +207,16 @@ fetchRemoteFile RemoteFile {..} = do
     appIO RemoteFileError $ do
         request <- parseRequest $ unpack url
         runResourceT $ httpSink request $ \_ -> sinkFile rfPath
+
+callProcess :: MonadIO m => String -> [String] -> AppT m ()
+callProcess cmd args = do
+    logDebugN $ pack $ "call: " <> cmd <> " " <> show args
+    appIO SystemError $ Process.callProcess cmd args
+
+readProcess :: MonadIO m => String -> [String] -> String -> AppT m String
+readProcess cmd args stdin = do
+    logDebugN $ pack $ "read: " <> cmd <> " " <> show args
+    appIO SystemError $ Process.readProcess cmd args stdin
 
 -- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
 appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
