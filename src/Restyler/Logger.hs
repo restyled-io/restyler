@@ -11,7 +11,7 @@ import Restyler.Prelude hiding (takeWhile)
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import Restyler.App.Type
+import Restyler.App
 import Scanner
 import System.Console.ANSI
 import System.Log.FastLogger (fromLogStr)

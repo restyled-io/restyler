@@ -9,8 +9,7 @@ import Restyler.Prelude
 
 import qualified Data.Vector as V
 import qualified Data.Yaml as Yaml
-import Restyler.App.Class
-import Restyler.App.Type
+import Restyler.App
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
 import Restyler.Options

@@ -1,6 +1,7 @@
 module Restyler.App
-    ( module X
+    ( module Restyler.App.Class
+    , module Restyler.App.Type
     ) where
 
-import Restyler.App.Class as X
-import Restyler.App.Type as X
+import Restyler.App.Class
+import Restyler.App.Type
