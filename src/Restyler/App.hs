@@ -198,7 +198,9 @@ readFile path = do
     appIO SystemError $ T.readFile path
 
 exitSuccess :: MonadIO m => AppT m ()
-exitSuccess = appIO SystemError Exit.exitSuccess
+exitSuccess = do
+    logDebugN "exitSuccess"
+    appIO SystemError Exit.exitSuccess
 
 fetchRemoteFile :: MonadIO m => RemoteFile -> AppT m ()
 fetchRemoteFile RemoteFile {..} = do
@@ -210,13 +212,16 @@ fetchRemoteFile RemoteFile {..} = do
 
 callProcess :: MonadIO m => String -> [String] -> AppT m ()
 callProcess cmd args = do
+    -- N.B. this injects access tokens into the logs when calling git-clone, but
+    -- that's OK because it's DEBUG and they're short-lived anyway.
     logDebugN $ pack $ "call: " <> cmd <> " " <> show args
     appIO SystemError $ Process.callProcess cmd args
 
 readProcess :: MonadIO m => String -> [String] -> String -> AppT m String
 readProcess cmd args stdin = do
     logDebugN $ pack $ "read: " <> cmd <> " " <> show args
-    appIO SystemError $ Process.readProcess cmd args stdin
+    output <- appIO SystemError $ Process.readProcess cmd args stdin
+    output <$ logDebugN ("output: " <> pack output)
 
 -- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
 appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
