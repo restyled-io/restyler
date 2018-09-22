@@ -3,6 +3,4 @@ module Restyler.App
     ) where
 
 import Restyler.App.Class as X
-import Restyler.App.Run as X
 import Restyler.App.Type as X
-import Restyler.App.Bootstrap as X

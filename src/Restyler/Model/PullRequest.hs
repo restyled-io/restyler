@@ -6,6 +6,7 @@ module Restyler.Model.PullRequest
     ( pullRequestOwnerName
     , pullRequestRepoName
     , pullRequestCloneUrl
+    , pullRequestCloneUrlToken
     , pullRequestSpec
     , pullRequestIssueId
     , pullRequestIsFork
@@ -30,11 +31,27 @@ pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
 
+-- | Clone URL appropriate to output in a message
+--
+-- This is a URL that will work if you are otherwised authorized to clone the
+-- repository (e.g.) you have an SSH key.
+--
 pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
 pullRequestCloneUrl =
     fromJustNote "Pull Request without clone URL"
         . repoCloneUrl
         . pullRequestRepo
+
+-- | Clone URL using the given Access Token
+pullRequestCloneUrlToken :: Text -> PullRequest -> Text
+pullRequestCloneUrlToken token pullRequest =
+    "https://x-access-token:"
+        <> token
+        <> "@github.com/"
+        <> untagName (pullRequestOwnerName pullRequest)
+        <> "/"
+        <> untagName (pullRequestRepoName pullRequest)
+        <> ".git"
 
 pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
 pullRequestSpec pullRequest = PullRequestSpec

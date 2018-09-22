@@ -1,18 +1,24 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.App.Type
     ( App(..)
-    , AppT(..)
+    , bootstrapApp
+    , finalizeApp
 
     -- * Application errors
     , AppError(..)
     , mapAppError
+
+    -- * Concrete Application stack
+    , AppT(..)
     ) where
 
 import Restyler.Prelude
 
 import Restyler.Model.Config
+import Restyler.Options
 
 -- | Application environment
 data App = App
@@ -21,10 +27,38 @@ data App = App
     , appAccessToken :: Text
     , appPullRequest :: PullRequest
     -- ^ The @'PullRequest'@ we are restyling
-    , appConfig :: Config
-    -- ^ Configuration loaded from @.restyled.yaml@
     , appRestyledPullRequest :: Maybe SimplePullRequest
     -- ^ Existing restyled @'PullRequest'@ if it exists
+    , appConfig :: Config
+    -- ^ Configuration loaded from @.restyled.yaml@
+    , appOptions :: Options
+    -- ^ Original command-line options
+    , appWorkingDirectory :: FilePath
+    -- ^ Temporary directory we are working in
+    }
+
+-- | A partial @'App'@ type
+--
+-- This is used to run @'MonadApp'@ actions to build the rest of it. The
+-- @'appPullRequest'@ and @'appConfig'@ fields will raise if used.
+--
+bootstrapApp :: Options -> FilePath -> App
+bootstrapApp options@Options {..} path = App
+    { appLogLevel = oLogLevel
+    , appLogColor = oLogColor
+    , appAccessToken = oAccessToken
+    , appPullRequest = error "Bootstrap appPullRequest forced"
+    , appRestyledPullRequest = Nothing
+    , appConfig = error "Bootstrap appConfig forced"
+    , appOptions = options
+    , appWorkingDirectory = path
+    }
+
+finalizeApp :: App -> PullRequest -> Maybe SimplePullRequest -> Config -> App
+finalizeApp app pullRequest mRestyledPullRequest config = app
+    { appPullRequest = pullRequest
+    , appRestyledPullRequest = mRestyledPullRequest
+    , appConfig = config
     }
 
 -- | All possible application error conditions

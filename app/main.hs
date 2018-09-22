@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Restyler.Main (restylerMain)
+import Restyler.CLI (restylerCLI)
 
 main :: IO ()
-main = restylerMain
+main = restylerCLI
