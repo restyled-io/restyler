@@ -10,6 +10,7 @@ where
 
 import Restyler.Prelude
 
+import qualified Data.Vector as V
 import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Logger
@@ -83,9 +84,10 @@ setupPullRequest
     -> AppT m PullRequest
 setupPullRequest path owner repo num = do
     pullRequest <-
-        mapAppError toPullRequestFetchError $ getPullRequest owner repo $ mkId
-            Proxy
-            num
+        mapAppError toPullRequestFetchError
+        $ runGitHub
+        $ pullRequestR owner repo
+        $ mkId Proxy num
 
     setupClone pullRequest path
 
@@ -150,6 +152,21 @@ loadRestyledPullRequest pullRequest = do
         toPathPart (pullRequestOwnerName pullRequest)
             <> ":"
             <> pullRequestRestyledRef pullRequest
+
+findPullRequest
+    :: MonadIO m
+    => Name Owner
+    -> Name Repo
+    -> Text
+    -> Text
+    -> AppT m (Maybe SimplePullRequest)
+findPullRequest owner name base head = do
+    results <- runGitHub $ pullRequestsForR
+        owner
+        name
+        (optionsBase base <> optionsHead head)
+        FetchAll
+    pure $ results V.!? 0
 
 -- | Load @.restyled.yaml@
 loadConfig :: MonadIO m => AppT m Config

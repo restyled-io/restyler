@@ -28,14 +28,18 @@ data PullRequestStatus
 sendPullRequestStatus :: MonadIO m => PullRequestStatus -> AppT m ()
 sendPullRequestStatus status = do
     statusConfig <- asks $ cStatusesConfig . appConfig
-
     when (shouldSendStatus statusConfig status) $ do
         pullRequest <- asks appPullRequest
-        createStatus
-            (pullRequestOwnerName pullRequest)
-            (pullRequestRepoName pullRequest)
-            (mkName Proxy $ pullRequestCommitSha $ pullRequestHead pullRequest)
-            (statusToStatus status)
+        createHeadShaStatus pullRequest status
+
+createHeadShaStatus
+    :: MonadIO m => PullRequest -> PullRequestStatus -> AppT m ()
+createHeadShaStatus pullRequest =
+    runGitHub_ . createStatusR owner name sha . statusToStatus
+  where
+    owner = pullRequestOwnerName pullRequest
+    name = pullRequestRepoName pullRequest
+    sha = mkName Proxy $ pullRequestHeadSha pullRequest
 
 -- | @'sendPullRequestStatus'@ but ignore any exceptions
 --

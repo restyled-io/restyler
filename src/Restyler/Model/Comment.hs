@@ -25,7 +25,7 @@ leaveRestyledComment restyledPr = do
             then Content.commentBodyFork
             else Content.commentBody
 
-    createComment
+    runGitHub_ $ createCommentR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
@@ -36,10 +36,11 @@ clearRestyledComments :: (HasCallStack, MonadIO m) => AppT m ()
 clearRestyledComments = do
     pullRequest <- asks appPullRequest
 
-    comments <- getComments
+    comments <- runGitHub $ commentsR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
+        FetchAll
 
     for_ (V.filter isRestyledComment comments) $ \comment -> do
         logDebugN
@@ -48,7 +49,7 @@ clearRestyledComments = do
             <> " by "
             <> commentUserName comment
 
-        deleteComment
+        runGitHub_ $ deleteCommentR
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkId Proxy $ issueCommentId comment)

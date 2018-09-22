@@ -16,23 +16,28 @@ module Restyler.App
     , AppError(..)
     , mapAppError
 
-    -- * Effects
-    -- ** GitHub
-    , getPullRequest
-    , findPullRequest
-    , createPullRequest
-    , updatePullRequest
-    , getComments
-    , createComment
-    , deleteComment
-    , createStatus
+    -- * GitHub
+    , runGitHub
+    , runGitHub_
+
+    -- ** Re-exports
+    , module GitHub.Endpoints.Issues.Comments
+    , module GitHub.Endpoints.PullRequests
+    , module GitHub.Endpoints.Repos.Statuses
 
     -- * System
+    -- ** Directories
     , getCurrentDirectory
-    , doesFileExist
     , setCurrentDirectory
+
+    -- ** Files
+    , doesFileExist
     , readFile
+
+    -- ** Environment
     , exitSuccess
+
+    -- ** Processes
     , callProcess
     , readProcess
 
@@ -46,11 +51,9 @@ import Restyler.Prelude
 import Conduit (runResourceT, sinkFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import qualified Data.Vector as V
-import GitHub.Endpoints.Issues.Comments hiding (createComment, deleteComment)
-import GitHub.Endpoints.PullRequests hiding
-    (createPullRequest, updatePullRequest)
-import GitHub.Endpoints.Repos.Statuses hiding (createStatus)
+import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
+import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import GitHub.Endpoints.Repos.Statuses
 import GitHub.Request
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
@@ -109,73 +112,46 @@ newtype AppT m a = AppT
         , MonadLogger
         )
 
-getPullRequest
-    :: MonadIO m
-    => Name Owner
-    -> Name Repo
-    -> Id PullRequest
-    -> AppT m PullRequest
-getPullRequest owner name num = runGitHub $ pullRequestR owner name num
 
-findPullRequest
-    :: MonadIO m
-    => Name Owner
-    -> Name Repo
-    -> Text
-    -> Text
-    -> AppT m (Maybe SimplePullRequest)
-findPullRequest owner name base head = do
-    results <- runGitHub $ pullRequestsForR
-        owner
-        name
-        (optionsBase base <> optionsHead head)
-        FetchAll
-    pure $ results V.!? 0
+-- | Run a GitHub @'Request'@
+runGitHub :: MonadIO m => Request k a -> AppT m a
+runGitHub req = do
+    logDebugN $ "GitHub request: " <> showGitHubRequest req
+    auth <- asks $ OAuth . encodeUtf8 . appAccessToken
+    result <- appIO OtherError $ do
+        mgr <- getGlobalManager
+        executeRequestWithMgr mgr auth req
 
-createPullRequest
-    :: MonadIO m
-    => Name Owner
-    -> Name Repo
-    -> CreatePullRequest
-    -> AppT m PullRequest
-createPullRequest owner name create =
-    runGitHub $ createPullRequestR owner name create
+    either (throwError . GitHubError) pure result
 
-updatePullRequest
-    :: MonadIO m
-    => Name Owner
-    -> Name Repo
-    -> Id PullRequest
-    -> EditPullRequest
-    -> AppT m PullRequest
-updatePullRequest owner name id' edit =
-    runGitHub $ updatePullRequestR owner name id' edit
+-- | @'runGitHub'@ but discard the result
+runGitHub_ :: MonadIO m => Request k a -> AppT m ()
+runGitHub_ = void . runGitHub
 
-getComments
-    :: MonadIO m
-    => Name Owner
-    -> Name Repo
-    -> Id Issue
-    -> AppT m (Vector IssueComment)
-getComments owner name id' = runGitHub $ commentsR owner name id' FetchAll
+-- | Show a GitHub @'Request'@, useful for debugging
+-- brittany-disable-next-binding
+showGitHubRequest :: Request k a -> Text
+showGitHubRequest (SimpleQuery (Query ps qs)) = mconcat
+    [ "[GET] "
+    , "/" <> T.intercalate "/" ps
+    , "?" <> T.intercalate "&" (queryParts qs)
+    ]
+showGitHubRequest (SimpleQuery (PagedQuery ps qs fc)) = mconcat
+    [ "[GET] "
+    , "/" <> T.intercalate "/" ps
+    , "?" <> T.intercalate "&" (queryParts qs)
+    , " (" <> tshow fc <> ")"
+    ]
+showGitHubRequest (SimpleQuery (Command m ps _body)) = mconcat
+    [ "[" <> T.toUpper (tshow m) <> "] "
+    , "/" <> T.intercalate "/" ps
+    ]
+showGitHubRequest (StatusQuery _ _) = "<status query>"
+showGitHubRequest (HeaderQuery _ _) = "<header query>"
+showGitHubRequest (RedirectQuery _) = "<redirect query>"
 
-createComment
-    :: MonadIO m => Name Owner -> Name Repo -> Id Issue -> Text -> AppT m ()
-createComment owner name id' body =
-    runGitHub_ $ createCommentR owner name id' body
-
-deleteComment :: MonadIO m => Name Owner -> Name Repo -> Id Comment -> AppT m ()
-deleteComment owner name id' = runGitHub_ $ deleteCommentR owner name id'
-
-createStatus
-    :: MonadIO m
-    => Name Owner
-    -> Name Repo
-    -> Name Commit
-    -> NewStatus
-    -> AppT m ()
-createStatus owner name sha status =
-    runGitHub_ $ createStatusR owner name sha status
+queryParts :: QueryString -> [Text]
+queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv
 
 getCurrentDirectory :: MonadIO m => AppT m FilePath
 getCurrentDirectory = do
@@ -228,43 +204,3 @@ appIO :: MonadIO m => (IOException -> AppError) -> IO a -> AppT m a
 appIO err f = AppT $ do
     result <- liftIO $ tryIO f
     either (throwError . err) pure result
-
--- | Run a GitHub @'Request'@
-runGitHub :: MonadIO m => Request k a -> AppT m a
-runGitHub req = do
-    logDebugN $ "GitHub request: " <> showGitHubRequest req
-    auth <- asks $ OAuth . encodeUtf8 . appAccessToken
-    result <- appIO OtherError $ do
-        mgr <- getGlobalManager
-        executeRequestWithMgr mgr auth req
-
-    either (throwError . GitHubError) pure result
-
--- | @'runGitHub'@ but discard the result
-runGitHub_ :: MonadIO m => Request k a -> AppT m ()
-runGitHub_ = void . runGitHub
-
--- | Show a GitHub @'Request'@, useful for debugging
--- brittany-disable-next-binding
-showGitHubRequest :: Request k a -> Text
-showGitHubRequest (SimpleQuery (Query ps qs)) = mconcat
-    [ "[GET] "
-    , "/" <> T.intercalate "/" ps
-    , "?" <> T.intercalate "&" (queryParts qs)
-    ]
-showGitHubRequest (SimpleQuery (PagedQuery ps qs fc)) = mconcat
-    [ "[GET] "
-    , "/" <> T.intercalate "/" ps
-    , "?" <> T.intercalate "&" (queryParts qs)
-    , " (" <> tshow fc <> ")"
-    ]
-showGitHubRequest (SimpleQuery (Command m ps _body)) = mconcat
-    [ "[" <> T.toUpper (tshow m) <> "] "
-    , "/" <> T.intercalate "/" ps
-    ]
-showGitHubRequest (StatusQuery _ _) = "<status query>"
-showGitHubRequest (HeaderQuery _ _) = "<header query>"
-showGitHubRequest (RedirectQuery _) = "<redirect query>"
-
-queryParts :: QueryString -> [Text]
-queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv

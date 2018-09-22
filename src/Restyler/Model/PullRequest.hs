@@ -12,6 +12,7 @@ module Restyler.Model.PullRequest
     , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
     , pullRequestHeadRef
+    , pullRequestHeadSha
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
     , pullRequestRestyledBase
@@ -58,6 +59,9 @@ pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
 
 pullRequestHeadRef :: PullRequest -> Text
 pullRequestHeadRef = pullRequestCommitRef . pullRequestHead
+
+pullRequestHeadSha :: PullRequest -> Text
+pullRequestHeadSha = pullRequestCommitSha . pullRequestHead
 
 pullRequestRemoteHeadRef :: PullRequest -> Text
 pullRequestRemoteHeadRef pullRequest@PullRequest {..}

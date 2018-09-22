@@ -39,7 +39,7 @@ createRestyledPullRequest _restylers = do
     -- know it's our branch, of course).
     forcePushOrigin $ pullRequestRestyledRef pullRequest
 
-    pr <- createPullRequest
+    pr <- runGitHub $ createPullRequestR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         CreatePullRequest
@@ -80,7 +80,7 @@ closeRestyledPullRequest = do
                 }
         logInfoN $ "Closing restyled PR: " <> showSpec spec
 
-        updatePullRequest
+        runGitHub $ updatePullRequestR
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkId Proxy $ simplePullRequestNumber restyledPr)
@@ -109,5 +109,4 @@ forcePushOrigin branch =
     callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
 
 checkoutNewBranch :: MonadIO m => Text -> AppT m ()
-checkoutNewBranch branch =
-    callProcess "git" ["checkout", "-b", unpack branch]
+checkoutNewBranch branch = callProcess "git" ["checkout", "-b", unpack branch]
