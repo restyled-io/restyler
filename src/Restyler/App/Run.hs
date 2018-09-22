@@ -12,9 +12,6 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import Restyler.App
-import Restyler.Capabilities.Git
-import Restyler.Capabilities.GitHub
-import Restyler.Capabilities.System
 import Restyler.Logger
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
@@ -78,19 +75,12 @@ bootstrapApp Options {..} path = runApp app $ do
         }
 
 setupPullRequest
-    :: ( HasCallStack
-       , MonadLogger m
-       , MonadReader App m
-       , MonadGit m
-       , MonadSystem m
-       , MonadGitHub m
-       , MonadError AppError m
-       )
+    :: (HasCallStack, MonadIO m)
     => FilePath
     -> Name Owner
     -> Name Repo
     -> Int
-    -> m PullRequest
+    -> AppT m PullRequest
 setupPullRequest path owner repo num = do
     pullRequest <-
         mapAppError toPullRequestFetchError $ getPullRequest owner repo $ mkId
@@ -103,16 +93,7 @@ setupPullRequest path owner repo num = do
     logInfoN $ "Restyling PR " <> showSpec spec
     pure pullRequest
 
-setupClone
-    :: ( HasCallStack
-       , MonadSystem m
-       , MonadError AppError m
-       , MonadGit m
-       , MonadReader App m
-       )
-    => PullRequest
-    -> FilePath
-    -> m ()
+setupClone :: (HasCallStack, MonadIO m) => PullRequest -> FilePath -> AppT m ()
 setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
     token <- asks appAccessToken
 
@@ -139,9 +120,9 @@ setupClone pullRequest dir = mapAppError toPullRequestCloneError $ do
             <> ".git"
 
 loadRestyledPullRequest
-    :: (HasCallStack, MonadLogger m, MonadGitHub m)
+    :: (HasCallStack, MonadIO m)
     => PullRequest
-    -> m (Maybe SimplePullRequest)
+    -> AppT m (Maybe SimplePullRequest)
 loadRestyledPullRequest pullRequest = do
     mRestyledPullRequest <- findPullRequest
         (pullRequestOwnerName pullRequest)
@@ -171,14 +152,14 @@ loadRestyledPullRequest pullRequest = do
             <> pullRequestRestyledRef pullRequest
 
 -- | Load @.restyled.yaml@
-loadConfig :: (MonadSystem m, MonadError AppError m) => m Config
+loadConfig :: MonadIO m => AppT m Config
 loadConfig = do
     exists <- doesFileExist configPath
 
     if exists then decodeConfig =<< readFile configPath else pure defaultConfig
 
 -- | Decode the configuration content, or throw an @'AppError'@
-decodeConfig :: MonadError AppError m => Text -> m Config
+decodeConfig :: Monad m => Text -> AppT m Config
 decodeConfig =
     either (throwError . ConfigurationError) pure
         . Yaml.decodeEither

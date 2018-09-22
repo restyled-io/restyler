@@ -12,7 +12,6 @@ where
 import Restyler.Prelude
 
 import Restyler.App
-import Restyler.Capabilities.GitHub
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
 import Restyler.Model.StatusesConfig
@@ -26,8 +25,7 @@ data PullRequestStatus
     -- ^ We encountered an error and can link to a Job
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
-sendPullRequestStatus
-    :: (MonadGitHub m, MonadReader App m) => PullRequestStatus -> m ()
+sendPullRequestStatus :: MonadIO m => PullRequestStatus -> AppT m ()
 sendPullRequestStatus status = do
     statusConfig <- asks $ cStatusesConfig . appConfig
 
@@ -44,10 +42,7 @@ sendPullRequestStatus status = do
 -- This is useful for emitting the Errored status, where we wouldn't want an
 -- exception here to muddy the debugging of the error we're reporting.
 --
-sendPullRequestStatus_
-    :: (MonadGitHub m, MonadError AppError m, MonadLogger m, MonadReader App m)
-    => PullRequestStatus
-    -> m ()
+sendPullRequestStatus_ :: MonadIO m => PullRequestStatus -> AppT m ()
 sendPullRequestStatus_ status = sendPullRequestStatus status
     `catchError` \_ -> logWarnN "Error sending PR status"
 

@@ -8,8 +8,7 @@ module Restyler.Model.Restyler.Run
 import Restyler.Prelude
 
 import Data.List (nub)
-import Restyler.Capabilities.Docker
-import Restyler.Capabilities.System
+import Restyler.App
 import Restyler.Model.Include
 import Restyler.Model.Interpreter
 import Restyler.Model.Restyler
@@ -18,11 +17,7 @@ import Restyler.Model.Restyler
 --
 -- Returns the subset of @'Restyler@'s that were actually invoked.
 --
-runRestylers
-    :: (Monad m, MonadSystem m, MonadDocker m, MonadLogger m)
-    => [Restyler]
-    -> [FilePath]
-    -> m [Restyler]
+runRestylers :: MonadIO m => [Restyler] -> [FilePath] -> AppT m [Restyler]
 runRestylers restylers allPaths = do
     paths <- filterM doesFileExist allPaths
 
@@ -31,11 +26,7 @@ runRestylers restylers allPaths = do
 
     filterM (\r -> runRestyler r =<< filterRestylePaths r paths) restylers
 
-runRestyler
-    :: (MonadSystem m, Monad m, MonadDocker m, MonadLogger m)
-    => Restyler
-    -> [FilePath]
-    -> m Bool
+runRestyler :: MonadIO m => Restyler -> [FilePath] -> AppT m Bool
 runRestyler _ [] = pure False
 runRestyler r@Restyler {..} paths = True <$ if rSupportsMultiplePaths
     then do
@@ -45,8 +36,7 @@ runRestyler r@Restyler {..} paths = True <$ if rSupportsMultiplePaths
         logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
         dockerRunRestyler r [path]
 
-filterRestylePaths
-    :: (Monad m, MonadSystem m) => Restyler -> [FilePath] -> m [FilePath]
+filterRestylePaths :: MonadIO m => Restyler -> [FilePath] -> AppT m [FilePath]
 filterRestylePaths r = filterM (r `shouldRestyle`)
   where
     Restyler {..} `shouldRestyle` path
@@ -56,8 +46,7 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
             contents <- readFile path
             pure $ any (contents `hasInterpreter`) rInterpreters
 
-dockerRunRestyler
-    :: (MonadDocker m, MonadSystem m, Monad m) => Restyler -> [FilePath] -> m ()
+dockerRunRestyler :: MonadIO m => Restyler -> [FilePath] -> AppT m ()
 dockerRunRestyler Restyler {..} paths = do
     cwd <- getCurrentDirectory
 

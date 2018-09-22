@@ -11,11 +11,6 @@ import Restyler.Prelude
 
 import Restyler.App
 import Restyler.App.Run
-import Restyler.Capabilities.Docker
-import Restyler.Capabilities.Git
-import Restyler.Capabilities.GitHub
-import Restyler.Capabilities.RemoteFile
-import Restyler.Capabilities.System
 import Restyler.Model.Comment
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
@@ -65,17 +60,7 @@ withTempDirectory f = do
     innerResult <- either (exitWithAppError . SystemError) pure result
     either exitWithAppError pure innerResult
 
-run
-    :: ( HasCallStack
-       , MonadSystem m
-       , MonadDocker m
-       , MonadGit m
-       , MonadGitHub m
-       , MonadLogger m
-       , MonadReader App m
-       , MonadRemoteFile m
-       )
-    => m ()
+run :: (HasCallStack, MonadIO m) => AppT m ()
 run = do
     unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
 
@@ -105,20 +90,13 @@ run = do
     sendPullRequestStatus $ DifferencesStatus restyledUrl
     logInfoN "Restyling successful"
 
-configEnabled :: MonadReader App m => m Bool
+configEnabled :: Monad m => AppT m Bool
 configEnabled = asks $ cEnabled . appConfig
 
-commentsEnabled :: MonadReader App m => m Bool
+commentsEnabled :: Monad m => AppT m Bool
 commentsEnabled = asks $ cCommentsEnabled . appConfig
 
-restyle
-    :: ( MonadSystem m
-       , MonadDocker m
-       , MonadGit m
-       , MonadLogger m
-       , MonadReader App m
-       )
-    => m RestyleResult
+restyle :: MonadIO m => AppT m RestyleResult
 restyle = do
     config <- asks appConfig
     pullRequest <- asks appPullRequest
@@ -128,7 +106,7 @@ restyle = do
         <$> runRestylers (cRestylers config) pullRequestPaths
         <*> changedPaths (pullRequestLocalHeadRef pullRequest)
 
-isAutoPush :: MonadReader App m => m Bool
+isAutoPush :: Monad m => AppT m Bool
 isAutoPush = do
     isAuto <- asks $ cAuto . appConfig
     pullRequest <- asks appPullRequest
@@ -172,7 +150,7 @@ exitWithAppError = \case
     showGitHubError (JsonError e) = "Malformed response: " <> unpack e
     showGitHubError (UserError e) = "User error: " <> unpack e
 
-exitWithInfo :: (MonadSystem m, MonadLogger m) => Text -> m ()
+exitWithInfo :: MonadIO m => Text -> AppT m ()
 exitWithInfo msg = do
     logInfoN msg
     exitSuccess

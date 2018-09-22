@@ -12,13 +12,11 @@ import Restyler.Prelude
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import Restyler.App
-import Restyler.Capabilities.GitHub
 import qualified Restyler.Content as Content
 import Restyler.Model.PullRequest
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
-leaveRestyledComment
-    :: (HasCallStack, MonadGitHub m, MonadReader App m) => PullRequest -> m ()
+leaveRestyledComment :: (HasCallStack, MonadIO m) => PullRequest -> AppT m ()
 leaveRestyledComment restyledPr = do
     pullRequest <- asks appPullRequest
 
@@ -34,8 +32,7 @@ leaveRestyledComment restyledPr = do
         (restyledCommentBody restyledPr)
 
 -- | Locate any comments left by us on the origin PR and delete them
-clearRestyledComments
-    :: (HasCallStack, MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+clearRestyledComments :: (HasCallStack, MonadIO m) => AppT m ()
 clearRestyledComments = do
     pullRequest <- asks appPullRequest
 

@@ -12,8 +12,6 @@ where
 import Restyler.Prelude
 
 import Restyler.App
-import Restyler.Capabilities.Git
-import Restyler.Capabilities.GitHub
 import qualified Restyler.Content as Content
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequestSpec
@@ -21,18 +19,13 @@ import Restyler.Model.Restyler
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest
-    :: ( HasCallStack
-       , MonadGit m
-       , MonadGitHub m
-       , MonadLogger m
-       , MonadReader App m
-       )
+    :: (HasCallStack, MonadIO m)
     => [Restyler]
     -- ^ Restylers that ran to produce this diff
     --
     -- Currently ignored. This will be used in the PR body soon.
     --
-    -> m PullRequest
+    -> AppT m PullRequest
 createRestyledPullRequest _restylers = do
     pullRequest <- asks appPullRequest
     let rBranch = pullRequestRestyledRef pullRequest
@@ -60,7 +53,7 @@ createRestyledPullRequest _restylers = do
     pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
 -- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: (MonadGit m, MonadReader App m) => m ()
+updateRestyledPullRequest :: MonadIO m => AppT m ()
 updateRestyledPullRequest = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
     checkoutBranch True rBranch
@@ -71,8 +64,7 @@ updateRestyledPullRequest = do
 --
 -- TODO: delete the branch
 --
-closeRestyledPullRequest
-    :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+closeRestyledPullRequest :: MonadIO m => AppT m ()
 closeRestyledPullRequest = do
     -- We have to use the Owner/Repo from the main PR since SimplePullRequest
     -- doesn't give us much.
@@ -101,7 +93,7 @@ closeRestyledPullRequest = do
                 }
 
 -- | Commit and push to current branch
-updateOriginalPullRequest :: (MonadGit m, MonadReader App m) => m ()
+updateOriginalPullRequest :: MonadIO m => AppT m ()
 updateOriginalPullRequest = do
     commitAll Content.commitMessage
     pushOrigin . pullRequestHeadRef =<< asks appPullRequest
