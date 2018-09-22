@@ -33,29 +33,30 @@ import qualified System.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
-class Functor m => MonadApp m where
-    -- | Run a GitHub @'Request'@
-    runGitHub :: Request k a -> m a
+class
+    ( Monad m
+    , MonadLogger m
+    , MonadReader App m
+    , MonadError AppError m
+    )
+    => MonadApp m where
+        runGitHub :: Request k a -> m a
 
-    -- | @'runGitHub'@ but discard the result
-    runGitHub_ :: Request k a -> m ()
-    runGitHub_ = void . runGitHub
+        runGitHub_ :: Request k a -> m ()
+        runGitHub_ = void . runGitHub
 
-    getCurrentDirectory :: m FilePath
+        getCurrentDirectory :: m FilePath
+        setCurrentDirectory :: FilePath -> m ()
 
-    setCurrentDirectory :: FilePath -> m ()
+        doesFileExist :: FilePath -> m Bool
+        readFile :: FilePath -> m Text
 
-    doesFileExist :: FilePath -> m Bool
+        exitSuccess :: m ()
 
-    readFile :: FilePath -> m Text
+        callProcess :: String -> [String] -> m ()
+        readProcess :: String -> [String] -> String -> m String
 
-    exitSuccess :: m ()
-
-    callProcess :: String -> [String] -> m ()
-
-    readProcess :: String -> [String] -> String -> m String
-
-    downloadFile :: Text -> FilePath -> m ()
+        downloadFile :: Text -> FilePath -> m ()
 
 instance MonadIO m => MonadApp (AppT m) where
     runGitHub req = do

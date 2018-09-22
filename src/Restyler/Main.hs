@@ -11,7 +11,6 @@ where
 import Restyler.Prelude
 
 import Restyler.App
-import Restyler.App.Run
 import Restyler.Model.Comment
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
@@ -62,7 +61,7 @@ withTempDirectory f = do
     innerResult <- either (exitWithAppError . SystemError) pure result
     either exitWithAppError pure innerResult
 
-run :: (HasCallStack, MonadIO m) => AppT m ()
+run :: (HasCallStack, MonadApp m) => m ()
 run = do
     unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
 
@@ -94,13 +93,13 @@ run = do
     sendPullRequestStatus $ DifferencesStatus restyledUrl
     logInfoN "Restyling successful"
 
-configEnabled :: Monad m => AppT m Bool
+configEnabled :: MonadApp m => m Bool
 configEnabled = asks $ cEnabled . appConfig
 
-commentsEnabled :: Monad m => AppT m Bool
+commentsEnabled :: MonadApp m => m Bool
 commentsEnabled = asks $ cCommentsEnabled . appConfig
 
-restyle :: MonadIO m => AppT m RestyleResult
+restyle :: MonadApp m => m RestyleResult
 restyle = do
     config <- asks appConfig
     pullRequest <- asks appPullRequest
@@ -110,14 +109,14 @@ restyle = do
         <$> runRestylers (cRestylers config) pullRequestPaths
         <*> changedPaths (pullRequestLocalHeadRef pullRequest)
 
-changedPaths :: MonadIO m => Text -> AppT m [FilePath]
+changedPaths :: MonadApp m => Text -> m [FilePath]
 changedPaths branch = do
     output <- lines
         <$> readProcess "git" ["merge-base", unpack branch, "HEAD"] ""
     let ref = maybe branch pack $ listToMaybe output
     lines <$> readProcess "git" ["diff", "--name-only", unpack ref] ""
 
-isAutoPush :: Monad m => AppT m Bool
+isAutoPush :: MonadApp m => m Bool
 isAutoPush = do
     isAuto <- asks $ cAuto . appConfig
     pullRequest <- asks appPullRequest
@@ -159,7 +158,7 @@ exitWithAppError = \case
     showGitHubError (JsonError e) = "Malformed response: " <> unpack e
     showGitHubError (UserError e) = "User error: " <> unpack e
 
-exitWithInfo :: MonadIO m => Text -> AppT m ()
+exitWithInfo :: MonadApp m => Text -> m ()
 exitWithInfo msg = do
     logInfoN msg
     exitSuccess

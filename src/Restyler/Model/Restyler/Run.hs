@@ -17,7 +17,7 @@ import Restyler.Model.Restyler
 --
 -- Returns the subset of @'Restyler@'s that were actually invoked.
 --
-runRestylers :: MonadIO m => [Restyler] -> [FilePath] -> AppT m [Restyler]
+runRestylers :: MonadApp m => [Restyler] -> [FilePath] -> m [Restyler]
 runRestylers restylers allPaths = do
     paths <- filterM doesFileExist allPaths
 
@@ -26,7 +26,7 @@ runRestylers restylers allPaths = do
 
     filterM (\r -> runRestyler r =<< filterRestylePaths r paths) restylers
 
-runRestyler :: MonadIO m => Restyler -> [FilePath] -> AppT m Bool
+runRestyler :: MonadApp m => Restyler -> [FilePath] -> m Bool
 runRestyler _ [] = pure False
 runRestyler r@Restyler {..} paths = True <$ if rSupportsMultiplePaths
     then do
@@ -36,7 +36,7 @@ runRestyler r@Restyler {..} paths = True <$ if rSupportsMultiplePaths
         logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
         dockerRunRestyler r [path]
 
-filterRestylePaths :: MonadIO m => Restyler -> [FilePath] -> AppT m [FilePath]
+filterRestylePaths :: MonadApp m => Restyler -> [FilePath] -> m [FilePath]
 filterRestylePaths r = filterM (r `shouldRestyle`)
   where
     Restyler {..} `shouldRestyle` path
@@ -46,7 +46,7 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
             contents <- readFile path
             pure $ any (contents `hasInterpreter`) rInterpreters
 
-dockerRunRestyler :: MonadIO m => Restyler -> [FilePath] -> AppT m ()
+dockerRunRestyler :: MonadApp m => Restyler -> [FilePath] -> m ()
 dockerRunRestyler Restyler {..} paths = do
     cwd <- getCurrentDirectory
     callProcess "docker"

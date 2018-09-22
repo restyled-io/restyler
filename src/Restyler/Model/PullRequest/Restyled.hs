@@ -19,13 +19,13 @@ import Restyler.Model.Restyler
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest
-    :: (HasCallStack, MonadIO m)
+    :: (HasCallStack, MonadApp m)
     => [Restyler]
     -- ^ Restylers that ran to produce this diff
     --
     -- Currently ignored. This will be used in the PR body soon.
     --
-    -> AppT m PullRequest
+    -> m PullRequest
 createRestyledPullRequest _restylers = do
     pullRequest <- asks appPullRequest
     let rBranch = pullRequestRestyledRef pullRequest
@@ -53,7 +53,7 @@ createRestyledPullRequest _restylers = do
     pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
 -- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: MonadIO m => AppT m ()
+updateRestyledPullRequest :: MonadApp m => m ()
 updateRestyledPullRequest = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
     checkoutNewBranch rBranch
@@ -64,7 +64,7 @@ updateRestyledPullRequest = do
 --
 -- TODO: delete the branch
 --
-closeRestyledPullRequest :: MonadIO m => AppT m ()
+closeRestyledPullRequest :: MonadApp m => m ()
 closeRestyledPullRequest = do
     -- We have to use the Owner/Repo from the main PR since SimplePullRequest
     -- doesn't give us much.
@@ -93,20 +93,20 @@ closeRestyledPullRequest = do
                 }
 
 -- | Commit and push to current branch
-updateOriginalPullRequest :: MonadIO m => AppT m ()
+updateOriginalPullRequest :: MonadApp m => m ()
 updateOriginalPullRequest = do
     commitAll Content.commitMessage
     pushOrigin . pullRequestHeadRef =<< asks appPullRequest
 
-pushOrigin :: MonadIO m => Text -> AppT m ()
+pushOrigin :: MonadApp m => Text -> m ()
 pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
 
-commitAll :: MonadIO m => Text -> AppT m ()
+commitAll :: MonadApp m => Text -> m ()
 commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
 
-forcePushOrigin :: MonadIO m => Text -> AppT m ()
+forcePushOrigin :: MonadApp m => Text -> m ()
 forcePushOrigin branch =
     callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
 
-checkoutNewBranch :: MonadIO m => Text -> AppT m ()
+checkoutNewBranch :: MonadApp m => Text -> m ()
 checkoutNewBranch branch = callProcess "git" ["checkout", "-b", unpack branch]

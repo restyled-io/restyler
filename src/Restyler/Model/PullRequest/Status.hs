@@ -25,15 +25,14 @@ data PullRequestStatus
     -- ^ We encountered an error and can link to a Job
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
-sendPullRequestStatus :: MonadIO m => PullRequestStatus -> AppT m ()
+sendPullRequestStatus :: MonadApp m => PullRequestStatus -> m ()
 sendPullRequestStatus status = do
     statusConfig <- asks $ cStatusesConfig . appConfig
     when (shouldSendStatus statusConfig status) $ do
         pullRequest <- asks appPullRequest
         createHeadShaStatus pullRequest status
 
-createHeadShaStatus
-    :: MonadIO m => PullRequest -> PullRequestStatus -> AppT m ()
+createHeadShaStatus :: MonadApp m => PullRequest -> PullRequestStatus -> m ()
 createHeadShaStatus pullRequest =
     runGitHub_ . createStatusR owner name sha . statusToStatus
   where
@@ -46,7 +45,7 @@ createHeadShaStatus pullRequest =
 -- This is useful for emitting the Errored status, where we wouldn't want an
 -- exception here to muddy the debugging of the error we're reporting.
 --
-sendPullRequestStatus_ :: MonadIO m => PullRequestStatus -> AppT m ()
+sendPullRequestStatus_ :: MonadApp m => PullRequestStatus -> m ()
 sendPullRequestStatus_ status = sendPullRequestStatus status
     `catchError` \_ -> logWarnN "Error sending PR status"
 
