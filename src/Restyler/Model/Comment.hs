@@ -20,16 +20,11 @@ leaveRestyledComment :: (HasCallStack, MonadApp m) => PullRequest -> m ()
 leaveRestyledComment restyledPr = do
     pullRequest <- asks appPullRequest
 
-    let
-        restyledCommentBody = if pullRequestIsFork pullRequest
-            then Content.commentBodyFork
-            else Content.commentBody
-
     runGitHub_ $ createCommentR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
-        (restyledCommentBody restyledPr)
+        (Content.commentBody restyledPr)
 
 -- | Locate any comments left by us on the origin PR and delete them
 clearRestyledComments :: (HasCallStack, MonadApp m) => m ()

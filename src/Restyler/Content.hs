@@ -4,7 +4,6 @@
 module Restyler.Content
     ( commitMessage
     , commentBody
-    , commentBodyFork
     ) where
 
 import Restyler.Prelude hiding (commentBody)
@@ -16,40 +15,33 @@ import Text.Shakespeare.Text (st)
 commitMessage :: Text
 commitMessage = "Restyled"
 
--- | The comment to leave about a restyled Pull Request
 commentBody :: PullRequest -> Text
-commentBody pullRequest = [st|
-Hi there!
+commentBody pullRequest = mconcat
+    [ commentPreamble pullRequest <> "\n"
+    , commentToIncorporate pullRequest <> "\n"
+    , commentFooter
+    ]
 
-I just wanted to let you know that some code in this PR might not match the
-team's preferred styles. This process isn't perfect, but when we ran some
-auto-reformatting tools on it there were differences. Those differences can be
-seen in ##{pullRequestNumber pullRequest}.
+-- brittany-disable-next-binding
 
-To incorporate the changes, merge that PR into yours.
+commentPreamble :: PullRequest -> Text
+commentPreamble pullRequest = [st|
+Hey there-
 
-Sorry if this was unexpected. To disable it, see our [documentation][].
-
-Thanks,
-[Restyled.io][]
-
-[restyled.io]: https://restyled.io
-[documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
+I'm a [bot][homepage], here to let you know that some code in this PR might not
+match the team's automated styling. I ran the team's auto-reformatting tools on
+the files changed in this PR and found some differences. Those differences can
+be seen in ##{pullRequestNumber pullRequest}.
 |]
 
--- | The more complicated comment to leave when we restyled PRs from forks
-commentBodyFork :: HasCallStack => PullRequest -> Text
-commentBodyFork pullRequest = [st|
-Hi there!
+-- brittany-disable-next-binding
 
-I just wanted to let you know that some code in this PR might not match the
-team's preferred styles. This process isn't perfect, but when we ran some
-auto-reformatting tools on it there were differences. Those differences can be
-seen in ##{pullRequestNumber pullRequest}.
-
+commentToIncorporate :: PullRequest -> Text
+commentToIncorporate pullRequest
+    | pullRequestIsFork pullRequest = [st|
 **NOTE**: Since this PR was opened from a fork, we're not able to open our PR
 with yours as the base branch. Therefore, the PR linked above was opened
-directly against `#{bBranch}`. It includes your changes and another commit to
+directly against `#{pullRequestBaseRef pullRequest}`. It includes your changes and another commit to
 adjust styling.
 
 If you're interested in incorporating the style fixes in this PR, you can do
@@ -62,11 +54,20 @@ git merge --ff-only FETCH_HEAD
 git push
 ```
 
-Thanks,
-[Restyled.io][]
+Fixing the styling (through the above or any other means) will cause the linked
+PR to be closed and this comment delete.
+|]
+    | otherwise = [st|
+To incorporate those fixes, just merge that PR into this one. Or, if you
+manually fix the styling, that PR will be closed and this comment deleted.
+|]
 
-[restyled.io]: https://restyled.io
+-- brittany-disable-next-binding
+
+commentFooter :: Text
+commentFooter = [st|
+Sorry if this was unexpected. To disable it, see our [documentation][].
+
+[homepage]: https://restyled.io
 [documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
 |]
-  where
-    bBranch = pullRequestBaseRef pullRequest
