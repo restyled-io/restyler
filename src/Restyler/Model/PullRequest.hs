@@ -26,7 +26,7 @@ import Restyler.Prelude
 
 import Restyler.Model.PullRequestSpec
 
-pullRequestOwnerName :: PullRequest -> Name Owner
+pullRequestOwnerName :: HasCallStack => PullRequest -> Name Owner
 pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
@@ -44,7 +44,7 @@ pullRequestCloneUrl =
         . pullRequestRepo
 
 -- | Clone URL using the given Access Token
-pullRequestCloneUrlToken :: Text -> PullRequest -> Text
+pullRequestCloneUrlToken :: HasCallStack => Text -> PullRequest -> Text
 pullRequestCloneUrlToken token pullRequest =
     "https://x-access-token:"
         <> token
@@ -108,12 +108,12 @@ pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
 -- Internal functions below this point
 --------------------------------------------------------------------------------
 
-pullRequestOwner :: PullRequest -> SimpleOwner
+pullRequestOwner :: HasCallStack => PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
 
 -- |
 --
--- N.B. Partial, we assume a Repo always exists
+-- N.B. The source of all partiality and @'HasCallStack'@ constraints
 --
 pullRequestRepo :: HasCallStack => PullRequest -> Repo
 pullRequestRepo =
