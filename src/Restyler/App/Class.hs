@@ -22,6 +22,7 @@ import Restyler.Prelude
 import Conduit (runResourceT, sinkFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified Data.Vector as V
 import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
 import GitHub.Endpoints.Repos.Statuses
@@ -42,6 +43,11 @@ class
     => MonadApp m where
         runGitHub :: Request k a -> m a
 
+        -- | Fetch the first page using @'runGitHub'@, return the first item
+        runGitHubFirst :: (FetchCount -> Request k (Vector a)) -> m (Maybe a)
+        runGitHubFirst f = (V.!? 0) <$> runGitHub (f 1)
+
+        -- | @'void' . 'runGitHub'@
         runGitHub_ :: Request k a -> m ()
         runGitHub_ = void . runGitHub
 

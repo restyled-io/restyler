@@ -7,7 +7,6 @@ module Restyler.Setup
 
 import Restyler.Prelude
 
-import qualified Data.Vector as V
 import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Model.Config
@@ -24,6 +23,12 @@ restylerSetup app = do
         $ pullRequestR oOwner oRepo
         $ mkId Proxy oPullRequest
 
+    mRestyledPullRequest <-
+        (`catchError` const (pure Nothing))
+        $ runGitHubFirst
+        $ pullRequestsForR oOwner oRepo
+        $ pullRequestRestyledMod pullRequest
+
     setupClone pullRequest
 
     configExists <- doesFileExist configPath
@@ -31,7 +36,6 @@ restylerSetup app = do
         then decodeConfig =<< readFile configPath
         else pure defaultConfig
 
-    mRestyledPullRequest <- findRestyledPullRequest pullRequest
     pure $ finalizeApp app pullRequest mRestyledPullRequest config
 
 setupClone :: (HasCallStack, MonadApp m) => PullRequest -> m ()
@@ -62,17 +66,6 @@ decodeConfig =
     either (throwError . ConfigurationError) pure
         . Yaml.decodeEither
         . encodeUtf8
-
-findRestyledPullRequest
-    :: MonadApp m => PullRequest -> m (Maybe SimplePullRequest)
-findRestyledPullRequest pullRequest = (V.!? 0) <$> runGitHub request
-  where
-    request = pullRequestsForR owner name options FetchAll
-    options = optionsBase base <> optionsHead (toPathPart owner <> ":" <> head)
-    owner = pullRequestOwnerName pullRequest
-    name = pullRequestRepoName pullRequest
-    base = pullRequestRestyledBase pullRequest
-    head = pullRequestRestyledRef pullRequest
 
 toPullRequestFetchError :: AppError -> AppError
 toPullRequestFetchError (GitHubError e) = PullRequestFetchError e

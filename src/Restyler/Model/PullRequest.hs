@@ -19,6 +19,7 @@ module Restyler.Model.PullRequest
     , pullRequestLocalHeadRef
     , pullRequestRestyledBase
     , pullRequestRestyledRef
+    , pullRequestRestyledMod
     )
 where
 
@@ -104,12 +105,24 @@ pullRequestRestyledBase pullRequest
 pullRequestRestyledRef :: PullRequest -> Text
 pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
 
+pullRequestRestyledMod :: PullRequest -> PullRequestMod
+pullRequestRestyledMod pullRequest = mconcat
+    [ optionsBase $ pullRequestRestyledBase pullRequest
+    , optionsHead $ pullRequestRestyledRefQualified pullRequest
+    ]
+
 --------------------------------------------------------------------------------
 -- Internal functions below this point
 --------------------------------------------------------------------------------
 
 pullRequestOwner :: HasCallStack => PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
+
+pullRequestRestyledRefQualified :: HasCallStack => PullRequest -> Text
+pullRequestRestyledRefQualified pullRequest =
+    toPathPart (pullRequestOwnerName pullRequest)
+        <> ":"
+        <> pullRequestRestyledRef pullRequest
 
 -- |
 --
