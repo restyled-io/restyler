@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.CLI
     ( restylerCLI
@@ -33,8 +34,7 @@ restylerCLI = do
 
     options <- parseOptions
     withTempDirectory $ \path -> runExceptT $ do
-        let app' = bootstrapApp options path
-        app <- runApp app' $ restylerSetup app'
+        app <- bootstrapApp options path restylerSetup
         runApp app $ restylerMain `catchError` \ex -> do
             traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
             throwError ex
@@ -44,6 +44,34 @@ withTempDirectory f = do
     result <- tryIO $ withSystemTempDirectory "restyler-" f
     innerResult <- either (dieAppError . SystemError) pure result
     either dieAppError pure innerResult
+
+bootstrapApp
+    :: MonadIO m
+    => Options
+    -> FilePath
+    -> AppT m (PullRequest, Maybe SimplePullRequest, Config)
+    -> ExceptT AppError m App
+bootstrapApp options@Options {..} path f = do
+    let
+        tempApp = App
+            { appLogLevel = oLogLevel
+            , appLogColor = oLogColor
+            , appAccessToken = oAccessToken
+            , appPullRequest = error "Bootstrap appPullRequest forced"
+            , appRestyledPullRequest = Nothing
+            , appConfig = error "Bootstrap appConfig forced"
+            , appOptions = options
+            , appWorkingDirectory = path
+            }
+
+    runApp tempApp $ do
+        (pullRequest, mRestyledPullRequest, config) <- f
+
+        pure tempApp
+            { appPullRequest = pullRequest
+            , appRestyledPullRequest = mRestyledPullRequest
+            , appConfig = config
+            }
 
 runApp :: MonadIO m => App -> AppT m a -> ExceptT AppError m a
 runApp app = runAppLoggingT app . flip runReaderT app . runAppT

@@ -13,8 +13,10 @@ import Restyler.Model.Config
 import Restyler.Model.PullRequest
 import Restyler.Options
 
-restylerSetup :: (HasCallStack, MonadApp m) => App -> m App
-restylerSetup app = do
+restylerSetup
+    :: (HasCallStack, MonadApp m)
+    => m (PullRequest, Maybe SimplePullRequest, Config)
+restylerSetup = do
     Options {..} <- asks appOptions
 
     pullRequest <-
@@ -36,7 +38,7 @@ restylerSetup app = do
         then decodeConfig =<< readFile configPath
         else pure defaultConfig
 
-    pure $ finalizeApp app pullRequest mRestyledPullRequest config
+    pure (pullRequest, mRestyledPullRequest, config)
 
 setupClone :: (HasCallStack, MonadApp m) => PullRequest -> m ()
 setupClone pullRequest = mapAppError toPullRequestCloneError $ do
