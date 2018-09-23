@@ -27,46 +27,8 @@ tshow :: Show a => a -> Text
 -- | <tt><a>fmap</a></tt> for doubly-wrapped values
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 infixl 4 <$$>
-
-module Restyler.Model.StatusesConfig
-
--- | Configuration for sending PR statuses
-data StatusesConfig
-StatusesConfig :: Bool -> Bool -> Bool -> StatusesConfig
-
--- | Send a failure status when there were differences
-[scDifferences] :: StatusesConfig -> Bool
-
--- | Send a success status when there were no differences
-[scNoDifferences] :: StatusesConfig -> Bool
-
--- | Send a failure status when there were errors
-[scError] :: StatusesConfig -> Bool
-defaultStatusesConfig :: StatusesConfig
-instance GHC.Generics.Generic Restyler.Model.StatusesConfig.StatusesConfig
-instance GHC.Show.Show Restyler.Model.StatusesConfig.StatusesConfig
-instance GHC.Classes.Eq Restyler.Model.StatusesConfig.StatusesConfig
-instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.StatusesConfig.StatusesConfig
-instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.StatusesConfig.StatusesConfig
-
-module Restyler.Model.RemoteFile
-
--- | A remote (configuration) file, to fetch before restyling
-data RemoteFile
-RemoteFile :: URL -> FilePath -> RemoteFile
-
--- | Re-using GitHub's URL type
-[rfUrl] :: RemoteFile -> URL
-[rfPath] :: RemoteFile -> FilePath
-instance GHC.Generics.Generic Restyler.Model.RemoteFile.RemoteFile
-instance GHC.Show.Show Restyler.Model.RemoteFile.RemoteFile
-instance GHC.Classes.Eq Restyler.Model.RemoteFile.RemoteFile
-instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.RemoteFile.RemoteFile
-instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.RemoteFile.RemoteFile
-
-module Restyler.Capabilities.RemoteFile
-class MonadRemoteFile m
-fetchRemoteFile :: MonadRemoteFile m => RemoteFile -> m ()
+minimumBy :: (a -> a -> Ordering) -> [a] -> Maybe a
+maximumBy :: (a -> a -> Ordering) -> [a] -> Maybe a
 
 
 -- | String specification of a Repository's Pull Request
@@ -109,20 +71,32 @@ Options :: Text -> LogLevel -> Bool -> Name Owner -> Name Repo -> Int -> Maybe U
 parseOptions :: IO Options
 
 module Restyler.Model.PullRequest
-pullRequestOwnerName :: PullRequest -> Name Owner
+pullRequestOwnerName :: HasCallStack => PullRequest -> Name Owner
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
+
+-- | Clone URL appropriate to output in a message
+--   
+--   This is a URL that will work if you are otherwised authorized to clone
+--   the repository (e.g.) you have an SSH key.
 pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
+
+-- | Clone URL using the given Access Token
+pullRequestCloneUrlToken :: HasCallStack => Text -> PullRequest -> Text
 pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
+simplePullRequestSpec :: SimplePullRequest -> PullRequestSpec
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
 pullRequestIsFork :: PullRequest -> Bool
+pullRequestIsNonDefaultBranch :: HasCallStack => PullRequest -> Bool
 pullRequestBaseRef :: PullRequest -> Text
 pullRequestHeadRef :: PullRequest -> Text
+pullRequestHeadSha :: PullRequest -> Text
 pullRequestRemoteHeadRef :: PullRequest -> Text
 pullRequestLocalHeadRef :: PullRequest -> Text
 pullRequestRestyledBase :: PullRequest -> Text
 pullRequestRestyledRef :: PullRequest -> Text
+pullRequestRestyledMod :: PullRequest -> PullRequestMod
 
 module Restyler.Model.Interpreter
 data Interpreter
@@ -163,6 +137,50 @@ instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Include.Include
 instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.Include.Include
 instance Data.String.IsString Restyler.Model.Include.Include
 
+module Restyler.Model.Config.ExpectedKeys
+
+-- | Validate there are no unexpected keys in an Object
+--   
+--   This is provided for convenience in the most common use-case. For a
+--   more flexible interface, see <tt><a>validateExpectedKeyBy</a></tt>.
+validateObjectKeys :: [String] -> HashMap Text v -> Parser ()
+
+-- | Validate that a key is present in a list of (projected) items
+--   
+--   Returns the item found when validation passes.
+--   
+--   N.B. the <tt>[c]</tt> values are almost always going to be
+--   <tt><a>String</a></tt>. It's typed as a list of <tt>c</tt> because the
+--   only actual requirement is that there are equatable elements so we can
+--   compute edit-distances.
+--   
+--   <pre>
+--   &gt;&gt;&gt; validateExpectedKeyBy "key" fst [("foo", 1), ("bar", 2)] ("foo" :: String)
+--   Right ("foo",1)
+--   </pre>
+validateExpectedKeyBy :: (Eq c, Show c) => String -> (a -> [c]) -> [a] -> [c] -> Either String a
+
+module Restyler.Model.StatusesConfig
+
+-- | Configuration for sending PR statuses
+data StatusesConfig
+StatusesConfig :: Bool -> Bool -> Bool -> StatusesConfig
+
+-- | Send a failure status when there were differences
+[scDifferences] :: StatusesConfig -> Bool
+
+-- | Send a success status when there were no differences
+[scNoDifferences] :: StatusesConfig -> Bool
+
+-- | Send a failure status when there were errors
+[scError] :: StatusesConfig -> Bool
+defaultStatusesConfig :: StatusesConfig
+instance GHC.Generics.Generic Restyler.Model.StatusesConfig.StatusesConfig
+instance GHC.Show.Show Restyler.Model.StatusesConfig.StatusesConfig
+instance GHC.Classes.Eq Restyler.Model.StatusesConfig.StatusesConfig
+instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.StatusesConfig.StatusesConfig
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.StatusesConfig.StatusesConfig
+
 module Restyler.Model.Restyler
 
 -- | How to run a given restyler
@@ -200,18 +218,32 @@ defaultRestylers :: [Restyler]
 allRestylers :: [Restyler]
 namedRestyler :: MonadPlus m => Text -> m Restyler
 unsafeNamedRestyler :: Text -> Restyler
-instance GHC.Generics.Generic Restyler.Model.Restyler.RestylerOverrides
 instance GHC.Show.Show Restyler.Model.Restyler.Restyler
 instance GHC.Classes.Eq Restyler.Model.Restyler.Restyler
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Restyler.RestylerOverrides
 instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.Restyler.Restyler
 instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.Restyler.Restyler
 
+module Restyler.Model.RemoteFile
+
+-- | A remote (configuration) file, to fetch before restyling
+data RemoteFile
+RemoteFile :: URL -> FilePath -> RemoteFile
+
+-- | Re-using GitHub's URL type
+[rfUrl] :: RemoteFile -> URL
+[rfPath] :: RemoteFile -> FilePath
+instance GHC.Generics.Generic Restyler.Model.RemoteFile.RemoteFile
+instance GHC.Show.Show Restyler.Model.RemoteFile.RemoteFile
+instance GHC.Classes.Eq Restyler.Model.RemoteFile.RemoteFile
+instance Data.Aeson.Types.FromJSON.FromJSON Restyler.Model.RemoteFile.RemoteFile
+instance Data.Aeson.Types.ToJSON.ToJSON Restyler.Model.RemoteFile.RemoteFile
+
 module Restyler.Model.Config
 
 -- | Top-level configuration object
 data Config
-Config :: Bool -> Bool -> [RemoteFile] -> StatusesConfig -> [Restyler] -> Config
+Config :: Bool -> Bool -> [RemoteFile] -> Bool -> StatusesConfig -> [Restyler] -> Config
 
 -- | Do anything at all?
 [cEnabled] :: Config -> Bool
@@ -221,6 +253,9 @@ Config :: Bool -> Bool -> [RemoteFile] -> StatusesConfig -> [Restyler] -> Config
 
 -- | Any remote configuration files to fetch before restyling
 [cRemoteFiles] :: Config -> [RemoteFile]
+
+-- | Leave Comments?
+[cCommentsEnabled] :: Config -> Bool
 
 -- | Send PR statuses?
 [cStatusesConfig] :: Config -> StatusesConfig
@@ -233,6 +268,7 @@ Config :: Bool -> Bool -> [RemoteFile] -> StatusesConfig -> [Restyler] -> Config
 --   <ul>
 --   <li>Enabled</li>
 --   <li>Not Auto</li>
+--   <li>Leave comments</li>
 --   <li>Send statuses</li>
 --   <li>Run most restylers</li>
 --   </ul>
@@ -259,79 +295,11 @@ commentBody :: PullRequest -> Text
 -- | The more complicated comment to leave when we restyled PRs from forks
 commentBodyFork :: HasCallStack => PullRequest -> Text
 
-module Restyler.Capabilities.System
-class MonadSystem m
-doesFileExist :: MonadSystem m => FilePath -> m Bool
-getCurrentDirectory :: MonadSystem m => m FilePath
-setCurrentDirectory :: MonadSystem m => FilePath -> m ()
-readFile :: MonadSystem m => FilePath -> m Text
-exitSuccess :: MonadSystem m => m a
-
-module Restyler.Capabilities.GitHub
-class MonadGitHub m
-getPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> m PullRequest
-findPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Text -> Text -> m (Maybe SimplePullRequest)
-createPullRequest :: MonadGitHub m => Name Owner -> Name Repo -> CreatePullRequest -> m PullRequest
-updatePullRequest :: MonadGitHub m => Name Owner -> Name Repo -> Id PullRequest -> EditPullRequest -> m PullRequest
-getComments :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> m (Vector IssueComment)
-createComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Issue -> Text -> m ()
-deleteComment :: MonadGitHub m => Name Owner -> Name Repo -> Id Comment -> m ()
-createStatus :: MonadGitHub m => Name Owner -> Name Repo -> Name Commit -> NewStatus -> m ()
-
-module Restyler.Capabilities.Git
-class MonadGit m
-
--- | <pre>
---   git clone &lt;url&gt; &lt;directory&gt;
---   </pre>
-cloneRepository :: MonadGit m => Text -> FilePath -> m ()
-
--- | <pre>
---   git checkout [-b] &lt;branch&gt;
---   </pre>
-checkoutBranch :: MonadGit m => Bool -> Text -> m ()
-
--- | <pre>
---   git diff --name-only $(git merge-base &lt;branch&gt; HEAD)
---   </pre>
-changedPaths :: MonadGit m => Text -> m [FilePath]
-
--- | <pre>
---   git commit --all --message &lt;message&gt;
---   </pre>
-commitAll :: MonadGit m => Text -> m ()
-
--- | <pre>
---   git fetch origin &lt;remote&gt;:&lt;local&gt;
---   </pre>
-fetchOrigin :: MonadGit m => Text -> Text -> m ()
-
--- | <pre>
---   git push origin &lt;branch&gt;
---   </pre>
-pushOrigin :: MonadGit m => Text -> m ()
-
--- | <pre>
---   git push --force-with-lease origin &lt;branch&gt;
---   </pre>
-forcePushOrigin :: MonadGit m => Text -> m ()
-
-module Restyler.Capabilities.Docker
-class MonadDocker m
-dockerRun :: MonadDocker m => [String] -> m ()
-
-module Restyler.Model.Restyler.Run
-
--- | Runs the given <tt><a>Restyler</a></tt>s over the files
---   
---   Returns the subset of <tt>'Restyler</tt>'s that were actually invoked.
-runRestylers :: (Monad m, MonadSystem m, MonadDocker m, MonadLogger m) => [Restyler] -> [FilePath] -> m [Restyler]
-
-module Restyler.App
+module Restyler.App.Type
 
 -- | Application environment
 data App
-App :: LogLevel -> Bool -> Text -> PullRequest -> Config -> Maybe SimplePullRequest -> App
+App :: LogLevel -> Bool -> Text -> PullRequest -> Maybe SimplePullRequest -> Config -> Options -> FilePath -> App
 [appLogLevel] :: App -> LogLevel
 [appLogColor] :: App -> Bool
 [appAccessToken] :: App -> Text
@@ -339,13 +307,17 @@ App :: LogLevel -> Bool -> Text -> PullRequest -> Config -> Maybe SimplePullRequ
 -- | The <tt><a>PullRequest</a></tt> we are restyling
 [appPullRequest] :: App -> PullRequest
 
+-- | Existing restyled <tt><a>PullRequest</a></tt> if it exists
+[appRestyledPullRequest] :: App -> Maybe SimplePullRequest
+
 -- | Configuration loaded from <tt>.restyled.yaml</tt>
 [appConfig] :: App -> Config
 
--- | Existing restyled <tt><a>PullRequest</a></tt> if it exists
-[appRestyledPullRequest] :: App -> Maybe SimplePullRequest
-data AppT m a
-runAppT :: AppT m a -> ReaderT App (LoggingT (ExceptT AppError m)) a
+-- | Original command-line options
+[appOptions] :: App -> Options
+
+-- | Temporary directory we are working in
+[appWorkingDirectory] :: App -> FilePath
 
 -- | All possible application error conditions
 data AppError
@@ -362,9 +334,6 @@ ConfigurationError :: String -> AppError
 -- | Error running a <tt>docker</tt> operation
 DockerError :: IOException -> AppError
 
--- | Error running a <tt>git</tt> operation
-GitError :: IOException -> AppError
-
 -- | We encountered a GitHub API error during restyling
 GitHubError :: Error -> AppError
 
@@ -372,25 +341,54 @@ GitHubError :: Error -> AppError
 SystemError :: IOException -> AppError
 
 -- | Trouble performing some HTTP request
-RemoteFileError :: IOException -> AppError
+HttpError :: IOException -> AppError
 
 -- | A minor escape hatch for <tt><a>IOException</a></tt>s
 OtherError :: IOException -> AppError
 
 -- | Run a computation, and modify any thrown <tt><a>AppError</a></tt>s
 mapAppError :: MonadError AppError m => (AppError -> AppError) -> m a -> m a
-instance Control.Monad.IO.Class.MonadIO m => Control.Monad.Logger.MonadLogger (Restyler.App.AppT m)
-instance GHC.Base.Monad m => Control.Monad.Reader.Class.MonadReader Restyler.App.App (Restyler.App.AppT m)
-instance GHC.Base.Monad m => Control.Monad.Error.Class.MonadError Restyler.App.AppError (Restyler.App.AppT m)
-instance GHC.Base.Monad m => GHC.Base.Monad (Restyler.App.AppT m)
-instance GHC.Base.Monad m => GHC.Base.Applicative (Restyler.App.AppT m)
-instance GHC.Base.Functor m => GHC.Base.Functor (Restyler.App.AppT m)
-instance GHC.Show.Show Restyler.App.AppError
-instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.Git.MonadGit (Restyler.App.AppT m)
-instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.GitHub.MonadGitHub (Restyler.App.AppT m)
-instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.System.MonadSystem (Restyler.App.AppT m)
-instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.Docker.MonadDocker (Restyler.App.AppT m)
-instance Control.Monad.IO.Class.MonadIO m => Restyler.Capabilities.RemoteFile.MonadRemoteFile (Restyler.App.AppT m)
+newtype AppT m a
+AppT :: ReaderT App (LoggingT (ExceptT AppError m)) a -> AppT m a
+[runAppT] :: AppT m a -> ReaderT App (LoggingT (ExceptT AppError m)) a
+instance Control.Monad.IO.Class.MonadIO m => Control.Monad.Logger.MonadLogger (Restyler.App.Type.AppT m)
+instance GHC.Base.Monad m => Control.Monad.Reader.Class.MonadReader Restyler.App.Type.App (Restyler.App.Type.AppT m)
+instance GHC.Base.Monad m => Control.Monad.Error.Class.MonadError Restyler.App.Type.AppError (Restyler.App.Type.AppT m)
+instance GHC.Base.Monad m => GHC.Base.Monad (Restyler.App.Type.AppT m)
+instance GHC.Base.Monad m => GHC.Base.Applicative (Restyler.App.Type.AppT m)
+instance GHC.Base.Functor m => GHC.Base.Functor (Restyler.App.Type.AppT m)
+instance GHC.Show.Show Restyler.App.Type.AppError
+
+module Restyler.App.Class
+class (Monad m, MonadLogger m, MonadReader App m, MonadError AppError m) => MonadApp m
+runGitHub :: MonadApp m => Request k a -> m a
+
+-- | Fetch the first page using <tt><a>runGitHub</a></tt>, return the first
+--   item
+runGitHubFirst :: MonadApp m => (FetchCount -> Request k (Vector a)) -> m (Maybe a)
+
+-- | <pre>
+--   <a>void</a> . <a>runGitHub</a>
+--   </pre>
+runGitHub_ :: MonadApp m => Request k a -> m ()
+getCurrentDirectory :: MonadApp m => m FilePath
+setCurrentDirectory :: MonadApp m => FilePath -> m ()
+doesFileExist :: MonadApp m => FilePath -> m Bool
+readFile :: MonadApp m => FilePath -> m Text
+exitSuccess :: MonadApp m => m ()
+callProcess :: MonadApp m => String -> [String] -> m ()
+readProcess :: MonadApp m => String -> [String] -> String -> m String
+downloadFile :: MonadApp m => Text -> FilePath -> m ()
+instance Control.Monad.IO.Class.MonadIO m => Restyler.App.Class.MonadApp (Restyler.App.Type.AppT m)
+
+module Restyler.App
+
+module Restyler.Model.Restyler.Run
+
+-- | Runs the given <tt><a>Restyler</a></tt>s over the files
+--   
+--   Returns the subset of <tt>'Restyler</tt>'s that were actually invoked.
+runRestylers :: MonadApp m => [Restyler] -> [FilePath] -> m [Restyler]
 
 module Restyler.Model.PullRequest.Status
 data PullRequestStatus
@@ -405,76 +403,56 @@ DifferencesStatus :: URL -> PullRequestStatus
 ErrorStatus :: URL -> PullRequestStatus
 
 -- | Send a <tt><a>PullRequestStatus</a></tt> for the original Pull Request
-sendPullRequestStatus :: (MonadGitHub m, MonadReader App m) => PullRequestStatus -> m ()
+sendPullRequestStatus :: MonadApp m => PullRequestStatus -> m ()
 
 -- | <tt><a>sendPullRequestStatus</a></tt> but ignore any exceptions
 --   
 --   This is useful for emitting the Errored status, where we wouldn't want
 --   an exception here to muddy the debugging of the error we're reporting.
-sendPullRequestStatus_ :: (MonadGitHub m, MonadError AppError m, MonadLogger m, MonadReader App m) => PullRequestStatus -> m ()
+sendPullRequestStatus_ :: MonadApp m => PullRequestStatus -> m ()
 
 module Restyler.Model.PullRequest.Restyled
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
-createRestyledPullRequest :: (HasCallStack, MonadGit m, MonadGitHub m, MonadLogger m, MonadReader App m) => [Restyler] -> m PullRequest
+createRestyledPullRequest :: (HasCallStack, MonadApp m) => [Restyler] -> m PullRequest
 
 -- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: (MonadGit m, MonadReader App m) => m ()
+updateRestyledPullRequest :: MonadApp m => m ()
 
 -- | Close the Restyled PR, if we know of it
 --   
 --   TODO: delete the branch
-closeRestyledPullRequest :: (MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+closeRestyledPullRequest :: MonadApp m => m ()
 
 -- | Commit and push to current branch
-updateOriginalPullRequest :: (MonadGit m, MonadReader App m) => m ()
+updateOriginalPullRequest :: MonadApp m => m ()
 
 module Restyler.Model.Comment
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
-leaveRestyledComment :: (HasCallStack, MonadGitHub m, MonadReader App m) => PullRequest -> m ()
+leaveRestyledComment :: (HasCallStack, MonadApp m) => PullRequest -> m ()
 
 -- | Locate any comments left by us on the origin PR and delete them
-clearRestyledComments :: (HasCallStack, MonadGitHub m, MonadLogger m, MonadReader App m) => m ()
+clearRestyledComments :: (HasCallStack, MonadApp m) => m ()
+
+module Restyler.Main
+restylerMain :: (HasCallStack, MonadApp m) => m ()
 
 module Restyler.Logger
 runAppLoggingT :: MonadIO m => App -> LoggingT m a -> m a
 
-module Restyler.App.Run
+module Restyler.Setup
+restylerSetup :: (HasCallStack, MonadApp m) => m (PullRequest, Maybe SimplePullRequest, Config)
 
--- | Run an <tt><a>AppT</a></tt> action for real
---   
---   N.B. This unwraps only as far as <tt><a>ExceptT</a></tt> so that it
---   can be composed together with <tt><a>bootstrapApp</a></tt> and receive
---   overall error-handling after.
---   
---   See <tt><a>Restyler.Main</a></tt>.
-runApp :: MonadIO m => App -> AppT m a -> ExceptT AppError m a
-
--- | Bootstrap the initial <tt><a>App</a></tt> type
---   
---   We want to have the <tt><a>PullRequest</a></tt> and
---   <tt><a>Config</a></tt> in our application environment, so we need them
---   to construct an <tt><a>App</a></tt>. However, it's valuable to use our
---   normal <tt><a>AppT</a></tt> instances to interact with GitHub or call
---   processes so we get the same logging and error-handling there.
---   
---   So this function uses a partial <tt><a>App</a></tt> value and
---   <tt><a>runApp</a></tt> to build the rest of it.
---   
---   If the actions given to <tt><a>runApp</a></tt> here try to access
---   <tt><a>appPullRequest</a></tt> or <tt><a>appConfig</a></tt>, they will
---   fail. So it's important those actions aren't refactored away from this
---   module, where that assumption is less obvious.
-bootstrapApp :: HasCallStack => Options -> FilePath -> ExceptT AppError IO App
-
-module Restyler.Main
+module Restyler.CLI
 
 -- | The main entrypoint for the restyler CLI
 --   
 --   Parses command-line options, creates a temporary working directory and
 --   runs the restyling process. Application errors are reported to
---   <tt>stderr</tt> before a non-zero exit.
+--   <tt>stderr</tt> before a non-zero exit. The PullRequest is sent an
+--   error status as long as it has been initialized by the point of the
+--   failure.
 --   
 --   See <tt><a>parseOptions</a></tt> for usage information.
-restylerMain :: IO ()
+restylerCLI :: IO ()
