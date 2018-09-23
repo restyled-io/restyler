@@ -72,9 +72,3 @@ tests:
       - restyler
       - text
       - yaml
-  doctest:
-    main: Main.hs
-    source-dirs: doctest
-    ghc-options: -Wall
-    dependencies:
-      - doctest

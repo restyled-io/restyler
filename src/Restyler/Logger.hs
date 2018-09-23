@@ -4,8 +4,10 @@
 
 module Restyler.Logger
     ( runAppLoggingT
-    )
-where
+
+    -- * Exported for testing
+    , splitLogStr
+    ) where
 
 import Restyler.Prelude hiding (takeWhile)
 
@@ -41,18 +43,6 @@ runStdoutANSILoggerT = (`runLoggingT` logger)
         BS.putStr logStr
 
 -- | Split a log message into level and message
---
--- >>> :set -XOverloadedStrings
---
--- >>> splitLogStr "[Debug] Foo bar baz"
--- (Just "Debug","Foo bar baz")
---
--- >>> splitLogStr "[Info#123] Foo bar baz"
--- (Just "Info#123","Foo bar baz")
---
--- >>> splitLogStr "[Nope nope"
--- (Nothing,"[Nope nope")
---
 splitLogStr :: ByteString -> (Maybe ByteString, ByteString)
 splitLogStr bs = case scanOnly logScanner bs of
     Left _ -> (Nothing, bs)

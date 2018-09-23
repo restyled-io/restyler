@@ -38,9 +38,6 @@ validateObjectKeys ks =
 -- a list of @c@ because the only actual requirement is that there are equatable
 -- elements so we can compute edit-distances.
 --
--- >>> validateExpectedKeyBy "key" fst [("foo", 1), ("bar", 2)] ("foo" :: String)
--- Right ("foo",1)
---
 validateExpectedKeyBy
     :: (Eq c, Show c)
     => String -- ^ The label to show as /Unknown \<label> .../
