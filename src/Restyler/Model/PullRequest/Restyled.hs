@@ -78,9 +78,9 @@ closeRestyledPullRequest = do
                 , prsRepo = pullRequestRepoName pullRequest
                 , prsPullRequest = simplePullRequestNumber restyledPr
                 }
-        logInfoN $ "Closing restyled PR: " <> showSpec spec
 
-        runGitHub $ updatePullRequestR
+        logInfoN $ "Closing restyled PR: " <> showSpec spec
+        runGitHub_ $ updatePullRequestR
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkId Proxy $ simplePullRequestNumber restyledPr)
@@ -91,6 +91,10 @@ closeRestyledPullRequest = do
                 , editPullRequestBase = Nothing
                 , editPullRequestMaintainerCanModify = Nothing
                 }
+
+        let branch = pullRequestRestyledRef pullRequest
+        logInfoN $ "Deleting restyled branch: " <> branch
+        callProcess "git" ["push", "origin", "--delete", unpack branch]
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: MonadApp m => m ()
