@@ -4,11 +4,13 @@
 module Restyler.Content
     ( commitMessage
     , commentBody
+    , pullRequestBody
     ) where
 
-import Restyler.Prelude hiding (commentBody)
+import Restyler.Prelude hiding (commentBody, pullRequestBody)
 
 import Restyler.Model.PullRequest
+import Restyler.Model.Restyler
 import Text.Shakespeare.Text (st)
 
 -- | Simple for now: @Restyled@
@@ -71,3 +73,6 @@ Sorry if this was unexpected. To disable it, see our [documentation][].
 [homepage]: https://restyled.io
 [documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
 |]
+
+pullRequestBody :: PullRequest -> [Restyler] -> Text
+pullRequestBody _pullRequest _restylers = ""

@@ -19,18 +19,11 @@ import Restyler.Model.Restyler
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest
-    :: (HasCallStack, MonadApp m)
-    => [Restyler]
-    -- ^ Restylers that ran to produce this diff
-    --
-    -- Currently ignored. This will be used in the PR body soon.
-    --
-    -> m PullRequest
-createRestyledPullRequest _restylers = do
+    :: (HasCallStack, MonadApp m) => [Restyler] -> m PullRequest
+createRestyledPullRequest restylers = do
     pullRequest <- asks appPullRequest
-    let rBranch = pullRequestRestyledRef pullRequest
 
-    checkoutNewBranch rBranch
+    checkoutNewBranch $ pullRequestRestyledRef pullRequest
     commitAll Content.commitMessage
 
     -- N.B. we always force-push. There are various edge-cases that could mean
@@ -39,13 +32,15 @@ createRestyledPullRequest _restylers = do
     -- know it's our branch, of course).
     forcePushOrigin $ pullRequestRestyledRef pullRequest
 
+    let restyledTitle = pullRequestTitle pullRequest <> " (Restyled)"
+        restyledBody = Content.pullRequestBody pullRequest restylers
+
     pr <- runGitHub $ createPullRequestR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         CreatePullRequest
-            { createPullRequestTitle = pullRequestTitle pullRequest
-                <> " (Restyled)"
-            , createPullRequestBody = ""
+            { createPullRequestTitle = restyledTitle
+            , createPullRequestBody = restyledBody
             , createPullRequestHead = pullRequestRestyledRef pullRequest
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
@@ -61,9 +56,6 @@ updateRestyledPullRequest = do
     forcePushOrigin rBranch
 
 -- | Close the Restyled PR, if we know of it
---
--- TODO: delete the branch
---
 closeRestyledPullRequest :: MonadApp m => m ()
 closeRestyledPullRequest = do
     -- We have to use the Owner/Repo from the main PR since SimplePullRequest
