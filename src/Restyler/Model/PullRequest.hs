@@ -8,7 +8,6 @@ module Restyler.Model.PullRequest
     , pullRequestCloneUrl
     , pullRequestCloneUrlToken
     , pullRequestSpec
-    , simplePullRequestSpec
     , pullRequestIssueId
     , pullRequestIsFork
     , pullRequestIsNonDefaultBranch
@@ -61,9 +60,6 @@ pullRequestSpec pullRequest = PullRequestSpec
     , prsRepo = pullRequestRepoName pullRequest
     , prsPullRequest = pullRequestNumber pullRequest
     }
-
-simplePullRequestSpec :: SimplePullRequest -> PullRequestSpec
-simplePullRequestSpec = undefined
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue

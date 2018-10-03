@@ -61,14 +61,18 @@ logIntentions = do
     App {..} <- ask
     logInfoN $ "Restyling " <> showSpec (pullRequestSpec appPullRequest)
     logDebugN $ "Resolved configuration\n" <> decodeUtf8 (Yaml.encode appConfig)
-    logRestyledPullRequest appRestyledPullRequest
+    logRestyledPullRequest appPullRequest appRestyledPullRequest
   where
-    logRestyledPullRequest Nothing = logInfoN "Restyled PR does not exist"
-    logRestyledPullRequest (Just pr) =
-        logInfoN
-            $ "Restyled PR exists ("
-            <> showSpec (simplePullRequestSpec pr)
-            <> ")"
+    logRestyledPullRequest _ Nothing = logInfoN "Restyled PR does not exist"
+    logRestyledPullRequest pr (Just restyledPr) = do
+        let
+            -- Use the main PR's owner/repo because a SimplePullRequest doesn't
+            -- have that information; it will always be the same.
+            spec = showSpec (pullRequestSpec pr)
+                { prsPullRequest = simplePullRequestNumber restyledPr
+                }
+
+        logInfoN $ "Restyled PR exists (" <> spec <> ")"
 
 configEnabled :: MonadApp m => m Bool
 configEnabled = asks $ cEnabled . appConfig
