@@ -4,6 +4,7 @@
 module Restyler.Content
     ( commitMessage
     , commentBody
+    , commentBodyFork
     , pullRequestBody
     ) where
 
@@ -20,7 +21,14 @@ commitMessage = "Restyled"
 commentBody :: PullRequest -> Text
 commentBody pullRequest = mconcat
     [ commentPreamble pullRequest <> "\n"
-    , commentToIncorporate pullRequest <> "\n"
+    , commentToIncorporate <> "\n"
+    , commentFooter
+    ]
+
+commentBodyFork :: PullRequest -> Text
+commentBodyFork pullRequest = mconcat
+    [ commentPreamble pullRequest <> "\n"
+    , commentToIncorporateFork pullRequest <> "\n"
     , commentFooter
     ]
 
@@ -38,9 +46,16 @@ be seen in ##{pullRequestNumber pullRequest}.
 
 -- brittany-disable-next-binding
 
-commentToIncorporate :: PullRequest -> Text
-commentToIncorporate pullRequest
-    | pullRequestIsFork pullRequest = [st|
+commentToIncorporate :: Text
+commentToIncorporate = [st|
+To incorporate those fixes, just merge that PR into this one. Or, if you
+manually fix the styling, that PR will be closed and this comment deleted.
+|]
+
+-- brittany-disable-next-binding
+
+commentToIncorporateFork :: PullRequest -> Text
+commentToIncorporateFork pullRequest = [st|
 **NOTE**: Since this PR was opened from a fork, we're not able to open our PR
 with yours as the base branch. Therefore, the PR linked above was opened
 directly against `#{pullRequestBaseRef pullRequest}`. It includes your changes and another commit to
@@ -58,10 +73,6 @@ git push
 
 Fixing the styling (through the above or any other means) will cause the linked
 PR to be closed and this comment delete.
-|]
-    | otherwise = [st|
-To incorporate those fixes, just merge that PR into this one. Or, if you
-manually fix the styling, that PR will be closed and this comment deleted.
 |]
 
 -- brittany-disable-next-binding
