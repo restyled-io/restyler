@@ -48,6 +48,15 @@ make release
 
 Assumes you've already `docker login`-ed to the registry.
 
+## LICENSE
+
+Restyled is source-available, [Commons Claused][cc] licensed. For a detailed
+description of another project's rationale for this licensing model, one with
+which I agree, see [here][level].
+
+[cc]: https://commonsclause.com/
+[level]: https://leveljournal.com/source-available-licensing
+
 ---
 
 [CHANGELOG](./CHANGELOG.md) | [LICENSE](./LICENSE)
