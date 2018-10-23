@@ -39,9 +39,9 @@ test:
 .PHONY: docs
 docs:
 	stack --work-dir .stack-work-docs build --haddock
-	rsync -avz --delete \
+	aws s3 sync --acl public-read --delete \
 	  $$(stack path --work-dir .stack-work-docs --local-doc-root)/ \
-	  docs/
+	  s3://docs.restyled.io/restyler/
 
 
 .PHONY: test.integration
