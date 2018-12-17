@@ -1,6 +1,6 @@
 *.cabal
 *.t.err
-.stack-work
-.stack-work-docs
-docs/
+.env*
+!.env.test
+.stack-work*
 keys
