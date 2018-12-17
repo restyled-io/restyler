@@ -17,7 +17,12 @@ release: clean build lint test image.build image.release
 setup:
 	stack setup
 	stack build --dependencies-only --test --no-run-tests
-	stack install hlint weeder
+	stack install --copy-compiler-tool \
+	  brittany \
+	  fast-tags \
+	  hlint \
+	  stylish-haskell \
+	  weeder
 
 .PHONY: clean
 clean:
@@ -29,8 +34,8 @@ build:
 
 .PHONY: lint
 lint:
-	hlint app src test
-	weeder .
+	stack exec hlint app src test
+	stack exec weeder .
 
 .PHONY: test
 test:
