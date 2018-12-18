@@ -5,18 +5,16 @@ module Restyler.Content
     ( commitMessage
     , commentBody
     , commentBodyFork
-    , pullRequestBody
     ) where
 
-import Restyler.Prelude hiding (commentBody, pullRequestBody)
+import Restyler.Prelude hiding (commentBody)
 
 import Restyler.Model.PullRequest
 import Restyler.Model.Restyler
 import Text.Shakespeare.Text (st)
 
--- | Simple for now: @Restyled@
-commitMessage :: Text
-commitMessage = "Restyled"
+commitMessage :: Restyler -> Text
+commitMessage = pack . ("Restyled by " <>) . rName
 
 commentBody :: PullRequest -> Text
 commentBody pullRequest = mconcat
@@ -84,6 +82,3 @@ Sorry if this was unexpected. To disable it, see our [documentation][].
 [homepage]: https://restyled.io
 [documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
 |]
-
-pullRequestBody :: PullRequest -> [Restyler] -> Text
-pullRequestBody _pullRequest _restylers = ""

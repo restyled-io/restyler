@@ -17,7 +17,6 @@ import Restyler.Model.PullRequest.Restyled
 import Restyler.Model.PullRequest.Status
 import Restyler.Model.PullRequestSpec
 import Restyler.Model.RemoteFile
-import Restyler.Model.Restyler
 import Restyler.Model.Restyler.Run
 
 restylerMain :: (HasCallStack, MonadApp m) => m ()
@@ -29,18 +28,22 @@ restylerMain = do
     logInfoN $ "Fetching " <> tshow (length remoteFiles) <> " remote file(s)"
     for_ remoteFiles $ \RemoteFile {..} -> downloadFile (getUrl rfUrl) rfPath
 
-    result <- restyle
-    logDebugN $ "Restylers ran: " <> tshow (map rName $ rrRestylersRan result)
-    logDebugN $ "Paths restyled: " <> tshow (rrChangedPaths result)
+    unlessM isAutoPush $ do
+        branch <- asks $ pullRequestRestyledRef . appPullRequest
+        callProcess "git" ["checkout", "-b", unpack branch]
 
-    unless (wasRestyled result) $ do
+    results <- restyle
+    logDebugN $ "Restyling results: " <> tshow results
+
+    unless (any restylerCommittedChanges results) $ do
         clearRestyledComments
         closeRestyledPullRequest
         sendPullRequestStatus NoDifferencesStatus
         exitWithInfo "No style differences found"
 
     whenM isAutoPush $ do
-        updateOriginalPullRequest
+        branch <- asks $ pullRequestHeadRef . appPullRequest
+        callProcess "git" ["push", "origin", unpack branch]
         exitWithInfo "Pushed to original PR"
 
     mRestyledPr <- asks appRestyledPullRequest
@@ -49,7 +52,7 @@ restylerMain = do
             updateRestyledPullRequest
             pure $ simplePullRequestHtmlUrl restyledPr
         Nothing -> do
-            restyledPr <- createRestyledPullRequest $ rrRestylersRan result
+            restyledPr <- createRestyledPullRequest
             whenM commentsEnabled $ leaveRestyledComment restyledPr
             pure $ pullRequestHtmlUrl restyledPr
 
@@ -80,23 +83,12 @@ configEnabled = asks $ cEnabled . appConfig
 commentsEnabled :: MonadApp m => m Bool
 commentsEnabled = asks $ cCommentsEnabled . appConfig
 
-data RestyleResult = RestyleResult
-    { rrRestylersRan :: [Restyler]
-    , rrChangedPaths :: [FilePath]
-    }
-
-wasRestyled :: RestyleResult -> Bool
-wasRestyled = not . null . rrChangedPaths
-
-restyle :: MonadApp m => m RestyleResult
+restyle :: MonadApp m => m [RestylerResult]
 restyle = do
     config <- asks appConfig
     pullRequest <- asks appPullRequest
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
-
-    RestyleResult
-        <$> runRestylers (cRestylers config) pullRequestPaths
-        <*> changedPaths (pullRequestLocalHeadRef pullRequest)
+    runRestylers (cRestylers config) pullRequestPaths
 
 changedPaths :: MonadApp m => Text -> m [FilePath]
 changedPaths branch = do

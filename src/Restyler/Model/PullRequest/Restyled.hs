@@ -12,19 +12,13 @@ where
 import Restyler.Prelude
 
 import Restyler.App
-import qualified Restyler.Content as Content
 import Restyler.Model.PullRequest
 import Restyler.Model.PullRequestSpec
-import Restyler.Model.Restyler
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
-createRestyledPullRequest
-    :: (HasCallStack, MonadApp m) => [Restyler] -> m PullRequest
-createRestyledPullRequest restylers = do
+createRestyledPullRequest :: (HasCallStack, MonadApp m) => m PullRequest
+createRestyledPullRequest = do
     pullRequest <- asks appPullRequest
-
-    checkoutNewBranch $ pullRequestRestyledRef pullRequest
-    commitAll Content.commitMessage
 
     -- N.B. we always force-push. There are various edge-cases that could mean
     -- an "-restyled" branch already exists and 99% of the time we can be sure
@@ -33,7 +27,7 @@ createRestyledPullRequest restylers = do
     forcePushOrigin $ pullRequestRestyledRef pullRequest
 
     let restyledTitle = pullRequestTitle pullRequest <> " (Restyled)"
-        restyledBody = Content.pullRequestBody pullRequest restylers
+        restyledBody = ""
 
     pr <- runGitHub $ createPullRequestR
         (pullRequestOwnerName pullRequest)
@@ -51,8 +45,6 @@ createRestyledPullRequest restylers = do
 updateRestyledPullRequest :: MonadApp m => m ()
 updateRestyledPullRequest = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
-    checkoutNewBranch rBranch
-    commitAll Content.commitMessage
     forcePushOrigin rBranch
 
 -- | Close the Restyled PR, if we know of it
@@ -90,19 +82,12 @@ closeRestyledPullRequest = do
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: MonadApp m => m ()
-updateOriginalPullRequest = do
-    commitAll Content.commitMessage
+updateOriginalPullRequest =
     pushOrigin . pullRequestHeadRef =<< asks appPullRequest
 
 pushOrigin :: MonadApp m => Text -> m ()
 pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
 
-commitAll :: MonadApp m => Text -> m ()
-commitAll msg = callProcess "git" ["commit", "-am", unpack msg]
-
 forcePushOrigin :: MonadApp m => Text -> m ()
 forcePushOrigin branch =
     callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
-
-checkoutNewBranch :: MonadApp m => Text -> m ()
-checkoutNewBranch branch = callProcess "git" ["checkout", "-b", unpack branch]

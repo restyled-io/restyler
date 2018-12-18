@@ -77,3 +77,7 @@ minimumBy f xs = Just $ F.minimumBy f xs
 maximumBy :: (a -> a -> Ordering) -> [a] -> Maybe a
 maximumBy _ [] = Nothing
 maximumBy f xs = Just $ F.maximumBy f xs
+
+-- | Strip whitespace from the end of a @'Text'@
+chomp :: Text -> Text
+chomp = T.dropWhileEnd isSpace
