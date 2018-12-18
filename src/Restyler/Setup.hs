@@ -66,7 +66,7 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
 decodeConfig :: MonadApp m => Text -> m Config
 decodeConfig =
     either (throwError . ConfigurationError) pure
-        . Yaml.decodeEither
+        . Yaml.decodeEither'
         . encodeUtf8
 
 toPullRequestFetchError :: AppError -> AppError

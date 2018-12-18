@@ -7,6 +7,7 @@ module Restyler.CLI
 
 import Restyler.Prelude
 
+import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Logger
 import Restyler.Main
@@ -84,8 +85,11 @@ dieAppError = die . format . \case
         ["We had trouble fetching your Pull Request from GitHub:", showGitHubError e]
     PullRequestCloneError e ->
         ["We had trouble cloning your Pull Request branch:" <> show e]
-    ConfigurationError msg ->
-        [ "We had trouble with your " <> configPath <> ": " <> msg
+    ConfigurationError ex ->
+        [ "We had trouble with your "
+            <> configPath
+            <> ": "
+            <> Yaml.prettyPrintParseException ex
         , "Please see https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
         ]
     DockerError e -> ["The restyler container exited non-zero:", show e]
