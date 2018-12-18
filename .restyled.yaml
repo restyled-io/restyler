@@ -8,7 +8,4 @@ remote_files:
     path: .stylish-haskell.yaml
 restylers:
   - stylish-haskell
-  - brittany:
-      include:
-        - "**/*.hs"
-        - "!src/Restyler/Content.hs"  # Avoid HsSpliceExp{}
+  - brittany
