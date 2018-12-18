@@ -7,9 +7,11 @@ where
 
 import SpecHelper
 
+import Data.Bifunctor (first)
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import Data.List (isInfixOf)
-import Data.Yaml (decodeEither)
+import Data.Yaml (decodeEither', prettyPrintParseException)
 import Restyler.Model.Config
 import Restyler.Model.Include
 import Restyler.Model.Restyler
@@ -114,3 +116,6 @@ spec = do
 hasError :: String -> Either String Config -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
+
+decodeEither :: ByteString -> Either String Config
+decodeEither = first prettyPrintParseException . decodeEither'

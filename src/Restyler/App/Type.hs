@@ -14,6 +14,7 @@ module Restyler.App.Type
 
 import Restyler.Prelude
 
+import qualified Data.Yaml as Yaml
 import Restyler.Model.Config
 import Restyler.Options
 
@@ -40,7 +41,7 @@ data AppError
     -- ^ We couldn't fetch the @'PullRequest'@ to restyle
     | PullRequestCloneError IOException
     -- ^ We couldn't clone or checkout the PR's branch
-    | ConfigurationError String
+    | ConfigurationError Yaml.ParseException
     -- ^ We couldn't load a @.restyled.yaml@
     | DockerError IOException
     -- ^ Error running a @docker@ operation
