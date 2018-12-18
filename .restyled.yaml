@@ -9,3 +9,7 @@ remote_files:
 restylers:
   - stylish-haskell
   - brittany
+  - prettier:
+      include:
+        - "**/*.yaml"
+        - "**/*.yml"
