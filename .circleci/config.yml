@@ -1,10 +1,10 @@
----
 version: 2.0
 
 jobs:
   tests:
     docker:
-      - image: fpco/stack-build:lts
+      # https://github.com/haskell-works/stack-build/blob/master/minimal/Dockerfile
+      - image: quay.io/haskell_works/stack-build-minimal
         environment:
           GIT_AUTHOR_EMAIL: ci@restyled.io
           GIT_AUTHOR_NAME: Restyled.io CI
@@ -12,11 +12,16 @@ jobs:
           GIT_COMMITTER_NAME: Restyled.io CI
     steps:
       - checkout
+      - run:
+          name: Digest
+          command: git ls-files | xargs md5sum > digest
       - restore_cache:
           keys:
-            - stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
-            - stack-{{ .Branch }}
-            - stack-
+            # yamllint disable-line rule:line-length
+            - v1-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
+            - v1-{{ .Branch }}-{{ checksum "stack.yaml" }}-
+            - v1-{{ .Branch }}
+            - v1-
       - run:
           name: Dependencies
           command: |
