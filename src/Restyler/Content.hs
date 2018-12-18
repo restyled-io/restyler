@@ -59,7 +59,7 @@ commentToIncorporateFork pullRequest = [st|
 **NOTE**: Since this PR was opened from a fork, we're not able to open our PR
 with yours as the base branch. Therefore, the PR linked above was opened
 directly against `#{pullRequestBaseRef pullRequest}`. It includes your changes and another commit to
-adjust styling.
+adjusted styling.
 
 If you're interested in incorporating the style fixes in this PR, you can do
 that locally with something like:
