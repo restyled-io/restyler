@@ -1,9 +1,8 @@
 version: 2.0
 
 jobs:
-  tests:
+  build:
     docker:
-      # https://github.com/haskell-works/stack-build/blob/master/minimal/Dockerfile
       - image: quay.io/haskell_works/stack-build-minimal
         environment:
           GIT_AUTHOR_EMAIL: ci@restyled.io
@@ -44,65 +43,3 @@ jobs:
       - run:
           name: Test
           command: make test
-
-  image:
-    docker:
-      - image: docker:17.07.0-ce
-    steps:
-      - checkout
-      - setup_remote_docker:
-          reusable: true
-          version: 17.07.0-ce
-      - run:
-          name: Dependencies
-          command: apk add --update make
-      - run:
-          name: Build image
-          command: |
-            make image.build
-      - run:
-          name: Push image
-          command: |
-            make image.release \
-              DOCKER_USERNAME=$DOCKERHUB_USERNAME \
-              DOCKER_PASSWORD=$DOCKERHUB_PASSWORD \
-              RELEASE_IMAGE=restyled/restyler:b$CIRCLE_BUILD_NUM
-
-      - run:
-          name: Record image tag
-          command: |
-            mkdir -p /tmp/workspace
-            echo "b$CIRCLE_BUILD_NUM" > /tmp/workspace/image-tag
-
-      - persist_to_workspace:
-          root: /tmp/workspace
-          paths:
-            - image-tag
-
-  deploy:
-    docker:
-      - image: restyled/ops:heroku
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - deploy:
-          name: Deploy
-          command: |
-            read -r image_tag < /tmp/workspace/image-tag
-            heroku config:set "RESTYLER_TAG=$image_tag" --app restyled-io
-
-workflows:
-  version: 2
-  build_and_deploy:
-    jobs:
-      - tests
-      - image:
-          context: org-global
-      - deploy:
-          context: org-global
-          filters:
-            branches:
-              only: master
-          requires:
-            - tests
-            - image
