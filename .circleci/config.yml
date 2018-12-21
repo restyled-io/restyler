@@ -32,9 +32,6 @@ jobs:
       - run:
           name: Build
           command: make build
-      - run:
-          name: Lint
-          command: make lint
       - save_cache:
           key: stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
           paths:
@@ -43,3 +40,6 @@ jobs:
       - run:
           name: Test
           command: make test
+      - run:
+          name: Lint
+          command: make lint
