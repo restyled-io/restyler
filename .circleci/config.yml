@@ -34,7 +34,8 @@ jobs:
           name: Build
           command: make build
       - save_cache:
-          key: stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
+          # yamllint disable-line rule:line-length
+          key: v1-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
           paths:
             - ~/.stack
             - ./.stack-work
