@@ -2,18 +2,25 @@
 # will run, making it a great test PR.
 INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#3
 
-all: setup build lint test
+all: setup setup.lint setup.tools build lint test
 
 .PHONY: setup
 setup:
 	stack setup $(STACK_ARGUMENTS)
 	stack build $(STACK_ARGUMENTS) --dependencies-only --test --no-run-tests
+
+.PHONY: setup.lint
+setup.lint:
+	stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
+	  hlint \
+	  weeder
+
+.PHONY: setup.tools
+setup.tools:
 	stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
 	  brittany \
 	  fast-tags \
-	  hlint \
-	  stylish-haskell \
-	  weeder
+	  stylish-haskell
 
 .PHONY: build
 build:

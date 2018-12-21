@@ -25,7 +25,7 @@ jobs:
       - run:
           name: Dependencies
           command: |
-            make setup
+            make setup setup.lint
             curl "$HLINT_YAML_SRC" > .hlint.yaml
           environment:
             # yamllint disable-line rule:line-length
