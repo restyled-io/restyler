@@ -43,3 +43,9 @@ jobs:
       - run:
           name: Lint
           command: make lint
+      - run:
+          name: Release
+          command: |
+            if [ "$CIRCLE_BRANCH" = master ];
+              make release VERSION=$CIRCLE_BUILD_NUM
+            fi
