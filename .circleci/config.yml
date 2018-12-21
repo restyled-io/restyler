@@ -9,6 +9,7 @@ jobs:
           GIT_AUTHOR_NAME: Restyled.io CI
           GIT_COMMITTER_EMAIL: ci@restyled.io
           GIT_COMMITTER_NAME: Restyled.io CI
+          STACK_ARGUMENTS: --no-terminal
     steps:
       - checkout
       - run:

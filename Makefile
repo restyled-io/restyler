@@ -6,9 +6,9 @@ all: setup build lint test
 
 .PHONY: setup
 setup:
-	stack setup
-	stack build --dependencies-only --test --no-run-tests
-	stack install --copy-compiler-tool \
+	stack setup $(STACK_ARGUMENTS)
+	stack build $(STACK_ARGUMENTS) --dependencies-only --test --no-run-tests
+	stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
 	  brittany \
 	  fast-tags \
 	  hlint \
@@ -17,20 +17,20 @@ setup:
 
 .PHONY: build
 build:
-	stack build --pedantic --test --no-run-tests
+	stack build $(STACK_ARGUMENTS) --pedantic --test --no-run-tests
 
 .PHONY: lint
 lint:
-	stack exec hlint app src test
-	stack exec weeder .
+	stack exec $(STACK_ARGUMENTS) hlint app src test
+	stack exec $(STACK_ARGUMENTS) weeder .
 
 .PHONY: test
 test:
-	stack test
+	stack build $(STACK_ARGUMENTS) --test
 
 .PHONY: docs
 docs:
-	stack --work-dir .stack-work-docs build --haddock
+	stack $(STACK_ARGUMENTS) --work-dir .stack-work-docs build --haddock
 	aws s3 sync --acl public-read --delete \
 	  $$(stack path --work-dir .stack-work-docs --local-doc-root)/ \
 	  s3://docs.restyled.io/restyler/
