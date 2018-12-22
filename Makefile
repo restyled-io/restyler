@@ -56,5 +56,5 @@ test.integration:
 .PHONY: release
 release:
 	[ -n "$(VERSION)" ]
-	git tag -a "v$(VERSION)" "v$(VERSION)"
+	git tag -a -m "v$(VERSION)" "v$(VERSION)"
 	git push --tags
