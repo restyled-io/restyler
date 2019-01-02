@@ -45,9 +45,19 @@ jobs:
       - run:
           name: Lint
           command: make lint
+
+  # Triggered manually via API to deploy image built in Quay
+  deploy:
+    docker:
+      image: quay.io/restyled-io/ops
+    steps:
       - run:
-          name: Release
+          name: Deploy
           command: |
-            if [ "$CIRCLE_BRANCH" = master ]; then
-              make release VERSION=$CIRCLE_BUILD_NUM
+            if heroku config:set --app restyled-io \
+              "RESTYLER_IMAGE=$DEPLOY_IMAGE" \
+              "RESTYLER_TAG=$DEPLOY_TAG"; then
+              notify "restyled-io[restyler]" "Deploy of $DEPLOY_TAG successeful"
+            else
+              notify "restyled-io[restyler]" "Deploy of $DEPLOY_TAG failed" 1
             fi

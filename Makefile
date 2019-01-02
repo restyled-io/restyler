@@ -51,10 +51,3 @@ test.integration:
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  restyled/restyler --color=always "$(INTEGRATION_PULL_REQUEST)"
-
-# To release is just to tag. Quay.io will pick it up and build the image.
-.PHONY: release
-release:
-	[ -n "$(VERSION)" ]
-	git tag -a -m "v$(VERSION)" "v$(VERSION)"
-	git push --tags
