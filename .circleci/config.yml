@@ -57,7 +57,7 @@ jobs:
             if heroku config:set --app restyled-io \
               "RESTYLER_IMAGE=$DEPLOY_IMAGE" \
               "RESTYLER_TAG=$DEPLOY_TAG"; then
-              notify "restyled-io[restyler]" "Deploy of $DEPLOY_TAG successeful"
+              notify "restyled-io[restyler]" "Deploy of $DEPLOY_TAG successful"
             else
               notify "restyled-io[restyler]" "Deploy of $DEPLOY_TAG failed" 1
             fi
