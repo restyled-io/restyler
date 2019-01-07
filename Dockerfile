@@ -1,9 +1,6 @@
 # Build stage
-FROM fpco/stack-build:lts as builder
+FROM quay.io/haskell_works/stack-build-minimal:18.04 as builder
 MAINTAINER Pat Brisbin <pbrisbin@gmail.com>
-
-ENV LANG en_US.UTF-8
-ENV PATH /root/.local/bin:$PATH
 
 RUN stack upgrade
 
@@ -22,9 +19,19 @@ COPY LICENSE /src/
 RUN stack install
 
 # Runtime
-FROM fpco/stack-run:lts
-MAINTAINER Pat Brisbin <pbrisbin@gmail.com>
-ENV LANG en_US.UTF-8
+FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
+RUN \
+  apt-get update && \
+  apt-get -y install \
+    curl \
+    git \
+    locales \
+    netbase && \
+  locale-gen en_US.UTF-8 && \
+  rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /root/.local/bin/restyler /bin/restyler
 
 # Install docker
