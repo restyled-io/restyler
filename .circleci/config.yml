@@ -50,6 +50,7 @@ jobs:
           command: |
             if [ "$CIRCLE_BRANCH" = master ]; then
               git tag -a -m "b$CIRCLE_BUILD_NUM" "b$CIRCLE_BUILD_NUM"
+              git push --tags
             fi
 
   # Triggered manually via API to deploy image built in Quay
