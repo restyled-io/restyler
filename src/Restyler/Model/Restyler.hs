@@ -184,6 +184,12 @@ allRestylers =
         , rInclude = ["**/*.java"]
         , rSupportsArgSep = False
         }
+    , (baseRestyler "hlint")
+        { rImage = "restyled/restyler-hlint:a7342be"
+        , rCommand = ["hlint", "lint", "--refactor", "--refactor-options=-i"]
+        , rInclude = ["**/*.hs"]
+        , rSupportsMultiplePaths = False
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
