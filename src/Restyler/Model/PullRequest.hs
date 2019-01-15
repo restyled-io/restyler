@@ -9,6 +9,7 @@ module Restyler.Model.PullRequest
     , pullRequestCloneUrlToken
     , pullRequestSpec
     , pullRequestIssueId
+    , pullRequestIsClosed
     , pullRequestIsFork
     , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
@@ -64,6 +65,9 @@ pullRequestSpec pullRequest = PullRequestSpec
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
 pullRequestIssueId = mkId Proxy . pullRequestNumber
+
+pullRequestIsClosed :: PullRequest -> Bool
+pullRequestIsClosed = (== StateClosed) . pullRequestState
 
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork = (/=) <$> pullRequestHeadRepo <*> pullRequestBaseRepo

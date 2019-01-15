@@ -21,6 +21,10 @@ import Restyler.Model.Restyler.Run
 
 restylerMain :: (HasCallStack, MonadApp m) => m ()
 restylerMain = do
+    whenM (asks $ pullRequestIsClosed . appPullRequest) $ do
+        closeRestyledPullRequest
+        exitWithInfo "Source Pull Request is closed"
+
     unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
     logIntentions
 
