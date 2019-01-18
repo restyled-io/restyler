@@ -9,11 +9,11 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import Restyler.App
+import Restyler.Config
 import Restyler.Logger
 import Restyler.Main
-import Restyler.Config
-import Restyler.PullRequest.Status
 import Restyler.Options
+import Restyler.PullRequest.Status
 import Restyler.Setup
 import System.Exit (die)
 import System.IO (BufferMode(..), hSetBuffering, stderr, stdout)
