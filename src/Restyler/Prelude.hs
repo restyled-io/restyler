@@ -10,6 +10,7 @@ where
 import Prelude as X hiding
     (head, init, last, maximum, minimum, pred, read, readFile, succ, tail)
 
+import Control.Applicative as X ((<|>))
 import Control.Arrow as X ((&&&), (***))
 import Control.Error.Util as X (hush, note)
 import Control.Exception.Safe as X
