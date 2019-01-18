@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.Model.Restyler
+module Restyler.Restyler
     ( Restyler(..)
     , defaultRestylers
     , allRestylers
@@ -14,7 +14,7 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.HashMap.Lazy as HM
-import Restyler.Model.Config.ExpectedKeys
+import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 

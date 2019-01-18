@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.Config.ExpectedKeys
+module Restyler.Config.ExpectedKeys
     ( validateObjectKeys
     , validateExpectedKeyBy
     ) where

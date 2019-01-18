@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.Comment
+module Restyler.Comment
     ( leaveRestyledComment
     , clearRestyledComments
     )
@@ -13,7 +13,7 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import Restyler.App
 import qualified Restyler.Content as Content
-import Restyler.Model.PullRequest
+import Restyler.PullRequest
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
 leaveRestyledComment :: (HasCallStack, MonadApp m) => PullRequest -> m ()

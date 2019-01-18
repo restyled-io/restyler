@@ -6,7 +6,7 @@
 -- This shortened format is useful for passing a Pull Request as a command-line
 -- argument, or showing it in log messages.
 --
-module Restyler.Model.PullRequestSpec
+module Restyler.PullRequestSpec
     ( PullRequestSpec(..)
     , parseSpec
     , showSpec

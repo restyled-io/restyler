@@ -10,14 +10,14 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import Restyler.App
-import Restyler.Model.Comment
-import Restyler.Model.Config
-import Restyler.Model.PullRequest
-import Restyler.Model.PullRequest.Restyled
-import Restyler.Model.PullRequest.Status
-import Restyler.Model.PullRequestSpec
-import Restyler.Model.RemoteFile
-import Restyler.Model.Restyler.Run
+import Restyler.Comment
+import Restyler.Config
+import Restyler.PullRequest
+import Restyler.PullRequest.Restyled
+import Restyler.PullRequest.Status
+import Restyler.PullRequestSpec
+import Restyler.RemoteFile
+import Restyler.Restyler.Run
 
 restylerMain :: (HasCallStack, MonadApp m) => m ()
 restylerMain = do

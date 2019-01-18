@@ -14,7 +14,7 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Aeson.Types as Aeson
-import Restyler.Model.Config.ExpectedKeys
+import Restyler.Config.ExpectedKeys
 
 -- | Configuration for sending PR statuses
 data Statuses = Statuses

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.Model.Restyler.Run
+module Restyler.Restyler.Run
     ( RestyleOutcome(..)
     , RestylerResult(..)
     , restylerCommittedChanges
@@ -15,7 +15,7 @@ import Restyler.App
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import qualified Restyler.Content as Content
-import Restyler.Model.Restyler
+import Restyler.Restyler
 
 data RestyleOutcome
     = NoPaths

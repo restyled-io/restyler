@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.PullRequestSpecSpec
+module Restyler.PullRequestSpecSpec
     ( spec
     )
 where
@@ -8,7 +8,7 @@ where
 import SpecHelper
 
 import qualified Data.Text as T
-import Restyler.Model.PullRequestSpec
+import Restyler.PullRequestSpec
 import Test.QuickCheck
 
 spec :: Spec

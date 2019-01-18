@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.Config.ExpectedKeysSpec
+module Restyler.Config.ExpectedKeysSpec
     ( spec
     )
 where
 
 import SpecHelper
 
-import Restyler.Model.Config.ExpectedKeys
+import Restyler.Config.ExpectedKeys
 
 spec :: Spec
 spec = do

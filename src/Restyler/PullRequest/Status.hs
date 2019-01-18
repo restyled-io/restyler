@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.Model.PullRequest.Status
+module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
     , sendPullRequestStatus_
@@ -13,8 +13,8 @@ import Restyler.Prelude
 
 import Restyler.App
 import Restyler.Config.Statuses
-import Restyler.Model.Config
-import Restyler.Model.PullRequest
+import Restyler.Config
+import Restyler.PullRequest
 
 data PullRequestStatus
     = NoDifferencesStatus

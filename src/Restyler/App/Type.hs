@@ -15,7 +15,7 @@ module Restyler.App.Type
 import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
-import Restyler.Model.Config
+import Restyler.Config
 import Restyler.Options
 
 -- | Application environment

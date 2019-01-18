@@ -11,7 +11,7 @@ import Restyler.Prelude
 
 import qualified Env
 import Options.Applicative
-import Restyler.Model.PullRequestSpec
+import Restyler.PullRequestSpec
 import System.Console.ANSI (hSupportsANSI)
 import System.IO (stderr, stdout)
 
