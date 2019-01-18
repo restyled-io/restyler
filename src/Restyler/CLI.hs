@@ -11,8 +11,8 @@ import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Logger
 import Restyler.Main
-import Restyler.Model.Config
-import Restyler.Model.PullRequest.Status
+import Restyler.Config
+import Restyler.PullRequest.Status
 import Restyler.Options
 import Restyler.Setup
 import System.Exit (die)

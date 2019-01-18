@@ -9,8 +9,8 @@ module Restyler.Content
 
 import Restyler.Prelude hiding (commentBody)
 
-import Restyler.Model.PullRequest
-import Restyler.Model.Restyler
+import Restyler.PullRequest
+import Restyler.Restyler
 import Text.Shakespeare.Text (st)
 
 commitMessage :: Restyler -> Text

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.Config
+module Restyler.Config
     ( Config(..)
     , defaultConfig
     , configPath
@@ -15,9 +15,9 @@ import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
 import Restyler.Config.Statuses
-import Restyler.Model.Config.ExpectedKeys
-import Restyler.Model.RemoteFile
-import Restyler.Model.Restyler
+import Restyler.Config.ExpectedKeys
+import Restyler.RemoteFile
+import Restyler.Restyler
 
 -- | Top-level configuration object
 data Config = Config

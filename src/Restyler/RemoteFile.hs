@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.RemoteFile
+module Restyler.RemoteFile
     ( RemoteFile(..)
     ) where
 
@@ -9,7 +9,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import Restyler.Model.Config.ExpectedKeys
+import Restyler.Config.ExpectedKeys
 
 -- | A remote (configuration) file, to fetch before restyling
 data RemoteFile = RemoteFile

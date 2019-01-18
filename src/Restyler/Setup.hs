@@ -10,9 +10,9 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import Restyler.App
-import Restyler.Model.Config
-import Restyler.Model.PullRequest
+import Restyler.Config
 import Restyler.Options
+import Restyler.PullRequest
 
 restylerSetup
     :: (HasCallStack, MonadApp m)

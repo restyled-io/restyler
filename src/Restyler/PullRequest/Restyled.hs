@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.PullRequest.Restyled
+module Restyler.PullRequest.Restyled
     ( createRestyledPullRequest
     , updateRestyledPullRequest
     , closeRestyledPullRequest
@@ -12,8 +12,8 @@ where
 import Restyler.Prelude
 
 import Restyler.App
-import Restyler.Model.PullRequest
-import Restyler.Model.PullRequestSpec
+import Restyler.PullRequest
+import Restyler.PullRequestSpec
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest :: (HasCallStack, MonadApp m) => m PullRequest

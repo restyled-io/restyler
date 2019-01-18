@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.Model.PullRequest
+module Restyler.PullRequest
     ( pullRequestOwnerName
     , pullRequestRepoName
     , pullRequestCloneUrl
@@ -25,7 +25,7 @@ where
 
 import Restyler.Prelude
 
-import Restyler.Model.PullRequestSpec
+import Restyler.PullRequestSpec
 
 pullRequestOwnerName :: HasCallStack => PullRequest -> Name Owner
 pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
