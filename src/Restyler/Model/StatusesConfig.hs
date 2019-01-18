@@ -29,10 +29,17 @@ data StatusesConfig = StatusesConfig
 
 instance FromJSON StatusesConfig where
     parseJSON (Object o) = do
-        validateObjectKeys ["differences", "no-differences", "error"] o
+        validateObjectKeys
+            ["differences", "no_differences", "no-differences", "error"] o
+
+        let noDifferences = (<|>)
+                -- N.B. Snake-case preferred, kebab-case is deprecated
+                <$> o .:? "no_differences"
+                <*> o .:? "no-differences"
+
         StatusesConfig
             <$> o .:? "differences" .!= scDifferences
-            <*> o .:? "no-differences" .!= scNoDifferences
+            <*> noDifferences .!= scNoDifferences
             <*> o .:? "error" .!= scError
       where
         StatusesConfig{..} = defaultStatusesConfig
