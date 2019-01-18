@@ -12,9 +12,9 @@ where
 import Restyler.Prelude
 
 import Restyler.App
+import Restyler.Config.Statuses
 import Restyler.Model.Config
 import Restyler.Model.PullRequest
-import Restyler.Model.StatusesConfig
 
 data PullRequestStatus
     = NoDifferencesStatus
@@ -27,7 +27,7 @@ data PullRequestStatus
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus :: MonadApp m => PullRequestStatus -> m ()
 sendPullRequestStatus status = do
-    statusConfig <- asks $ cStatusesConfig . appConfig
+    statusConfig <- asks $ cStatuses . appConfig
     when (shouldSendStatus statusConfig status) $ do
         pullRequest <- asks appPullRequest
         createHeadShaStatus pullRequest status
@@ -49,10 +49,10 @@ sendPullRequestStatus_ :: MonadApp m => PullRequestStatus -> m ()
 sendPullRequestStatus_ status = sendPullRequestStatus status
     `catchError` \_ -> logWarnN "Error sending PR status"
 
-shouldSendStatus :: StatusesConfig -> PullRequestStatus -> Bool
-shouldSendStatus StatusesConfig {..} NoDifferencesStatus = scNoDifferences
-shouldSendStatus StatusesConfig {..} (DifferencesStatus _) = scDifferences
-shouldSendStatus StatusesConfig {..} (ErrorStatus _) = scError
+shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
+shouldSendStatus Statuses {..} NoDifferencesStatus = sNoDifferences
+shouldSendStatus Statuses {..} (DifferencesStatus _) = sDifferences
+shouldSendStatus Statuses {..} (ErrorStatus _) = sError
 
 statusToStatus :: PullRequestStatus -> NewStatus
 statusToStatus NoDifferencesStatus = NewStatus

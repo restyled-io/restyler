@@ -14,10 +14,10 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
+import Restyler.Config.Statuses
 import Restyler.Model.Config.ExpectedKeys
 import Restyler.Model.RemoteFile
 import Restyler.Model.Restyler
-import Restyler.Model.StatusesConfig
 
 -- | Top-level configuration object
 data Config = Config
@@ -29,7 +29,7 @@ data Config = Config
     -- ^ Any remote configuration files to fetch before restyling
     , cCommentsEnabled :: Bool
     -- ^ Leave Comments?
-    , cStatusesConfig :: StatusesConfig
+    , cStatuses :: Statuses
     -- ^ Send PR statuses?
     , cRestylers :: [Restyler]
     -- ^ What restylers to run
@@ -48,7 +48,7 @@ instance FromJSON Config where
             <*> o .:? "auto" .!= cAuto defaultConfig
             <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
             <*> o .:? "comments" .!= cCommentsEnabled defaultConfig
-            <*> o .:? "statuses" .!= cStatusesConfig defaultConfig
+            <*> o .:? "statuses" .!= cStatuses defaultConfig
             <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
 
@@ -70,7 +70,7 @@ defaultConfig = Config
     , cAuto = False
     , cRemoteFiles = []
     , cCommentsEnabled = True
-    , cStatusesConfig = defaultStatusesConfig
+    , cStatuses = defaultStatusesConfig
     , cRestylers = defaultRestylers
     }
 
