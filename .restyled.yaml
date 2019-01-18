@@ -13,3 +13,4 @@ restylers:
       include:
         - "**/*.yaml"
         - "**/*.yml"
+  - hlint
