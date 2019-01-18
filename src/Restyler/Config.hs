@@ -14,8 +14,8 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.Vector as V
-import Restyler.Config.Statuses
 import Restyler.Config.ExpectedKeys
+import Restyler.Config.Statuses
 import Restyler.RemoteFile
 import Restyler.Restyler
 

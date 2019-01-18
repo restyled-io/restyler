@@ -12,8 +12,8 @@ where
 import Restyler.Prelude
 
 import Restyler.App
-import Restyler.Config.Statuses
 import Restyler.Config
+import Restyler.Config.Statuses
 import Restyler.PullRequest
 
 data PullRequestStatus
