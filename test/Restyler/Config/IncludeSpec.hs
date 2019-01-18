@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.IncludeSpec
+module Restyler.Config.IncludeSpec
     ( spec
     )
 where
 
 import SpecHelper
 
-import Restyler.Model.Include
+import Restyler.Config.Include
 
 spec :: Spec
 spec = do

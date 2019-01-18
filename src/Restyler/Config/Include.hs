@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.Include
+module Restyler.Config.Include
     ( Include(..)
     , includePath
     )

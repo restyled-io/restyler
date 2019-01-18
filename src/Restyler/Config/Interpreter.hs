@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Restyler.Model.Interpreter
+module Restyler.Config.Interpreter
     ( Interpreter(..)
     , hasInterpreter
     )

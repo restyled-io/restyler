@@ -12,9 +12,9 @@ import Restyler.Prelude
 
 import Data.List (nub)
 import Restyler.App
+import Restyler.Config.Include
+import Restyler.Config.Interpreter
 import qualified Restyler.Content as Content
-import Restyler.Model.Include
-import Restyler.Model.Interpreter
 import Restyler.Model.Restyler
 
 data RestyleOutcome
