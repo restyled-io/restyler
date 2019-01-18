@@ -2,8 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restyler.Model.StatusesConfig
-    ( StatusesConfig(..)
+module Restyler.Config.Statuses
+    ( Statuses(..)
     , defaultStatusesConfig
     )
 where
@@ -17,17 +17,17 @@ import qualified Data.Aeson.Types as Aeson
 import Restyler.Model.Config.ExpectedKeys
 
 -- | Configuration for sending PR statuses
-data StatusesConfig = StatusesConfig
-    { scDifferences :: Bool
+data Statuses = Statuses
+    { sDifferences :: Bool
     -- ^ Send a failure status when there were differences
-    , scNoDifferences :: Bool
+    , sNoDifferences :: Bool
     -- ^ Send a success status when there were no differences
-    , scError :: Bool
+    , sError :: Bool
     -- ^ Send a failure status when there were errors
     }
     deriving (Eq, Show, Generic)
 
-instance FromJSON StatusesConfig where
+instance FromJSON Statuses where
     parseJSON (Object o) = do
         validateObjectKeys
             ["differences", "no_differences", "no-differences", "error"] o
@@ -37,28 +37,23 @@ instance FromJSON StatusesConfig where
                 <$> o .:? "no_differences"
                 <*> o .:? "no-differences"
 
-        StatusesConfig
-            <$> o .:? "differences" .!= scDifferences
-            <*> noDifferences .!= scNoDifferences
-            <*> o .:? "error" .!= scError
+        Statuses
+            <$> o .:? "differences" .!= sDifferences
+            <*> noDifferences .!= sNoDifferences
+            <*> o .:? "error" .!= sError
       where
-        StatusesConfig{..} = defaultStatusesConfig
-    parseJSON (Aeson.Bool b) = pure StatusesConfig
-        { scDifferences = b
-        , scNoDifferences = b
-        , scError = b
+        Statuses{..} = defaultStatusesConfig
+    parseJSON (Aeson.Bool b) = pure Statuses
+        { sDifferences = b
+        , sNoDifferences = b
+        , sError = b
         }
     parseJSON x = typeMismatch "Boolean or Statuses Configuration" x
 
-instance ToJSON StatusesConfig where
-    -- N.B. this is incorrect because I stupidly made this one kebab-case, but
-    -- we only use this instance for DEBUG printing, so it's fine for now.
+instance ToJSON Statuses where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
-defaultStatusesConfig :: StatusesConfig
-defaultStatusesConfig = StatusesConfig
-    { scDifferences = True
-    , scNoDifferences = True
-    , scError = True
-    }
+defaultStatusesConfig :: Statuses
+defaultStatusesConfig =
+    Statuses {sDifferences = True, sNoDifferences = True, sError = True}
