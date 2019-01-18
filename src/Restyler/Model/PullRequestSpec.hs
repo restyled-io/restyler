@@ -28,7 +28,7 @@ data PullRequestSpec = PullRequestSpec
 
 -- | Parse @\<owner>\/\<name>#\<number>@ into a @'PullRequestSpec'@
 parseSpec :: String -> Either String PullRequestSpec
-parseSpec = first parseErrorPretty . parse parser "<input>"
+parseSpec = first errorBundlePretty . parse parser "<input>"
 
 -- | Inverse of @'parseSpec'@
 showSpec :: PullRequestSpec -> Text
