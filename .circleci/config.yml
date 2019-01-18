@@ -18,10 +18,10 @@ jobs:
       - restore_cache:
           keys:
             # yamllint disable-line rule:line-length
-            - v1-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
-            - v1-{{ .Branch }}-{{ checksum "stack.yaml" }}-
-            - v1-{{ .Branch }}
-            - v1-
+            - v2-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
+            - v2-{{ .Branch }}-{{ checksum "stack.yaml" }}-
+            - v2-{{ .Branch }}
+            - v2-
       - run:
           name: Dependencies
           command: |
@@ -35,7 +35,7 @@ jobs:
           command: make build
       - save_cache:
           # yamllint disable-line rule:line-length
-          key: v1-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
+          key: v2-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
           paths:
             - ~/.stack
             - ./.stack-work
