@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restyler.Model.InterpreterSpec
+module Restyler.Config.InterpreterSpec
     ( spec
     )
 where
@@ -8,7 +8,7 @@ where
 import SpecHelper
 
 import qualified Data.Text as T
-import Restyler.Model.Interpreter
+import Restyler.Config.Interpreter
 
 spec :: Spec
 spec = do

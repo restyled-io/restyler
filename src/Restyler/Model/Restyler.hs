@@ -15,8 +15,8 @@ import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import qualified Data.HashMap.Lazy as HM
 import Restyler.Model.Config.ExpectedKeys
-import Restyler.Model.Include
-import Restyler.Model.Interpreter
+import Restyler.Config.Include
+import Restyler.Config.Interpreter
 
 -- | How to run a given restyler
 data Restyler = Restyler

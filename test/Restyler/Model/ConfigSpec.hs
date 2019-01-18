@@ -12,8 +12,8 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import Data.List (isInfixOf)
 import Data.Yaml (decodeEither', prettyPrintParseException)
+import Restyler.Config.Include
 import Restyler.Model.Config
-import Restyler.Model.Include
 import Restyler.Model.Restyler
 
 spec :: Spec
