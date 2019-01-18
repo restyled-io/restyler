@@ -20,6 +20,7 @@ library:
     - bytestring
     - conduit
     - directory
+    - edit-distance
     - envparse
     - errors
     - fast-logger
