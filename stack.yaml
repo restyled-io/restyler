@@ -1,5 +1,7 @@
-resolver: lts-12.24
-ghc-options:
-  "$locals": -fhide-source-paths
+resolver: lts-13.3
 extra-deps:
   - envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
+  - github-0.20@sha256:df31940c0ffcd17bc273e2424f1521dc071a9252904c3b82ae51bbd5e320cecf
+
+ghc-options:
+  "$locals": -fhide-source-paths
