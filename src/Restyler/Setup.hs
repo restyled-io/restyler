@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Setup
@@ -11,6 +11,7 @@ import Restyler.Prelude
 import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Config
+import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
 
@@ -46,23 +47,19 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
     dir <- asks appWorkingDirectory
     token <- asks appAccessToken
 
-    let cloneUrl = pullRequestCloneUrlToken token pullRequest
-    callProcess "git" ["clone", unpack cloneUrl, dir]
+    let cloneUrl = unpack $ pullRequestCloneUrlToken token pullRequest
+    gitClone cloneUrl dir
     setCurrentDirectory dir
 
-    when (pullRequestIsNonDefaultBranch pullRequest) $ fetchOrigin
-        (pullRequestBaseRef pullRequest)
-        (pullRequestBaseRef pullRequest)
+    when (pullRequestIsNonDefaultBranch pullRequest) $ gitFetch
+        (unpack $ pullRequestBaseRef pullRequest)
+        (unpack $ pullRequestBaseRef pullRequest)
 
-    when (pullRequestIsFork pullRequest) $ fetchOrigin
-        (pullRequestRemoteHeadRef pullRequest)
-        (pullRequestLocalHeadRef pullRequest)
+    when (pullRequestIsFork pullRequest) $ gitFetch
+        (unpack $ pullRequestRemoteHeadRef pullRequest)
+        (unpack $ pullRequestLocalHeadRef pullRequest)
 
-    callProcess "git" ["checkout", unpack $ pullRequestLocalHeadRef pullRequest]
-  where
-    fetchOrigin remoteRef localRef = callProcess
-        "git"
-        ["fetch", "origin", unpack $ remoteRef <> ":" <> localRef]
+    gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
 
 decodeConfig :: MonadApp m => Text -> m Config
 decodeConfig =

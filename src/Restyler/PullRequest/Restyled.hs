@@ -13,6 +13,7 @@ import Restyler.Prelude
 
 import Restyler.App
 import qualified Restyler.Content as Content
+import Restyler.Git
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
 import Restyler.RestylerResult
@@ -27,7 +28,7 @@ createRestyledPullRequest results = do
     -- an "-restyled" branch already exists and 99% of the time we can be sure
     -- it's ours. Force-pushing doesn't hurt when it's not needed (provided we
     -- know it's our branch, of course).
-    forcePushOrigin $ pullRequestRestyledRef pullRequest
+    gitPushForce . unpack $ pullRequestRestyledRef pullRequest
 
     let restyledTitle = "Restyle " <> pullRequestTitle pullRequest
         restyledBody = Content.pullRequestDescription pullRequest results
@@ -48,7 +49,7 @@ createRestyledPullRequest results = do
 updateRestyledPullRequest :: MonadApp m => m ()
 updateRestyledPullRequest = do
     rBranch <- asks $ pullRequestRestyledRef . appPullRequest
-    forcePushOrigin rBranch
+    gitPushForce $ unpack rBranch
 
 -- | Close the Restyled PR, if we know of it
 closeRestyledPullRequest :: MonadApp m => m ()
@@ -81,16 +82,9 @@ closeRestyledPullRequest = do
 
         let branch = pullRequestRestyledRef pullRequest
         logInfoN $ "Deleting restyled branch: " <> branch
-        callProcess "git" ["push", "origin", "--delete", unpack branch]
+        gitPushDelete $ unpack branch
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: MonadApp m => m ()
 updateOriginalPullRequest =
-    pushOrigin . pullRequestHeadRef =<< asks appPullRequest
-
-pushOrigin :: MonadApp m => Text -> m ()
-pushOrigin branch = callProcess "git" ["push", "origin", unpack branch]
-
-forcePushOrigin :: MonadApp m => Text -> m ()
-forcePushOrigin branch =
-    callProcess "git" ["push", "--force-with-lease", "origin", unpack branch]
+    gitPush . unpack . pullRequestHeadRef =<< asks appPullRequest

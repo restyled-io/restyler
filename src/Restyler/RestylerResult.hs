@@ -11,6 +11,7 @@ where
 import Restyler.Prelude
 
 import Restyler.App
+import Restyler.Git
 import Restyler.Restyler
 
 data RestyleOutcome
@@ -47,16 +48,9 @@ restylerCommittedChanges = committedChanges . rrOutcome
 
 getRestyleOutcome :: MonadApp m => Restyler -> m RestyleOutcome
 getRestyleOutcome restyler = do
-    changedPaths <- gitDiffNameOnly
+    changedPaths <- gitDiffNameOnly Nothing
 
     if null changedPaths
         then pure NoChanges
-        else ChangesCommitted changedPaths <$> commitChanges
-  where
-    gitDiffNameOnly = lines <$> readProcess "git" ["diff", "--name-only"] ""
-    gitCommitAll msg = callProcess "git" ["commit", "-a", "--message", msg]
-    gitRevParseHead = readProcess "git" ["rev-parse", "HEAD"] ""
-
-    commitChanges = do
-        gitCommitAll $ "Restyled by " <> rName restyler
-        chomp . pack <$> gitRevParseHead
+        else ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage
+    where commitMessage = "Restyled by " <> rName restyler
