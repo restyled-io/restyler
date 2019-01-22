@@ -12,12 +12,15 @@ where
 import Restyler.Prelude
 
 import Restyler.App
+import qualified Restyler.Content as Content
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
+import Restyler.RestylerResult
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
-createRestyledPullRequest :: (HasCallStack, MonadApp m) => m PullRequest
-createRestyledPullRequest = do
+createRestyledPullRequest
+    :: (HasCallStack, MonadApp m) => [RestylerResult] -> m PullRequest
+createRestyledPullRequest results = do
     pullRequest <- asks appPullRequest
 
     -- N.B. we always force-push. There are various edge-cases that could mean
@@ -26,8 +29,8 @@ createRestyledPullRequest = do
     -- know it's our branch, of course).
     forcePushOrigin $ pullRequestRestyledRef pullRequest
 
-    let restyledTitle = pullRequestTitle pullRequest <> " (Restyled)"
-        restyledBody = ""
+    let restyledTitle = "Restyle " <> pullRequestTitle pullRequest
+        restyledBody = Content.pullRequestDescription pullRequest results
 
     pr <- runGitHub $ createPullRequestR
         (pullRequestOwnerName pullRequest)

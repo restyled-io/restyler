@@ -2,10 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Restyler.Run
-    ( RestyleOutcome(..)
-    , RestylerResult(..)
-    , restylerCommittedChanges
-    , runRestylers
+    ( runRestylers
     ) where
 
 import Restyler.Prelude
@@ -14,28 +11,8 @@ import Data.List (nub)
 import Restyler.App
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
-import qualified Restyler.Content as Content
 import Restyler.Restyler
-
-data RestyleOutcome
-    = NoPaths
-    | NoChanges
-    | ChangesCommitted [FilePath] Text
-    deriving Show
-
-data RestylerResult = RestylerResult
-    { rrRestyler :: Restyler
-    , rrOutcome :: RestyleOutcome
-    }
-
-instance Show RestylerResult where
-    show RestylerResult {..} = rName rrRestyler <> ": " <> show rrOutcome
-
-restylerCommittedChanges :: RestylerResult -> Bool
-restylerCommittedChanges = committedChanges . rrOutcome
-  where
-    committedChanges (ChangesCommitted _ _) = True
-    committedChanges _ = False
+import Restyler.RestylerResult
 
 -- | Runs the given @'Restyler'@s over the files
 runRestylers :: MonadApp m => [Restyler] -> [FilePath] -> m [RestylerResult]
@@ -48,7 +25,7 @@ runRestylers restylers allPaths = do
     for restylers $ \r -> runRestyler r =<< filterRestylePaths r paths
 
 runRestyler :: MonadApp m => Restyler -> [FilePath] -> m RestylerResult
-runRestyler r [] = pure $ RestylerResult r NoPaths
+runRestyler r [] = pure $ noPathsRestylerResult r
 runRestyler r@Restyler {..} paths = do
     if rSupportsMultiplePaths
         then do
@@ -58,23 +35,7 @@ runRestyler r@Restyler {..} paths = do
             logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
             dockerRunRestyler r [path]
 
-    RestylerResult r <$> getRestyleOutcome r
-
-getRestyleOutcome :: MonadApp m => Restyler -> m RestyleOutcome
-getRestyleOutcome restyler = do
-    changedPaths <- gitDiffNameOnly
-
-    if null changedPaths
-        then pure NoChanges
-        else ChangesCommitted changedPaths <$> commitChanges
-  where
-    gitDiffNameOnly = lines <$> readProcess "git" ["diff", "--name-only"] ""
-    gitCommitAll msg = callProcess "git" ["commit", "-a", "--message", msg]
-    gitRevParseHead = readProcess "git" ["rev-parse", "HEAD"] ""
-
-    commitChanges = do
-        gitCommitAll $ unpack $ Content.commitMessage restyler
-        chomp . pack <$> gitRevParseHead
+    getRestylerResult r
 
 filterRestylePaths :: MonadApp m => Restyler -> [FilePath] -> m [FilePath]
 filterRestylePaths r = filterM (r `shouldRestyle`)
