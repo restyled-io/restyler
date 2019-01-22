@@ -12,6 +12,7 @@ import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Comment
 import Restyler.Config
+import Restyler.Git
 import Restyler.PullRequest
 import Restyler.PullRequest.Restyled
 import Restyler.PullRequest.Status
@@ -35,7 +36,7 @@ restylerMain = do
 
     unlessM isAutoPush $ do
         branch <- asks $ pullRequestRestyledRef . appPullRequest
-        callProcess "git" ["checkout", "-b", unpack branch]
+        gitCheckout $ unpack branch
 
     results <- restyle
     logDebugN $ "Restyling results: " <> tshow results
@@ -48,7 +49,7 @@ restylerMain = do
 
     whenM isAutoPush $ do
         branch <- asks $ pullRequestHeadRef . appPullRequest
-        callProcess "git" ["push", "origin", unpack branch]
+        gitPush $ unpack branch
         exitWithInfo "Pushed to original PR"
 
     mRestyledPr <- asks appRestyledPullRequest
@@ -97,10 +98,8 @@ restyle = do
 
 changedPaths :: MonadApp m => Text -> m [FilePath]
 changedPaths branch = do
-    output <- lines
-        <$> readProcess "git" ["merge-base", unpack branch, "HEAD"] ""
-    let ref = maybe branch pack $ listToMaybe output
-    lines <$> readProcess "git" ["diff", "--name-only", unpack ref] ""
+    ref <- maybe branch pack <$> gitMergeBase (unpack branch)
+    gitDiffNameOnly $ Just $ unpack ref
 
 isAutoPush :: MonadApp m => m Bool
 isAutoPush = do
