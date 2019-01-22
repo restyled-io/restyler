@@ -1,84 +1,104 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Restyler.Content
-    ( commitMessage
-    , commentBody
-    , commentBodyFork
-    ) where
+    ( commentBody
+    , pullRequestDescription
+    )
+where
 
 import Restyler.Prelude hiding (commentBody)
 
 import Restyler.PullRequest
 import Restyler.Restyler
+import Restyler.RestylerResult
 import Text.Shakespeare.Text (st)
-
-commitMessage :: Restyler -> Text
-commitMessage = pack . ("Restyled by " <>) . rName
-
-commentBody :: PullRequest -> Text
-commentBody pullRequest = mconcat
-    [ commentPreamble pullRequest <> "\n"
-    , commentToIncorporate <> "\n"
-    , commentFooter
-    ]
-
-commentBodyFork :: PullRequest -> Text
-commentBodyFork pullRequest = mconcat
-    [ commentPreamble pullRequest <> "\n"
-    , commentToIncorporateFork pullRequest <> "\n"
-    , commentFooter
-    ]
 
 -- brittany-disable-next-binding
 
-commentPreamble :: PullRequest -> Text
-commentPreamble pullRequest = [st|
+commentBody
+    :: PullRequest -- ^ Restyled PR
+    -> Text
+commentBody pullRequest = [st|
 Hey there-
 
 I'm a [bot][homepage], here to let you know that some code in this PR might not
 match the team's automated styling. I ran the team's auto-reformatting tools on
 the files changed in this PR and found some differences. Those differences can
 be seen in ##{pullRequestNumber pullRequest}.
-|]
 
--- brittany-disable-next-binding
-
-commentToIncorporate :: Text
-commentToIncorporate = [st|
-To incorporate those fixes, just merge that PR into this one. Or, if you
-manually fix the styling, that PR will be closed and this comment deleted.
-|]
-
--- brittany-disable-next-binding
-
-commentToIncorporateFork :: PullRequest -> Text
-commentToIncorporateFork pullRequest = [st|
-**NOTE**: Since this PR was opened from a fork, we're not able to open our PR
-with yours as the base branch. Therefore, the PR linked above was opened
-directly against `#{pullRequestBaseRef pullRequest}`. It includes your changes and another commit to
-adjusted styling.
-
-If you're interested in incorporating the style fixes in this PR, you can do
-that locally with something like:
-
-```console
-git remote add upstream #{getUrl $ pullRequestCloneUrl pullRequest}
-git fetch upstream pull/#{pullRequestNumber pullRequest}/head
-git merge --ff-only FETCH_HEAD
-git push
-```
-
-Fixing the styling (through the above or any other means) will cause the linked
-PR to be closed and this comment delete.
-|]
-
--- brittany-disable-next-binding
-
-commentFooter :: Text
-commentFooter = [st|
-Sorry if this was unexpected. To disable it, see our [documentation][].
+Please see that Pull Request's description for more details.
 
 [homepage]: https://restyled.io
+|]
+
+-- brittany-disable-next-binding
+
+pullRequestDescription
+    :: PullRequest -- ^ Original PR
+    -> [RestylerResult]
+    -> Text
+pullRequestDescription pullRequest results
+    | pullRequestIsFork pullRequest = [st|
+A duplicate of #{pullRequestNumber pullRequest} with additional commits that
+automatically address incorrect style, created by [Restyled][].
+
+Since the original Pull Request was opened as a fork in a contributor's
+repository, we are unable to create a Pull Request branching from it with only
+the style fixes.
+
+The following Restylers made fixes:
+
+#{resultsList}
+
+To incorporate these changes, you can either:
+
+1. Merge this Pull Request *instead of* the original, or
+
+1. Ask your contributor to locally incorporate these commits and push them to
+   the original Pull Request
+
+   <details>
+       <summary>Expand for example instructions</summary>
+
+       ```console
+       git remote add upstream #{getUrl $ pullRequestCloneUrl pullRequest}
+       git fetch upstream pull/<this PR number>/head
+       git merge --ff-only FETCH_HEAD
+       git push
+       ```
+
+   </details>
+
+#{footer}
+|]
+    | otherwise = [st|
+Automated style fixes for #{pullRequestNumber pullRequest}, created by
+[Restyled][].
+
+The following restylers made fixes:
+
+#{resultsList}
+
+To incorporate these changes, merge this Pull Request into the original. We
+recommend using the Squash or Rebase strategies.
+
+#{footer}
+|]
+  where
+    -- N.B. Assumes something committed changes, otherwise we'd not be opening
+    -- this PR at all
+    resultsList = unlines
+        $ map (("- " <>) . rName . rrRestyler)
+        $ filter restylerCommittedChanges results
+
+    footer = [st|
+**NOTE**: As work continues on the original Pull Request, this process will
+re-run and update (force-push) this Pull Request with updated style fixes as
+necessary. If the style is fixed manually at any point (i.e. this process finds
+no fixes to make), this Pull Request will be closed automatically.
+
+Sorry if this was unexpected. To disable it, see our [documentation][].
+
+[restyled]: https://restyled.io
 [documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
 |]

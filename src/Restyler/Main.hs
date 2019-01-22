@@ -18,6 +18,7 @@ import Restyler.PullRequest.Status
 import Restyler.PullRequestSpec
 import Restyler.RemoteFile
 import Restyler.Restyler.Run
+import Restyler.RestylerResult
 
 restylerMain :: (HasCallStack, MonadApp m) => m ()
 restylerMain = do
@@ -56,7 +57,7 @@ restylerMain = do
             updateRestyledPullRequest
             pure $ simplePullRequestHtmlUrl restyledPr
         Nothing -> do
-            restyledPr <- createRestyledPullRequest
+            restyledPr <- createRestyledPullRequest results
             whenM commentsEnabled $ leaveRestyledComment restyledPr
             pure $ pullRequestHtmlUrl restyledPr
 
