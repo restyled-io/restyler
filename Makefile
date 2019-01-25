@@ -51,3 +51,13 @@ test.integration:
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  restyled/restyler --color=always "$(INTEGRATION_PULL_REQUEST)"
+
+.PHONY: test.prod
+test.prod:
+	docker run --rm \
+	  --env DEBUG=1 \
+	  --env GITHUB_ACCESS_TOKEN \
+	  --volume /tmp:/tmp \
+	  --volume /var/run/docker.sock:/var/run/docker.sock \
+	  $$(heroku config:get RESTYLER_IMAGE --app restyled-io):$$(heroku config:get RESTYLER_TAG --app restyled-io) \
+	  --color=always "$(INTEGRATION_PULL_REQUEST)"
