@@ -94,8 +94,12 @@ instance MonadIO m => MonadApp (AppT m) where
         appIO SystemError Exit.exitSuccess
 
     callProcess cmd args = do
-        -- N.B. this injects access tokens into the logs when calling git-clone, but
-        -- that's OK because it's DEBUG and they're short-lived anyway.
+        -- N.B. this includes access tokens in log messages when used for
+        -- git-clone. That's acceptable because:
+        --
+        -- - These tokens are ephemeral (5 minutes)
+        -- - We generally accept secrets in DEBUG messages
+        --
         logDebugN $ pack $ "call: " <> cmd <> " " <> show args
         appIO SystemError $ Process.callProcess cmd args
 
