@@ -1,6 +1,6 @@
 # This PR has differences such that all Restylers known at the time I made it
 # will run, making it a great test PR.
-INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#3
+INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#6
 
 all: setup setup.lint setup.tools build lint test
 
