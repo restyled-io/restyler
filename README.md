@@ -34,7 +34,7 @@ make test
 
 ### Integration
 
-End-to-end test that restyles a public Pull Request in our `demo` Repository:
+End-to-end test that restyles an example Pull Request:
 
 ```console
 make test.integration GITHUB_ACCESS_TOKEN=$(bin/get-access-token)
