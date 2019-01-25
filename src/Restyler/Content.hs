@@ -39,8 +39,8 @@ pullRequestDescription
     -> Text
 pullRequestDescription pullRequest results
     | pullRequestIsFork pullRequest = [st|
-A duplicate of #{pullRequestNumber pullRequest} with additional commits that
-automatically address incorrect style, created by [Restyled][].
+A duplicate of ##{n} with additional commits that automatically address
+incorrect style, created by [Restyled][].
 
 Since the original Pull Request was opened as a fork in a contributor's
 repository, we are unable to create a Pull Request branching from it with only
@@ -72,8 +72,7 @@ To incorporate these changes, you can either:
 #{footer}
 |]
     | otherwise = [st|
-Automated style fixes for #{pullRequestNumber pullRequest}, created by
-[Restyled][].
+Automated style fixes for ##{n}, created by [Restyled][].
 
 The following restylers made fixes:
 
@@ -85,6 +84,10 @@ recommend using the Squash or Rebase strategies.
 #{footer}
 |]
   where
+    -- This variable is just so that we can wrap our content above such that
+    -- when the link is rendered at ~3 digits, it looks OK.
+    n = pullRequestNumber pullRequest
+
     -- N.B. Assumes something committed changes, otherwise we'd not be opening
     -- this PR at all
     resultsList = unlines
