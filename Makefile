@@ -35,13 +35,6 @@ lint:
 test:
 	stack build $(STACK_ARGUMENTS) --test
 
-.PHONY: docs
-docs:
-	stack $(STACK_ARGUMENTS) --work-dir .stack-work-docs build --haddock
-	aws s3 sync --acl public-read --delete \
-	  $$(stack path --work-dir .stack-work-docs --local-doc-root)/ \
-	  s3://docs.restyled.io/restyler/
-
 .PHONY: test.integration
 test.integration:
 	docker build --tag restyled/restyler .
@@ -61,3 +54,10 @@ test.prod:
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  $$(heroku config:get RESTYLER_IMAGE --app restyled-io):$$(heroku config:get RESTYLER_TAG --app restyled-io) \
 	  --color=always "$(INTEGRATION_PULL_REQUEST)"
+
+.PHONY: docs
+docs:
+	stack $(STACK_ARGUMENTS) --work-dir .stack-work-docs build --haddock
+	aws s3 sync --acl public-read --delete \
+	  $$(stack path --work-dir .stack-work-docs --local-doc-root)/ \
+	  s3://docs.restyled.io/restyler/
