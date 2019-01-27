@@ -47,7 +47,7 @@ test.integration:
 
 .PHONY: test.prod
 test.prod:
-	docker run --rm \
+	eval $$(docker-machine env restyled-prod) && docker run --rm \
 	  --env DEBUG=1 \
 	  --env GITHUB_ACCESS_TOKEN \
 	  --volume /tmp:/tmp \
