@@ -20,12 +20,10 @@ gitClone :: MonadApp m => String -> FilePath -> m ()
 gitClone url dir = callProcess "git" ["clone", url, dir]
 
 gitCheckout :: MonadApp m => String -> m ()
-gitCheckout branch =
-    callProcess "git" ["checkout", "--no-progress", "-b", branch]
+gitCheckout branch = callProcess "git" ["checkout", "--quiet", "-b", branch]
 
 gitCheckoutExisting :: MonadApp m => String -> m ()
-gitCheckoutExisting branch =
-    callProcess "git" ["checkout", "--no-progress", branch]
+gitCheckoutExisting branch = callProcess "git" ["checkout", "--quiet", branch]
 
 gitFetch :: MonadApp m => String -> String -> m ()
 gitFetch remoteRef localRef =
