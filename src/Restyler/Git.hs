@@ -17,7 +17,7 @@ import Restyler.Prelude
 import Restyler.App
 
 gitClone :: MonadApp m => String -> FilePath -> m ()
-gitClone url dir = callProcess "git" ["clone", url, dir]
+gitClone url dir = callProcess "git" ["clone", "--quiet", url, dir]
 
 gitCheckout :: MonadApp m => String -> m ()
 gitCheckout branch = callProcess "git" ["checkout", "--quiet", "-b", branch]
