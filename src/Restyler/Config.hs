@@ -44,7 +44,15 @@ instance FromJSON Config where
         pure defaultConfig { cRestylers = restylers }
     parseJSON (Object o) = do
         validateObjectKeys
-            ["enabled", "auto", "remote_files", "comments", "statuses", "labels", "restylers"] o
+            [ "enabled"
+            , "auto"
+            , "remote_files"
+            , "comments"
+            , "statuses"
+            , "labels"
+            , "restylers"
+            ]
+            o
         Config
             <$> o .:? "enabled" .!= cEnabled defaultConfig
             <*> o .:? "auto" .!= cAuto defaultConfig
