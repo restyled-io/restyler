@@ -13,6 +13,7 @@ module Restyler.App.Class
     -- of the hidings we'd otherwise need to do at every import site.
     --
     , module GitHub.Endpoints.Issues.Comments
+    , module GitHub.Endpoints.Issues.Labels
     , module GitHub.Endpoints.PullRequests
     , module GitHub.Endpoints.Repos.Statuses
     ) where
@@ -24,6 +25,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Vector as V
 import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
+import GitHub.Endpoints.Issues.Labels
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
 import GitHub.Endpoints.Repos.Statuses
 import GitHub.Request

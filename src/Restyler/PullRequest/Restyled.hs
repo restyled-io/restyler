@@ -12,6 +12,7 @@ where
 import Restyler.Prelude
 
 import Restyler.App
+import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Git
 import Restyler.PullRequest
@@ -42,6 +43,14 @@ createRestyledPullRequest results = do
             , createPullRequestHead = pullRequestRestyledRef pullRequest
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
+
+    labels <- asks $ cLabels . appConfig
+
+    unless (null labels) $ runGitHub_ $ addLabelsToIssueR
+        (pullRequestOwnerName pr)
+        (pullRequestRepoName pr)
+        (pullRequestIssueId pr)
+        labels
 
     pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
