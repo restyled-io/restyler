@@ -47,8 +47,8 @@ createRestyledPullRequest results = do
     labels <- asks $ cLabels . appConfig
 
     unless (null labels) $ runGitHub_ $ addLabelsToIssueR
-        (pullRequestOwnerName pullRequest)
-        (pullRequestRepoName pullRequest)
+        (pullRequestOwnerName pr)
+        (pullRequestRepoName pr)
         (pullRequestIssueId pr)
         labels
 
