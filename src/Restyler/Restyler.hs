@@ -189,6 +189,7 @@ allRestylers =
         , rCommand = ["hlint", "lint", "--refactor", "--refactor-options=-i"]
         , rInclude = ["**/*.hs"]
         , rSupportsMultiplePaths = False
+        , rSupportsArgSep = False
         }
     ]
 
