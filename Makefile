@@ -40,7 +40,7 @@ test.integration:
 	docker build --tag restyled/restyler .
 	docker run --rm \
 	  --env DEBUG=1 \
-	  --env GITHUB_ACCESS_TOKEN \
+	  --env-file "$(PWD)/.env" \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  restyled/restyler --color=always "$(INTEGRATION_PULL_REQUEST)"
