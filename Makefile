@@ -1,6 +1,8 @@
 # This PR has differences such that all Restylers known at the time I made it
 # will run, making it a great test PR.
 INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#6
+INTEGRATION_RESTYLER_IMAGE ?= restyled/restyler
+INTEGRATION_RESTYLER_TAG ?= :latest
 
 all: setup setup.lint setup.tools build lint test
 
@@ -43,7 +45,8 @@ test.integration:
 	  --env-file "$(PWD)/.env" \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
-	  restyled/restyler --color=always "$(INTEGRATION_PULL_REQUEST)"
+	  $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) \
+	    --color=always "$(INTEGRATION_PULL_REQUEST)"
 
 .PHONY: docs
 docs:
