@@ -23,5 +23,5 @@ EOM
 curl --silent -X POST \
   -H "Authorization: Bearer $jwt" \
   -H "Accept: application/vnd.github.machine-man-preview+json" \
-  "https://api.github.com/installations/$installation_id/access_tokens" \
-  | jq --raw-output '.token'
+  "https://api.github.com/installations/$installation_id/access_tokens" |
+  jq --raw-output '.token'
