@@ -2,7 +2,7 @@
 set -e
 
 app_id=${1:-5355}
-app_key=${2:-keys/restyled-io-development.2017-09-19.private-key.pem}
+app_key=${2:-$HOME/downloads/restyled-io-development.2019-03-21.private-key.pem}
 installation_id=${3:-58920}
 
 # https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-a-github-app
