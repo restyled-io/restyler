@@ -191,6 +191,13 @@ allRestylers =
         , rSupportsMultiplePaths = False
         , rSupportsArgSep = False
         }
+    , (baseRestyler "pg_format")
+        { rImage = "restyled/restyler-pg_format:9862f49"
+        , rCommand = ["pg_format-inplace"]
+        , rInclude = ["**/*.sql"]
+        , rSupportsArgSep = False
+        , rSupportsMultiplePaths = False
+        }
     ]
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
