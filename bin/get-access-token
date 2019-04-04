@@ -2,7 +2,7 @@
 set -e
 
 app_id=${1:-5355}
-app_key=${2:-$HOME/downloads/restyled-io-development.2019-03-21.private-key.pem}
+app_key=${2:-$HOME/downloads/restyled-io-development.2019-04-04.private-key.pem}
 installation_id=${3:-58920}
 
 # https://developer.github.com/apps/building-github-apps/authentication-options-for-github-apps/#authenticating-as-a-github-app
@@ -12,7 +12,7 @@ jwt=$(
     private_key = OpenSSL::PKey::RSA.new(private_pem)
     payload = {
       iat: Time.now.to_i,
-      exp: Time.now.to_i + (10 * 60),
+      exp: Time.now.to_i + (5 * 60),
       iss: $app_id,
     }
     puts JWT.encode(payload, private_key, "RS256")
@@ -24,4 +24,4 @@ curl --silent -X POST \
   -H "Authorization: Bearer $jwt" \
   -H "Accept: application/vnd.github.machine-man-preview+json" \
   "https://api.github.com/installations/$installation_id/access_tokens" |
-  jq --raw-output '.token'
+  jq --raw-output '.token // .message'
