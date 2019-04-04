@@ -27,12 +27,17 @@ restylerMain = do
         closeRestyledPullRequest
         exitWithInfo "Source Pull Request is closed"
 
-    unlessM configEnabled $ exitWithInfo "Restyler disabled by config"
+    whenConfig (not . cEnabled . appConfig)
+        $ exitWithInfo "Restyler disabled by config"
     logIntentions
 
-    remoteFiles <- asks $ cRemoteFiles . appConfig
-    logInfoN $ "Fetching " <> tshow (length remoteFiles) <> " remote file(s)"
-    for_ remoteFiles $ \RemoteFile {..} -> downloadFile (getUrl rfUrl) rfPath
+    whenConfigNonEmpty (cRemoteFiles . appConfig) $ \remoteFiles -> do
+        logInfoN
+            $ "Fetching "
+            <> tshow (length remoteFiles)
+            <> " remote file(s)"
+        for_ remoteFiles
+            $ \RemoteFile {..} -> downloadFile (getUrl rfUrl) rfPath
 
     unlessM isAutoPush $ do
         branch <- asks $ pullRequestRestyledRef . appPullRequest
@@ -59,7 +64,8 @@ restylerMain = do
             pure $ simplePullRequestHtmlUrl restyledPr
         Nothing -> do
             restyledPr <- createRestyledPullRequest results
-            whenM commentsEnabled $ leaveRestyledComment restyledPr
+            whenConfig (cCommentsEnabled . appConfig)
+                $ leaveRestyledComment restyledPr
             pure $ pullRequestHtmlUrl restyledPr
 
     sendPullRequestStatus $ DifferencesStatus restyledUrl
@@ -82,12 +88,6 @@ logIntentions = do
                 }
 
         logInfoN $ "Restyled PR exists (" <> spec <> ")"
-
-configEnabled :: MonadApp m => m Bool
-configEnabled = asks $ cEnabled . appConfig
-
-commentsEnabled :: MonadApp m => m Bool
-commentsEnabled = asks $ cCommentsEnabled . appConfig
 
 restyle :: MonadApp m => m [RestylerResult]
 restyle = do

@@ -3,6 +3,9 @@
 
 module Restyler.Config
     ( Config(..)
+    , whenConfig
+    , whenConfigNonEmpty
+    , whenConfigJust
     , defaultConfig
     , configPath
     )
@@ -13,6 +16,8 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
+import Data.Bool (bool)
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Vector as V
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Statuses
@@ -66,6 +71,17 @@ instance FromJSON Config where
 instance ToJSON Config where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
+
+whenConfig :: MonadReader env m => (env -> Bool) -> m () -> m ()
+whenConfig getConfig act =
+    whenConfigJust (bool Nothing (Just ()) . getConfig) (const act)
+
+whenConfigNonEmpty :: MonadReader env m => (env -> [a]) -> ([a] -> m ()) -> m ()
+whenConfigNonEmpty getConfig act =
+    whenConfigJust (NE.nonEmpty . getConfig) (act . NE.toList)
+
+whenConfigJust :: MonadReader env m => (env -> Maybe a) -> (a -> m ()) -> m ()
+whenConfigJust getConfig act = traverse_ act =<< asks getConfig
 
 -- | Default configuration
 --
