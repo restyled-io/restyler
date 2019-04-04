@@ -26,9 +26,8 @@ data PullRequestStatus
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus :: MonadApp m => PullRequestStatus -> m ()
-sendPullRequestStatus status = do
-    statusConfig <- asks $ cStatuses . appConfig
-    when (shouldSendStatus statusConfig status) $ do
+sendPullRequestStatus status =
+    whenConfig ((`shouldSendStatus` status) . cStatuses . appConfig) $ do
         pullRequest <- asks appPullRequest
         createHeadShaStatus pullRequest status
 

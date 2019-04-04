@@ -44,13 +44,11 @@ createRestyledPullRequest results = do
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
 
-    labels <- asks $ cLabels . appConfig
-
-    unless (null labels) $ runGitHub_ $ addLabelsToIssueR
+    whenConfigNonEmpty (cLabels . appConfig) $ runGitHub_ . addLabelsToIssueR
         (pullRequestOwnerName pr)
         (pullRequestRepoName pr)
         (pullRequestIssueId pr)
-        labels
+
 
     pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
