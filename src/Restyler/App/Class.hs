@@ -15,6 +15,7 @@ module Restyler.App.Class
     , module GitHub.Endpoints.Issues.Comments
     , module GitHub.Endpoints.Issues.Labels
     , module GitHub.Endpoints.PullRequests
+    , module GitHub.Endpoints.PullRequests.ReviewRequests
     , module GitHub.Endpoints.Repos.Statuses
     ) where
 
@@ -27,6 +28,7 @@ import qualified Data.Vector as V
 import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
 import GitHub.Endpoints.Issues.Labels
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import GitHub.Endpoints.PullRequests.ReviewRequests
 import GitHub.Endpoints.Repos.Statuses
 import GitHub.Request
 import Network.HTTP.Client.TLS

@@ -13,6 +13,7 @@ import Restyler.Prelude
 
 import Restyler.App
 import Restyler.Config
+import Restyler.Config.RequestReview
 import qualified Restyler.Content as Content
 import Restyler.Git
 import Restyler.PullRequest
@@ -49,6 +50,14 @@ createRestyledPullRequest results = do
         (pullRequestRepoName pr)
         (pullRequestIssueId pr)
 
+    whenConfigJust (cRequestReview . appConfig)
+        $ runGitHub_
+        . createReviewRequestR
+              (pullRequestOwnerName pr)
+              (pullRequestRepoName pr)
+              (pullRequestNumber pr)
+        . requestOneReviewer
+        . flip determineReviewer pullRequest
 
     pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
 
