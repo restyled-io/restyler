@@ -91,10 +91,10 @@ logIntentions = do
 
 restyle :: MonadApp m => m [RestylerResult]
 restyle = do
-    config <- asks appConfig
+    restylers <- asks $ cRestylers . appConfig
     pullRequest <- asks appPullRequest
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
-    runRestylers (cRestylers config) pullRequestPaths
+    runRestylers restylers pullRequestPaths
 
 changedPaths :: MonadApp m => Text -> m [FilePath]
 changedPaths branch = do
