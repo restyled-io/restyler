@@ -31,13 +31,7 @@ restylerMain = do
         $ exitWithInfo "Restyler disabled by config"
     logIntentions
 
-    whenConfigNonEmpty (cRemoteFiles . appConfig) $ \remoteFiles -> do
-        logInfoN
-            $ "Fetching "
-            <> tshow (length remoteFiles)
-            <> " remote file(s)"
-        for_ remoteFiles
-            $ \RemoteFile {..} -> downloadFile (getUrl rfUrl) rfPath
+    whenConfigNonEmpty (cRemoteFiles . appConfig) $ traverse_ downloadRemoteFile
 
     unlessM isAutoPush $ do
         branch <- asks $ pullRequestRestyledRef . appPullRequest
@@ -88,6 +82,11 @@ logIntentions = do
                 }
 
         logInfoN $ "Restyled PR exists (" <> spec <> ")"
+
+downloadRemoteFile :: MonadApp m => RemoteFile -> m ()
+downloadRemoteFile RemoteFile {..} = do
+    logInfoN $ "Fetching remote file: " <> pack rfPath
+    downloadFile (getUrl rfUrl) rfPath
 
 restyle :: MonadApp m => m [RestylerResult]
 restyle = do
