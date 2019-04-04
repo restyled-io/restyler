@@ -42,7 +42,7 @@ test.integration:
 	docker build --tag restyled/restyler .
 	docker run --rm \
 	  --env DEBUG=1 \
-	  --env-file "$(PWD)/.env" \
+	  --env GITHUB_ACCESS_TOKEN \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) \
