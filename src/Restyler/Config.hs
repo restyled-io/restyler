@@ -20,6 +20,7 @@ import Data.Bool (bool)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Vector as V
 import Restyler.Config.ExpectedKeys
+import Restyler.Config.RequestReview
 import Restyler.Config.Statuses
 import Restyler.RemoteFile
 import Restyler.Restyler
@@ -36,6 +37,8 @@ data Config = Config
     -- ^ Leave Comments?
     , cStatuses :: Statuses
     -- ^ Send PR statuses?
+    , cRequestReview :: Maybe RequestReviewConfig
+    -- ^ Request review for Restyle PRs?
     , cLabels :: [Name IssueLabel]
     -- ^ Labels to add to Restyle PRs
     , cRestylers :: [Restyler]
@@ -54,6 +57,7 @@ instance FromJSON Config where
             , "remote_files"
             , "comments"
             , "statuses"
+            , "request_review"
             , "labels"
             , "restylers"
             ]
@@ -64,6 +68,7 @@ instance FromJSON Config where
             <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
             <*> o .:? "comments" .!= cCommentsEnabled defaultConfig
             <*> o .:? "statuses" .!= cStatuses defaultConfig
+            <*> o .:? "request_review" .!= cRequestReview defaultConfig
             <*> o .:? "labels" .!= cLabels defaultConfig
             <*> o .:? "restylers" .!= cRestylers defaultConfig
     parseJSON v = typeMismatch "Config object or list of restylers" v
@@ -89,6 +94,7 @@ whenConfigJust getConfig act = traverse_ act =<< asks getConfig
 -- - Not Auto
 -- - Leave comments
 -- - Send statuses
+-- - Don't request review
 -- - No labels
 -- - Run most restylers
 --
@@ -99,6 +105,7 @@ defaultConfig = Config
     , cRemoteFiles = []
     , cCommentsEnabled = True
     , cStatuses = defaultStatusesConfig
+    , cRequestReview = Nothing
     , cLabels = []
     , cRestylers = defaultRestylers
     }

@@ -5,6 +5,7 @@
 module Restyler.PullRequest
     ( pullRequestOwnerName
     , pullRequestRepoName
+    , pullRequestUserLogin
     , pullRequestCloneUrl
     , pullRequestCloneUrlToken
     , pullRequestSpec
@@ -32,6 +33,9 @@ pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
+
+pullRequestUserLogin :: PullRequest -> Name User
+pullRequestUserLogin = simpleUserLogin . pullRequestUser
 
 -- | Clone URL appropriate to output in a message
 --
