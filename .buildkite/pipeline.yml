@@ -50,6 +50,11 @@ steps:
   - label: Release image if master
     command: |
       if [ "$BUILDKITE_BRANCH" = master ]; then
+        # Buildkite environment-handling is weird. The heroku CLI can't see
+        # these unless I re-export them.
+        export HEROKU_EMAIL=$HEROKU_EMAIL
+        export HEROKU_API_KEY=$HEROKU_API_KEY
+
         heroku config:set --app restyled-io \
           "RESTYLER_IMAGE=quay.io/restyled-io/restyler" \
           "RESTYLER_TAG=bk$BUILDKITE_BUILD_NUMBER"
