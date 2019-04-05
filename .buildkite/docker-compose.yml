@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  build:
+    image: quay.io/haskell_works/stack-build-minimal
+    environment:
+      GIT_AUTHOR_EMAIL: ci@restyled.io
+      GIT_AUTHOR_NAME: Restyled.io CI
+      GIT_COMMITTER_EMAIL: ci@restyled.io
+      GIT_COMMITTER_NAME: Restyled.io CI
+      STACK_ARGUMENTS: --no-terminal
+    working_dir: ${BUILDKITE_BUILD_CHECKOUT_PATH}
+    volumes:
+      - '/cache/stack:/root/.stack'
+      - '/cache/restyler/.stack-work:${BUILDKITE_BUILD_CHECKOUT_PATH}/.stack-work'
+
+  ops:
+    image: restyled/ops
+    working_dir: ${BUILDKITE_BUILD_CHECKOUT_PATH}
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
