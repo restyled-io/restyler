@@ -1,0 +1,58 @@
+references:
+  docker-build: &docker-build
+    plugins:
+      - docker-compose#v3.0.0:
+          config: .buildkite/docker-compose.yml
+          run: build
+
+  docker-ops: &docker-ops
+    plugins:
+      - docker-compose#v3.0.0:
+          config: .buildkite/docker-compose.yml
+          run: ops
+
+steps:
+  - label: Dependencies
+    command: make setup setup.lint
+    <<: *docker-build
+
+  - wait
+
+  - label: Build
+    command: make build
+    <<: *docker-build
+
+  - wait
+
+  - label: Test
+    command: make test
+    <<: *docker-build
+
+  - label: Lint
+    command: make lint
+    <<: *docker-build
+
+  - label: Build image
+    command: docker build --tag restyled/restyler .
+    <<: *docker-ops
+
+  - wait
+
+  - label: Push image
+    command: |
+      docker tag restyled/restyler quay.io/restyled-io/restyler:bk$BUILDKITE_BUILD_NUMBER
+      docker login -u restyled-io+buildkite -p "$QUAY_DOCKER_PASSWORD" quay.io
+      docker push quay.io/restyled-io/restyler:bk$BUILDKITE_BUILD_NUMBER
+    <<: *docker-ops
+
+  - wait
+
+  - label: Release image if master
+    command: |
+      if [ "$BUILDKITE_BRANCH" = master ]; then
+        heroku config:set --app restyled-io \
+          "RESTYLER_IMAGE=quay.io/restyled-io/restyler" \
+          "RESTYLER_TAG=bk$BUILDKITE_BUILD_NUMBER"
+        notify "restyled-io[restyler]" "Deploy of bk$BUILDKITE_BUILD_NUMBER successful"
+      fi
+    <<: *docker-ops
