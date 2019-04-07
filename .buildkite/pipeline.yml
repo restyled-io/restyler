@@ -12,54 +12,47 @@ references:
           run: ops
 
 steps:
-  - label: Dependencies
-    command: make setup setup.lint
-    <<: *docker-build
-
-  - wait
-
   - label: Build
-    command: make build
+    command: |
+      echo "--- Dependencies"
+      make setup setup.lint
+
+      echo "--- Build"
+      make build
+
+      echo "--- Test"
+      make test
+
+      echo "--- Lint"
+      make lint
     <<: *docker-build
 
-  - wait
-
-  - label: Test
-    command: make test
-    <<: *docker-build
-
-  - label: Lint
-    command: make lint
-    <<: *docker-build
-
-  - label: Build image
+  - label: Image
     command: docker build --tag restyled/restyler .
     <<: *docker-ops
 
   - wait
 
-  - label: Push image
+  - label: Release
     command: |
-      docker tag restyled/restyler quay.io/restyled-io/restyler:bk$BUILDKITE_BUILD_NUMBER
+      echo "--- Pushing image to registry"
+      docker tag restyled/restyler \
+        quay.io/restyled-io/restyler:bk$BUILDKITE_BUILD_NUMBER
       docker login -u restyled-io+buildkite -p "$QUAY_DOCKER_PASSWORD" quay.io
       docker push quay.io/restyled-io/restyler:bk$BUILDKITE_BUILD_NUMBER
-    <<: *docker-ops
 
-  - wait
+      echo "--- Setting up environment"
+      # Unclear why this is required, but it is
+      export HEROKU_EMAIL=$HEROKU_EMAIL
+      export HEROKU_API_KEY=$HEROKU_API_KEY
+      export PUSHOVER_API_KEY=$PUSHOVER_API_KEY
+      export PUSHOVER_USER_KEY=$PUSHOVER_USER_KEY
 
-  - label: Release image if master
-    command: |
-      if [ "$BUILDKITE_BRANCH" = master ]; then
-        # Unclear why this is required, but it is
-        export HEROKU_EMAIL=$HEROKU_EMAIL
-        export HEROKU_API_KEY=$HEROKU_API_KEY
-        export PUSHOVER_API_KEY=$PUSHOVER_API_KEY
-        export PUSHOVER_USER_KEY=$PUSHOVER_USER_KEY
+      echo "--- Heroku config:set"
+      heroku config:set --app restyled-io \
+        "RESTYLER_IMAGE=quay.io/restyled-io/restyler" \
+        "RESTYLER_TAG=bk$BUILDKITE_BUILD_NUMBER"
 
-        heroku config:set --app restyled-io \
-          "RESTYLER_IMAGE=quay.io/restyled-io/restyler" \
-          "RESTYLER_TAG=bk$BUILDKITE_BUILD_NUMBER"
-
-        notify "restyled-io[restyler]" "Deploy of bk$BUILDKITE_BUILD_NUMBER successful"
-      fi
+      notify "restyled-io[restyler]" "Deploy of bk$BUILDKITE_BUILD_NUMBER successful"
+    branches: master
     <<: *docker-ops
