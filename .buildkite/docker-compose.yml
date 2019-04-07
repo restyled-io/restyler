@@ -9,10 +9,11 @@ services:
       GIT_COMMITTER_EMAIL: ci@restyled.io
       GIT_COMMITTER_NAME: Restyled.io CI
       STACK_ARGUMENTS: --no-terminal
-    working_dir: ${BUILDKITE_BUILD_CHECKOUT_PATH}
+    working_dir: /code
     volumes:
+      - '${BUILDKITE_BUILD_CHECKOUT_PATH}:/code'
+      - '/cache/restyler/.stack-work:/code/.stack-work'
       - '/cache/stack:/root/.stack'
-      - '/cache/restyler/.stack-work:${BUILDKITE_BUILD_CHECKOUT_PATH}/.stack-work'
 
   ops:
     image: restyled/ops
