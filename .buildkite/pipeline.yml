@@ -1,6 +1,9 @@
 steps:
   - label: Build
     command: |
+      echo "--- Upgrade Stack"
+      stack upgrade
+
       echo "--- Dependencies"
       make setup setup.lint
 
