@@ -4,7 +4,8 @@ module Restyler.Prelude
     )
 where
 
-import RIO as X hiding (LogLevel(..), first, second)
+-- Why are first/second not the real things?
+import RIO as X hiding (first, second)
 
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Except as X
@@ -15,13 +16,6 @@ import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
 import RIO.Text as X (encodeUtf8, pack, unpack)
 import Safe as X (fromJustNote)
 
--- TODO: Move to RIO and its own logging facilities
-import Control.Monad.Logger as X
-    (LogLevel(..), MonadLogger, logDebugN, logErrorN, logInfoN, logWarnN)
-
---------------------------------------------------------------------------------
--- Globally-useful utilities
---------------------------------------------------------------------------------
 import qualified RIO.Text as T
 
 decodeUtf8 :: ByteString -> Text
@@ -36,3 +30,6 @@ f <$$> a = fmap f <$> a
 -- | Strip whitespace from the end of a @'Text'@
 chomp :: Text -> Text
 chomp = T.dropWhileEnd isSpace
+
+uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
+uncurry3 f (a, b, c) = f a b c

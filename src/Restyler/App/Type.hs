@@ -25,8 +25,7 @@ import qualified System.Process as Process
 
 -- | Application environment
 data App = App
-    { appLogLevel :: LogLevel
-    , appLogColor :: Bool
+    { appLogFunc :: LogFunc
     , appAccessToken :: Text
     , appPullRequest :: PullRequest
     -- ^ The @'PullRequest'@ we are restyling
@@ -41,7 +40,7 @@ data App = App
     }
 
 instance HasLogFunc App where
-    logFuncL = undefined
+    logFuncL = lens appLogFunc $ \x y -> x { appLogFunc = y }
 
 instance HasOptions App where
     optionsL = lens appOptions $ \x y -> x { appOptions = y }
