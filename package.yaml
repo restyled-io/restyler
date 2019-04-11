@@ -55,7 +55,6 @@ ghc-options:
 
 dependencies:
   - base
-  - rio
 
 
 library:
@@ -70,25 +69,20 @@ library:
     - ansi-terminal
     - bytestring
     - conduit
-    - directory
     - edit-distance
     - envparse
     - errors
-    - fast-logger
     - filepath
     - github
     - http-client-tls
     - http-conduit
     - megaparsec
-    - monad-logger
     - mtl
     - optparse-applicative
     - process
+    - rio
     - safe
-    - safe-exceptions
-    - scanner
     - shakespeare
-    - temporary
     - text
     - unordered-containers
     - vector
@@ -116,7 +110,7 @@ tests:
       - bytestring
       - github
       - hspec
-      - quickcheck-text
       - restyler
+      - rio
       - text
       - yaml
