@@ -16,6 +16,9 @@ import Restyler.Git
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
 import Restyler.RestylerResult
+import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import GitHub.Endpoints.PullRequests.ReviewRequests
+import GitHub.Endpoints.Issues.Labels
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest

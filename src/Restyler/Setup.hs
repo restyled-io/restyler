@@ -10,6 +10,7 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
+import GitHub.Endpoints.PullRequests hiding (pullRequest)
 
 restylerSetup
     :: ( HasCallStack

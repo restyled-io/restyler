@@ -2,7 +2,7 @@ module Restyler.CLI
     ( restylerCLI
     ) where
 
-import Restyler.Prelude hiding (withTempDirectory)
+import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import Restyler.App
@@ -28,16 +28,18 @@ restylerCLI = do
     hSetBuffering stderr LineBuffering
 
     options <- parseOptions
-    withTempDirectory $ \path -> do
+    handles dieHandlers $ withSystemTempDirectory "restyler-" $ \path -> do
         app <- bootstrapApp options path restylerSetup
         runRIO app $ restylerMain `catchAny` \ex -> do
             traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
             throwIO ex
 
-withTempDirectory :: (FilePath -> IO a) -> IO a
-withTempDirectory f =
-    withSystemTempDirectory "restyler-" f
-        `catches` [Handler dieAppError, Handler $ dieAppError . SystemError]
+handles :: [Handler IO a] -> IO a -> IO a
+handles = flip catches
+
+-- | Handle @'AppError'@ directly, and @'IOException'@s as @'SystemError'@
+dieHandlers :: [Handler IO a]
+dieHandlers = [Handler dieAppError, Handler $ dieAppError . SystemError]
 
 -- brittany-next-binding --columns 90
 

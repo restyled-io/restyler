@@ -11,6 +11,7 @@ import Restyler.App
 import Restyler.Config
 import Restyler.Config.Statuses
 import Restyler.PullRequest
+import GitHub.Endpoints.Repos.Statuses
 
 data PullRequestStatus
     = NoDifferencesStatus
