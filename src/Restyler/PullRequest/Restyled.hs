@@ -8,7 +8,7 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App
+import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.RequestReview
 import qualified Restyler.Content as Content
