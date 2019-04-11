@@ -28,8 +28,7 @@ restylerSetup = do
     pullRequest <-
         mapAppError toPullRequestFetchError
         $ runGitHub
-        $ pullRequestR oOwner oRepo
-        $ mkId Proxy oPullRequest
+        $ pullRequestR oOwner oRepo oPullRequest
 
     mRestyledPullRequest <-
         (`catchAny` const (pure Nothing))

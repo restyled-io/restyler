@@ -24,7 +24,7 @@ Hey there-
 I'm a [bot][homepage], here to let you know that some code in this PR might not
 match the team's automated styling. I ran the team's auto-reformatting tools on
 the files changed in this PR and found some differences. Those differences can
-be seen in ##{pullRequestNumber pullRequest}.
+be seen in ##{unIssueNumber $ pullRequestNumber pullRequest}.
 
 Please see that Pull Request's description for more details.
 
@@ -86,7 +86,7 @@ recommend using the Squash or Rebase strategies.
   where
     -- This variable is just so that we can wrap our content above such that
     -- when the link is rendered at ~3 digits, it looks OK.
-    n = pullRequestNumber pullRequest
+    n = unIssueNumber $ pullRequestNumber pullRequest
 
     -- N.B. Assumes something committed changes, otherwise we'd not be opening
     -- this PR at all
