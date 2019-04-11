@@ -1,80 +1,47 @@
 module Restyler.App
     ( App(..)
+    , StartupApp(..)
     , bootstrapApp
-
-    -- * Application errors
-    , AppError(..)
-    , mapAppError
     ) where
 
 import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
-import qualified Data.Yaml as Yaml
 import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Class
-import Restyler.Logger
+import Restyler.App.Error
 import Restyler.Config
+import Restyler.Logger
 import Restyler.Options
+import Restyler.Setup
 import qualified RIO.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
--- | All possible application error conditions
-data AppError
-    = PullRequestFetchError Error
-    -- ^ We couldn't fetch the @'PullRequest'@ to restyle
-    | PullRequestCloneError IOException
-    -- ^ We couldn't clone or checkout the PR's branch
-    | ConfigurationError Yaml.ParseException
-    -- ^ We couldn't load a @.restyled.yaml@
-    | DockerError IOException
-    -- ^ Error running a @docker@ operation
-    | GitHubError Error
-    -- ^ We encountered a GitHub API error during restyling
-    | SystemError IOException
-    -- ^ Trouble reading a file or etc
-    | HttpError IOException
-    -- ^ Trouble performing some HTTP request
-    | OtherError IOException
-    -- ^ A minor escape hatch for @'IOException'@s
-    deriving Show
-
-instance Exception AppError
-
--- | Run a computation, and modify any thrown exceptions to @'AppError'@s
-mapAppError :: (MonadUnliftIO m, Exception e) => (e -> AppError) -> m a -> m a
-mapAppError f = (`catch` throwIO . f)
-
--- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
-appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
-appIO f = mapAppError f . liftIO
-
--- | App environment that is ready immediately
---
--- This is used to bootstrap the main @'App'@ type, which will re-use its
--- instances and provide those that only work in the complete environment.
---
-data TempApp = TempApp
+-- | Environment used for @'RIO'@ actions to load the real @'App'@
+data StartupApp = StartupApp
     { appLogFunc :: LogFunc
+    -- ^ Log function built based on @--debug@ and @--color@
     , appOptions :: Options
+    -- ^ Options passed on the command-line
     , appWorkingDirectory :: FilePath
+    -- ^ Temporary working directory we've created
     }
 
-instance HasLogFunc TempApp where
+instance HasLogFunc StartupApp where
     logFuncL = lens appLogFunc $ \x y -> x { appLogFunc = y }
 
-instance HasOptions TempApp where
+instance HasOptions StartupApp where
     optionsL = lens appOptions $ \x y -> x { appOptions = y }
 
-instance HasWorkingDirectory TempApp where
+instance HasWorkingDirectory StartupApp where
     workingDirectoryL = lens appWorkingDirectory $ \x y ->
         x { appWorkingDirectory = y }
 
-instance HasSystem TempApp where
+instance HasSystem StartupApp where
     getCurrentDirectory = do
         logDebug "getCurrentDirectory"
         appIO SystemError Directory.getCurrentDirectory
@@ -91,7 +58,7 @@ instance HasSystem TempApp where
         logDebug $ "readFile: " <> displayShow path
         appIO SystemError $ readFileUtf8 path
 
-instance HasProcess TempApp where
+instance HasProcess StartupApp where
     callProcess cmd args = do
         -- N.B. this includes access tokens in log messages when used for
         -- git-clone. That's acceptable because:
@@ -107,7 +74,7 @@ instance HasProcess TempApp where
         output <- appIO SystemError $ Process.readProcess cmd args stdin'
         output <$ logDebug ("output: " <> fromString output)
 
-instance HasGitHub TempApp where
+instance HasGitHub StartupApp where
     runGitHub req = do
         logDebug $ "GitHub request: " <> displayGitHubRequest req
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
@@ -116,34 +83,18 @@ instance HasGitHub TempApp where
             executeRequestWithMgr mgr auth req
         either (throwIO . GitHubError) pure result
 
-bootstrapApp
-    :: MonadIO m
-    => Options
-    -> FilePath
-    -> RIO TempApp (PullRequest, Maybe SimplePullRequest, Config)
-    -> m App
-bootstrapApp options@Options {..} path = runRIO tempApp . fmap toApp
-  where
-    tempApp = TempApp
-        { appLogFunc = restylerLogFunc options
-        , appOptions = options
-        , appWorkingDirectory = path
-        }
+appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
+appIO f = mapAppError f . liftIO
 
-    -- NB. Could be uncurry3 (App tempApp)
-    toApp (pullRequest, mRestyledPullRequest, config) = App
-        { appApp = tempApp
-        , appPullRequest = pullRequest
-        , appRestyledPullRequest = mRestyledPullRequest
-        , appConfig = config
-        }
-
--- | Application environment
+-- | Fully booted application environment
 data App = App
-    { appApp :: TempApp
+    { appApp :: StartupApp
     , appConfig :: Config
+    -- ^ Configuration loaded from @.restyled.yaml@
     , appPullRequest :: PullRequest
+    -- ^ Original Pull Request being restyled
     , appRestyledPullRequest :: Maybe SimplePullRequest
+    -- ^ Possible pre-existing Restyle Pull Request
     }
 
 instance HasLogFunc App where
@@ -190,10 +141,26 @@ instance HasDownloadFile App where
 instance HasGitHub App where
     runGitHub = runApp . runGitHub
 
-appL :: Lens' App TempApp
+appL :: Lens' App StartupApp
 appL = lens appApp $ \x y -> x { appApp = y }
 
-runApp :: RIO TempApp a -> RIO App a
+runApp :: RIO StartupApp a -> RIO App a
 runApp f = do
     app <- asks appApp
     runRIO app f
+
+bootstrapApp :: MonadIO m => Options -> FilePath -> m App
+bootstrapApp options path = runRIO app $ toApp <$> restylerSetup
+  where
+    app = StartupApp
+        { appLogFunc = restylerLogFunc options
+        , appOptions = options
+        , appWorkingDirectory = path
+        }
+
+    toApp (pullRequest, mRestyledPullRequest, config) = App
+        { appApp = app
+        , appPullRequest = pullRequest
+        , appRestyledPullRequest = mRestyledPullRequest
+        , appConfig = config
+        }
