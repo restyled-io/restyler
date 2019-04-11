@@ -1,6 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 -- |
 --
 -- <https://developer.github.com/v3/pulls/review_requests>

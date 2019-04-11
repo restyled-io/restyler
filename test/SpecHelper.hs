@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module SpecHelper
@@ -6,16 +5,11 @@ module SpecHelper
     )
 where
 
-import RIO as X hiding (first)
-
-import Data.Bifunctor as X (first)
+import Restyler.Prelude as X
 import Test.Hspec as X
+import Test.QuickCheck as X
 
-import Data.Char (isSpace)
-import qualified Data.Text as T
-import Data.Text.Arbitrary ()
 import GitHub.Data (Id, Name, mkId, mkName)
-import Test.QuickCheck
 
 instance Num (Id a) where
     -- Just so we can type literals for Ids in Specs
@@ -28,7 +22,7 @@ instance Num (Id a) where
     signum = error "NO"
 
 instance Arbitrary (Name a) where
-    arbitrary = mkName Proxy <$> arbitrary `suchThat` T.all goodChar
+    arbitrary = mkName Proxy . pack <$> arbitrary `suchThat` all goodChar
       where
         goodChar c
             | isSpace c = False
