@@ -11,6 +11,7 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import Restyler.Config (configPath)
+import Text.Wrap
 
 data AppError
     = PullRequestFetchError Error
@@ -38,29 +39,51 @@ mapAppError :: (MonadUnliftIO m, Exception e) => (e -> AppError) -> m a -> m a
 mapAppError f = handle $ throwIO . f
 
 prettyAppError :: AppError -> String
-prettyAppError = format . \case
+prettyAppError = uncurry trouble . \case
     PullRequestFetchError e ->
-        [ "We had trouble fetching your Pull Request from GitHub:"
-        , showGitHubError e
-        ]
-    PullRequestCloneError e ->
-        ["We had trouble cloning your Pull Request branch:" <> show e]
-    ConfigurationError ex ->
-        [ "We had trouble with your "
-            <> configPath
-            <> ": "
-            <> Yaml.prettyPrintParseException ex
-        , "Please see https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
-        ]
-    DockerError e -> ["The restyler container exited non-zero:", show e]
-    GitHubError e ->
-        ["We had trouble communicating with GitHub:", showGitHubError e]
-    SystemError e -> ["We had trouble running a system command:", show e]
-    HttpError e -> ["We had trouble performing an HTTP request:", show e]
-    OtherError e -> ["We encountered an unexpected exception:", show e]
+        ("fetching your Pull Request from GitHub", showGitHubError e)
+    PullRequestCloneError e -> ("cloning your Pull Request branch", show e)
+    ConfigurationError ex -> ("with your " <> configPath, showConfigError ex)
+    DockerError e -> ("with a restyler container", show e)
+    GitHubError e -> ("communicating with GitHub", showGitHubError e)
+    SystemError e -> ("running a system command", show e)
+    HttpError e -> ("performing an HTTP request", show e)
+    OtherError e -> ("with something unexpected", show e)
+
+-- |
+--
+-- @
+-- We had trouble {doing a thing}:
+--
+--   {the full error message...}
+--
+-- @
+--
+trouble :: String -> String -> String
+trouble acting shown = "We had trouble " <> acting <> ":\n\n" <> reflow shown
+
+showGitHubError :: Error -> String
+showGitHubError (HTTPError e) = "HTTP exception: " <> show e
+showGitHubError (ParseError e) = "Unable to parse response: " <> unpack e
+showGitHubError (JsonError e) = "Malformed response: " <> unpack e
+showGitHubError (UserError e) = "User error: " <> unpack e
+
+showConfigError :: Yaml.ParseException -> String
+showConfigError ex = unlines
+    [ Yaml.prettyPrintParseException ex
+    , "Please see https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
+    ]
+
+reflow :: String -> String
+reflow =
+    unlines . map ("  " <>) . lines . unpack . wrapText wrapSettings 78 . pack
   where
-    format msg = "[Error] " <> dropWhileEnd isSpace (unlines msg)
-    showGitHubError (HTTPError e) = "HTTP exception: " <> show e
-    showGitHubError (ParseError e) = "Unable to parse response: " <> unpack e
-    showGitHubError (JsonError e) = "Malformed response: " <> unpack e
-    showGitHubError (UserError e) = "User error: " <> unpack e
+    wrapSettings =
+        WrapSettings {preserveIndentation = True, breakLongWords = True}
+
+-- wordwrap :: Int -> [String] -> [String]
+-- wordwrap n = concatMap go
+--   where
+--     go :: String -> [String]
+--     go [] = []
+--     go xs = let (x, rest) = splitAt n xs in x : go rest

@@ -86,6 +86,7 @@ library:
     - text
     - unordered-containers
     - vector
+    - word-wrap
     - yaml
 
 executables:
