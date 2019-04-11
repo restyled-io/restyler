@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Restyler.Logger
     ( restylerLogFunc
     )

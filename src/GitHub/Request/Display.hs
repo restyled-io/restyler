@@ -1,45 +1,44 @@
+{-# LANGUAGE LambdaCase #-}
+
 module GitHub.Request.Display
-    ( displayGitHubRequest
+    ( DisplayGitHubRequest(..)
     )
 where
 
-import RIO
+import Prelude
 
-import qualified RIO.Text as T
+import Data.Text (Text, pack, unpack)
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8)
 import GitHub.Data
 
 newtype DisplayGitHubRequest k a
     = DisplayGitHubRequest (Request k a)
 
 instance Show (DisplayGitHubRequest k a) where
-    show (DisplayGitHubRequest req) = T.unpack $ format req
-      where
-        format :: Request k a -> Text
-        format = \case
-            SimpleQuery (Query ps qs) -> mconcat
-                [ "[GET] "
-                , "/" <> T.intercalate "/" ps
-                , "?" <> T.intercalate "&" (queryParts qs)
-                ]
-            SimpleQuery (PagedQuery ps qs fc) -> mconcat
-                [ "[GET] "
-                , "/" <> T.intercalate "/" ps
-                , "?" <> T.intercalate "&" (queryParts qs)
-                , " (" <> tshow fc <> ")"
-                ]
-            SimpleQuery (Command m ps _body) -> mconcat
-                [ "[" <> T.toUpper (tshow m) <> "] "
-                , "/" <> T.intercalate "/" ps
-                ]
-            StatusQuery _ _ -> "<status query>"
-            HeaderQuery _ _ -> "<header query>"
-            RedirectQuery _ -> "<redirect query>"
+    show (DisplayGitHubRequest req) = unpack $ formatRequest req
 
-        queryParts :: QueryString -> [Text]
-        queryParts = map $ \(k, mv) ->
-            T.decodeUtf8With T.lenientDecode k
-                <> "="
-                <> maybe "" (T.decodeUtf8With T.lenientDecode) mv
+formatRequest :: Request k a -> Text
+formatRequest = \case
+    SimpleQuery (Query ps qs) -> mconcat
+        [ "[GET] "
+        , "/" <> T.intercalate "/" ps
+        , "?" <> T.intercalate "&" (queryParts qs)
+        ]
+    SimpleQuery (PagedQuery ps qs fc) -> mconcat
+        [ "[GET] "
+        , "/" <> T.intercalate "/" ps
+        , "?" <> T.intercalate "&" (queryParts qs)
+        , " (" <> pack (show fc) <> ")"
+        ]
+    SimpleQuery (Command m ps _body) ->
+        mconcat
+            [ "[" <> T.toUpper (pack $ show m) <> "] "
+            , "/" <> T.intercalate "/" ps
+            ]
+    StatusQuery _ _ -> "<status query>"
+    HeaderQuery _ _ -> "<header query>"
+    RedirectQuery _ -> "<redirect query>"
 
-displayGitHubRequest :: Request k a -> Utf8Builder
-displayGitHubRequest = displayShow . DisplayGitHubRequest
+queryParts :: QueryString -> [Text]
+queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv

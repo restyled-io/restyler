@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Restyler.Config.RequestReview
     ( RequestReviewConfig
     , determineReviewer

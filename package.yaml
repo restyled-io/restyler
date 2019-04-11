@@ -18,14 +18,12 @@ default-extensions:
   - DoAndIfThenElse
   - EmptyDataDecls
   - ExistentialQuantification
-  - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
   - GADTs
   - GeneralizedNewtypeDeriving
   - InstanceSigs
   - KindSignatures
-  - LambdaCase
   - MonadFailDesugaring
   - MultiParamTypeClasses
   - MultiWayIf
@@ -43,6 +41,10 @@ default-extensions:
   - TypeFamilies
   - TypeSynonymInstances
   - ViewPatterns
+
+  # Forcing addition of these in-module because of broken tooling
+  # - FlexibleContexts
+  # - LambdaCase
 
 ghc-options:
   -Wall
