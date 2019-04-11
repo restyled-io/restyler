@@ -36,7 +36,7 @@ noPathsRestylerResult r = RestylerResult r NoPaths
 --
 -- N.B. This will create commits if appropriate.
 --
-getRestylerResult :: MonadApp m => Restyler -> m RestylerResult
+getRestylerResult :: HasProcess env => Restyler -> RIO env RestylerResult
 getRestylerResult r = RestylerResult r <$> getRestyleOutcome r
 
 -- | Does this @'RestylerResult'@ indicate changes were comitted?
@@ -46,7 +46,7 @@ restylerCommittedChanges = committedChanges . rrOutcome
     committedChanges (ChangesCommitted _ _) = True
     committedChanges _ = False
 
-getRestyleOutcome :: MonadApp m => Restyler -> m RestyleOutcome
+getRestyleOutcome :: HasProcess env => Restyler -> RIO env RestyleOutcome
 getRestyleOutcome restyler = do
     changedPaths <- gitDiffNameOnly Nothing
 

@@ -9,7 +9,6 @@
 module Restyler.PullRequestSpec
     ( PullRequestSpec(..)
     , parseSpec
-    , showSpec
     )
 where
 
@@ -24,20 +23,21 @@ data PullRequestSpec = PullRequestSpec
     , prsRepo :: Name Repo
     , prsPullRequest :: Int
     }
-    deriving (Eq, Show)
+    deriving Eq
+
+instance Show PullRequestSpec where
+    show PullRequestSpec {..} = unpack
+        $ untagName prsOwner
+        <> "/"
+        <> untagName prsRepo
+        <> "#"
+        <> tshow prsPullRequest
 
 -- | Parse @\<owner>\/\<name>#\<number>@ into a @'PullRequestSpec'@
 parseSpec :: String -> Either String PullRequestSpec
 parseSpec = first errorBundlePretty . parse parser "<input>"
 
 -- | Inverse of @'parseSpec'@
-showSpec :: PullRequestSpec -> Text
-showSpec PullRequestSpec {..} =
-    untagName prsOwner
-        <> "/"
-        <> untagName prsRepo
-        <> "#"
-        <> tshow prsPullRequest
 
 type Parser = Parsec Void String
 
