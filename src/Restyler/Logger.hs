@@ -1,76 +1,38 @@
 module Restyler.Logger
     ( withRestylerLogFunc
-    , restylerLogOptions
-
-    -- * Exported for testing
-    , splitLogStr
     ) where
 
 import Restyler.Prelude hiding (takeWhile)
 
--- import Control.Monad.Logger
---     (LoggingT, defaultLogStr, filterLogger, runLoggingT, runStdoutLoggingT)
 import Data.ByteString (ByteString)
--- import qualified Data.ByteString as BS
+import Data.ByteString.Builder (toLazyByteString)
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.Text as T
 import Restyler.Options
-import Scanner
--- import System.Console.ANSI
--- import System.Log.FastLogger (fromLogStr)
+import System.Console.ANSI
 
-withRestylerLogFunc :: MonadUnliftIO m => Options -> (LogFunc -> m a) -> m a
-withRestylerLogFunc Options {..} f = do
-    logOptions <- restylerLogOptions oLogLevel oLogColor
-    withLogFunc logOptions f
+-- TODO: make the whole stack pure now that we can
+withRestylerLogFunc :: Options -> (LogFunc -> m a) -> m a
+withRestylerLogFunc options inner = inner $ restylerLogFunc options
 
-restylerLogOptions
-    :: MonadIO m
-    => LogLevel
-    -> Bool -- ^ Use color?
-    -> m LogOptions
-restylerLogOptions level useColor =
-    setLogUseColor useColor
-        . setLogMinLevel level
-        <$> logOptionsHandle stdout False
+restylerLogFunc :: Options -> LogFunc
+restylerLogFunc Options {..} = mkLogFunc $ \_cs _source level msg ->
+    when (level >= oLogLevel) $ do
+        BS.putStr "["
+        when oLogColor $ setSGR [levelStyle level]
+        BS.putStr $ levelStr level
+        when oLogColor $ setSGR [Reset]
+        BS.putStr "] "
+        BS.putStrLn $ toStrictBytes $ toLazyByteString $ getUtf8Builder msg
 
-{-
-runAppLoggingT :: MonadIO m => App -> LoggingT m a -> m a
-runAppLoggingT App {..} = runLogging
-    . filterLogger (\_ level -> level >= appLogLevel)
-  where
-    runLogging =
-        if appLogColor then runStdoutANSILoggerT else runStdoutLoggingT
+levelStr :: LogLevel -> ByteString
+levelStr = \case
+    LevelDebug -> "DEBUG"
+    LevelInfo -> "INFO"
+    LevelWarn -> "WARN"
+    LevelError -> "ERROR"
+    LevelOther x -> encodeUtf8 $ T.toUpper x
 
-runStdoutANSILoggerT :: LoggingT m a -> m a
-runStdoutANSILoggerT = (`runLoggingT` logger)
-  where
-    logger loc src level str = do
-        let
-            (mLevelStr, logStr) =
-                splitLogStr . fromLogStr $ defaultLogStr loc src level str
-
-        for_ mLevelStr $ \levelStr -> do
-            BS.putStr "["
-            setSGR [levelStyle level]
-            BS.putStr levelStr
-            setSGR [Reset]
-            BS.putStr "] "
-
-        BS.putStr logStr
--}
-
--- | Split a log message into level and message
-splitLogStr :: ByteString -> (Maybe ByteString, ByteString)
-splitLogStr bs = case scanOnly logScanner bs of
-    Left _ -> (Nothing, bs)
-    Right (x, y) -> (Just x, y)
-
-logScanner :: Scanner (ByteString, ByteString)
-logScanner =
-    (,)
-        <$> (char8 '[' *> takeWhileChar8 (/= ']') <* char8 ']')
-        <*> (skipSpace *> takeWhile (const True))
-
-{-
 levelStyle :: LogLevel -> SGR
 levelStyle = \case
     LevelDebug -> SetColor Foreground Dull Magenta
@@ -78,4 +40,3 @@ levelStyle = \case
     LevelWarn -> SetColor Foreground Dull Yellow
     LevelError -> SetColor Foreground Dull Red
     LevelOther _ -> Reset
--}
