@@ -15,29 +15,46 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 
 -- | Runs the given @'Restyler'@s over the files
-runRestylers :: MonadApp m => [Restyler] -> [FilePath] -> m [RestylerResult]
+runRestylers
+    :: (HasLogFunc env, HasSystem env, HasProcess env)
+    => [Restyler]
+    -> [FilePath]
+    -> RIO env [RestylerResult]
 runRestylers restylers allPaths = do
     paths <- filterM doesFileExist allPaths
 
-    logDebugN $ "Restylers: " <> tshow (map rName restylers)
-    logDebugN $ "Paths: " <> tshow paths
+    logDebug $ "Restylers: " <> displayShow (map rName restylers)
+    logDebug $ "Paths: " <> displayShow paths
 
     for restylers $ \r -> runRestyler r =<< filterRestylePaths r paths
 
-runRestyler :: MonadApp m => Restyler -> [FilePath] -> m RestylerResult
+runRestyler
+    :: (HasLogFunc env, HasSystem env, HasProcess env)
+    => Restyler
+    -> [FilePath]
+    -> RIO env RestylerResult
 runRestyler r [] = pure $ noPathsRestylerResult r
 runRestyler r@Restyler {..} paths = do
     if rSupportsMultiplePaths
         then do
-            logInfoN $ "Restyling " <> tshow paths <> " via " <> pack rName
+            logInfo
+                $ "Restyling "
+                <> displayShow paths
+                <> " via "
+                <> displayShow rName
             dockerRunRestyler r paths
         else for_ paths $ \path -> do
-            logInfoN $ "Restyling " <> tshow path <> " via " <> pack rName
+            logInfo
+                $ "Restyling "
+                <> displayShow path
+                <> " via "
+                <> displayShow rName
             dockerRunRestyler r [path]
 
     getRestylerResult r
 
-filterRestylePaths :: MonadApp m => Restyler -> [FilePath] -> m [FilePath]
+filterRestylePaths
+    :: HasSystem env => Restyler -> [FilePath] -> RIO env [FilePath]
 filterRestylePaths r = filterM (r `shouldRestyle`)
   where
     Restyler {..} `shouldRestyle` path
@@ -47,7 +64,8 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
             contents <- readFile path
             pure $ any (contents `hasInterpreter`) rInterpreters
 
-dockerRunRestyler :: MonadApp m => Restyler -> [FilePath] -> m ()
+dockerRunRestyler
+    :: (HasSystem env, HasProcess env) => Restyler -> [FilePath] -> RIO env ()
 dockerRunRestyler Restyler {..} paths = do
     cwd <- getCurrentDirectory
     callProcess "docker"

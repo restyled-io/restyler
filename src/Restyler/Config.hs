@@ -3,6 +3,7 @@
 
 module Restyler.Config
     ( Config(..)
+    , HasConfig(..)
     , whenConfig
     , whenConfigNonEmpty
     , whenConfigJust
@@ -77,16 +78,21 @@ instance ToJSON Config where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
-whenConfig :: MonadReader env m => (env -> Bool) -> m () -> m ()
-whenConfig getConfig act =
-    whenConfigJust (bool Nothing (Just ()) . getConfig) (const act)
+class HasConfig env where
+    configL :: Lens' env Config
 
-whenConfigNonEmpty :: MonadReader env m => (env -> [a]) -> ([a] -> m ()) -> m ()
-whenConfigNonEmpty getConfig act =
-    whenConfigJust (NE.nonEmpty . getConfig) (act . NE.toList)
+whenConfig :: HasConfig env => (Config -> Bool) -> RIO env () -> RIO env ()
+whenConfig check act =
+    whenConfigJust (bool Nothing (Just ()) . check) (const act)
 
-whenConfigJust :: MonadReader env m => (env -> Maybe a) -> (a -> m ()) -> m ()
-whenConfigJust getConfig act = traverse_ act =<< asks getConfig
+whenConfigNonEmpty
+    :: HasConfig env => (Config -> [a]) -> ([a] -> RIO env ()) -> RIO env ()
+whenConfigNonEmpty check act =
+    whenConfigJust (NE.nonEmpty . check) (act . NE.toList)
+
+whenConfigJust
+    :: HasConfig env => (Config -> Maybe a) -> (a -> RIO env ()) -> RIO env ()
+whenConfigJust check act = traverse_ act . check =<< view configL
 
 -- | Default configuration
 --

@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
+
 
 module Restyler.CLI
     ( restylerCLI
@@ -10,7 +10,7 @@ import Restyler.Prelude
 import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Config
-import Restyler.Logger
+-- import Restyler.Logger
 import Restyler.Main
 import Restyler.Options
 import Restyler.PullRequest.Status
@@ -31,49 +31,45 @@ restylerCLI = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
 
-    options <- parseOptions
-    withRestylerDirectory $ \path -> runExceptT $ do
-        app <- bootstrapApp options path restylerSetup
-        runApp app $ restylerMain `catchError` \ex -> do
-            traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
-            throwError ex
+    options@Options {..} <- parseOptions
 
-withRestylerDirectory :: (FilePath -> IO (Either AppError a)) -> IO a
-withRestylerDirectory f = do
-    result <- tryIO $ withSystemTempDirectory "restyler-" f
-    innerResult <- either (dieAppError . SystemError) pure result
-    either dieAppError pure innerResult
+    withRestylerDirectory $ \path -> do
+        let
+            -- TODO: now that all our actions are HasBased, we can re-use them and not
+            -- require a concrete App in both cases, and so not have this partiality
+            tempApp = App
+                { appLogLevel = oLogLevel
+                , appLogColor = oLogColor
+                , appAccessToken = oAccessToken
+                , appPullRequest = error "Bootstrap appPullRequest forced"
+                , appRestyledPullRequest = Nothing
+                , appConfig = error "Bootstrap appConfig forced"
+                , appOptions = options
+                , appWorkingDirectory = path
+                }
 
-bootstrapApp
-    :: MonadIO m
-    => Options
-    -> FilePath
-    -> AppT m (PullRequest, Maybe SimplePullRequest, Config)
-    -> ExceptT AppError m App
-bootstrapApp options@Options {..} path f = do
-    let
-        tempApp = App
-            { appLogLevel = oLogLevel
-            , appLogColor = oLogColor
-            , appAccessToken = oAccessToken
-            , appPullRequest = error "Bootstrap appPullRequest forced"
-            , appRestyledPullRequest = Nothing
-            , appConfig = error "Bootstrap appConfig forced"
-            , appOptions = options
-            , appWorkingDirectory = path
-            }
+        app <- runRIO tempApp $ do
+            (pullRequest, mRestyledPullRequest, config) <- restylerSetup
 
-    runApp tempApp $ do
-        (pullRequest, mRestyledPullRequest, config) <- f
+            -- TODO: Can't I just do this and proceed
+            -- set configL config
+            -- set pullRequestL pullRequest
+            -- set restyledPullRequestL mRestyledPullRequest
+            pure $ tempApp
+                { appPullRequest = pullRequest
+                , appRestyledPullRequest = mRestyledPullRequest
+                , appConfig = config
+                }
 
-        pure tempApp
-            { appPullRequest = pullRequest
-            , appRestyledPullRequest = mRestyledPullRequest
-            , appConfig = config
-            }
+        runRIO app $ restylerMain `catchAny` \ex -> do
+            traverse_ (sendPullRequestStatus_ . ErrorStatus) oJobUrl
+            throwIO ex
 
-runApp :: MonadIO m => App -> AppT m a -> ExceptT AppError m a
-runApp app = runAppLoggingT app . flip runReaderT app . runAppT
+-- | Run in a prefixed temporary directory
+withRestylerDirectory :: (FilePath -> IO a) -> IO a
+withRestylerDirectory f =
+    withSystemTempDirectory "restyler-" f
+        `catches` [Handler dieAppError, Handler $ dieAppError . SystemError]
 
 -- brittany-next-binding --columns 90
 
