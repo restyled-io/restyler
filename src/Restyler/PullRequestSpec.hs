@@ -16,7 +16,7 @@ where
 import Restyler.Prelude
 
 import qualified Prelude as Unsafe
-import Text.Megaparsec
+import Text.Megaparsec hiding (some)
 import Text.Megaparsec.Char
 
 data PullRequestSpec = PullRequestSpec

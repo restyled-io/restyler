@@ -56,7 +56,7 @@ validateExpectedKeyBy label f as k = note msg $ find ((== k) . f) as
         )
 
 nearestElem :: String -> [String] -> Maybe (String, Int)
-nearestElem x = minimumBy (compare `on` snd) . map (id &&& editDistance x)
+nearestElem x = minimumByMaybe (compare `on` snd) . map (id &&& editDistance x)
 
 editDistance :: String -> String -> Int
 editDistance = levenshteinDistance defaultEditCosts
