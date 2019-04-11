@@ -76,7 +76,7 @@ pullRequestIsClosed = (== StateClosed) . pullRequestState
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork = (/=) <$> pullRequestHeadRepo <*> pullRequestBaseRepo
 
-pullRequestIsNonDefaultBranch :: HasCallStack => PullRequest -> Bool
+pullRequestIsNonDefaultBranch :: PullRequest -> Bool
 pullRequestIsNonDefaultBranch =
     (/=) <$> pullRequestBaseRef <*> pullRequestDefaultBranch
 

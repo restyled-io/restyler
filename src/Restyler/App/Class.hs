@@ -22,9 +22,6 @@ module Restyler.App.Class
 import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import qualified Data.Vector as V
 import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
 import GitHub.Endpoints.Issues.Labels
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
@@ -34,7 +31,9 @@ import GitHub.Request
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Type
-import qualified System.Directory as Directory
+import qualified RIO.Directory as Directory
+import qualified RIO.Text as T
+import qualified RIO.Vector as V
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
@@ -91,7 +90,7 @@ instance MonadIO m => MonadApp (AppT m) where
 
     readFile path = do
         logDebugN $ "readFile: " <> tshow path
-        appIO SystemError $ T.readFile path
+        appIO SystemError $ readFileUtf8 path
 
     exitSuccess = do
         logDebugN "exitSuccess"
@@ -107,9 +106,9 @@ instance MonadIO m => MonadApp (AppT m) where
         logDebugN $ pack $ "call: " <> cmd <> " " <> show args
         appIO SystemError $ Process.callProcess cmd args
 
-    readProcess cmd args stdin = do
+    readProcess cmd args stdin' = do
         logDebugN $ pack $ "read: " <> cmd <> " " <> show args
-        output <- appIO SystemError $ Process.readProcess cmd args stdin
+        output <- appIO SystemError $ Process.readProcess cmd args stdin'
         output <$ logDebugN ("output: " <> pack output)
 
     downloadFile url path = do

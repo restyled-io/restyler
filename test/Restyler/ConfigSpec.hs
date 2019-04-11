@@ -7,7 +7,6 @@ where
 
 import SpecHelper
 
-import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import Data.List (isInfixOf)

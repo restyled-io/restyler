@@ -6,10 +6,12 @@ module SpecHelper
     )
 where
 
+import RIO as X hiding (first)
+
+import Data.Bifunctor as X (first)
 import Test.Hspec as X
 
 import Data.Char (isSpace)
-import Data.Proxy
 import qualified Data.Text as T
 import Data.Text.Arbitrary ()
 import GitHub.Data (Id, Name, mkId, mkName)
