@@ -9,8 +9,6 @@ import Restyler.Prelude as X
 import Test.Hspec as X
 import Test.QuickCheck as X
 
-import GitHub.Data (Id, Name, mkId, mkName)
-
 instance Num (Id a) where
     -- Just so we can type literals for Ids in Specs
     fromInteger = mkId Proxy . fromInteger

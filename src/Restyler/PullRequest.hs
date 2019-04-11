@@ -1,5 +1,11 @@
 module Restyler.PullRequest
-    ( HasPullRequest(..)
+    ( PullRequest
+    , pullRequestHtmlUrl
+    , pullRequestNumber
+    , HasPullRequest(..)
+    , SimplePullRequest
+    , simplePullRequestNumber
+    , simplePullRequestHtmlUrl
     , HasRestyledPullRequest(..)
     , pullRequestOwnerName
     , pullRequestRepoName
@@ -24,6 +30,7 @@ where
 
 import Restyler.Prelude
 
+import GitHub.Data
 import Restyler.PullRequestSpec
 
 class HasPullRequest env where

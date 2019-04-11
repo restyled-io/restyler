@@ -16,6 +16,7 @@ import Restyler.App.Error
 import Restyler.Config
 import Restyler.Logger
 import Restyler.Options
+import Restyler.PullRequest
 import Restyler.Setup
 import qualified RIO.Directory as Directory
 import qualified System.Exit as Exit

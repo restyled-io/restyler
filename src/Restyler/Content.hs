@@ -6,7 +6,7 @@ module Restyler.Content
     )
 where
 
-import Restyler.Prelude hiding (commentBody)
+import Restyler.Prelude
 
 import Restyler.PullRequest
 import Restyler.Restyler
