@@ -83,5 +83,4 @@ toPullRequestFetchError e = e
 
 toPullRequestCloneError :: AppError -> AppError
 toPullRequestCloneError (SystemError e) = PullRequestCloneError e
-toPullRequestCloneError (OtherError e) = PullRequestCloneError e
 toPullRequestCloneError e = e

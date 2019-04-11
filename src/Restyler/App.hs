@@ -79,7 +79,7 @@ instance HasGitHub StartupApp where
     runGitHub req = do
         logDebug $ "GitHub request: " <> displayGitHubRequest req
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
-        result <- appIO OtherError $ do
+        result <- appIO (OtherError . toException) $ do
             mgr <- getGlobalManager
             executeRequestWithMgr mgr auth req
         either (throwIO . GitHubError) pure result

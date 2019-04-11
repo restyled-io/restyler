@@ -27,8 +27,8 @@ data AppError
     -- ^ Trouble reading a file or etc
     | HttpError IOException
     -- ^ Trouble performing some HTTP request
-    | OtherError IOException
-    -- ^ A minor escape hatch for @'IOException'@s
+    | OtherError SomeException
+    -- ^ Escape hatch for anything else
     deriving Show
 
 instance Exception AppError
