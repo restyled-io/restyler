@@ -14,6 +14,7 @@ module Restyler.App.Type
 
 import Restyler.Prelude
 
+import Control.Monad.Logger (LoggingT)
 import qualified Data.Yaml as Yaml
 import Restyler.Config
 import Restyler.Options
