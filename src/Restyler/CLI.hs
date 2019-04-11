@@ -16,8 +16,6 @@ import Restyler.Options
 import Restyler.PullRequest.Status
 import Restyler.Setup
 import System.Exit (die)
-import System.IO (BufferMode(..), hSetBuffering, stderr, stdout)
-import System.IO.Temp (withSystemTempDirectory)
 
 -- | The main entrypoint for the restyler CLI
 --
@@ -34,14 +32,14 @@ restylerCLI = do
     hSetBuffering stderr LineBuffering
 
     options <- parseOptions
-    withTempDirectory $ \path -> runExceptT $ do
+    withRestylerDirectory $ \path -> runExceptT $ do
         app <- bootstrapApp options path restylerSetup
         runApp app $ restylerMain `catchError` \ex -> do
             traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
             throwError ex
 
-withTempDirectory :: (FilePath -> IO (Either AppError a)) -> IO a
-withTempDirectory f = do
+withRestylerDirectory :: (FilePath -> IO (Either AppError a)) -> IO a
+withRestylerDirectory f = do
     result <- tryIO $ withSystemTempDirectory "restyler-" f
     innerResult <- either (dieAppError . SystemError) pure result
     either dieAppError pure innerResult

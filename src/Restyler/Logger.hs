@@ -11,6 +11,8 @@ module Restyler.Logger
 
 import Restyler.Prelude hiding (takeWhile)
 
+import Control.Monad.Logger
+    (LoggingT, defaultLogStr, filterLogger, runLoggingT, runStdoutLoggingT)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Restyler.App

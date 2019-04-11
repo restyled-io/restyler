@@ -31,7 +31,7 @@ instance ToJSON Interpreter where
 -- | Does that path start with a /shebang/ for the given @'Interpreter'@
 hasInterpreter :: Text -> Interpreter -> Bool
 contents `hasInterpreter` interpreter = fromMaybe False $ do
-    line <- headMay $ T.lines contents
+    line <- headMaybe $ T.lines contents
     foundInterpreter <- parseInterpreter . unpack $ T.strip line
     pure $ foundInterpreter == interpreter
 
