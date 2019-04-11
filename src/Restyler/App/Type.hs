@@ -4,6 +4,9 @@ module Restyler.App.Type
     -- * Application errors
     , AppError(..)
     , mapAppError
+
+    -- * Partial @'App'@ type
+    , TempApp(..)
     ) where
 
 import Restyler.Prelude
@@ -136,42 +139,77 @@ instance HasDownloadFile App where
 
 instance HasGitHub App where
     runGitHub req = do
-        logDebug $ "GitHub request: " <> showGitHubRequest req
+        logDebug $ "GitHub request: " <> displayGitHubRequest req
         auth <- asks $ OAuth . encodeUtf8 . appAccessToken
         result <- appIO OtherError $ do
             mgr <- getGlobalManager
             executeRequestWithMgr mgr auth req
         either (throwIO . GitHubError) pure result
 
--- brittany-disable-next-binding
+newtype DisplayGitHubRequest k a = DisplayGitHubRequest (Request k a)
 
--- | Show a GitHub @'Request'@, useful for debugging
---
--- TODO: Use a newtype and @'displayShow'@
---
-showGitHubRequest :: Request k a -> Utf8Builder
-showGitHubRequest = fromString . unpack . format
-  where
-    format :: Request k a -> Text
-    format = \case
-        SimpleQuery (Query ps qs) -> mconcat
-            [ "[GET] "
-            , "/" <> T.intercalate "/" ps
-            , "?" <> T.intercalate "&" (queryParts qs)
-            ]
-        SimpleQuery (PagedQuery ps qs fc) -> mconcat
-            [ "[GET] "
-            , "/" <> T.intercalate "/" ps
-            , "?" <> T.intercalate "&" (queryParts qs)
-            , " (" <> tshow fc <> ")"
-            ]
-        SimpleQuery (Command m ps _body) -> mconcat
-            [ "[" <> T.toUpper (tshow m) <> "] "
-            , "/" <> T.intercalate "/" ps
-            ]
-        StatusQuery _ _ -> "<status query>"
-        HeaderQuery _ _ -> "<header query>"
-        RedirectQuery _ -> "<redirect query>"
+instance Show (DisplayGitHubRequest k a) where
+    show (DisplayGitHubRequest req) = unpack $ format req
+      where
+        format :: Request k a -> Text
+        format = \case
+            SimpleQuery (Query ps qs) -> mconcat
+                [ "[GET] "
+                , "/" <> T.intercalate "/" ps
+                , "?" <> T.intercalate "&" (queryParts qs)
+                ]
+            SimpleQuery (PagedQuery ps qs fc) -> mconcat
+                [ "[GET] "
+                , "/" <> T.intercalate "/" ps
+                , "?" <> T.intercalate "&" (queryParts qs)
+                , " (" <> tshow fc <> ")"
+                ]
+            SimpleQuery (Command m ps _body) -> mconcat
+                [ "[" <> T.toUpper (tshow m) <> "] "
+                , "/" <> T.intercalate "/" ps
+                ]
+            StatusQuery _ _ -> "<status query>"
+            HeaderQuery _ _ -> "<header query>"
+            RedirectQuery _ -> "<redirect query>"
 
-    queryParts :: QueryString -> [Text]
-    queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv
+        queryParts :: QueryString -> [Text]
+        queryParts = map $ \(k, mv) ->
+            decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv
+
+displayGitHubRequest :: Request k a -> Utf8Builder
+displayGitHubRequest = displayShow . DisplayGitHubRequest
+
+-- | Used for running @'RIO'@ actions to construct our @'App'@
+--
+-- Holds onto a partial @'App'@ value so we can re-use many @Has@ instances from
+-- it. Specifically does not have instances for accessing the data we don't have
+-- in a @'TempApp'@ -- thus making this safe.
+--
+newtype TempApp = TempApp { unTempApp :: App }
+
+appL :: Lens' TempApp App
+appL = lens unTempApp $ \_ y -> TempApp y
+
+instance HasOptions TempApp where
+    optionsL = appL . optionsL
+
+instance HasWorkingDirectory TempApp where
+    workingDirectoryL = appL . workingDirectoryL
+
+runTempApp :: RIO App a -> RIO TempApp a
+runTempApp f = do
+    TempApp app <- ask
+    runRIO app f
+
+instance HasSystem TempApp where
+    getCurrentDirectory = runTempApp getCurrentDirectory
+    setCurrentDirectory = runTempApp . setCurrentDirectory
+    doesFileExist = runTempApp . doesFileExist
+    readFile = runTempApp . readFile
+
+instance HasProcess TempApp where
+    callProcess cmd = runTempApp . callProcess cmd
+    readProcess cmd args = runTempApp . readProcess cmd args
+
+instance HasGitHub TempApp where
+    runGitHub = runTempApp . runGitHub
