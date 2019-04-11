@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.Main
     ( restylerMain
     ) where
@@ -9,7 +5,7 @@ module Restyler.Main
 import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
-import Restyler.App
+import Restyler.App.Class
 import Restyler.Comment
 import Restyler.Config
 import Restyler.Git

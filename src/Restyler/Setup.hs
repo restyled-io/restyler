@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.Setup
     ( restylerSetup
     ) where
@@ -9,7 +5,9 @@ module Restyler.Setup
 import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
-import Restyler.App
+import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import Restyler.App.Class
+import Restyler.App.Error
 import Restyler.Config
 import Restyler.Git
 import Restyler.Options
@@ -85,5 +83,4 @@ toPullRequestFetchError e = e
 
 toPullRequestCloneError :: AppError -> AppError
 toPullRequestCloneError (SystemError e) = PullRequestCloneError e
-toPullRequestCloneError (OtherError e) = PullRequestCloneError e
 toPullRequestCloneError e = e

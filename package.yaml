@@ -14,17 +14,16 @@ default-extensions:
   - DeriveFunctor
   - DeriveGeneric
   - DeriveTraversable
+  - DerivingStrategies
   - DoAndIfThenElse
   - EmptyDataDecls
   - ExistentialQuantification
-  - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
   - GADTs
   - GeneralizedNewtypeDeriving
   - InstanceSigs
   - KindSignatures
-  - LambdaCase
   - MonadFailDesugaring
   - MultiParamTypeClasses
   - MultiWayIf
@@ -43,6 +42,10 @@ default-extensions:
   - TypeSynonymInstances
   - ViewPatterns
 
+  # Forcing addition of these in-module because of broken tooling
+  # - FlexibleContexts
+  # - LambdaCase
+
 ghc-options:
   -Wall
   -Wcompat
@@ -54,7 +57,6 @@ ghc-options:
 
 dependencies:
   - base
-  - rio
 
 
 library:
@@ -69,28 +71,24 @@ library:
     - ansi-terminal
     - bytestring
     - conduit
-    - directory
     - edit-distance
     - envparse
     - errors
-    - fast-logger
     - filepath
     - github
     - http-client-tls
     - http-conduit
     - megaparsec
-    - monad-logger
     - mtl
     - optparse-applicative
     - process
+    - rio
     - safe
-    - safe-exceptions
-    - scanner
     - shakespeare
-    - temporary
     - text
     - unordered-containers
     - vector
+    - word-wrap
     - yaml
 
 executables:
@@ -115,7 +113,7 @@ tests:
       - bytestring
       - github
       - hspec
-      - quickcheck-text
       - restyler
+      - rio
       - text
       - yaml

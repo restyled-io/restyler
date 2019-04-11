@@ -4,24 +4,33 @@ module Restyler.Prelude
     )
 where
 
-import RIO as X hiding (LogLevel(..), first, second)
+-- Prefer Bifunctor first/second not Arrow
+import RIO as X hiding (first, second)
 
 import Control.Error.Util as X (hush, note)
-import Control.Monad.Except as X
 import Data.Bifunctor as X (first, second)
-import GitHub.Data as X hiding (command)
+import GitHub.Data as X
+    ( Auth(..)
+    , Error(..)
+    , FetchCount
+    , Id
+    , IssueLabel
+    , Name
+    , Owner
+    , Repo
+    , Request
+    , URL(..)
+    , User
+    , getUrl
+    , mkId
+    , mkName
+    , untagName
+    )
 import RIO.Char as X (isSpace)
 import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
 import RIO.Text as X (encodeUtf8, pack, unpack)
 import Safe as X (fromJustNote)
 
--- TODO: Move to RIO and its own logging facilities
-import Control.Monad.Logger as X
-    (LogLevel(..), MonadLogger, logDebugN, logErrorN, logInfoN, logWarnN)
-
---------------------------------------------------------------------------------
--- Globally-useful utilities
---------------------------------------------------------------------------------
 import qualified RIO.Text as T
 
 decodeUtf8 :: ByteString -> Text
