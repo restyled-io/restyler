@@ -24,7 +24,7 @@ leaveRestyledComment restyledPr = do
     runGitHub_ $ createCommentR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
-        (pullRequestIssueId pullRequest)
+        (pullRequestNumber pullRequest)
         (Content.commentBody restyledPr)
 
 -- | Locate any comments left by us on the origin PR and delete them
@@ -37,7 +37,7 @@ clearRestyledComments = do
     comments <- runGitHub $ commentsR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
-        (pullRequestIssueId pullRequest)
+        (pullRequestNumber pullRequest)
         FetchAll
 
     for_ (V.filter isRestyledComment comments) $ \comment -> do

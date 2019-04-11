@@ -9,15 +9,8 @@ import Restyler.Prelude as X
 import Test.Hspec as X
 import Test.QuickCheck as X
 
-instance Num (Id a) where
-    -- Just so we can type literals for Ids in Specs
-    fromInteger = mkId Proxy . fromInteger
-
-    (+) = error "NO"
-    (-) = error "NO"
-    (*) = error "NO"
-    abs = error "NO"
-    signum = error "NO"
+deriving instance Num IssueNumber
+deriving instance Arbitrary IssueNumber
 
 instance Arbitrary (Name a) where
     arbitrary = mkName Proxy . pack <$> arbitrary `suchThat` all goodChar

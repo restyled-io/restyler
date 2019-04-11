@@ -26,10 +26,10 @@ restylerSetup = do
     Options {..} <- view optionsL
 
     pullRequest <-
-        mapAppError toPullRequestFetchError
-        $ runGitHub
-        $ pullRequestR oOwner oRepo
-        $ mkId Proxy oPullRequest
+        mapAppError toPullRequestFetchError $ runGitHub $ pullRequestR
+            oOwner
+            oRepo
+            oPullRequest
 
     mRestyledPullRequest <-
         (`catchAny` const (pure Nothing))

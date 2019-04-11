@@ -15,6 +15,7 @@ import GitHub.Data as X
     , FetchCount
     , Id
     , IssueLabel
+    , IssueNumber(..)
     , Name
     , Owner
     , Repo
@@ -24,6 +25,7 @@ import GitHub.Data as X
     , getUrl
     , mkId
     , mkName
+    , unIssueNumber
     , untagName
     )
 import RIO.Char as X (isSpace)

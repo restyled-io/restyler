@@ -11,6 +11,7 @@ where
 
 import Restyler.Prelude
 
+import GitHub.Data
 import qualified Prelude as Unsafe
 import Text.Megaparsec hiding (some)
 import Text.Megaparsec.Char
@@ -18,23 +19,19 @@ import Text.Megaparsec.Char
 data PullRequestSpec = PullRequestSpec
     { prsOwner :: Name Owner
     , prsRepo :: Name Repo
-    , prsPullRequest :: Int
+    , prsPullRequest :: IssueNumber
     }
     deriving Eq
 
 instance Show PullRequestSpec where
     show PullRequestSpec {..} = unpack
-        $ untagName prsOwner
-        <> "/"
-        <> untagName prsRepo
-        <> "#"
-        <> tshow prsPullRequest
+        $  untagName prsOwner <> "/"
+        <> untagName prsRepo  <> "#"
+        <> toPathPart prsPullRequest
 
 -- | Parse @\<owner>\/\<name>#\<number>@ into a @'PullRequestSpec'@
 parseSpec :: String -> Either String PullRequestSpec
 parseSpec = first errorBundlePretty . parse parser "<input>"
-
--- | Inverse of @'parseSpec'@
 
 type Parser = Parsec Void String
 
@@ -43,7 +40,7 @@ parser =
     PullRequestSpec
         <$> (mkName Proxy . pack <$> manyTill nonSpace (char '/'))
         <*> (mkName Proxy . pack <$> manyTill nonSpace (char '#'))
-        <*> (Unsafe.read <$> some digitChar)
+        <*> (IssueNumber . Unsafe.read <$> some digitChar)
 
 nonSpace :: Parser Char
 nonSpace = satisfy $ not . isSpace
