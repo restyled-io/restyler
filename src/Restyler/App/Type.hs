@@ -64,34 +64,6 @@ data TempApp = TempApp
     , appWorkingDirectory :: FilePath
     }
 
-bootstrapApp
-    :: MonadIO m
-    => Options
-    -> FilePath
-    -> RIO TempApp (PullRequest, Maybe SimplePullRequest, Config)
-    -> m App
-bootstrapApp options@Options {..} path f = do
-    let
-        tempApp = TempApp
-            { appLogFunc = restylerLogFunc options
-            , appOptions = options
-            , appWorkingDirectory = path
-            }
-
-    runRIO tempApp $ do
-        (pullRequest, mRestyledPullRequest, config) <- f
-
-        pure App
-            { appApp = tempApp
-            , appPullRequest = pullRequest
-            , appRestyledPullRequest = mRestyledPullRequest
-            , appConfig = config
-            }
-
---------------------------------------------------------------------------------
--- Accessing data we can get on partial or full App environments
---------------------------------------------------------------------------------
-
 instance HasLogFunc TempApp where
     logFuncL = lens appLogFunc $ \x y -> x { appLogFunc = y }
 
@@ -101,10 +73,6 @@ instance HasOptions TempApp where
 instance HasWorkingDirectory TempApp where
     workingDirectoryL = lens appWorkingDirectory $ \x y ->
         x { appWorkingDirectory = y }
-
---------------------------------------------------------------------------------
--- Capabilities we have in partial or full App environments
---------------------------------------------------------------------------------
 
 instance HasSystem TempApp where
     getCurrentDirectory = do
@@ -123,11 +91,6 @@ instance HasSystem TempApp where
         logDebug $ "readFile: " <> displayShow path
         appIO SystemError $ readFileUtf8 path
 
-instance HasExit TempApp where
-    exitSuccess = do
-        logDebug "exitSuccess"
-        appIO SystemError Exit.exitSuccess
-
 instance HasProcess TempApp where
     callProcess cmd args = do
         -- N.B. this includes access tokens in log messages when used for
@@ -144,13 +107,6 @@ instance HasProcess TempApp where
         output <- appIO SystemError $ Process.readProcess cmd args stdin'
         output <$ logDebug ("output: " <> fromString output)
 
-instance HasDownloadFile TempApp where
-    downloadFile url path = do
-        logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
-        appIO HttpError $ do
-            request <- parseRequest $ unpack url
-            runResourceT $ httpSink request $ \_ -> sinkFile path
-
 instance HasGitHub TempApp where
     runGitHub req = do
         logDebug $ "GitHub request: " <> displayGitHubRequest req
@@ -160,6 +116,28 @@ instance HasGitHub TempApp where
             executeRequestWithMgr mgr auth req
         either (throwIO . GitHubError) pure result
 
+bootstrapApp
+    :: MonadIO m
+    => Options
+    -> FilePath
+    -> RIO TempApp (PullRequest, Maybe SimplePullRequest, Config)
+    -> m App
+bootstrapApp options@Options {..} path = runRIO tempApp . fmap toApp
+  where
+    tempApp = TempApp
+        { appLogFunc = restylerLogFunc options
+        , appOptions = options
+        , appWorkingDirectory = path
+        }
+
+    -- NB. Could be uncurry3 (App tempApp)
+    toApp (pullRequest, mRestyledPullRequest, config) = App
+        { appApp = tempApp
+        , appPullRequest = pullRequest
+        , appRestyledPullRequest = mRestyledPullRequest
+        , appConfig = config
+        }
+
 -- | Application environment
 data App = App
     { appApp :: TempApp
@@ -167,9 +145,6 @@ data App = App
     , appPullRequest :: PullRequest
     , appRestyledPullRequest :: Maybe SimplePullRequest
     }
-
-appL :: Lens' App TempApp
-appL = lens appApp $ \x y -> x { appApp = y }
 
 instance HasLogFunc App where
     logFuncL = appL . logFuncL
@@ -197,17 +172,26 @@ instance HasSystem App where
     readFile = runApp . readFile
 
 instance HasExit App where
-    exitSuccess = runApp exitSuccess
+    exitSuccess = do
+        logDebug "exitSuccess"
+        appIO SystemError Exit.exitSuccess
 
 instance HasProcess App where
     callProcess cmd = runApp . callProcess cmd
     readProcess cmd args = runApp . readProcess cmd args
 
 instance HasDownloadFile App where
-    downloadFile url = runApp . downloadFile url
+    downloadFile url path = do
+        logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
+        appIO HttpError $ do
+            request <- parseRequest $ unpack url
+            runResourceT $ httpSink request $ \_ -> sinkFile path
 
 instance HasGitHub App where
     runGitHub = runApp . runGitHub
+
+appL :: Lens' App TempApp
+appL = lens appApp $ \x y -> x { appApp = y }
 
 runApp :: RIO TempApp a -> RIO App a
 runApp f = do
