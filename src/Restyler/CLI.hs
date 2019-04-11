@@ -7,7 +7,6 @@ import Restyler.Prelude hiding (withTempDirectory)
 import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Config
-import Restyler.Logger
 import Restyler.Main
 import Restyler.Options
 import Restyler.PullRequest.Status
@@ -39,32 +38,6 @@ withTempDirectory :: (FilePath -> IO a) -> IO a
 withTempDirectory f =
     withSystemTempDirectory "restyler-" f
         `catches` [Handler dieAppError, Handler $ dieAppError . SystemError]
-
-bootstrapApp
-    :: MonadIO m
-    => Options
-    -> FilePath
-    -> RIO TempApp (PullRequest, Maybe SimplePullRequest, Config)
-    -> m App
-bootstrapApp options@Options {..} path f = do
-    let tempApp = App
-            { appLogFunc = restylerLogFunc options
-            , appAccessToken = oAccessToken
-            , appPullRequest = error ""
-            , appRestyledPullRequest = error ""
-            , appConfig = error ""
-            , appOptions = options
-            , appWorkingDirectory = path
-            }
-
-    runRIO (TempApp tempApp) $ do
-        (pullRequest, mRestyledPullRequest, config) <- f
-
-        pure tempApp
-            { appPullRequest = pullRequest
-            , appRestyledPullRequest = mRestyledPullRequest
-            , appConfig = config
-            }
 
 -- brittany-next-binding --columns 90
 

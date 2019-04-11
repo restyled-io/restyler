@@ -1,12 +1,10 @@
 module Restyler.App.Type
     ( App(..)
+    , bootstrapApp
 
     -- * Application errors
     , AppError(..)
     , mapAppError
-
-    -- * Partial @'App'@ type
-    , TempApp(..)
     ) where
 
 import Restyler.Prelude
@@ -14,51 +12,16 @@ import Restyler.Prelude
 import Conduit (runResourceT, sinkFile)
 import qualified Data.Yaml as Yaml
 import GitHub.Request
+import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Class
+import Restyler.Logger
 import Restyler.Config
 import Restyler.Options
 import qualified RIO.Directory as Directory
-import qualified RIO.Text as T
 import qualified System.Exit as Exit
 import qualified System.Process as Process
-
--- | Application environment
-data App = App
-    { appLogFunc :: LogFunc
-    , appAccessToken :: Text
-    , appPullRequest :: PullRequest
-    -- ^ The @'PullRequest'@ we are restyling
-    , appRestyledPullRequest :: Maybe SimplePullRequest
-    -- ^ Existing restyled @'PullRequest'@ if it exists
-    , appConfig :: Config
-    -- ^ Configuration loaded from @.restyled.yaml@
-    , appOptions :: Options
-    -- ^ Original command-line options
-    , appWorkingDirectory :: FilePath
-    -- ^ Temporary directory we are working in
-    }
-
-instance HasLogFunc App where
-    logFuncL = lens appLogFunc $ \x y -> x { appLogFunc = y }
-
-instance HasOptions App where
-    optionsL = lens appOptions $ \x y -> x { appOptions = y }
-
-instance HasWorkingDirectory App where
-    workingDirectoryL = lens appWorkingDirectory $ \x y ->
-        x { appWorkingDirectory = y }
-
-instance HasConfig App where
-    configL = lens appConfig $ \x y -> x { appConfig = y }
-
-instance HasPullRequest App where
-    pullRequestL = lens appPullRequest $ \x y -> x { appPullRequest = y }
-
-instance HasRestyledPullRequest App where
-    restyledPullRequestL = lens appRestyledPullRequest $ \x y ->
-        x { appRestyledPullRequest = y }
 
 -- | All possible application error conditions
 data AppError
@@ -83,16 +46,67 @@ data AppError
 instance Exception AppError
 
 -- | Run a computation, and modify any thrown exceptions to @'AppError'@s
-mapAppError
-    :: (MonadUnliftIO m, Exception e)
-    => (e -> AppError) -> m a -> m a
+mapAppError :: (MonadUnliftIO m, Exception e) => (e -> AppError) -> m a -> m a
 mapAppError f = (`catch` throwIO . f)
 
 -- | Run an @'IO'@ computation and capture @'IOException'@s to the given type
 appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
 appIO f = mapAppError f . liftIO
 
-instance HasSystem App where
+-- | App environment that is ready immediately
+--
+-- This is used to bootstrap the main @'App'@ type, which will re-use its
+-- instances and provide those that only work in the complete environment.
+--
+data TempApp = TempApp
+    { appLogFunc :: LogFunc
+    , appOptions :: Options
+    , appWorkingDirectory :: FilePath
+    }
+
+bootstrapApp
+    :: MonadIO m
+    => Options
+    -> FilePath
+    -> RIO TempApp (PullRequest, Maybe SimplePullRequest, Config)
+    -> m App
+bootstrapApp options@Options {..} path f = do
+    let
+        tempApp = TempApp
+            { appLogFunc = restylerLogFunc options
+            , appOptions = options
+            , appWorkingDirectory = path
+            }
+
+    runRIO tempApp $ do
+        (pullRequest, mRestyledPullRequest, config) <- f
+
+        pure App
+            { appApp = tempApp
+            , appPullRequest = pullRequest
+            , appRestyledPullRequest = mRestyledPullRequest
+            , appConfig = config
+            }
+
+--------------------------------------------------------------------------------
+-- Accessing data we can get on partial or full App environments
+--------------------------------------------------------------------------------
+
+instance HasLogFunc TempApp where
+    logFuncL = lens appLogFunc $ \x y -> x { appLogFunc = y }
+
+instance HasOptions TempApp where
+    optionsL = lens appOptions $ \x y -> x { appOptions = y }
+
+instance HasWorkingDirectory TempApp where
+    workingDirectoryL = lens appWorkingDirectory $ \x y ->
+        x { appWorkingDirectory = y }
+
+--------------------------------------------------------------------------------
+-- Capabilities we have in partial or full App environments
+--------------------------------------------------------------------------------
+
+instance HasSystem TempApp where
     getCurrentDirectory = do
         logDebug "getCurrentDirectory"
         appIO SystemError Directory.getCurrentDirectory
@@ -109,12 +123,12 @@ instance HasSystem App where
         logDebug $ "readFile: " <> displayShow path
         appIO SystemError $ readFileUtf8 path
 
-instance HasExit App where
+instance HasExit TempApp where
     exitSuccess = do
         logDebug "exitSuccess"
         appIO SystemError Exit.exitSuccess
 
-instance HasProcess App where
+instance HasProcess TempApp where
     callProcess cmd args = do
         -- N.B. this includes access tokens in log messages when used for
         -- git-clone. That's acceptable because:
@@ -130,86 +144,72 @@ instance HasProcess App where
         output <- appIO SystemError $ Process.readProcess cmd args stdin'
         output <$ logDebug ("output: " <> fromString output)
 
-instance HasDownloadFile App where
+instance HasDownloadFile TempApp where
     downloadFile url path = do
         logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
         appIO HttpError $ do
             request <- parseRequest $ unpack url
             runResourceT $ httpSink request $ \_ -> sinkFile path
 
-instance HasGitHub App where
+instance HasGitHub TempApp where
     runGitHub req = do
         logDebug $ "GitHub request: " <> displayGitHubRequest req
-        auth <- asks $ OAuth . encodeUtf8 . appAccessToken
+        auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
         result <- appIO OtherError $ do
             mgr <- getGlobalManager
             executeRequestWithMgr mgr auth req
         either (throwIO . GitHubError) pure result
 
-newtype DisplayGitHubRequest k a = DisplayGitHubRequest (Request k a)
+-- | Application environment
+data App = App
+    { appApp :: TempApp
+    , appConfig :: Config
+    , appPullRequest :: PullRequest
+    , appRestyledPullRequest :: Maybe SimplePullRequest
+    }
 
-instance Show (DisplayGitHubRequest k a) where
-    show (DisplayGitHubRequest req) = unpack $ format req
-      where
-        format :: Request k a -> Text
-        format = \case
-            SimpleQuery (Query ps qs) -> mconcat
-                [ "[GET] "
-                , "/" <> T.intercalate "/" ps
-                , "?" <> T.intercalate "&" (queryParts qs)
-                ]
-            SimpleQuery (PagedQuery ps qs fc) -> mconcat
-                [ "[GET] "
-                , "/" <> T.intercalate "/" ps
-                , "?" <> T.intercalate "&" (queryParts qs)
-                , " (" <> tshow fc <> ")"
-                ]
-            SimpleQuery (Command m ps _body) -> mconcat
-                [ "[" <> T.toUpper (tshow m) <> "] "
-                , "/" <> T.intercalate "/" ps
-                ]
-            StatusQuery _ _ -> "<status query>"
-            HeaderQuery _ _ -> "<header query>"
-            RedirectQuery _ -> "<redirect query>"
+appL :: Lens' App TempApp
+appL = lens appApp $ \x y -> x { appApp = y }
 
-        queryParts :: QueryString -> [Text]
-        queryParts = map $ \(k, mv) ->
-            decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv
+instance HasLogFunc App where
+    logFuncL = appL . logFuncL
 
-displayGitHubRequest :: Request k a -> Utf8Builder
-displayGitHubRequest = displayShow . DisplayGitHubRequest
-
--- | Used for running @'RIO'@ actions to construct our @'App'@
---
--- Holds onto a partial @'App'@ value so we can re-use many @Has@ instances from
--- it. Specifically does not have instances for accessing the data we don't have
--- in a @'TempApp'@ -- thus making this safe.
---
-newtype TempApp = TempApp { unTempApp :: App }
-
-appL :: Lens' TempApp App
-appL = lens unTempApp $ \_ y -> TempApp y
-
-instance HasOptions TempApp where
+instance HasOptions App where
     optionsL = appL . optionsL
 
-instance HasWorkingDirectory TempApp where
+instance HasWorkingDirectory App where
     workingDirectoryL = appL . workingDirectoryL
 
-runTempApp :: RIO App a -> RIO TempApp a
-runTempApp f = do
-    TempApp app <- ask
+instance HasConfig App where
+    configL = lens appConfig $ \x y -> x { appConfig = y }
+
+instance HasPullRequest App where
+    pullRequestL = lens appPullRequest $ \x y -> x { appPullRequest = y }
+
+instance HasRestyledPullRequest App where
+    restyledPullRequestL = lens appRestyledPullRequest $ \x y ->
+        x { appRestyledPullRequest = y }
+
+instance HasSystem App where
+    getCurrentDirectory = runApp getCurrentDirectory
+    setCurrentDirectory = runApp . setCurrentDirectory
+    doesFileExist = runApp . doesFileExist
+    readFile = runApp . readFile
+
+instance HasExit App where
+    exitSuccess = runApp exitSuccess
+
+instance HasProcess App where
+    callProcess cmd = runApp . callProcess cmd
+    readProcess cmd args = runApp . readProcess cmd args
+
+instance HasDownloadFile App where
+    downloadFile url = runApp . downloadFile url
+
+instance HasGitHub App where
+    runGitHub = runApp . runGitHub
+
+runApp :: RIO TempApp a -> RIO App a
+runApp f = do
+    app <- asks appApp
     runRIO app f
-
-instance HasSystem TempApp where
-    getCurrentDirectory = runTempApp getCurrentDirectory
-    setCurrentDirectory = runTempApp . setCurrentDirectory
-    doesFileExist = runTempApp . doesFileExist
-    readFile = runTempApp . readFile
-
-instance HasProcess TempApp where
-    callProcess cmd = runTempApp . callProcess cmd
-    readProcess cmd args = runTempApp . readProcess cmd args
-
-instance HasGitHub TempApp where
-    runGitHub = runTempApp . runGitHub
