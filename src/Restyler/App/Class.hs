@@ -15,27 +15,10 @@ module Restyler.App.Class
     , HasGitHub(..)
     , runGitHubFirst
     , runGitHub_
-
-    -- * Re-exports
-    -- |
-    --
-    -- This is useful because it defines what GitHub APIs we use and takes care
-    -- of the hidings we'd otherwise need to do at every import site.
-    --
-    , module GitHub.Endpoints.Issues.Comments
-    , module GitHub.Endpoints.Issues.Labels
-    , module GitHub.Endpoints.PullRequests
-    , module GitHub.Endpoints.PullRequests.ReviewRequests
-    , module GitHub.Endpoints.Repos.Statuses
     ) where
 
 import Restyler.Prelude
 
-import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
-import GitHub.Endpoints.Issues.Labels
-import GitHub.Endpoints.PullRequests hiding (pullRequest)
-import GitHub.Endpoints.PullRequests.ReviewRequests
-import GitHub.Endpoints.Repos.Statuses
 import Restyler.Config
 import Restyler.Options
 import Restyler.PullRequest
@@ -46,8 +29,11 @@ class HasWorkingDirectory env where
 
 class HasSystem env where
     getCurrentDirectory :: RIO env FilePath
+
     setCurrentDirectory :: FilePath -> RIO env ()
+
     doesFileExist :: FilePath -> RIO env Bool
+
     readFile :: FilePath -> RIO env Text
 
 class HasExit env where
@@ -55,9 +41,8 @@ class HasExit env where
 
 class HasProcess env where
     callProcess :: String -> [String] -> RIO env ()
-    readProcess :: String -> [String] -> String -> RIO env String
 
--- class HasProcess env => HasGit env where
+    readProcess :: String -> [String] -> String -> RIO env String
 
 class HasDownloadFile env where
     downloadFile :: Text -> FilePath -> RIO env ()

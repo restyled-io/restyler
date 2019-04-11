@@ -11,6 +11,7 @@ import qualified Data.Vector as V
 import Restyler.App
 import qualified Restyler.Content as Content
 import Restyler.PullRequest
+import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
 leaveRestyledComment
