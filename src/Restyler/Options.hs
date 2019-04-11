@@ -24,8 +24,7 @@ data EnvOptions = EnvOptions
     }
 
 data CLIOptions = CLIOptions
-    { coFake :: Bool
-    , coColor :: ColorOption
+    { coColor :: ColorOption
     , coJobUrl :: Maybe URL
     , coPullRequestSpec :: PullRequestSpec
     }
@@ -39,7 +38,6 @@ data Options = Options
     , oRepo :: Name Repo
     , oPullRequest :: Int
     , oJobUrl :: Maybe URL
-    , oFake :: Bool
     }
 
 class HasOptions env where
@@ -69,7 +67,6 @@ parseOptions = do
         , oRepo = prsRepo coPullRequestSpec
         , oPullRequest = prsPullRequest coPullRequestSpec
         , oJobUrl = coJobUrl
-        , oFake = coFake
         }
 
 -- brittany-disable-next-binding
@@ -82,11 +79,7 @@ envParser = EnvOptions
 -- brittany-disable-next-binding
 optionsParser :: Parser CLIOptions
 optionsParser = CLIOptions
-    <$> switch
-        (  long "fake"
-        <> help "Don't load an actual PullRequest (testing only)"
-        )
-    <*> option (eitherReader parseColorOption)
+    <$> option (eitherReader parseColorOption)
         (  long "color"
         <> metavar "always|never|auto"
         <> help "Colorize log messages"
