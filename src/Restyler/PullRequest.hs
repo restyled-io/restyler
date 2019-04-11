@@ -79,7 +79,7 @@ pullRequestSpec pullRequest = PullRequestSpec
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
-pullRequestIssueId = mkId Proxy . pullRequestNumber
+pullRequestIssueId = mkId Proxy . unIssueNumber . pullRequestNumber
 
 pullRequestIsClosed :: PullRequest -> Bool
 pullRequestIsClosed = (== StateClosed) . pullRequestState
