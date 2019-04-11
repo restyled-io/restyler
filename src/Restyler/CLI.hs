@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
 
-
 module Restyler.CLI
     ( restylerCLI
     ) where
@@ -10,7 +9,7 @@ import Restyler.Prelude
 import qualified Data.Yaml as Yaml
 import Restyler.App
 import Restyler.Config
--- import Restyler.Logger
+import Restyler.Logger
 import Restyler.Main
 import Restyler.Options
 import Restyler.PullRequest.Status
@@ -30,46 +29,88 @@ restylerCLI :: IO ()
 restylerCLI = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
-
     options@Options {..} <- parseOptions
 
     withRestylerDirectory $ \path -> do
-        let
-            -- TODO: now that all our actions are HasBased, we can re-use them and not
-            -- require a concrete App in both cases, and so not have this partiality
-            tempApp = App
-                { appLogLevel = oLogLevel
-                , appLogColor = oLogColor
-                , appAccessToken = oAccessToken
-                , appPullRequest = error "Bootstrap appPullRequest forced"
-                , appRestyledPullRequest = Nothing
-                , appConfig = error "Bootstrap appConfig forced"
-                , appOptions = options
-                , appWorkingDirectory = path
-                }
-
-        app <- runRIO tempApp $ do
-            (pullRequest, mRestyledPullRequest, config) <- restylerSetup
-
-            -- TODO: Can't I just do this and proceed
-            -- set configL config
-            -- set pullRequestL pullRequest
-            -- set restyledPullRequestL mRestyledPullRequest
-            pure $ tempApp
-                { appPullRequest = pullRequest
-                , appRestyledPullRequest = mRestyledPullRequest
-                , appConfig = config
-                }
+        app <- withTempApp options path
+            $ \tempApp -> uncurry3 (tempAppToApp tempApp) <$> restylerSetup
 
         runRIO app $ restylerMain `catchAny` \ex -> do
             traverse_ (sendPullRequestStatus_ . ErrorStatus) oJobUrl
             throwIO ex
 
 -- | Run in a prefixed temporary directory
+--
+-- Also ensures all exceptions will flow through @'dieAppError'@.
+--
 withRestylerDirectory :: (FilePath -> IO a) -> IO a
 withRestylerDirectory f =
     withSystemTempDirectory "restyler-" f
         `catches` [Handler dieAppError, Handler $ dieAppError . SystemError]
+
+-- | Used for running @'RIO'@ actions to construct our @'App'@
+--
+-- Holds onto a partial @'App'@ value so we can re-use many @Has@ instances from
+-- it. But specifically does not have instances for @'HasConfig'@,
+-- @'HasPullRequest'@, or @'HasRestyledPullRequest'@, making it safe that we
+-- hold onto a partial version of @'App'@.
+--
+newtype TempApp = TempApp { unTempApp :: App }
+
+appL :: Lens' TempApp App
+appL = lens unTempApp $ \_ y -> TempApp y
+
+instance HasOptions TempApp where
+    optionsL = appL . optionsL
+
+instance HasWorkingDirectory TempApp where
+    workingDirectoryL = appL . workingDirectoryL
+
+runTempApp :: RIO App a -> RIO TempApp a
+runTempApp f = do
+    TempApp app <- ask
+    runRIO app f
+
+instance HasSystem TempApp where
+    getCurrentDirectory = runTempApp getCurrentDirectory
+    setCurrentDirectory = runTempApp . setCurrentDirectory
+    doesFileExist = runTempApp . doesFileExist
+    readFile = runTempApp . readFile
+
+instance HasProcess TempApp where
+    callProcess cmd = runTempApp . callProcess cmd
+    readProcess cmd args = runTempApp . readProcess cmd args
+
+instance HasGitHub TempApp where
+    runGitHub = runTempApp . runGitHub
+
+tempAppToApp
+    :: TempApp -> PullRequest -> Maybe SimplePullRequest -> Config -> App
+tempAppToApp (TempApp app) pullRequest mRestyledPullRequest config = app
+    { appPullRequest = pullRequest
+    , appRestyledPullRequest = mRestyledPullRequest
+    , appConfig = config
+    }
+
+withTempApp
+    :: MonadUnliftIO m
+    => Options
+    -> FilePath
+    -> (TempApp -> RIO TempApp a)
+    -> m a
+withTempApp options path f = withRestylerLogFunc options $ \lf -> do
+    let
+        tempApp = TempApp App
+            { appLogFunc = lf
+            , appAccessToken = oAccessToken options
+            , appPullRequest = error ""
+            , appRestyledPullRequest = error ""
+            , appConfig = error ""
+            , appOptions = options
+            , appWorkingDirectory = path
+            }
+
+    runRIO tempApp $ f tempApp
 
 -- brittany-next-binding --columns 90
 
