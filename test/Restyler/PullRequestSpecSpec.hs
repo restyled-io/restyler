@@ -25,7 +25,3 @@ spec = describe "parseSpec" $ do
     it "round-trips" $ property $ \(owner, name, Positive num) ->
         let prSpec = PullRequestSpec owner name num
         in parseSpec (T.unpack $ showSpec prSpec) == Right prSpec
-
-isLeft :: Either a b -> Bool
-isLeft (Left _) = True
-isLeft _ = False
