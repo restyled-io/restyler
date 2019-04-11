@@ -77,7 +77,7 @@ instance HasProcess StartupApp where
 
 instance HasGitHub StartupApp where
     runGitHub req = do
-        logDebug $ "GitHub request: " <> displayGitHubRequest req
+        logDebug $ "GitHub request: " <> displayShow (DisplayGitHubRequest req)
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
         result <- appIO (OtherError . toException) $ do
             mgr <- getGlobalManager
