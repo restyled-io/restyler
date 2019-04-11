@@ -7,7 +7,6 @@ where
 
 import SpecHelper
 
-import qualified Data.Text as T
 import Restyler.PullRequestSpec
 import Test.QuickCheck
 
@@ -24,4 +23,4 @@ spec = describe "parseSpec" $ do
 
     it "round-trips" $ property $ \(owner, name, Positive num) ->
         let prSpec = PullRequestSpec owner name num
-        in parseSpec (T.unpack $ showSpec prSpec) == Right prSpec
+        in parseSpec (show prSpec) == Right prSpec

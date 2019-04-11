@@ -25,13 +25,17 @@ data PullRequestStatus
     -- ^ We encountered an error and can link to a Job
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
-sendPullRequestStatus :: MonadApp m => PullRequestStatus -> m ()
+sendPullRequestStatus
+    :: (HasConfig env, HasPullRequest env, HasGitHub env)
+    => PullRequestStatus
+    -> RIO env ()
 sendPullRequestStatus status =
-    whenConfig ((`shouldSendStatus` status) . cStatuses . appConfig) $ do
-        pullRequest <- asks appPullRequest
+    whenConfig ((`shouldSendStatus` status) . cStatuses) $ do
+        pullRequest <- view pullRequestL
         createHeadShaStatus pullRequest status
 
-createHeadShaStatus :: MonadApp m => PullRequest -> PullRequestStatus -> m ()
+createHeadShaStatus
+    :: HasGitHub env => PullRequest -> PullRequestStatus -> RIO env ()
 createHeadShaStatus pullRequest =
     runGitHub_ . createStatusR owner name sha . statusToStatus
   where
@@ -44,9 +48,12 @@ createHeadShaStatus pullRequest =
 -- This is useful for emitting the Errored status, where we wouldn't want an
 -- exception here to muddy the debugging of the error we're reporting.
 --
-sendPullRequestStatus_ :: MonadApp m => PullRequestStatus -> m ()
+sendPullRequestStatus_
+    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
+    => PullRequestStatus
+    -> RIO env ()
 sendPullRequestStatus_ status = sendPullRequestStatus status
-    `catchError` \_ -> logWarnN "Error sending PR status"
+    `catchAny` \_ -> logWarn "Error sending PR status"
 
 shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
 shouldSendStatus Statuses {..} NoDifferencesStatus = sNoDifferences

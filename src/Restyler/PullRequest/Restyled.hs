@@ -22,9 +22,17 @@ import Restyler.RestylerResult
 
 -- | Commit and push to the (new) restyled branch, and open a PR for it
 createRestyledPullRequest
-    :: (HasCallStack, MonadApp m) => [RestylerResult] -> m PullRequest
+    :: ( HasCallStack
+       , HasLogFunc env
+       , HasConfig env
+       , HasPullRequest env
+       , HasProcess env
+       , HasGitHub env
+       )
+    => [RestylerResult]
+    -> RIO env PullRequest
 createRestyledPullRequest results = do
-    pullRequest <- asks appPullRequest
+    pullRequest <- view pullRequestL
 
     -- N.B. we always force-push. There are various edge-cases that could mean
     -- an "-restyled" branch already exists and 99% of the time we can be sure
@@ -45,12 +53,12 @@ createRestyledPullRequest results = do
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
 
-    whenConfigNonEmpty (cLabels . appConfig) $ runGitHub_ . addLabelsToIssueR
+    whenConfigNonEmpty cLabels $ runGitHub_ . addLabelsToIssueR
         (pullRequestOwnerName pr)
         (pullRequestRepoName pr)
         (pullRequestIssueId pr)
 
-    whenConfigJust (cRequestReview . appConfig)
+    whenConfigJust cRequestReview
         $ runGitHub_
         . createReviewRequestR
               (pullRequestOwnerName pr)
@@ -59,21 +67,28 @@ createRestyledPullRequest results = do
         . requestOneReviewer
         . flip determineReviewer pullRequest
 
-    pr <$ logInfoN ("Opened Restyled PR " <> showSpec (pullRequestSpec pr))
+    pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
 
 -- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: MonadApp m => m ()
+updateRestyledPullRequest :: (HasPullRequest env, HasProcess env) => RIO env ()
 updateRestyledPullRequest = do
-    rBranch <- asks $ pullRequestRestyledRef . appPullRequest
+    rBranch <- pullRequestRestyledRef <$> view pullRequestL
     gitPushForce $ unpack rBranch
 
 -- | Close the Restyled PR, if we know of it
-closeRestyledPullRequest :: MonadApp m => m ()
+closeRestyledPullRequest
+    :: ( HasLogFunc env
+       , HasProcess env
+       , HasPullRequest env
+       , HasRestyledPullRequest env
+       , HasGitHub env
+       )
+    => RIO env ()
 closeRestyledPullRequest = do
     -- We have to use the Owner/Repo from the main PR since SimplePullRequest
     -- doesn't give us much.
-    (pullRequest, mRestyledPr) <- asks
-        (appPullRequest &&& appRestyledPullRequest)
+    pullRequest <- view pullRequestL
+    mRestyledPr <- view restyledPullRequestL
 
     for_ mRestyledPr $ \restyledPr -> do
         let
@@ -83,7 +98,7 @@ closeRestyledPullRequest = do
                 , prsPullRequest = simplePullRequestNumber restyledPr
                 }
 
-        logInfoN $ "Closing restyled PR: " <> showSpec spec
+        logInfo $ "Closing restyled PR: " <> displayShow spec
         runGitHub_ $ updatePullRequestR
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
@@ -97,10 +112,10 @@ closeRestyledPullRequest = do
                 }
 
         let branch = pullRequestRestyledRef pullRequest
-        logInfoN $ "Deleting restyled branch: " <> branch
+        logInfo $ "Deleting restyled branch: " <> displayShow branch
         gitPushDelete $ unpack branch
 
 -- | Commit and push to current branch
-updateOriginalPullRequest :: MonadApp m => m ()
+updateOriginalPullRequest :: (HasPullRequest env, HasProcess env) => RIO env ()
 updateOriginalPullRequest =
-    gitPush . unpack . pullRequestHeadRef =<< asks appPullRequest
+    gitPush . unpack . pullRequestHeadRef =<< view pullRequestL

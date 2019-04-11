@@ -3,6 +3,7 @@
 
 module Restyler.Options
     ( Options(..)
+    , HasOptions(..)
     , parseOptions
     )
 where
@@ -43,6 +44,9 @@ data Options = Options
     , oJobUrl :: Maybe URL
     , oFake :: Bool
     }
+
+class HasOptions env where
+    optionsL :: Lens' env Options
 
 -- | Parse required environment variables and command-line options
 --
