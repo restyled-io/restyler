@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
@@ -11,7 +7,8 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App
+import GitHub.Endpoints.Repos.Statuses
+import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.Statuses
 import Restyler.PullRequest

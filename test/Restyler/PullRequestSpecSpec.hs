@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Restyler.PullRequestSpecSpec
     ( spec
     )
@@ -8,7 +6,6 @@ where
 import SpecHelper
 
 import Restyler.PullRequestSpec
-import Test.QuickCheck
 
 spec :: Spec
 spec = describe "parseSpec" $ do

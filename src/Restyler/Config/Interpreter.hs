@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Restyler.Config.Interpreter
     ( Interpreter(..)
     , hasInterpreter

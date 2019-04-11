@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Restyler.Config.Include
     ( Include(..)
     , includePath

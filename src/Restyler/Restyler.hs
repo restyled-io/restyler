@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.Restyler
     ( Restyler(..)
     , defaultRestylers

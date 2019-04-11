@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Restyler.PullRequest.Restyled
     ( createRestyledPullRequest
     , updateRestyledPullRequest
@@ -11,7 +8,10 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App
+import GitHub.Endpoints.Issues.Labels
+import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import GitHub.Endpoints.PullRequests.ReviewRequests
+import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.RequestReview
 import qualified Restyler.Content as Content
