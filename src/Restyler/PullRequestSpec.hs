@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-
 -- | String specification of a Repository's Pull Request
 --
 -- This shortened format is useful for passing a Pull Request as a command-line

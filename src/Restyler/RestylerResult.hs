@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.RestylerResult
     ( RestylerResult(..)
     , noPathsRestylerResult

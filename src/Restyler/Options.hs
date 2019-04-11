@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.Options
     ( Options(..)
     , HasOptions(..)

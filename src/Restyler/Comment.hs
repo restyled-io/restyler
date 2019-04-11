@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Restyler.Comment
     ( leaveRestyledComment
     , clearRestyledComments

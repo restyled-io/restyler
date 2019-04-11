@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.Setup
     ( restylerSetup
     ) where

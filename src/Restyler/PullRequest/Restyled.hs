@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Restyler.PullRequest.Restyled
     ( createRestyledPullRequest
     , updateRestyledPullRequest
