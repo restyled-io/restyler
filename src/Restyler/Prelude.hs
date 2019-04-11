@@ -4,11 +4,10 @@ module Restyler.Prelude
     )
 where
 
--- Why are first/second not the real things?
+-- Prefer Bifunctor first/second not Arrow
 import RIO as X hiding (first, second)
 
 import Control.Error.Util as X (hush, note)
-import Control.Monad.Except as X
 import Data.Bifunctor as X (first, second)
 import GitHub.Data as X hiding (command)
 import RIO.Char as X (isSpace)
@@ -30,6 +29,3 @@ f <$$> a = fmap f <$> a
 -- | Strip whitespace from the end of a @'Text'@
 chomp :: Text -> Text
 chomp = T.dropWhileEnd isSpace
-
-uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
-uncurry3 f (a, b, c) = f a b c

@@ -1,5 +1,5 @@
 module Restyler.Logger
-    ( withRestylerLogFunc
+    ( restylerLogFunc
     ) where
 
 import Restyler.Prelude hiding (takeWhile)
@@ -10,10 +10,6 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text as T
 import Restyler.Options
 import System.Console.ANSI
-
--- TODO: make the whole stack pure now that we can
-withRestylerLogFunc :: Options -> (LogFunc -> m a) -> m a
-withRestylerLogFunc options inner = inner $ restylerLogFunc options
 
 restylerLogFunc :: Options -> LogFunc
 restylerLogFunc Options {..} = mkLogFunc $ \_cs _source level msg ->

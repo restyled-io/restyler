@@ -2,7 +2,7 @@ module Restyler.CLI
     ( restylerCLI
     ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding (withTempDirectory)
 
 import qualified Data.Yaml as Yaml
 import Restyler.App
@@ -27,80 +27,29 @@ restylerCLI :: IO ()
 restylerCLI = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
-    options@Options {..} <- parseOptions
 
-    withRestylerDirectory $ \path -> do
-        app <- withTempApp options path
-            $ \tempApp -> uncurry3 (tempAppToApp tempApp) <$> restylerSetup
-
+    options <- parseOptions
+    withTempDirectory $ \path -> do
+        app <- bootstrapApp options path restylerSetup
         runRIO app $ restylerMain `catchAny` \ex -> do
-            traverse_ (sendPullRequestStatus_ . ErrorStatus) oJobUrl
+            traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
             throwIO ex
 
--- | Run in a prefixed temporary directory
---
--- Also ensures all exceptions will flow through @'dieAppError'@.
---
-withRestylerDirectory :: (FilePath -> IO a) -> IO a
-withRestylerDirectory f =
+withTempDirectory :: (FilePath -> IO a) -> IO a
+withTempDirectory f =
     withSystemTempDirectory "restyler-" f
         `catches` [Handler dieAppError, Handler $ dieAppError . SystemError]
 
--- | Used for running @'RIO'@ actions to construct our @'App'@
---
--- Holds onto a partial @'App'@ value so we can re-use many @Has@ instances from
--- it. But specifically does not have instances for @'HasConfig'@,
--- @'HasPullRequest'@, or @'HasRestyledPullRequest'@, making it safe that we
--- hold onto a partial version of @'App'@.
---
-newtype TempApp = TempApp { unTempApp :: App }
-
-appL :: Lens' TempApp App
-appL = lens unTempApp $ \_ y -> TempApp y
-
-instance HasOptions TempApp where
-    optionsL = appL . optionsL
-
-instance HasWorkingDirectory TempApp where
-    workingDirectoryL = appL . workingDirectoryL
-
-runTempApp :: RIO App a -> RIO TempApp a
-runTempApp f = do
-    TempApp app <- ask
-    runRIO app f
-
-instance HasSystem TempApp where
-    getCurrentDirectory = runTempApp getCurrentDirectory
-    setCurrentDirectory = runTempApp . setCurrentDirectory
-    doesFileExist = runTempApp . doesFileExist
-    readFile = runTempApp . readFile
-
-instance HasProcess TempApp where
-    callProcess cmd = runTempApp . callProcess cmd
-    readProcess cmd args = runTempApp . readProcess cmd args
-
-instance HasGitHub TempApp where
-    runGitHub = runTempApp . runGitHub
-
-tempAppToApp
-    :: TempApp -> PullRequest -> Maybe SimplePullRequest -> Config -> App
-tempAppToApp (TempApp app) pullRequest mRestyledPullRequest config = app
-    { appPullRequest = pullRequest
-    , appRestyledPullRequest = mRestyledPullRequest
-    , appConfig = config
-    }
-
-withTempApp
-    :: MonadUnliftIO m
+bootstrapApp
+    :: MonadIO m
     => Options
     -> FilePath
-    -> (TempApp -> RIO TempApp a)
-    -> m a
-withTempApp options path f = withRestylerLogFunc options $ \lf -> do
-    let
-        tempApp = TempApp App
-            { appLogFunc = lf
-            , appAccessToken = oAccessToken options
+    -> RIO TempApp (PullRequest, Maybe SimplePullRequest, Config)
+    -> m App
+bootstrapApp options@Options {..} path f = do
+    let tempApp = App
+            { appLogFunc = restylerLogFunc options
+            , appAccessToken = oAccessToken
             , appPullRequest = error ""
             , appRestyledPullRequest = error ""
             , appConfig = error ""
@@ -108,7 +57,14 @@ withTempApp options path f = withRestylerLogFunc options $ \lf -> do
             , appWorkingDirectory = path
             }
 
-    runRIO tempApp $ f tempApp
+    runRIO (TempApp tempApp) $ do
+        (pullRequest, mRestyledPullRequest, config) <- f
+
+        pure tempApp
+            { appPullRequest = pullRequest
+            , appRestyledPullRequest = mRestyledPullRequest
+            , appConfig = config
+            }
 
 -- brittany-next-binding --columns 90
 
