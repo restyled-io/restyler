@@ -1,33 +1,33 @@
 module Restyler.Logger
     ( restylerLogFunc
-    ) where
+    )
+where
 
-import Restyler.Prelude hiding (takeWhile)
+import Restyler.Prelude
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (toLazyByteString)
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.Text as T
+import qualified Data.ByteString.Char8 as BS8
 import Restyler.Options
 import System.Console.ANSI
 
 restylerLogFunc :: Options -> LogFunc
 restylerLogFunc Options {..} = mkLogFunc $ \_cs _source level msg ->
     when (level >= oLogLevel) $ do
-        BS.putStr "["
+        BS8.putStr "["
         when oLogColor $ setSGR [levelStyle level]
-        BS.putStr $ levelStr level
+        BS8.putStr $ levelStr level
         when oLogColor $ setSGR [Reset]
-        BS.putStr "] "
-        BS.putStrLn $ toStrictBytes $ toLazyByteString $ getUtf8Builder msg
+        BS8.putStr "] "
+        BS8.putStrLn $ toStrictBytes $ toLazyByteString $ getUtf8Builder msg
 
 levelStr :: LogLevel -> ByteString
 levelStr = \case
-    LevelDebug -> "DEBUG"
-    LevelInfo -> "INFO"
-    LevelWarn -> "WARN"
-    LevelError -> "ERROR"
-    LevelOther x -> encodeUtf8 $ T.toUpper x
+    LevelDebug -> "Debug"
+    LevelInfo -> "Info"
+    LevelWarn -> "Warn"
+    LevelError -> "Error"
+    LevelOther x -> encodeUtf8 x
 
 levelStyle :: LogLevel -> SGR
 levelStyle = \case
