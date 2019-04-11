@@ -1,7 +1,7 @@
-resolver: lts-13.3
+resolver: lts-13.16
 extra-deps:
   - envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
-  - github-0.20@sha256:df31940c0ffcd17bc273e2424f1521dc071a9252904c3b82ae51bbd5e320cecf
+  - github-0.21@sha256:9d88c84e308723e314069f91c70c0f3fdad6d18976f185f1ae672ce8eee30547
   - word-wrap-0.4.1@sha256:f72233b383ef569c557bfd9812cbb8e306c415ce509082c0bd15ee51c0239ccc
 
 ghc-options:

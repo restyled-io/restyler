@@ -38,7 +38,7 @@ data Options = Options
     , oLogColor :: Bool
     , oOwner :: Name Owner
     , oRepo :: Name Repo
-    , oPullRequest :: Int
+    , oPullRequest :: IssueNumber
     , oJobUrl :: Maybe URL
     }
 

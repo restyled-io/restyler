@@ -102,7 +102,7 @@ closeRestyledPullRequest = do
         runGitHub_ $ updatePullRequestR
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
-            (mkId Proxy $ simplePullRequestNumber restyledPr)
+            (simplePullRequestNumber restyledPr)
             EditPullRequest
                 { editPullRequestTitle = Nothing
                 , editPullRequestBody = Nothing

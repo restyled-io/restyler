@@ -14,7 +14,6 @@ where
 import Prelude
 
 import Data.Aeson
-import Data.Text (pack)
 import GitHub.Data
 import GitHub.Request
 
@@ -47,7 +46,7 @@ createReviewRequest
     :: Auth
     -> Name Owner
     -> Name Repo
-    -> Int
+    -> IssueNumber
     -> RequestReview
     -> IO (Either Error ReviewRequest)
 createReviewRequest auth user repo pull =
@@ -56,7 +55,7 @@ createReviewRequest auth user repo pull =
 createReviewRequestR
     :: Name Owner
     -> Name Repo
-    -> Int
+    -> IssueNumber
     -> RequestReview
     -> Request 'RW ReviewRequest
 createReviewRequestR user repo pull = command Post paths . encode
@@ -66,6 +65,6 @@ createReviewRequestR user repo pull = command Post paths . encode
         , toPathPart user
         , toPathPart repo
         , "pulls"
-        , pack $ show pull
+        , toPathPart pull
         , "requested_reviewers"
         ]
