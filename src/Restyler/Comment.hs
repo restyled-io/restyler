@@ -16,9 +16,12 @@ import qualified Restyler.Content as Content
 import Restyler.PullRequest
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
-leaveRestyledComment :: (HasCallStack, MonadApp m) => PullRequest -> m ()
+leaveRestyledComment
+    :: (HasCallStack, HasPullRequest env, HasGitHub env)
+    => PullRequest
+    -> RIO env ()
 leaveRestyledComment restyledPr = do
-    pullRequest <- asks appPullRequest
+    pullRequest <- view pullRequestL
 
     runGitHub_ $ createCommentR
         (pullRequestOwnerName pullRequest)
@@ -27,9 +30,11 @@ leaveRestyledComment restyledPr = do
         (Content.commentBody restyledPr)
 
 -- | Locate any comments left by us on the origin PR and delete them
-clearRestyledComments :: (HasCallStack, MonadApp m) => m ()
+clearRestyledComments
+    :: (HasCallStack, HasLogFunc env, HasPullRequest env, HasGitHub env)
+    => RIO env ()
 clearRestyledComments = do
-    pullRequest <- asks appPullRequest
+    pullRequest <- view pullRequestL
 
     comments <- runGitHub $ commentsR
         (pullRequestOwnerName pullRequest)
@@ -38,11 +43,11 @@ clearRestyledComments = do
         FetchAll
 
     for_ (V.filter isRestyledComment comments) $ \comment -> do
-        logDebugN
+        logDebug
             $ "Deleting comment "
-            <> tshow (issueCommentId comment)
+            <> displayShow (issueCommentId comment)
             <> " by "
-            <> commentUserName comment
+            <> displayShow (commentUserName comment)
 
         runGitHub_ $ deleteCommentR
             (pullRequestOwnerName pullRequest)

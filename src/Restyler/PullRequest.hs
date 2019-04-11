@@ -3,7 +3,9 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.PullRequest
-    ( pullRequestOwnerName
+    ( HasPullRequest(..)
+    , HasRestyledPullRequest(..)
+    , pullRequestOwnerName
     , pullRequestRepoName
     , pullRequestUserLogin
     , pullRequestCloneUrl
@@ -27,6 +29,12 @@ where
 import Restyler.Prelude
 
 import Restyler.PullRequestSpec
+
+class HasPullRequest env where
+    pullRequestL :: Lens' env PullRequest
+
+class HasRestyledPullRequest env where
+    restyledPullRequestL :: Lens' env (Maybe SimplePullRequest)
 
 pullRequestOwnerName :: HasCallStack => PullRequest -> Name Owner
 pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner

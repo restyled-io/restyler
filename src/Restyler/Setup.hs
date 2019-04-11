@@ -16,10 +16,16 @@ import Restyler.Options
 import Restyler.PullRequest
 
 restylerSetup
-    :: (HasCallStack, MonadApp m)
-    => m (PullRequest, Maybe SimplePullRequest, Config)
+    :: ( HasCallStack
+       , HasOptions env
+       , HasWorkingDirectory env
+       , HasSystem env
+       , HasProcess env
+       , HasGitHub env
+       )
+    => RIO env (PullRequest, Maybe SimplePullRequest, Config)
 restylerSetup = do
-    Options {..} <- asks appOptions
+    Options {..} <- view optionsL
 
     pullRequest <-
         mapAppError toPullRequestFetchError
@@ -28,7 +34,7 @@ restylerSetup = do
         $ mkId Proxy oPullRequest
 
     mRestyledPullRequest <-
-        (`catchError` const (pure Nothing))
+        (`catchAny` const (pure Nothing))
         $ runGitHubFirst
         $ pullRequestsForR oOwner oRepo
         $ pullRequestRestyledMod pullRequest
@@ -42,10 +48,18 @@ restylerSetup = do
 
     pure (pullRequest, mRestyledPullRequest, config)
 
-setupClone :: (HasCallStack, MonadApp m) => PullRequest -> m ()
+setupClone
+    :: ( HasCallStack
+       , HasOptions env
+       , HasWorkingDirectory env
+       , HasSystem env
+       , HasProcess env
+       )
+    => PullRequest
+    -> RIO env ()
 setupClone pullRequest = mapAppError toPullRequestCloneError $ do
-    dir <- asks appWorkingDirectory
-    token <- asks appAccessToken
+    dir <- view workingDirectoryL
+    token <- oAccessToken <$> view optionsL
 
     let cloneUrl = unpack $ pullRequestCloneUrlToken token pullRequest
     gitClone cloneUrl dir
@@ -61,11 +75,9 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
 
     gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
 
-decodeConfig :: MonadApp m => Text -> m Config
+decodeConfig :: MonadUnliftIO m => Text -> m Config
 decodeConfig =
-    either (throwError . ConfigurationError) pure
-        . Yaml.decodeEither'
-        . encodeUtf8
+    either (throwIO . ConfigurationError) pure . Yaml.decodeEither' . encodeUtf8
 
 toPullRequestFetchError :: AppError -> AppError
 toPullRequestFetchError (GitHubError e) = PullRequestFetchError e
