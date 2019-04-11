@@ -9,7 +9,23 @@ import RIO as X hiding (first, second)
 
 import Control.Error.Util as X (hush, note)
 import Data.Bifunctor as X (first, second)
-import GitHub.Data as X hiding (command)
+import GitHub.Data as X
+    ( Auth(..)
+    , Error(..)
+    , FetchCount
+    , Id
+    , IssueLabel
+    , Name
+    , Owner
+    , Repo
+    , Request
+    , URL(..)
+    , User
+    , getUrl
+    , mkId
+    , mkName
+    , untagName
+    )
 import RIO.Char as X (isSpace)
 import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
 import RIO.Text as X (encodeUtf8, pack, unpack)
