@@ -8,7 +8,7 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App
+import Restyler.App.Class
 import Restyler.Git
 import Restyler.Restyler
 

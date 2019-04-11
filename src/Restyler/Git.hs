@@ -14,7 +14,7 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App
+import Restyler.App.Class
 
 gitClone :: HasProcess env => String -> FilePath -> RIO env ()
 gitClone url dir = callProcess "git" ["clone", "--quiet", url, dir]

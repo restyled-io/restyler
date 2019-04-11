@@ -5,7 +5,7 @@ module Restyler.Restyler.Run
 import Restyler.Prelude
 
 import Data.List (nub)
-import Restyler.App
+import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Restyler

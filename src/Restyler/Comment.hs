@@ -8,7 +8,7 @@ import Restyler.Prelude
 
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import Restyler.App
+import Restyler.App.Class
 import qualified Restyler.Content as Content
 import Restyler.PullRequest
 import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
