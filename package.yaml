@@ -46,8 +46,7 @@ default-extensions:
   # Forcing addition of these in-module because of broken tooling
   # - LambdaCase
 
-ghc-options:
-  -Wall
+ghc-options: -Wall
   -Wcompat
   -Widentities
   -Wincomplete-record-updates
@@ -57,7 +56,6 @@ ghc-options:
 
 dependencies:
   - base
-
 
 library:
   source-dirs: src
