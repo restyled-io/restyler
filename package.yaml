@@ -59,9 +59,6 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options:
-    - -Wall
-    - -O2
   dependencies:
     - Glob
     - aeson
@@ -105,7 +102,6 @@ tests:
   test:
     main: Spec.hs
     source-dirs: test
-    ghc-options: -Wall
     dependencies:
       - QuickCheck
       - bytestring
