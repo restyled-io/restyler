@@ -63,10 +63,11 @@ trouble :: String -> String -> String
 trouble acting shown = "We had trouble " <> acting <> ":\n\n" <> reflow shown
 
 showGitHubError :: Error -> String
-showGitHubError (HTTPError e) = "HTTP exception: " <> show e
-showGitHubError (ParseError e) = "Unable to parse response: " <> unpack e
-showGitHubError (JsonError e) = "Malformed response: " <> unpack e
-showGitHubError (UserError e) = "User error: " <> unpack e
+showGitHubError = \case
+    HTTPError e -> "HTTP exception: " <> show e
+    ParseError e -> "Unable to parse response: " <> unpack e
+    JsonError e -> "Malformed response: " <> unpack e
+    UserError e -> "User error: " <> unpack e
 
 showConfigError :: Yaml.ParseException -> String
 showConfigError ex = unlines
@@ -80,10 +81,3 @@ reflow =
   where
     wrapSettings =
         WrapSettings {preserveIndentation = True, breakLongWords = True}
-
--- wordwrap :: Int -> [String] -> [String]
--- wordwrap n = concatMap go
---   where
---     go :: String -> [String]
---     go [] = []
---     go xs = let (x, rest) = splitAt n xs in x : go rest
