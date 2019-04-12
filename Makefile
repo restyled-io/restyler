@@ -9,6 +9,8 @@ all: setup setup.lint setup.tools build lint test
 .PHONY: setup
 setup:
 	stack setup $(STACK_ARGUMENTS)
+	# Avoid ExitFailure (-9) (THIS MAY INDICATE OUT OF MEMORY)
+	stack build $(STACK_ARGUMENTS) -j 1 Cabal
 	stack build $(STACK_ARGUMENTS) --dependencies-only --test --no-run-tests
 
 .PHONY: setup.lint
