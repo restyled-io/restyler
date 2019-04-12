@@ -25,6 +25,7 @@
   - -XDoAndIfThenElse
   - -XEmptyDataDecls
   - -XExistentialQuantification
+  - -XFlexibleContexts
   - -XFlexibleInstances
   - -XFunctionalDependencies
   - -XGADTs
