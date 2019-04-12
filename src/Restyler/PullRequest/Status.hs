@@ -7,11 +7,11 @@ where
 
 import Restyler.Prelude
 
+import GitHub.Endpoints.Repos.Statuses
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.Statuses
 import Restyler.PullRequest
-import GitHub.Endpoints.Repos.Statuses
 
 data PullRequestStatus
     = NoDifferencesStatus

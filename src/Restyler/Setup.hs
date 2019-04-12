@@ -5,13 +5,13 @@ module Restyler.Setup
 import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
+import GitHub.Endpoints.PullRequests hiding (pullRequest)
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
-import GitHub.Endpoints.PullRequests hiding (pullRequest)
 
 restylerSetup
     :: ( HasCallStack
