@@ -20,25 +20,22 @@ instance Show (DisplayGitHubRequest k a) where
 
 formatRequest :: Request k a -> Text
 formatRequest = \case
-    (Query ps qs) -> mconcat
+    Query ps qs -> mconcat
         [ "[GET] "
         , "/" <> T.intercalate "/" ps
         , "?" <> T.intercalate "&" (queryParts qs)
         ]
-    (PagedQuery ps qs fc) -> mconcat
+    PagedQuery ps qs fc -> mconcat
         [ "[GET] "
         , "/" <> T.intercalate "/" ps
         , "?" <> T.intercalate "&" (queryParts qs)
         , " (" <> pack (show fc) <> ")"
         ]
-    (Command m ps _body) ->
+    Command m ps _body ->
         mconcat
             [ "[" <> T.toUpper (pack $ show m) <> "] "
             , "/" <> T.intercalate "/" ps
             ]
-    -- StatusQuery _ _ -> "<status query>"
-    -- HeaderQuery _ _ -> "<header query>"
-    -- RedirectQuery _ -> "<redirect query>"
 
 queryParts :: QueryString -> [Text]
 queryParts = map $ \(k, mv) -> decodeUtf8 k <> "=" <> maybe "" decodeUtf8 mv

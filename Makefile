@@ -1,8 +1,9 @@
 # This PR has differences such that all Restylers known at the time I made it
 # will run, making it a great test PR.
-INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#6
+INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#10
 INTEGRATION_RESTYLER_IMAGE ?= restyled/restyler
 INTEGRATION_RESTYLER_TAG ?= :latest
+INTEGRATION_RESTYLER_BUILD ?= 1
 
 all: setup setup.lint setup.tools build lint test
 
@@ -41,10 +42,13 @@ test:
 
 .PHONY: test.integration
 test.integration:
-	docker build --tag restyled/restyler .
-	docker run --rm \
+	if [ "$(INTEGRATION_RESTYLER_BUILD)" -eq 1 ]; then \
+	  docker build --tag \
+	    $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) .; \
+	fi
+	docker run -it --rm \
 	  --env DEBUG=1 \
-	  --env GITHUB_ACCESS_TOKEN \
+	  --env GITHUB_ACCESS_TOKEN=$$(./bin/get-access-token) \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) \
