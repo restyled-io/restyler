@@ -18,6 +18,7 @@ default-extensions:
   - DoAndIfThenElse
   - EmptyDataDecls
   - ExistentialQuantification
+  - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
   - GADTs
@@ -43,7 +44,6 @@ default-extensions:
   - ViewPatterns
 
   # Forcing addition of these in-module because of broken tooling
-  # - FlexibleContexts
   # - LambdaCase
 
 ghc-options:

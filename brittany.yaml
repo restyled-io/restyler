@@ -39,6 +39,7 @@ conf_forward:
     - -XDoAndIfThenElse
     - -XEmptyDataDecls
     - -XExistentialQuantification
+    - -XFlexibleContexts
     - -XFlexibleInstances
     - -XFunctionalDependencies
     - -XGADTs

@@ -38,6 +38,7 @@ language_extensions:
   - DoAndIfThenElse
   - EmptyDataDecls
   - ExistentialQuantification
+  - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
   - GADTs
