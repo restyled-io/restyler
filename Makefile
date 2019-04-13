@@ -52,6 +52,7 @@ test.integration:
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) \
+	    --job-url https://example.com \
 	    --color=always "$(INTEGRATION_PULL_REQUEST)"
 
 .PHONY: docs
