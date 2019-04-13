@@ -95,7 +95,11 @@ workflows:
   build_and_release:
     jobs:
       - build
-      - image
+      - image:
+          filters:
+            branches:
+              only:
+                - master
       - release:
           requires:
             - build
