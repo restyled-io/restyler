@@ -4,6 +4,10 @@ module Restyler.App.Error
     ( AppError(..)
     , mapAppError
     , prettyAppError
+
+    -- * Error handling
+    , errorPullRequest
+    , dieAppErrorHandlers
     )
 where
 
@@ -11,7 +15,11 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import GitHub.Data (Error(..))
+import Restyler.App.Class
 import Restyler.Config (configPath)
+import Restyler.Options
+import Restyler.PullRequest.Status
+import System.Exit (die)
 import Text.Wrap
 
 data AppError
@@ -82,3 +90,44 @@ reflow =
   where
     wrapSettings =
         WrapSettings {preserveIndentation = True, breakLongWords = True}
+
+-- | Error the original @'PullRequest'@ and re-throw the exception
+errorPullRequest
+    :: ( HasLogFunc env
+       , HasOptions env
+       , HasConfig env
+       , HasPullRequest env
+       , HasGitHub env
+       )
+    => SomeException
+    -> RIO env ()
+errorPullRequest = exceptExit $ \ex -> do
+    mJobUrl <- oJobUrl <$> view optionsL
+    logInfo $ "Erroring original PR (job-url: " <> displayShow mJobUrl <> ")"
+    traverse_ (sendPullRequestStatus_ . ErrorStatus) mJobUrl
+    throwIO ex
+
+-- | Error handlers for overall execution
+--
+-- Usage:
+--
+-- > {- main routine -} `catches` dieAppErrorHandlers
+--
+-- Ensures __all__ exceptions (besides @'ExitCode'@s) go through:
+--
+-- @
+-- 'die' . 'prettyAppError'
+-- @
+--
+dieAppErrorHandlers :: [Handler IO ()]
+dieAppErrorHandlers =
+    [Handler dieAppError, Handler $ exceptExit $ dieAppError . OtherError]
+
+dieAppError :: AppError -> IO a
+dieAppError = die . prettyAppError
+
+exceptExit :: Applicative f => (SomeException -> f ()) -> SomeException -> f ()
+exceptExit f ex = maybe (f ex) ignore $ fromException ex
+  where
+    ignore :: Applicative f => ExitCode -> f ()
+    ignore _ = pure ()
