@@ -39,7 +39,7 @@ class HasSystem env where
     readFile :: FilePath -> RIO env Text
 
 class HasExit env where
-    exitSuccess :: RIO env ()
+    exitSuccess :: RIO env a
 
 class HasProcess env where
     callProcess :: String -> [String] -> RIO env ()
