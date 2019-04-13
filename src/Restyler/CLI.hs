@@ -28,7 +28,7 @@ handles :: [Handler IO a] -> IO a -> IO a
 handles = flip catches
 
 dieHandlers :: [Handler IO a]
-dieHandlers = [Handler dieAppError] -- , Handler $ dieAppError . OtherError]
+dieHandlers = [Handler dieAppError, Handler $ dieAppError . OtherError]
 
 dieAppError :: AppError -> IO a
 dieAppError = die . prettyAppError

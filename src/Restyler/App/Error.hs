@@ -29,7 +29,7 @@ data AppError
     -- ^ Trouble reading a file or etc
     | HttpError IOException
     -- ^ Trouble performing some HTTP request
-    | OtherError SomeException
+    | OtherError IOException
     -- ^ Escape hatch for anything else
     deriving Show
 
