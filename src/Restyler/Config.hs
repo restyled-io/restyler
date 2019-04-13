@@ -17,6 +17,7 @@ import Data.Aeson.Types (typeMismatch)
 import Data.Bool (bool)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Vector as V
+import GitHub.Data (IssueLabel)
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.RequestReview
 import Restyler.Config.Statuses

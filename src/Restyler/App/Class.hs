@@ -20,6 +20,7 @@ module Restyler.App.Class
 import Restyler.Prelude
 
 import Data.Aeson
+import GitHub.Data.Request
 import Restyler.Config
 import Restyler.Options
 import Restyler.PullRequest

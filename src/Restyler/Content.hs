@@ -8,6 +8,7 @@ where
 
 import Restyler.Prelude
 
+import GitHub.Data (unIssueNumber)
 import Restyler.PullRequest
 import Restyler.Restyler
 import Restyler.RestylerResult

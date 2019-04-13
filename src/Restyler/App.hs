@@ -7,6 +7,7 @@ module Restyler.App
 import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
+import GitHub.Auth
 import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
