@@ -28,7 +28,7 @@ restylerMain
        , HasDownloadFile env
        , HasGitHub env
        )
-    => RIO env ()
+    => RIO env a
 restylerMain = do
     pullRequest <- view pullRequestL
 
@@ -128,7 +128,7 @@ isAutoPush = do
     pullRequest <- view pullRequestL
     pure $ isAuto && not (pullRequestIsFork pullRequest)
 
-exitWithInfo :: (HasLogFunc env, HasExit env) => Utf8Builder -> RIO env ()
+exitWithInfo :: (HasLogFunc env, HasExit env) => Utf8Builder -> RIO env a
 exitWithInfo msg = do
     logInfo msg
     exitSuccess
