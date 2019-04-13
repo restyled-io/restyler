@@ -31,3 +31,6 @@ infixl 4 <$$>
 -- | @'fmap'@ for doubly-wrapped values
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 f <$$> a = fmap f <$> a
+
+handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
+handles = flip catches
