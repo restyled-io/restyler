@@ -20,7 +20,7 @@ restylerCLI = do
 
     handles dieHandlers $ withSystemTempDirectory "restyler-" $ \path -> do
         app <- bootstrapApp options path
-        runRIO app $ restylerMain `catchAny` \ex -> do
+        runRIO app $ restylerMain `catchIO` \ex -> do
             traverse_ (sendPullRequestStatus_ . ErrorStatus) $ oJobUrl options
             throwIO ex
 
