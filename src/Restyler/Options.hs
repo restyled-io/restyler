@@ -10,6 +10,7 @@ where
 import Restyler.Prelude
 
 import qualified Env
+import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
 import Restyler.PullRequestSpec
 import System.Console.ANSI (hSupportsANSI)

@@ -10,6 +10,7 @@ where
 import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
+import GitHub.Data (Error(..))
 import Restyler.Config (configPath)
 import Text.Wrap
 

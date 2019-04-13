@@ -54,6 +54,4 @@ gitDiffNameOnly mRef = do
 gitCommitAll :: HasProcess env => String -> RIO env String
 gitCommitAll msg = do
     callProcess "git" ["commit", "-a", "--message", msg]
-
-    -- TODO: gross
-    unpack . chomp . pack <$> readProcess "git" ["rev-parse", "HEAD"] ""
+    dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
