@@ -68,7 +68,7 @@ restylerMain = do
             pure $ pullRequestHtmlUrl restyledPr
 
     sendPullRequestStatus $ DifferencesStatus restyledUrl
-    logInfo "Restyling successful"
+    exitWithInfo "Restyling successful"
 
 logIntentions
     :: ( HasLogFunc env
