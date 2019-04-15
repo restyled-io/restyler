@@ -1,8 +1,19 @@
 module Main (main) where
 
-import Prelude
+import Restyler.Prelude
 
-import Restyler.CLI (restylerCLI)
+import Restyler.App
+import Restyler.App.Error
+import Restyler.Main
+import Restyler.Options
 
 main :: IO ()
-main = restylerCLI
+main = do
+    hSetBuffering stdout LineBuffering
+    hSetBuffering stderr LineBuffering
+    options <- parseOptions
+    handles dieAppErrorHandlers
+        $ withSystemTempDirectory "restyler-"
+        $ \path -> do
+              app <- bootstrapApp options path
+              runRIO app $ handleAny errorPullRequest restylerMain
