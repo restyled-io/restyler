@@ -85,11 +85,12 @@ showConfigError ex = unlines
     ]
 
 reflow :: String -> String
-reflow =
-    unlines . map ("  " <>) . lines . unpack . wrapText wrapSettings 78 . pack
+reflow = indent . wrap
   where
+    indent = unlines . map ("  " <>) . lines
+    wrap = unpack . wrapText wrapSettings 78 . pack
     wrapSettings =
-        WrapSettings {preserveIndentation = True, breakLongWords = True}
+        WrapSettings {preserveIndentation = True, breakLongWords = False}
 
 -- | Error the original @'PullRequest'@ and re-throw the exception
 errorPullRequest
