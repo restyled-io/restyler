@@ -37,16 +37,11 @@ make test
 End-to-end test that restyles an example Pull Request:
 
 ```console
-make test.integration GITHUB_ACCESS_TOKEN=$(bin/get-access-token)
+make test.integration
 ```
 
-## Release
-
-```console
-make release
-```
-
-Assumes you've already `docker login`-ed to the registry.
+**NOTE**: This only works if you have local keys for our development GitHub App
+(i.e. `bin/get-access-token` works).
 
 ## LICENSE
 
