@@ -17,6 +17,12 @@ import Safe as X (fromJustNote)
 
 import qualified RIO.Text as T
 
+-- | Like @'withReader'@ for @'RIO'@
+withRIO :: (env' -> env) -> RIO env a -> RIO env' a
+withRIO f m = do
+    env <- asks f
+    runRIO env m
+
 -- | Decode known-valid UTF-8
 --
 -- Uses @'lenientDecode'@:

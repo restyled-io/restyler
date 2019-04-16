@@ -154,9 +154,7 @@ appL :: Lens' App StartupApp
 appL = lens appApp $ \x y -> x { appApp = y }
 
 runApp :: RIO StartupApp a -> RIO App a
-runApp f = do
-    app <- asks appApp
-    runRIO app f
+runApp = withRIO appApp
 
 bootstrapApp :: MonadIO m => Options -> FilePath -> m App
 bootstrapApp options path = runRIO app $ toApp <$> restylerSetup
