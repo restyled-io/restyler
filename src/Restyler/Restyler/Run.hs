@@ -62,7 +62,7 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
         | includePath rInclude path = pure True
         | null rInterpreters = pure False
         | otherwise = do
-            contents <- readFile path `catchIO` \_ -> pure ""
+            contents <- readFile path `catchAny` \_ -> pure ""
             pure $ any (contents `hasInterpreter`) rInterpreters
 
 dockerRunRestyler
