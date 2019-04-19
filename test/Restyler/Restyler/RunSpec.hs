@@ -6,6 +6,7 @@ where
 import SpecHelper
 
 import Restyler.App.Class
+import Restyler.App.Error
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
@@ -13,7 +14,8 @@ import Restyler.Restyler.Run
 data TestApp = TestApp
 
 instance HasSystem TestApp where
-    readFile = liftIO . readFileUtf8
+    -- Must throw AppError to match real implementation
+    readFile = handleIO (throwIO . SystemError) . readFileUtf8
 
     -- Not used in this test
     getCurrentDirectory = error "getCurrentDirectory"
