@@ -1,6 +1,10 @@
 module Restyler.Restyler.Run
     ( runRestylers
-    ) where
+
+    -- * Exported for testing only
+    , filterRestylePaths
+    )
+where
 
 import Restyler.Prelude
 
@@ -58,7 +62,7 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
         | includePath rInclude path = pure True
         | null rInterpreters = pure False
         | otherwise = do
-            contents <- readFile path
+            contents <- readFile path `catchIO` \_ -> pure ""
             pure $ any (contents `hasInterpreter`) rInterpreters
 
 dockerRunRestyler
