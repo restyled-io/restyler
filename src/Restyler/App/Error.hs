@@ -19,6 +19,7 @@ import Restyler.App.Class
 import Restyler.Config (configPath)
 import Restyler.Options
 import Restyler.PullRequest.Status
+import Restyler.Restyler (Restyler(..))
 import System.Exit (die)
 import Text.Wrap
 
@@ -29,8 +30,8 @@ data AppError
     -- ^ We couldn't clone or checkout the PR's branch
     | ConfigurationError Yaml.ParseException
     -- ^ We couldn't load a @.restyled.yaml@
-    | DockerError IOException
-    -- ^ Error running a @docker@ operation
+    | RestylerError Restyler IOException
+    -- ^ A Restyler we ran exited non-zero
     | GitHubError Error
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
@@ -53,7 +54,7 @@ prettyAppError = uncurry trouble . \case
         ("fetching your Pull Request from GitHub", showGitHubError e)
     PullRequestCloneError e -> ("cloning your Pull Request branch", show e)
     ConfigurationError ex -> ("with your " <> configPath, showConfigError ex)
-    DockerError e -> ("with a restyler container", show e)
+    RestylerError r e -> ("with the " <> rName r <> " restyler", show e)
     GitHubError e -> ("communicating with GitHub", showGitHubError e)
     SystemError e -> ("running a system command", show e)
     HttpError e -> ("performing an HTTP request", show e)

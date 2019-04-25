@@ -2,6 +2,7 @@ module Restyler.Restyler.Run
     ( runRestylers
 
     -- * Exported for testing only
+    , runRestyler
     , filterRestylePaths
     )
 where
@@ -10,6 +11,7 @@ import Restyler.Prelude
 
 import Data.List (nub)
 import Restyler.App.Class
+import Restyler.App.Error
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Restyler
@@ -67,10 +69,14 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
 
 dockerRunRestyler
     :: (HasSystem env, HasProcess env) => Restyler -> [FilePath] -> RIO env ()
-dockerRunRestyler Restyler {..} paths = do
+dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getCurrentDirectory
-    callProcess "docker"
+    handle toRestylerError
+        $ callProcess "docker"
         $ ["run", "--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]
         <> map ("./" <>) paths
+  where
+    toRestylerError (SystemError ex) = throwIO $ RestylerError r ex
+    toRestylerError ex = throwIO ex
