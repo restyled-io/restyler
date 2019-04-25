@@ -105,7 +105,6 @@ tests:
     dependencies:
       - QuickCheck
       - bytestring
-      - directory
       - github
       - hspec
       - process
