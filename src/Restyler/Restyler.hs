@@ -149,6 +149,7 @@ allRestylers =
         }
     , (baseRestyler "php-cs-fixer")
         { rCommand = ["php-cs-fixer", "fix"]
+        , rImage = "restyled/restyler-php-cs-fixer:1bda900"
         , rInclude = ["**/*.php"]
         , rSupportsMultiplePaths = False
         }
