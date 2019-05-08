@@ -111,6 +111,7 @@ allRestylers =
     [ (baseRestyler "stylish-haskell")
         { rImage = "restyled/restyler-stylish-haskell:c0ba83d"
         , rCommand = ["stylish-haskell", "--inplace"]
+        , rDocumentation = [wiki "/Common-Errors:-Stylish-Haskell"]
         , rInclude = ["**/*.hs"]
         }
     , (baseRestyler "prettier")
@@ -126,6 +127,7 @@ allRestylers =
     , (baseRestyler "brittany")
         { rImage = "restyled/restyler-brittany:749acd1"
         , rCommand = ["brittany", "--write-mode", "inplace"]
+        , rDocumentation = [wiki "/Common-Errors:-Brittany"]
         , rInclude = ["**/*.hs"]
         , rSupportsArgSep = False
         }
@@ -173,6 +175,7 @@ allRestylers =
     , (baseRestyler "rustfmt") { rInclude = ["**/*.rs"] }
     , (baseRestyler "terraform")
         { rCommand = ["terraform", "fmt"]
+        , rDocumentation = [wiki "/Common-Errors:-Rustfmt"]
         , rInclude = ["**/*.tf"]
         , rSupportsMultiplePaths = False
         }
@@ -202,6 +205,7 @@ allRestylers =
         , rSupportsMultiplePaths = False
         }
     ]
+    where wiki = ("https://github.com/restyled-io/restyled.io/wiki" <>)
 
 namedRestyler :: MonadPlus m => Text -> m Restyler
 namedRestyler =
