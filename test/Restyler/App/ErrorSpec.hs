@@ -35,4 +35,5 @@ spec = do
                 , "\n  \"http://example.com/some/ungodly/long/url?with=all&the=stuff#here-too\","
                 , "\n  beContext = [\"Oof\",\"Something\",\"Is\",\"Really bad\"]}"
                 , "\n"
+                , "\n"
                 ]
