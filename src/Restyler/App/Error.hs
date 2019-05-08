@@ -81,6 +81,7 @@ toErrorDocumentation = formatDocs . \case
     ConfigurationError _ ->
         [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
         ]
+    RestylerError r _ -> rDocumentation r
     _ -> []
   where
     formatDocs [] = "\n"
