@@ -28,6 +28,11 @@ data Restyler = Restyler
     -- sub-command or an inplace flag, they should be present here. This is to
     -- avoid users accidentally overriding them out and being confused.
     --
+    , rDocumentation :: [String]
+    -- ^ Documentation URLs for this Restyler, not configurable
+    --
+    -- These are showing if we encounter an error with this Restyler
+    --
     , rArguments :: [String]
     -- ^ Arguments to pass before the paths
     , rInclude :: [Include]
@@ -212,6 +217,7 @@ baseRestyler name = Restyler
     { rName = name
     , rImage = "restyled/restyler-" <> name
     , rCommand = [name]
+    , rDocumentation = []
     , rArguments = []
     , rInclude = ["**/*"]
     , rInterpreters = []

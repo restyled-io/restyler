@@ -65,6 +65,7 @@ someRestyler = Restyler
     { rName = "test-restyler"
     , rImage = "restyled/restyler-test-restyler"
     , rCommand = ["restyle"]
+    , rDocumentation = []
     , rArguments = []
     , rInclude = ["**/*"]
     , rInterpreters = []
