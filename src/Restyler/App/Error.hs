@@ -49,28 +49,43 @@ mapAppError :: (MonadUnliftIO m, Exception e) => (e -> AppError) -> m a -> m a
 mapAppError f = handle $ throwIO . f
 
 prettyAppError :: AppError -> String
-prettyAppError = uncurry trouble . \case
-    PullRequestFetchError e ->
-        ("fetching your Pull Request from GitHub", showGitHubError e)
-    PullRequestCloneError e -> ("cloning your Pull Request branch", show e)
-    ConfigurationError ex -> ("with your " <> configPath, showConfigError ex)
-    RestylerError r e -> ("with the " <> rName r <> " restyler", show e)
-    GitHubError e -> ("communicating with GitHub", showGitHubError e)
-    SystemError e -> ("running a system command", show e)
-    HttpError e -> ("performing an HTTP request", show e)
-    OtherError e -> ("with something unexpected", show e)
+prettyAppError =
+    format <$> toErrorTitle <*> toErrorBody <*> toErrorDocumentation
+    where format title body docs = title <> ":\n\n" <> body <> docs
 
--- |
---
--- @
--- We had trouble {doing a thing}:
---
---   {the full error message...}
---
--- @
---
-trouble :: String -> String -> String
-trouble acting shown = "We had trouble " <> acting <> ":\n\n" <> reflow shown
+toErrorTitle :: AppError -> String
+toErrorTitle = trouble . \case
+    PullRequestFetchError _ -> "fetching your Pull Request from GitHub"
+    PullRequestCloneError _ -> "cloning your Pull Request branch"
+    ConfigurationError _ -> "with your " <> configPath
+    RestylerError r _ -> "with the " <> rName r <> " restyler"
+    GitHubError _ -> "communicating with GitHub"
+    SystemError _ -> "running a system command"
+    HttpError _ -> "performing an HTTP request"
+    OtherError _ -> "with something unexpected"
+    where trouble = ("We had trouble " <>)
+
+toErrorBody :: AppError -> String
+toErrorBody = reflow . \case
+    PullRequestFetchError e -> showGitHubError e
+    PullRequestCloneError e -> show e
+    ConfigurationError e -> Yaml.prettyPrintParseException e
+    RestylerError _ e -> show e
+    GitHubError e -> showGitHubError e
+    SystemError e -> show e
+    HttpError e -> show e
+    OtherError e -> show e
+
+toErrorDocumentation :: AppError -> String
+toErrorDocumentation = formatDocs . \case
+    ConfigurationError _ ->
+        [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
+        ]
+    _ -> []
+  where
+    formatDocs [] = "\n"
+    formatDocs [url] = "\nPlease see " <> url <> "\n"
+    formatDocs urls = unlines $ "\nPlease see" : map ("  - " <>) urls
 
 showGitHubError :: Error -> String
 showGitHubError = \case
@@ -78,12 +93,6 @@ showGitHubError = \case
     ParseError e -> "Unable to parse response: " <> unpack e
     JsonError e -> "Malformed response: " <> unpack e
     UserError e -> "User error: " <> unpack e
-
-showConfigError :: Yaml.ParseException -> String
-showConfigError ex = unlines
-    [ Yaml.prettyPrintParseException ex
-    , "Please see https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
-    ]
 
 reflow :: String -> String
 reflow = indent . wrap
