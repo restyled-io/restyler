@@ -103,13 +103,13 @@ pullRequestHeadSha = pullRequestCommitSha . pullRequestHead
 pullRequestRemoteHeadRef :: PullRequest -> Text
 pullRequestRemoteHeadRef pullRequest@PullRequest {..}
     | pullRequestIsFork pullRequest
-    = "pull/" <> tshow pullRequestNumber <> "/head"
+    = "pull/" <> toPathPart pullRequestNumber <> "/head"
     | otherwise
     = pullRequestCommitRef pullRequestHead
 
 pullRequestLocalHeadRef :: PullRequest -> Text
 pullRequestLocalHeadRef pullRequest@PullRequest {..}
-    | pullRequestIsFork pullRequest = "pull-" <> tshow pullRequestNumber
+    | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestNumber
     | otherwise = pullRequestCommitRef pullRequestHead
 
 pullRequestRestyledBase :: PullRequest -> Text
