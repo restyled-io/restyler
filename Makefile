@@ -22,8 +22,12 @@ setup.lint:
 
 .PHONY: setup.tools
 setup.tools:
+	# TODO: install brittany from functioning resolver and copy
+	# stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
+	#   brittany \
+	#   fast-tags \
+	#   stylish-haskell
 	stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
-	  brittany \
 	  fast-tags \
 	  stylish-haskell
 
