@@ -115,12 +115,21 @@ errorPullRequest
     -> RIO env ()
 errorPullRequest = exceptExit $ \ex -> do
     mJobUrl <- oJobUrl <$> view optionsL
-    logInfo $ "Erroring original PR (job-url: " <> displayShow mJobUrl <> ")"
-    traverse_ (handleAny warn . sendPullRequestStatus_ . ErrorStatus) mJobUrl
+    traverse_ errorPullRequestUrl mJobUrl
     throwIO ex
-  where
-    warn ex =
-        logWarn $ "Caught " <> displayShow ex <> " while erroring PR. Ignoring."
+
+-- | Actually error the @'PullRequest'@, given the job-url to link to
+errorPullRequestUrl
+    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
+    => URL
+    -> RIO env ()
+errorPullRequestUrl url = do
+    logInfo "Erroring original PR"
+    handleAny warnIgnore $ sendPullRequestStatus_ $ ErrorStatus url
+
+-- | Ignore an exception, warning about it.
+warnIgnore :: (Show a, HasLogFunc env) => a -> RIO env ()
+warnIgnore ex = logWarn $ "Caught " <> displayShow ex <> ", ignoring."
 
 -- | Error handlers for overall execution
 --
