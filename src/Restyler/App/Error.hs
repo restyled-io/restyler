@@ -116,8 +116,11 @@ errorPullRequest
 errorPullRequest = exceptExit $ \ex -> do
     mJobUrl <- oJobUrl <$> view optionsL
     logInfo $ "Erroring original PR (job-url: " <> displayShow mJobUrl <> ")"
-    traverse_ (sendPullRequestStatus_ . ErrorStatus) mJobUrl
+    traverse_ (handleAny warn . sendPullRequestStatus_ . ErrorStatus) mJobUrl
     throwIO ex
+  where
+    warn ex =
+        logWarn $ "Caught " <> displayShow ex <> " while erroring PR. Ignoring."
 
 -- | Error handlers for overall execution
 --
