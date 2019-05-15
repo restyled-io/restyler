@@ -44,6 +44,10 @@ lint:
 test:
 	stack build $(STACK_ARGUMENTS) --test
 
+.PHONY: watch
+watch:
+	stack build $(STACK_ARGUMENTS) --fast --pedantic --test --file-watch
+
 .PHONY: test.integration
 test.integration:
 	if [ "$(INTEGRATION_RESTYLER_BUILD)" -eq 1 ]; then \
