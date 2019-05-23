@@ -194,6 +194,7 @@ allRestylers =
         { rImage = "restyled/restyler-hlint:efbd99c"
         , rCommand = ["hlint", "lint", "--refactor", "--refactor-options=-i"]
         , rInclude = ["**/*.hs"]
+        , rDocumentation = [wiki "/Common-Errors:-HLint"]
         , rSupportsMultiplePaths = False
         , rSupportsArgSep = False
         }
