@@ -97,6 +97,18 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - restyler
+  restyle-path:
+    main: main.hs
+    source-dirs: restyle-path
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - restyler
+      - rio
+      - unliftio
 
 tests:
   test:
