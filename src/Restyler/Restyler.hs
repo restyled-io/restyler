@@ -125,7 +125,7 @@ allRestylers =
         , rSupportsMultiplePaths = False
         }
     , (baseRestyler "brittany")
-        { rImage = "restyled/restyler-brittany:749acd1"
+        { rImage = "restyled/restyler-brittany:caa75f3"
         , rCommand = ["brittany", "--write-mode", "inplace"]
         , rDocumentation = [wiki "/Common-Errors:-Brittany"]
         , rInclude = ["**/*.hs"]
