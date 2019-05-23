@@ -2,7 +2,6 @@
 
 module Restyler.Logger
     ( restylerLogFunc
-    , restylerLogFunc'
     )
 where
 
@@ -15,16 +14,12 @@ import Restyler.Options
 import System.Console.ANSI
 
 restylerLogFunc :: Options -> LogFunc
-restylerLogFunc Options {..} = restylerLogFunc' oLogLevel oLogColor
-
--- | @'restylerLogFunc'@, but not dependent on a full @'Options'@ value
-restylerLogFunc' :: LogLevel -> Bool -> LogFunc
-restylerLogFunc' logLevel logColor = mkLogFunc $ \_cs _source level msg ->
-    when (level >= logLevel) $ do
+restylerLogFunc Options {..} = mkLogFunc $ \_cs _source level msg ->
+    when (level >= oLogLevel) $ do
         BS8.putStr "["
-        when logColor $ setSGR [levelStyle level]
+        when oLogColor $ setSGR [levelStyle level]
         BS8.putStr $ levelStr level
-        when logColor $ setSGR [Reset]
+        when oLogColor $ setSGR [Reset]
         BS8.putStr "] "
         BS8.putStrLn $ toStrictBytes $ toLazyByteString $ getUtf8Builder msg
 
