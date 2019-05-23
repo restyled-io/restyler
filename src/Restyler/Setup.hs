@@ -1,6 +1,8 @@
 module Restyler.Setup
     ( restylerSetup
-    ) where
+    , loadConfig
+    )
+where
 
 import Restyler.Prelude
 
@@ -39,12 +41,16 @@ restylerSetup = do
 
     setupClone pullRequest
 
-    configExists <- doesFileExist configPath
-    config <- if configExists
-        then decodeConfig =<< readFile configPath
-        else pure defaultConfig
+    config <- loadConfig
 
     pure (pullRequest, mRestyledPullRequest, config)
+
+loadConfig :: HasSystem env => RIO env Config
+loadConfig = do
+    configExists <- doesFileExist configPath
+    if configExists
+        then decodeConfig =<< readFile configPath
+        else pure defaultConfig
 
 setupClone
     :: ( HasCallStack
