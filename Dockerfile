@@ -14,6 +14,7 @@ COPY package.yaml /src/
 RUN stack install --dependencies-only
 
 COPY app /src/app
+COPY restyle-path /src/restyle-path
 COPY src /src/src
 COPY LICENSE /src/
 RUN stack install
@@ -33,6 +34,7 @@ RUN \
   rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /root/.local/bin/restyler /bin/restyler
+COPY --from=builder /root/.local/bin/restyle-path /bin/restyle-path
 
 # Install docker
 ENV DOCKER_ARCHIVE docker-17.03.1-ce.tgz
