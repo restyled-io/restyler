@@ -34,7 +34,7 @@ restylerSetup = do
             oPullRequest
 
     mRestyledPullRequest <-
-        (`catchAny` const (pure Nothing))
+        handleAny (const $ pure Nothing)
         $ runGitHubFirst
         $ pullRequestsForR oOwner oRepo
         $ pullRequestRestyledMod pullRequest
