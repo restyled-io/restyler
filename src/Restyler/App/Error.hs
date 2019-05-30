@@ -8,6 +8,9 @@ module Restyler.App.Error
     -- * Error handling
     , errorPullRequest
     , dieAppErrorHandlers
+
+    -- * Lower-level helpers
+    , warnIgnore
     )
 where
 

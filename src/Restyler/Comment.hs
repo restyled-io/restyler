@@ -10,6 +10,7 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
 import Restyler.App.Class
+import Restyler.App.Error (warnIgnore)
 import qualified Restyler.Content as Content
 import Restyler.PullRequest
 
@@ -47,7 +48,12 @@ clearRestyledComments = do
             <> " by "
             <> displayShow (commentUserName comment)
 
-        runGitHub_ $ deleteCommentR
+        -- FIXME: I think deleteCommentR is broken. GitHub's Request fixes
+        -- MtJSON, which is not MtUnit, and so we are expecting to parse a JSON
+        -- response here, but GitHub is (rightfully) returning 204 No Content
+        -- and failing to parse. I need to reproduce this minimally and report
+        -- it, for now we just make comment-deletion best-effort.
+        handleAny warnIgnore $ runGitHub_ $ deleteCommentR
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkId Proxy $ issueCommentId comment)
