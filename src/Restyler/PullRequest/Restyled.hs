@@ -43,6 +43,7 @@ createRestyledPullRequest results = do
     let restyledTitle = "Restyle " <> pullRequestTitle pullRequest
         restyledBody = Content.pullRequestDescription pullRequest results
 
+    logInfo "Creating Restyled PR"
     pr <- runGitHub $ createPullRequestR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
@@ -53,19 +54,23 @@ createRestyledPullRequest results = do
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
 
-    whenConfigNonEmpty cLabels $ runGitHub_ . addLabelsToIssueR
-        (pullRequestOwnerName pr)
-        (pullRequestRepoName pr)
-        (pullRequestIssueId pr)
+    whenConfigNonEmpty cLabels $ \labels -> do
+        logInfo $ "Adding labels to Restyled PR (" <> displayShow labels <> ")"
+        runGitHub_ $ addLabelsToIssueR
+            (pullRequestOwnerName pr)
+            (pullRequestRepoName pr)
+            (pullRequestIssueId pr)
+            labels
 
-    whenConfigJust cRequestReview
-        $ runGitHub_
-        . createReviewRequestR
-              (pullRequestOwnerName pr)
-              (pullRequestRepoName pr)
-              (pullRequestNumber pr)
-        . requestOneReviewer
-        . flip determineReviewer pullRequest
+    whenConfigJust cRequestReview $ \req -> do
+        logInfo $ "Requesting review of Restyled PR (" <> displayShow req <> ")"
+        runGitHub_
+            $ createReviewRequestR
+                  (pullRequestOwnerName pr)
+                  (pullRequestRepoName pr)
+                  (pullRequestNumber pr)
+            $ requestOneReviewer
+            $ determineReviewer req pullRequest
 
     pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
 

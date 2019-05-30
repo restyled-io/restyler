@@ -41,7 +41,7 @@ clearRestyledComments = do
         FetchAll
 
     for_ (V.filter isRestyledComment comments) $ \comment -> do
-        logDebug
+        logInfo
             $ "Deleting comment "
             <> displayShow (issueCommentId comment)
             <> " by "

@@ -22,7 +22,7 @@ data PullRequestStatus
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus
-    :: (HasConfig env, HasPullRequest env, HasGitHub env)
+    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
     => PullRequestStatus
     -> RIO env ()
 sendPullRequestStatus status =
@@ -31,13 +31,22 @@ sendPullRequestStatus status =
         createHeadShaStatus pullRequest status
 
 createHeadShaStatus
-    :: HasGitHub env => PullRequest -> PullRequestStatus -> RIO env ()
-createHeadShaStatus pullRequest =
-    runGitHub_ . createStatusR owner name sha . statusToStatus
+    :: (HasLogFunc env, HasGitHub env)
+    => PullRequest
+    -> PullRequestStatus
+    -> RIO env ()
+createHeadShaStatus pullRequest status = do
+    logInfo $ "Setting status of " <> shortStatus <> " for " <> shortSha
+    runGitHub_ $ createStatusR owner name sha $ statusToStatus status
   where
     owner = pullRequestOwnerName pullRequest
     name = pullRequestRepoName pullRequest
     sha = mkName Proxy $ pullRequestHeadSha pullRequest
+    shortSha = fromString $ take 7 $ unpack $ pullRequestHeadSha pullRequest
+    shortStatus = case status of
+        NoDifferencesStatus -> "no differences"
+        DifferencesStatus _ -> "differences"
+        ErrorStatus _ -> "error"
 
 shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
 shouldSendStatus Statuses {..} NoDifferencesStatus = sNoDifferences
