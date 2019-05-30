@@ -72,7 +72,7 @@ toErrorBody = reflow . \case
     PullRequestCloneError e -> show e
     ConfigurationError e -> Yaml.prettyPrintParseException e
     RestylerError _ e -> show e
-    GitHubError _req e -> showGitHubError e
+    GitHubError req e -> "Request: " <> show req <> "\n" <> showGitHubError e
     SystemError e -> show e
     HttpError e -> show e
     OtherError e -> show e
