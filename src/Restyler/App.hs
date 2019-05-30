@@ -78,22 +78,15 @@ instance HasProcess StartupApp where
 
 instance HasGitHub StartupApp where
     runGitHub req = do
-        logDebug $ "GitHub request: " <> displayShow (DisplayGitHubRequest req)
+        logDebug $ "GitHub request: " <> displayShow (displayGitHubRequest req)
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
-        untryAppIO GitHubError $ do
+        result <- liftIO $ do
             mgr <- getGlobalManager
             executeRequestWithMgr mgr auth req
+        either (throwIO . GitHubError (displayGitHubRequest req)) pure result
 
 appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
 appIO f = mapAppError f . liftIO
-
--- | Take an @'IO' 'Either'@ and wrap-throw @'Left'@s
---
--- So-named because it effectively undoes a @'tryIO'@, in addition to handling
--- the @'AppError'@ wrapping for you (like @'appIO'@).
---
-untryAppIO :: MonadUnliftIO m => (e -> AppError) -> IO (Either e a) -> m a
-untryAppIO f = either (throwIO . f) pure <=< liftIO
 
 -- | Fully booted application environment
 data App = App

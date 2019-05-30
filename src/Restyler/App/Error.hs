@@ -15,6 +15,7 @@ import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
 import GitHub.Data (Error(..))
+import GitHub.Request.Display
 import Restyler.App.Class
 import Restyler.Config (configPath)
 import Restyler.Options
@@ -32,7 +33,7 @@ data AppError
     -- ^ We couldn't load a @.restyled.yaml@
     | RestylerError Restyler IOException
     -- ^ A Restyler we ran exited non-zero
-    | GitHubError Error
+    | GitHubError DisplayGitHubRequest Error
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
     -- ^ Trouble reading a file or etc
@@ -59,7 +60,7 @@ toErrorTitle = trouble . \case
     PullRequestCloneError _ -> "cloning your Pull Request branch"
     ConfigurationError _ -> "with your " <> configPath
     RestylerError r _ -> "with the " <> rName r <> " restyler"
-    GitHubError _ -> "communicating with GitHub"
+    GitHubError _ _ -> "communicating with GitHub"
     SystemError _ -> "running a system command"
     HttpError _ -> "performing an HTTP request"
     OtherError _ -> "with something unexpected"
@@ -71,7 +72,7 @@ toErrorBody = reflow . \case
     PullRequestCloneError e -> show e
     ConfigurationError e -> Yaml.prettyPrintParseException e
     RestylerError _ e -> show e
-    GitHubError e -> showGitHubError e
+    GitHubError _req e -> showGitHubError e
     SystemError e -> show e
     HttpError e -> show e
     OtherError e -> show e

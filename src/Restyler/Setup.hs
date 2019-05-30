@@ -84,7 +84,7 @@ decodeConfig =
     either (throwIO . ConfigurationError) pure . Yaml.decodeEither' . encodeUtf8
 
 toPullRequestFetchError :: AppError -> AppError
-toPullRequestFetchError (GitHubError e) = PullRequestFetchError e
+toPullRequestFetchError (GitHubError _ e) = PullRequestFetchError e
 toPullRequestFetchError e = e
 
 toPullRequestCloneError :: AppError -> AppError

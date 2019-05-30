@@ -1,7 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 
 module GitHub.Request.Display
-    ( DisplayGitHubRequest(..)
+    ( DisplayGitHubRequest
+    , displayGitHubRequest
     )
 where
 
@@ -12,14 +13,15 @@ import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import GitHub.Request
 
-newtype DisplayGitHubRequest k a
-    = DisplayGitHubRequest (Request k a)
+newtype DisplayGitHubRequest = DisplayGitHubRequest
+    { unDisplayGitHubRequest :: Text
+    }
 
-instance Show (DisplayGitHubRequest k a) where
-    show (DisplayGitHubRequest req) = unpack $ formatRequest req
+instance Show DisplayGitHubRequest where
+    show = unpack . unDisplayGitHubRequest
 
-formatRequest :: Request k a -> Text
-formatRequest = \case
+displayGitHubRequest :: Request k a -> DisplayGitHubRequest
+displayGitHubRequest = DisplayGitHubRequest . \case
     Query ps qs -> mconcat
         [ "[GET] "
         , "/" <> T.intercalate "/" ps
