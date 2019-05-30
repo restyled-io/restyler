@@ -125,8 +125,8 @@ errorPullRequestUrl
     => URL
     -> RIO env ()
 errorPullRequestUrl url = do
-    logInfo "Erroring original PR"
     handleAny warnIgnore $ sendPullRequestStatus $ ErrorStatus url
+    logInfo "Errored original PR"
 
 -- | Ignore an exception, warning about it.
 warnIgnore :: (Show a, HasLogFunc env) => a -> RIO env ()
