@@ -76,6 +76,11 @@ instance HasProcess StartupApp where
         output <- appIO SystemError $ Process.readProcess cmd args stdin'
         output <$ logDebug ("output: " <> fromString output)
 
+instance HasExit StartupApp where
+    exitSuccess = do
+        logDebug "exitSuccess"
+        appIO SystemError Exit.exitSuccess
+
 instance HasGitHub StartupApp where
     runGitHub req = do
         logDebug $ "GitHub request: " <> displayShow (displayGitHubRequest req)
@@ -125,9 +130,7 @@ instance HasSystem App where
     readFile = runApp . readFile
 
 instance HasExit App where
-    exitSuccess = do
-        logDebug "exitSuccess"
-        appIO SystemError Exit.exitSuccess
+    exitSuccess = runApp exitSuccess
 
 instance HasProcess App where
     callProcess cmd = runApp . callProcess cmd

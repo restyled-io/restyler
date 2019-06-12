@@ -2,6 +2,7 @@ module Restyler.PullRequest.Restyled
     ( createRestyledPullRequest
     , updateRestyledPullRequest
     , closeRestyledPullRequest
+    , closeRestyledPullRequest'
     , updateOriginalPullRequest
     )
 where
@@ -95,6 +96,15 @@ closeRestyledPullRequest = do
     pullRequest <- view pullRequestL
     mRestyledPr <- view restyledPullRequestL
 
+    closeRestyledPullRequest' pullRequest mRestyledPr
+
+-- | Extracted for use during Setup (e.g. without @'HasPullRequest'@)
+closeRestyledPullRequest'
+    :: (HasLogFunc env, HasProcess env, HasGitHub env)
+    => PullRequest
+    -> Maybe SimplePullRequest
+    -> RIO env ()
+closeRestyledPullRequest' pullRequest mRestyledPr =
     for_ mRestyledPr $ \restyledPr -> do
         let
             spec = PullRequestSpec

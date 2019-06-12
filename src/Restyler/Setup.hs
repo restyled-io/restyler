@@ -14,12 +14,15 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
+import Restyler.PullRequest.Restyled
 
 restylerSetup
     :: ( HasCallStack
+       , HasLogFunc env
        , HasOptions env
        , HasWorkingDirectory env
        , HasSystem env
+       , HasExit env
        , HasProcess env
        , HasGitHub env
        )
@@ -38,6 +41,10 @@ restylerSetup = do
         $ runGitHubFirst
         $ pullRequestsForR oOwner oRepo
         $ pullRequestRestyledMod pullRequest
+
+    when (pullRequestIsClosed pullRequest) $ do
+        closeRestyledPullRequest' pullRequest mRestyledPullRequest
+        exitWithInfo "Source Pull Request is closed"
 
     setupClone pullRequest
 

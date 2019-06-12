@@ -32,13 +32,8 @@ restylerMain
 restylerMain = do
     pullRequest <- view pullRequestL
 
-    when (pullRequestIsClosed pullRequest) $ do
-        closeRestyledPullRequest
-        exitWithInfo "Source Pull Request is closed"
-
     whenConfig (not . cEnabled) $ exitWithInfo "Restyler disabled by config"
     logIntentions
-
     whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
 
     unlessM isAutoPush $ gitCheckout $ unpack $ pullRequestRestyledRef
@@ -127,8 +122,3 @@ isAutoPush = do
     isAuto <- cAuto <$> view configL
     pullRequest <- view pullRequestL
     pure $ isAuto && not (pullRequestIsFork pullRequest)
-
-exitWithInfo :: (HasLogFunc env, HasExit env) => Utf8Builder -> RIO env a
-exitWithInfo msg = do
-    logInfo msg
-    exitSuccess
