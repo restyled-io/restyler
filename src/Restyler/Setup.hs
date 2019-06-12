@@ -49,6 +49,7 @@ restylerSetup = do
     setupClone pullRequest
 
     config <- loadConfig
+    unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
     pure (pullRequest, mRestyledPullRequest, config)
 
