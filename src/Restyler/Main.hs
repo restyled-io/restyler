@@ -32,7 +32,6 @@ restylerMain
 restylerMain = do
     pullRequest <- view pullRequestL
 
-    whenConfig (not . cEnabled) $ exitWithInfo "Restyler disabled by config"
     logIntentions
     whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
 
