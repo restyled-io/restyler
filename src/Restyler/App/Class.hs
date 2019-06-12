@@ -10,6 +10,7 @@ module Restyler.App.Class
     -- * Capabilities
     , HasSystem(..)
     , HasExit(..)
+    , exitWithInfo
     , HasProcess(..)
     , HasDownloadFile(..)
     , HasGitHub(..)
@@ -40,6 +41,11 @@ class HasSystem env where
 
 class HasExit env where
     exitSuccess :: RIO env a
+
+exitWithInfo :: (HasLogFunc env, HasExit env) => Utf8Builder -> RIO env a
+exitWithInfo msg = do
+    logInfo msg
+    exitSuccess
 
 class HasProcess env where
     callProcess :: String -> [String] -> RIO env ()
