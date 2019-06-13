@@ -108,6 +108,7 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
         (unpack $ pullRequestLocalHeadRef pullRequest)
 
     gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
+    gitCheckout $ unpack $ pullRequestRestyledRef pullRequest
 
 decodeConfig :: MonadUnliftIO m => Text -> m Config
 decodeConfig =

@@ -28,12 +28,7 @@ restylerMain
        )
     => RIO env a
 restylerMain = do
-    pullRequest <- view pullRequestL
-
     whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
-
-    unlessM isAutoPush $ gitCheckout $ unpack $ pullRequestRestyledRef
-        pullRequest
 
     results <- restyle
     logDebug $ "Restyling results: " <> displayShow results
@@ -45,8 +40,12 @@ restylerMain = do
         exitWithInfo "No style differences found"
 
     whenM isAutoPush $ do
+        logInfo "Pushing Restyle commits to original PR"
+        pullRequest <- view pullRequestL
+        gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
+        gitMerge $ unpack $ pullRequestRestyledRef pullRequest
         gitPush $ unpack $ pullRequestHeadRef pullRequest
-        exitWithInfo "Pushed to original PR"
+        exitWithInfo "Pushed Restyle commits to original PR"
 
     mRestyledPullRequest <- view restyledPullRequestL
     restyledUrl <- case mRestyledPullRequest of
