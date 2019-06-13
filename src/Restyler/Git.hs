@@ -9,6 +9,7 @@ module Restyler.Git
     , gitMergeBase
     , gitDiffNameOnly
     , gitCommitAll
+    , gitMerge
     )
 where
 
@@ -55,3 +56,6 @@ gitCommitAll :: HasProcess env => String -> RIO env String
 gitCommitAll msg = do
     callProcess "git" ["commit", "-a", "--message", msg]
     dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
+
+gitMerge :: HasProcess env => String -> RIO env ()
+gitMerge branch = callProcess "git" ["merge", "--ff-only", branch]
