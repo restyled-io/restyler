@@ -17,6 +17,7 @@ import Restyler.Config
 import Restyler.Config.RequestReview
 import qualified Restyler.Content as Content
 import Restyler.Git
+import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
 import Restyler.RestylerResult
@@ -25,6 +26,7 @@ import Restyler.RestylerResult
 createRestyledPullRequest
     :: ( HasCallStack
        , HasLogFunc env
+       , HasOptions env
        , HasConfig env
        , HasPullRequest env
        , HasProcess env
@@ -33,6 +35,7 @@ createRestyledPullRequest
     => [RestylerResult]
     -> RIO env PullRequest
 createRestyledPullRequest results = do
+    mJobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
 
     -- N.B. we always force-push. There are various edge-cases that could mean
@@ -42,7 +45,8 @@ createRestyledPullRequest results = do
     gitPushForce . unpack $ pullRequestRestyledRef pullRequest
 
     let restyledTitle = "Restyle " <> pullRequestTitle pullRequest
-        restyledBody = Content.pullRequestDescription pullRequest results
+        restyledBody =
+            Content.pullRequestDescription mJobUrl pullRequest results
 
     logInfo "Creating Restyled PR"
     pr <- runGitHub $ createPullRequestR

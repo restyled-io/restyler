@@ -35,10 +35,11 @@ Please see that Pull Request's description for more details.
 -- brittany-disable-next-binding
 
 pullRequestDescription
-    :: PullRequest -- ^ Original PR
+    :: Maybe URL -- ^ Job URL, if we have it
+    -> PullRequest -- ^ Original PR
     -> [RestylerResult]
     -> Text
-pullRequestDescription pullRequest results
+pullRequestDescription mJobUrl pullRequest results
     | pullRequestIsFork pullRequest = [st|
 A duplicate of ##{n} with additional commits that automatically address
 incorrect style, created by [Restyled][].
@@ -47,7 +48,7 @@ Since the original Pull Request was opened as a fork in a contributor's
 repository, we are unable to create a Pull Request branching from it with only
 the style fixes.
 
-The following Restylers made fixes:
+The following Restylers #{madeFixes}:
 
 #{resultsList}
 
@@ -75,7 +76,7 @@ To incorporate these changes, you can either:
     | otherwise = [st|
 Automated style fixes for ##{n}, created by [Restyled][].
 
-The following restylers made fixes:
+The following restylers #{madeFixes}:
 
 #{resultsList}
 
@@ -88,6 +89,11 @@ recommend using the Squash or Rebase strategies.
     -- This variable is just so that we can wrap our content above such that
     -- when the link is rendered at ~3 digits, it looks OK.
     n = unIssueNumber $ pullRequestNumber pullRequest
+
+    -- Link the "made fixes" line to the Job log, if we can
+    madeFixes = case mJobUrl of
+        Nothing -> "made fixes"
+        Just jobUrl -> "[made fixes](" <> getUrl jobUrl <> ")"
 
     -- N.B. Assumes something committed changes, otherwise we'd not be opening
     -- this PR at all

@@ -18,6 +18,7 @@ import Restyler.RestylerResult
 
 restylerMain
     :: ( HasLogFunc env
+       , HasOptions env
        , HasConfig env
        , HasPullRequest env
        , HasRestyledPullRequest env
