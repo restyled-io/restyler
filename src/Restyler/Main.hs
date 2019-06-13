@@ -5,6 +5,7 @@ module Restyler.Main
 import Restyler.Prelude
 
 import Restyler.App.Class
+import Restyler.App.Error
 import Restyler.Comment
 import Restyler.Config
 import Restyler.Git
@@ -44,8 +45,13 @@ restylerMain = do
         pullRequest <- view pullRequestL
         gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
         gitMerge $ unpack $ pullRequestRestyledRef pullRequest
-        gitPush $ unpack $ pullRequestHeadRef pullRequest
-        exitWithInfo "Pushed Restyle commits to original PR"
+
+        handleAny warnIgnore $ do
+            -- This will fail if other changes came in while we were restyling,
+            -- but it also means that we should be working on a Job for those
+            -- changes already
+            gitPush $ unpack $ pullRequestHeadRef pullRequest
+            exitWithInfo "Pushed Restyle commits to original PR"
 
     mRestyledPullRequest <- view restyledPullRequestL
     restyledUrl <- case mRestyledPullRequest of
