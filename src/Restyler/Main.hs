@@ -4,7 +4,6 @@ module Restyler.Main
 
 import Restyler.Prelude
 
-import qualified Data.Yaml as Yaml
 import Restyler.App.Class
 import Restyler.Comment
 import Restyler.Config
@@ -12,7 +11,6 @@ import Restyler.Git
 import Restyler.PullRequest
 import Restyler.PullRequest.Restyled
 import Restyler.PullRequest.Status
-import Restyler.PullRequestSpec
 import Restyler.RemoteFile
 import Restyler.Restyler.Run
 import Restyler.RestylerResult
@@ -32,7 +30,6 @@ restylerMain
 restylerMain = do
     pullRequest <- view pullRequestL
 
-    logIntentions
     whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
 
     unlessM isAutoPush $ gitCheckout $ unpack $ pullRequestRestyledRef
@@ -63,33 +60,6 @@ restylerMain = do
 
     sendPullRequestStatus $ DifferencesStatus restyledUrl
     exitWithInfo "Restyling successful"
-
-logIntentions
-    :: ( HasLogFunc env
-       , HasConfig env
-       , HasPullRequest env
-       , HasRestyledPullRequest env
-       )
-    => RIO env ()
-logIntentions = do
-    config <- view configL
-    pullRequest <- view pullRequestL
-    mRestyledPullRequest <- view restyledPullRequestL
-    logInfo $ "Restyling " <> displayShow (pullRequestSpec pullRequest)
-    logDebug $ fromString $ unpack $ "Resolved configuration\n" <> decodeUtf8
-        (Yaml.encode config)
-    logRestyledPullRequest pullRequest mRestyledPullRequest
-  where
-    logRestyledPullRequest _ Nothing = logInfo "Restyled PR does not exist"
-    logRestyledPullRequest pr (Just restyledPr) = do
-        let
-            -- Use the main PR's owner/repo because a SimplePullRequest doesn't
-            -- have that information; it will always be the same.
-            spec = displayShow (pullRequestSpec pr)
-                { prsPullRequest = simplePullRequestNumber restyledPr
-                }
-
-        logInfo $ "Restyled PR exists (" <> spec <> ")"
 
 downloadRemoteFile
     :: (HasLogFunc env, HasDownloadFile env) => RemoteFile -> RIO env ()
