@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Restyler.Setup
     ( restylerSetup
     , loadConfig
@@ -15,6 +17,7 @@ import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Restyled
+import Restyler.PullRequestSpec
 
 restylerSetup
     :: ( HasCallStack
@@ -51,6 +54,10 @@ restylerSetup = do
     config <- loadConfig
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
+    logInfo $ "Restyling " <> displayShow (pullRequestSpec pullRequest)
+    logInfo $ displayRestyled pullRequest mRestyledPullRequest
+    logDebug $ displayConfig config
+
     pure (pullRequest, mRestyledPullRequest, config)
 
 loadConfig :: HasSystem env => RIO env Config
@@ -59,6 +66,21 @@ loadConfig = do
     if configExists
         then decodeConfig =<< readFile configPath
         else pure defaultConfig
+
+displayConfig :: Config -> Utf8Builder
+displayConfig =
+    fromString
+        . unpack
+        . ("Resolved configuration\n" <>)
+        . decodeUtf8
+        . Yaml.encode
+
+displayRestyled :: PullRequest -> Maybe SimplePullRequest -> Utf8Builder
+displayRestyled pr = \case
+    Nothing -> "Restyled PR does not exist"
+    Just rpr -> "Restyled PR is " <> displayShow (pullRequestSpec pr)
+        { prsPullRequest = simplePullRequestNumber rpr
+        }
 
 setupClone
     :: ( HasCallStack
