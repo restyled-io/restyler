@@ -25,6 +25,7 @@ restylerMain
        , HasSystem env
        , HasExit env
        , HasProcess env
+       , HasGit env
        , HasDownloadFile env
        , HasGitHub env
        )
@@ -79,6 +80,7 @@ restyle
        , HasPullRequest env
        , HasSystem env
        , HasProcess env
+       , HasGit env
        )
     => RIO env [RestylerResult]
 restyle = do
@@ -87,7 +89,7 @@ restyle = do
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
     runRestylers restylers pullRequestPaths
 
-changedPaths :: HasProcess env => Text -> RIO env [FilePath]
+changedPaths :: HasGit env => Text -> RIO env [FilePath]
 changedPaths branch = do
     ref <- maybe branch pack <$> gitMergeBase (unpack branch)
     gitDiffNameOnly $ Just $ unpack ref

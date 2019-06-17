@@ -1,15 +1,14 @@
 module Restyler.Git
-    ( gitClone
+    (
+    -- * Class of actions that require the Clone
+      HasGit(..)
+
+    -- * Functions needed to establish a Clone
+    -- | Therefore, they only require @'HasProcess'@
+    , gitClone
+    , gitFetch
     , gitCheckout
     , gitCheckoutExisting
-    , gitFetch
-    , gitPush
-    , gitPushForce
-    , gitPushDelete
-    , gitMergeBase
-    , gitDiffNameOnly
-    , gitCommitAll
-    , gitMerge
     )
 where
 
@@ -17,8 +16,21 @@ import Restyler.Prelude
 
 import Restyler.App.Class
 
+class HasGit env where
+    gitPush :: String -> RIO env ()
+    gitPushForce :: String -> RIO env ()
+    gitPushDelete :: String -> RIO env ()
+    gitMergeBase :: String -> RIO env (Maybe String)
+    gitDiffNameOnly :: Maybe String -> RIO env [FilePath]
+    gitCommitAll :: String -> RIO env String
+    gitMerge :: String -> RIO env ()
+
 gitClone :: HasProcess env => String -> FilePath -> RIO env ()
 gitClone url dir = callProcess "git" ["clone", "--quiet", url, dir]
+
+gitFetch :: HasProcess env => String -> String -> RIO env ()
+gitFetch remoteRef localRef =
+    callProcess "git" ["fetch", "origin", remoteRef <> ":" <> localRef]
 
 gitCheckout :: HasProcess env => String -> RIO env ()
 gitCheckout branch =
@@ -27,35 +39,3 @@ gitCheckout branch =
 gitCheckoutExisting :: HasProcess env => String -> RIO env ()
 gitCheckoutExisting branch =
     callProcess "git" ["checkout", "--no-progress", branch]
-
-gitFetch :: HasProcess env => String -> String -> RIO env ()
-gitFetch remoteRef localRef =
-    callProcess "git" ["fetch", "origin", remoteRef <> ":" <> localRef]
-
-gitPush :: HasProcess env => String -> RIO env ()
-gitPush branch = callProcess "git" ["push", "origin", branch]
-
-gitPushForce :: HasProcess env => String -> RIO env ()
-gitPushForce branch =
-    callProcess "git" ["push", "--force-with-lease", "origin", branch]
-
-gitPushDelete :: HasProcess env => String -> RIO env ()
-gitPushDelete branch = callProcess "git" ["push", "origin", "--delete", branch]
-
-gitMergeBase :: HasProcess env => String -> RIO env (Maybe String)
-gitMergeBase branch = do
-    output <- readProcess "git" ["merge-base", branch, "HEAD"] ""
-    pure $ listToMaybe $ lines output
-
-gitDiffNameOnly :: HasProcess env => Maybe String -> RIO env [FilePath]
-gitDiffNameOnly mRef = do
-    let args = ["diff", "--name-only"] <> maybeToList mRef
-    lines <$> readProcess "git" args ""
-
-gitCommitAll :: HasProcess env => String -> RIO env String
-gitCommitAll msg = do
-    callProcess "git" ["commit", "-a", "--message", msg]
-    dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
-
-gitMerge :: HasProcess env => String -> RIO env ()
-gitMerge branch = callProcess "git" ["merge", "--ff-only", branch]
