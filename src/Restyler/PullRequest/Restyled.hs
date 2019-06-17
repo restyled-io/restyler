@@ -9,6 +9,7 @@ where
 
 import Restyler.Prelude
 
+import GitHub.Endpoints.GitData.References.Delete
 import GitHub.Endpoints.Issues.Labels
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
 import GitHub.Endpoints.PullRequests.ReviewRequests
@@ -129,10 +130,12 @@ closeRestyledPullRequest' pullRequest mRestyledPr =
                 , editPullRequestMaintainerCanModify = Nothing
                 }
 
-        -- FIXME: called not from in a Git repo!
-        -- let branch = pullRequestRestyledRef pullRequest
-        -- logInfo $ "Deleting restyled branch: " <> displayShow branch
-        -- gitPushDelete $ unpack branch
+        let branch = pullRequestRestyledRef pullRequest
+        logInfo $ "Deleting restyled branch: " <> displayShow branch
+        runGitHub_ $ deleteReferenceR
+            (pullRequestOwnerName pullRequest)
+            (pullRequestRepoName pullRequest)
+            (mkName Proxy $ "heads/" <> branch)
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: (HasPullRequest env, HasGit env) => RIO env ()
