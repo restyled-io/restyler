@@ -20,8 +20,8 @@ module Restyler.App.Class
 
 import Restyler.Prelude
 
-import Data.Aeson
 import GitHub.Data.Request
+import GitHub.Request
 import Restyler.Config
 import Restyler.Options
 import Restyler.PullRequest
@@ -56,15 +56,16 @@ class HasDownloadFile env where
     downloadFile :: Text -> FilePath -> RIO env ()
 
 class HasGitHub env where
-    runGitHub :: FromJSON a => Request k a -> RIO env a
+    runGitHub :: ParseResponse m a => GenRequest m k a -> RIO env a
 
 -- | Fetch the first page using @'runGitHub'@, return the first item
 runGitHubFirst
-    :: (HasGitHub env, FromJSON a)
-    => (FetchCount -> Request k (Vector a))
+    :: (HasGitHub env, ParseResponse m (Vector a))
+    => (FetchCount -> GenRequest m k (Vector a))
     -> RIO env (Maybe a)
 runGitHubFirst f = (V.!? 0) <$> runGitHub (f 1)
 
 -- | @'void' . 'runGitHub'@
-runGitHub_ :: (HasGitHub env, FromJSON a) => Request k a -> RIO env ()
+runGitHub_
+    :: (HasGitHub env, ParseResponse m a) => GenRequest m k a -> RIO env ()
 runGitHub_ = void . runGitHub

@@ -20,7 +20,7 @@ newtype DisplayGitHubRequest = DisplayGitHubRequest
 instance Show DisplayGitHubRequest where
     show = unpack . unDisplayGitHubRequest
 
-displayGitHubRequest :: Request k a -> DisplayGitHubRequest
+displayGitHubRequest :: GenRequest m k a -> DisplayGitHubRequest
 displayGitHubRequest = DisplayGitHubRequest . \case
     Query ps qs -> mconcat
         [ "[GET] "
