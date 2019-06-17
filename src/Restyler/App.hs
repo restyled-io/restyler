@@ -141,8 +141,6 @@ instance HasGit App where
     gitPush branch = callProcess "git" ["push", "origin", branch]
     gitPushForce branch =
         callProcess "git" ["push", "--force-with-lease", "origin", branch]
-    gitPushDelete branch =
-        callProcess "git" ["push", "origin", "--delete", branch]
     gitMergeBase branch = do
         output <- readProcess "git" ["merge-base", branch, "HEAD"] ""
         pure $ listToMaybe $ lines output
