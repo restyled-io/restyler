@@ -8,7 +8,6 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App.Class
 import Restyler.Git
 import Restyler.Restyler
 
@@ -34,7 +33,7 @@ noPathsRestylerResult r = RestylerResult r NoPaths
 --
 -- N.B. This will create commits if appropriate.
 --
-getRestylerResult :: HasProcess env => Restyler -> RIO env RestylerResult
+getRestylerResult :: HasGit env => Restyler -> RIO env RestylerResult
 getRestylerResult r = RestylerResult r <$> getRestyleOutcome r
 
 -- | Does this @'RestylerResult'@ indicate changes were comitted?
@@ -44,7 +43,7 @@ restylerCommittedChanges = committedChanges . rrOutcome
     committedChanges (ChangesCommitted _ _) = True
     committedChanges _ = False
 
-getRestyleOutcome :: HasProcess env => Restyler -> RIO env RestyleOutcome
+getRestyleOutcome :: HasGit env => Restyler -> RIO env RestyleOutcome
 getRestyleOutcome restyler = do
     changedPaths <- gitDiffNameOnly Nothing
 

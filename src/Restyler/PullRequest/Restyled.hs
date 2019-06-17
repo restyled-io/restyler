@@ -29,7 +29,7 @@ createRestyledPullRequest
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
-       , HasProcess env
+       , HasGit env
        , HasGitHub env
        )
     => [RestylerResult]
@@ -80,7 +80,7 @@ createRestyledPullRequest results = do
     pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
 
 -- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: (HasPullRequest env, HasProcess env) => RIO env ()
+updateRestyledPullRequest :: (HasPullRequest env, HasGit env) => RIO env ()
 updateRestyledPullRequest = do
     rBranch <- pullRequestRestyledRef <$> view pullRequestL
     gitPushForce $ unpack rBranch
@@ -88,7 +88,6 @@ updateRestyledPullRequest = do
 -- | Close the Restyled PR, if we know of it
 closeRestyledPullRequest
     :: ( HasLogFunc env
-       , HasProcess env
        , HasPullRequest env
        , HasRestyledPullRequest env
        , HasGitHub env
@@ -104,7 +103,7 @@ closeRestyledPullRequest = do
 
 -- | Extracted for use during Setup (e.g. without @'HasPullRequest'@)
 closeRestyledPullRequest'
-    :: (HasLogFunc env, HasProcess env, HasGitHub env)
+    :: (HasLogFunc env, HasGitHub env)
     => PullRequest
     -> Maybe SimplePullRequest
     -> RIO env ()
@@ -130,11 +129,12 @@ closeRestyledPullRequest' pullRequest mRestyledPr =
                 , editPullRequestMaintainerCanModify = Nothing
                 }
 
-        let branch = pullRequestRestyledRef pullRequest
-        logInfo $ "Deleting restyled branch: " <> displayShow branch
-        gitPushDelete $ unpack branch
+        -- FIXME: called not from in a Git repo!
+        -- let branch = pullRequestRestyledRef pullRequest
+        -- logInfo $ "Deleting restyled branch: " <> displayShow branch
+        -- gitPushDelete $ unpack branch
 
 -- | Commit and push to current branch
-updateOriginalPullRequest :: (HasPullRequest env, HasProcess env) => RIO env ()
+updateOriginalPullRequest :: (HasPullRequest env, HasGit env) => RIO env ()
 updateOriginalPullRequest =
     gitPush . unpack . pullRequestHeadRef =<< view pullRequestL

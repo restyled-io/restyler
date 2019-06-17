@@ -15,6 +15,7 @@ import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
+import Restyler.Git
 import Restyler.Logger
 import Restyler.Options
 import Restyler.PullRequest
@@ -135,6 +136,23 @@ instance HasExit App where
 instance HasProcess App where
     callProcess cmd = runApp . callProcess cmd
     readProcess cmd args = runApp . readProcess cmd args
+
+instance HasGit App where
+    gitPush branch = callProcess "git" ["push", "origin", branch]
+    gitPushForce branch =
+        callProcess "git" ["push", "--force-with-lease", "origin", branch]
+    gitPushDelete branch =
+        callProcess "git" ["push", "origin", "--delete", branch]
+    gitMergeBase branch = do
+        output <- readProcess "git" ["merge-base", branch, "HEAD"] ""
+        pure $ listToMaybe $ lines output
+    gitDiffNameOnly mRef = do
+        let args = ["diff", "--name-only"] <> maybeToList mRef
+        lines <$> readProcess "git" args ""
+    gitCommitAll msg = do
+        callProcess "git" ["commit", "-a", "--message", msg]
+        dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
+    gitMerge branch = callProcess "git" ["merge", "--ff-only", branch]
 
 instance HasDownloadFile App where
     downloadFile url path = do

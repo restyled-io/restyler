@@ -4,6 +4,7 @@ module Restyler.Restyler.Run
 
     -- * Exported for testing only
     , runRestyler
+    , runRestyler_
     , filterRestylePaths
     )
 where
@@ -15,12 +16,13 @@ import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Git
 import Restyler.Restyler
 import Restyler.RestylerResult
 
 -- | Runs the given @'Restyler'@s over the files and report results
 runRestylers
-    :: (HasLogFunc env, HasSystem env, HasProcess env)
+    :: (HasLogFunc env, HasSystem env, HasProcess env, HasGit env)
     => [Restyler]
     -> [FilePath]
     -> RIO env [RestylerResult]
@@ -61,7 +63,7 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
-    :: (HasLogFunc env, HasSystem env, HasProcess env)
+    :: (HasLogFunc env, HasSystem env, HasProcess env, HasGit env)
     => Restyler
     -> [FilePath]
     -> RIO env RestylerResult

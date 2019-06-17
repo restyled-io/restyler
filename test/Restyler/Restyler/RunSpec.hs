@@ -28,7 +28,7 @@ spec = do
 
             filtered `shouldBe` []
 
-    describe "runRestyler" $ do
+    describe "runRestyler_" $ do
         it "rescues exit code exceptions to RestylerError" $ do
             let errCallProcess _ _ =
                     mapAppError SystemError $ liftIO $ Process.callProcess
@@ -40,7 +40,7 @@ spec = do
                     , taCallProcess = errCallProcess
                     }
 
-            runTestApp (runRestyler someRestyler ["foo bar"])
+            runTestApp (runRestyler_ someRestyler ["foo bar"])
                 `shouldThrow` isRestylerError someRestyler errMessage
 
 isRestylerError :: Restyler -> String -> AppError -> Bool
