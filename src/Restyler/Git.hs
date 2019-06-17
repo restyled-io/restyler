@@ -19,7 +19,6 @@ import Restyler.App.Class
 class HasGit env where
     gitPush :: String -> RIO env ()
     gitPushForce :: String -> RIO env ()
-    gitPushDelete :: String -> RIO env ()
     gitMergeBase :: String -> RIO env (Maybe String)
     gitDiffNameOnly :: Maybe String -> RIO env [FilePath]
     gitCommitAll :: String -> RIO env String
