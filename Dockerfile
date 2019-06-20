@@ -8,9 +8,10 @@ RUN mkdir -p /src
 WORKDIR /src
 
 COPY stack.yaml /src/
-RUN stack setup
-
+COPY stack.yaml.lock /src/
 COPY package.yaml /src/
+
+RUN stack setup
 RUN stack install --dependencies-only
 
 COPY app /src/app
