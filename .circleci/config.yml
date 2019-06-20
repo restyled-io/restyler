@@ -23,6 +23,9 @@ jobs:
             - v2-{{ .Branch }}
             - v2-
       - run:
+          name: Upgrade Stack
+          command: stack upgrade
+      - run:
           name: Dependencies
           command: |
             make setup setup.lint
