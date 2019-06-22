@@ -56,19 +56,25 @@ restylerMain = do
             gitPush $ unpack $ pullRequestHeadRef pullRequest
             exitWithInfo "Pushed Restyle commits to original PR"
 
-    prsEnabled <- cPullRequestsEnabled <$> view configL
+    -- NB there is the edge-case of switching this off mid-PR. A previously
+    -- opened Restyle PR would stop updating at that point.
+    whenConfig (not . cPullRequestsEnabled) $ do
+        mUrl <- oJobUrl <$> view optionsL
+        sendPullRequestStatus $ DifferencesStatus mUrl
+        logInfo "Not creating (or updating) Restyle PR, disabled by config"
+        exitWithInfo "Restyling successful"
+
     mRestyledPullRequest <- view restyledPullRequestL
-    mUrl <- case (mRestyledPullRequest, prsEnabled) of
-        (Nothing, False) -> oJobUrl <$> view optionsL
-        (Nothing, True) -> do
+    restyledUrl <- case mRestyledPullRequest of
+        Just restyledPr -> do
+            updateRestyledPullRequest
+            pure $ simplePullRequestHtmlUrl restyledPr
+        Nothing -> do
             restyledPr <- createRestyledPullRequest results
             whenConfig cCommentsEnabled $ leaveRestyledComment restyledPr
-            pure $ Just $ pullRequestHtmlUrl restyledPr
-        (Just restyledPr, _) -> do
-            updateRestyledPullRequest
-            pure $ Just $ simplePullRequestHtmlUrl restyledPr
+            pure $ pullRequestHtmlUrl restyledPr
 
-    sendPullRequestStatus $ DifferencesStatus mUrl
+    sendPullRequestStatus $ DifferencesStatus $ Just restyledUrl
     exitWithInfo "Restyling successful"
 
 downloadRemoteFile
