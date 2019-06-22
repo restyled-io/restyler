@@ -17,8 +17,7 @@ restylers:
       command:
         - stylish-haskell
         - --inplace
-      documentation:
-        https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Stylish-Haskell
+      documentation: https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Stylish-Haskell
       include:
         - "**/*.hs"
 
