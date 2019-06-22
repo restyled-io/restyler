@@ -69,6 +69,7 @@ library:
     - edit-distance
     - envparse
     - errors
+    - file-embed
     - filepath
     - github
     - http-client-tls
