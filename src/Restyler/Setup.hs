@@ -2,7 +2,6 @@
 
 module Restyler.Setup
     ( restylerSetup
-    , loadConfig
     )
 where
 
@@ -27,6 +26,7 @@ restylerSetup
        , HasSystem env
        , HasExit env
        , HasProcess env
+       , HasDownloadFile env
        , HasGitHub env
        )
     => RIO env (PullRequest, Maybe SimplePullRequest, Config)
@@ -51,7 +51,7 @@ restylerSetup = do
 
     setupClone pullRequest
 
-    config <- loadConfig
+    config <- mapAppError ConfigurationError loadConfig
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
     logInfo $ "Restyling " <> displayShow (pullRequestSpec pullRequest)
@@ -59,13 +59,6 @@ restylerSetup = do
     logDebug $ displayConfig config
 
     pure (pullRequest, mRestyledPullRequest, config)
-
-loadConfig :: HasSystem env => RIO env Config
-loadConfig = do
-    configExists <- doesFileExist configPath
-    if configExists
-        then decodeConfig =<< readFile configPath
-        else pure defaultConfig
 
 displayConfig :: Config -> Utf8Builder
 displayConfig =
@@ -109,10 +102,6 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
 
     gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
     gitCheckout $ unpack $ pullRequestRestyledRef pullRequest
-
-decodeConfig :: MonadUnliftIO m => Text -> m Config
-decodeConfig =
-    either (throwIO . ConfigurationError) pure . Yaml.decodeEither' . encodeUtf8
 
 toPullRequestFetchError :: AppError -> AppError
 toPullRequestFetchError (GitHubError _ e) = PullRequestFetchError e

@@ -4,7 +4,7 @@
 #
 # - All keys are optional and default as shown
 # - The entire config can also be just a list of values, which will be
-#   interpretted as specifying the restylers key
+#   interpreted as specifying the restylers key
 #
 ####
 
@@ -26,7 +26,7 @@ auto: false
 #     - url: https://raw.github.com/.../hlint.yaml
 #       path: .hlint.yaml
 #
-# Files must be publically accessible.
+# Files must be publicly accessible.
 #
 remote_files: []
 
@@ -53,11 +53,9 @@ statuses:
 #   owner: From the owner of the repository
 #
 # One value will apply to origin and forked PRs, but you can also specify
-# separate values (as shown).
+# separate values.
 #
-request_review:
-  origin: author
-  forked: owner
+request_review: none
 
 # Add labels to any created Restyle PRs
 #
@@ -65,7 +63,10 @@ request_review:
 #
 labels: []
 
-# Which restylers to run. See restylers.yaml for their defaults.
+# Which restylers to run
+#
+# See restyled-io/restylers repository for their defaults.
+#
 restylers:
   - astyle
   - autopep8
@@ -77,3 +78,12 @@ restylers:
   - shfmt
   - stylish-haskell
   - terraform
+
+# Version of the set of Restylers to run
+#
+# This should correspond to a ref on the restyled-io/restylers repository,
+# usually it's a tag that is a date of when that set was released. You could
+# re-specific the default in your own config if you prefer to avoid update
+# surprises.
+#
+restylers_version: "20190627"

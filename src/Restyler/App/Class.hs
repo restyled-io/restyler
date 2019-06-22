@@ -1,13 +1,5 @@
 module Restyler.App.Class
-    (
-    -- * Data
-      HasOptions(..)
-    , HasConfig(..)
-    , HasPullRequest(..)
-    , HasRestyledPullRequest(..)
-    , HasWorkingDirectory(..)
-
-    -- * Capabilities
+    ( HasWorkingDirectory(..)
     , HasSystem(..)
     , HasExit(..)
     , exitWithInfo
@@ -16,15 +8,13 @@ module Restyler.App.Class
     , HasGitHub(..)
     , runGitHubFirst
     , runGitHub_
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
 import GitHub.Data.Request
 import GitHub.Request
-import Restyler.Config
-import Restyler.Options
-import Restyler.PullRequest
 import qualified RIO.Vector as V
 
 class HasWorkingDirectory env where

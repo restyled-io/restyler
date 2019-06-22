@@ -82,6 +82,13 @@ instance HasExit StartupApp where
         logDebug "exitSuccess"
         appIO SystemError Exit.exitSuccess
 
+instance HasDownloadFile StartupApp where
+    downloadFile url path = do
+        logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
+        appIO HttpError $ do
+            request <- parseRequest $ unpack url
+            runResourceT $ httpSink request $ \_ -> sinkFile path
+
 instance HasGitHub StartupApp where
     runGitHub req = do
         logDebug $ "GitHub request: " <> displayShow (displayGitHubRequest req)
@@ -153,11 +160,7 @@ instance HasGit App where
     gitMerge branch = callProcess "git" ["merge", "--ff-only", branch]
 
 instance HasDownloadFile App where
-    downloadFile url path = do
-        logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
-        appIO HttpError $ do
-            request <- parseRequest $ unpack url
-            runResourceT $ httpSink request $ \_ -> sinkFile path
+    downloadFile url = runApp . downloadFile url
 
 instance HasGitHub App where
     runGitHub = runApp . runGitHub

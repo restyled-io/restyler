@@ -20,8 +20,9 @@ import qualified Data.Yaml as Yaml
 import GitHub.Data (Error(..))
 import GitHub.Request.Display
 import Restyler.App.Class
-import Restyler.Config (configPath)
+import Restyler.Config
 import Restyler.Options
+import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.Restyler (Restyler(..))
 import System.Exit (die)
@@ -32,7 +33,7 @@ data AppError
     -- ^ We couldn't fetch the @'PullRequest'@ to restyle
     | PullRequestCloneError IOException
     -- ^ We couldn't clone or checkout the PR's branch
-    | ConfigurationError Yaml.ParseException
+    | ConfigurationError ConfigError
     -- ^ We couldn't load a @.restyled.yaml@
     | RestylerError Restyler IOException
     -- ^ A Restyler we ran exited non-zero
@@ -61,7 +62,7 @@ toErrorTitle :: AppError -> String
 toErrorTitle = trouble . \case
     PullRequestFetchError _ -> "fetching your Pull Request from GitHub"
     PullRequestCloneError _ -> "cloning your Pull Request branch"
-    ConfigurationError _ -> "with your " <> configPath
+    ConfigurationError _ -> "with your configuration"
     RestylerError r _ -> "with the " <> rName r <> " restyler"
     GitHubError _ _ -> "communicating with GitHub"
     SystemError _ -> "running a system command"
@@ -73,7 +74,11 @@ toErrorBody :: AppError -> String
 toErrorBody = reflow . \case
     PullRequestFetchError e -> showGitHubError e
     PullRequestCloneError e -> show e
-    ConfigurationError e -> Yaml.prettyPrintParseException e
+    ConfigurationError (ConfigErrorInvalidYaml e) ->
+        Yaml.prettyPrintParseException e
+    ConfigurationError (ConfigErrorInvalidRestylers es) ->
+        "Invalid Restylers:" <> unlines (map ("  - " <>) es)
+    ConfigurationError ConfigErrorNoRestylers -> "No Restylers configured"
     RestylerError _ e -> show e
     GitHubError req e -> "Request: " <> show req <> "\n" <> showGitHubError e
     SystemError e -> show e

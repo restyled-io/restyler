@@ -14,8 +14,8 @@ import GitHub.Endpoints.Issues.Labels
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
 import GitHub.Endpoints.PullRequests.ReviewRequests
 import Restyler.App.Class
+import Restyler.Comment
 import Restyler.Config
-import Restyler.Config.RequestReview
 import qualified Restyler.Content as Content
 import Restyler.Git
 import Restyler.Options
@@ -68,15 +68,17 @@ createRestyledPullRequest results = do
             (pullRequestIssueId pr)
             labels
 
-    whenConfigJust cRequestReview $ \req -> do
-        logInfo $ "Requesting review of Restyled PR (" <> displayShow req <> ")"
-        runGitHub_
-            $ createReviewRequestR
-                  (pullRequestOwnerName pr)
-                  (pullRequestRepoName pr)
-                  (pullRequestNumber pr)
-            $ requestOneReviewer
-            $ determineReviewer req pullRequest
+    whenConfigJust (configPullRequestReviewer pullRequest) $ \user -> do
+        logInfo $ "Requesting review of Restyled PR from " <> displayShow user
+        runGitHub_ $ createReviewRequestR
+            (pullRequestOwnerName pr)
+            (pullRequestRepoName pr)
+            (pullRequestNumber pr)
+            (requestOneReviewer user)
+
+    whenConfig cComments $ do
+        logInfo "Leaving commit of Restyled PR"
+        leaveRestyledComment pr
 
     pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
 
