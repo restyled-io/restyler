@@ -15,8 +15,8 @@ restylers:
       <<: *defaults
       image: "restyled/restyler-stylish-haskell:c0ba83d"
       command:
-        - "stylish-haskell
-        - --inplace"
+        - stylish-haskell
+        - --inplace
       documentation:
         https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Stylish-Haskell
       include:
