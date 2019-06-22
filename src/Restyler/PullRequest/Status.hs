@@ -13,7 +13,7 @@ import Restyler.Config.Statuses
 import Restyler.PullRequest
 
 data PullRequestStatus
-    = NoDifferencesStatus
+    = NoDifferencesStatus (Maybe URL)
     -- ^ We found no differences after restyling
     | DifferencesStatus (Maybe URL)
     -- ^ We found differences and opened a restyled @'PullRequest'@
@@ -44,19 +44,19 @@ createHeadShaStatus pullRequest status = do
     sha = mkName Proxy $ pullRequestHeadSha pullRequest
     shortSha = fromString $ take 7 $ unpack $ pullRequestHeadSha pullRequest
     shortStatus = case status of
-        NoDifferencesStatus -> "no differences"
+        NoDifferencesStatus _ -> "no differences"
         DifferencesStatus _ -> "differences"
         ErrorStatus _ -> "error"
 
 shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
-shouldSendStatus Statuses {..} NoDifferencesStatus = sNoDifferences
+shouldSendStatus Statuses {..} (NoDifferencesStatus _) = sNoDifferences
 shouldSendStatus Statuses {..} (DifferencesStatus _) = sDifferences
 shouldSendStatus Statuses {..} (ErrorStatus _) = sError
 
 statusToStatus :: PullRequestStatus -> NewStatus
-statusToStatus NoDifferencesStatus = NewStatus
+statusToStatus (NoDifferencesStatus mUrl) = NewStatus
     { newStatusState = StatusSuccess
-    , newStatusTargetUrl = Nothing
+    , newStatusTargetUrl = mUrl
     , newStatusDescription = Just "No differences"
     , newStatusContext = Just "restyled"
     }
