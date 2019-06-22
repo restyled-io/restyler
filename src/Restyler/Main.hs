@@ -32,6 +32,7 @@ restylerMain
        )
     => RIO env a
 restylerMain = do
+    jobUrl <- oJobUrl <$> view optionsL
     whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
 
     results <- restyle
@@ -40,7 +41,7 @@ restylerMain = do
     unless (any restylerCommittedChanges results) $ do
         clearRestyledComments
         closeRestyledPullRequest
-        sendPullRequestStatus NoDifferencesStatus
+        sendPullRequestStatus $ NoDifferencesStatus jobUrl
         exitWithInfo "No style differences found"
 
     whenM isAutoPush $ do
@@ -59,8 +60,7 @@ restylerMain = do
     -- NB there is the edge-case of switching this off mid-PR. A previously
     -- opened Restyle PR would stop updating at that point.
     whenConfig (not . cPullRequestsEnabled) $ do
-        mUrl <- oJobUrl <$> view optionsL
-        sendPullRequestStatus $ DifferencesStatus mUrl
+        sendPullRequestStatus $ DifferencesStatus jobUrl
         logInfo "Not creating (or updating) Restyle PR, disabled by config"
         exitWithInfo "Restyling successful"
 
