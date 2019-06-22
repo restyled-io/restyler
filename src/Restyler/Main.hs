@@ -9,6 +9,7 @@ import Restyler.App.Error
 import Restyler.Comment
 import Restyler.Config
 import Restyler.Git
+import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Restyled
 import Restyler.PullRequest.Status
@@ -55,17 +56,19 @@ restylerMain = do
             gitPush $ unpack $ pullRequestHeadRef pullRequest
             exitWithInfo "Pushed Restyle commits to original PR"
 
+    prsEnabled <- cPullRequestsEnabled <$> view configL
     mRestyledPullRequest <- view restyledPullRequestL
-    restyledUrl <- case mRestyledPullRequest of
-        Just restyledPr -> do
-            updateRestyledPullRequest
-            pure $ simplePullRequestHtmlUrl restyledPr
-        Nothing -> do
+    mUrl <- case (mRestyledPullRequest, prsEnabled) of
+        (Nothing, False) -> oJobUrl <$> view optionsL
+        (Nothing, True) -> do
             restyledPr <- createRestyledPullRequest results
             whenConfig cCommentsEnabled $ leaveRestyledComment restyledPr
-            pure $ pullRequestHtmlUrl restyledPr
+            pure $ Just $ pullRequestHtmlUrl restyledPr
+        (Just restyledPr, _) -> do
+            updateRestyledPullRequest
+            pure $ Just $ simplePullRequestHtmlUrl restyledPr
 
-    sendPullRequestStatus $ DifferencesStatus restyledUrl
+    sendPullRequestStatus $ DifferencesStatus mUrl
     exitWithInfo "Restyling successful"
 
 downloadRemoteFile
