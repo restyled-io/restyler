@@ -9,6 +9,7 @@ where
 import Restyler.Prelude
 
 import Data.Aeson
+import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import Data.Bool (bool)
 import GitHub.Data (User)
@@ -16,10 +17,9 @@ import Restyler.Config.ExpectedKeys
 import Restyler.PullRequest
 
 data RequestReviewFrom
-    = RequestReviewFromAuthor
-    -- ^ Request review from the Author of the original PR
+    = RequestReviewFromNone
+    | RequestReviewFromAuthor
     | RequestReviewFromOwner
-    -- ^ Request review from the Owner of the original PR
     deriving (Eq, Show, Generic)
 
 instance FromJSON RequestReviewFrom where
@@ -27,16 +27,18 @@ instance FromJSON RequestReviewFrom where
         withText "RequestReviewFrom" $ either fail pure . readRequestReviewFrom
 
 instance ToJSON RequestReviewFrom where
+    toJSON RequestReviewFromNone = String "none"
     toJSON RequestReviewFromAuthor = String "author"
     toJSON RequestReviewFromOwner = String "owner"
 
 readRequestReviewFrom :: Text -> Either String RequestReviewFrom
 readRequestReviewFrom = \case
+    "none" -> Right RequestReviewFromNone
     "author" -> Right RequestReviewFromAuthor
     "owner" -> Right RequestReviewFromOwner
     x -> Left $ mconcat
         [ "Invalid RequestReviewFrom value: " <> show x
-        , "\n  Valid values: author, owner."
+        , "\n  Valid values: none, author, or owner."
         ]
 
 data RequestReviewConfig = RequestReviewConfig
@@ -45,42 +47,36 @@ data RequestReviewConfig = RequestReviewConfig
     }
     deriving (Eq, Show, Generic)
 
+bothFrom :: RequestReviewFrom -> RequestReviewConfig
+bothFrom x = RequestReviewConfig {rrcOrigin = x, rrcForked = x}
+
 instance FromJSON RequestReviewConfig where
     parseJSON (String t) =
-        either fail (pure . simpleRequestReviewConfig)
-            $ readRequestReviewFrom t
-
+        either fail (pure . bothFrom) $ readRequestReviewFrom t
     parseJSON (Object o) = do
         validateObjectKeys ["origin", "forked"] o
         RequestReviewConfig
             <$> o .:? "origin" .!= RequestReviewFromAuthor
             <*> o .:? "forked" .!= RequestReviewFromOwner
-
     parseJSON x = typeMismatch
         "Invalid type for RequestReview. Expected String or Object."
         x
 
 instance ToJSON RequestReviewConfig where
-    toJSON RequestReviewConfig{..} = object
-        [ "origin" .= rrcOrigin
-        , "forked" .= rrcForked
-        ]
+    toJSON = genericToJSON $ aesonPrefix snakeCase
+    toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
--- | Given a Config and PR, determine who should be requested as reviewer
 determineReviewer
-    :: RequestReviewConfig
-    -> PullRequest -- ^ The Original PR
-    -> Name User
-determineReviewer RequestReviewConfig {..} pr =
+    :: PullRequest -- ^ The Original PR
+    -> RequestReviewConfig
+    -> Maybe (Name User)
+determineReviewer pr RequestReviewConfig {..} =
     (`reviewerFor` pr) $ bool rrcOrigin rrcForked $ pullRequestIsFork pr
 
-reviewerFor :: RequestReviewFrom -> PullRequest -> Name User
-reviewerFor RequestReviewFromAuthor = pullRequestUserLogin
-reviewerFor RequestReviewFromOwner = coerceName . pullRequestOwnerName
-
-simpleRequestReviewConfig :: RequestReviewFrom -> RequestReviewConfig
-simpleRequestReviewConfig x =
-    RequestReviewConfig {rrcOrigin = x, rrcForked = x}
+reviewerFor :: RequestReviewFrom -> PullRequest -> Maybe (Name User)
+reviewerFor RequestReviewFromNone = const Nothing
+reviewerFor RequestReviewFromAuthor = Just . pullRequestUserLogin
+reviewerFor RequestReviewFromOwner = Just . coerceName . pullRequestOwnerName
 
 -- TODO: centralize this?
 coerceName :: Name a -> Name b

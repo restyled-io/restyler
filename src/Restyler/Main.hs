@@ -59,7 +59,7 @@ restylerMain = do
 
     -- NB there is the edge-case of switching this off mid-PR. A previously
     -- opened Restyle PR would stop updating at that point.
-    whenConfig (not . cPullRequestsEnabled) $ do
+    whenConfig (not . cPullRequests) $ do
         sendPullRequestStatus $ DifferencesStatus jobUrl
         logInfo "Not creating (or updating) Restyle PR, disabled by config"
         exitWithInfo "Restyling successful"
@@ -71,17 +71,10 @@ restylerMain = do
             pure $ simplePullRequestHtmlUrl restyledPr
         Nothing -> do
             restyledPr <- createRestyledPullRequest results
-            whenConfig cCommentsEnabled $ leaveRestyledComment restyledPr
             pure $ pullRequestHtmlUrl restyledPr
 
     sendPullRequestStatus $ DifferencesStatus $ Just restyledUrl
     exitWithInfo "Restyling successful"
-
-downloadRemoteFile
-    :: (HasLogFunc env, HasDownloadFile env) => RemoteFile -> RIO env ()
-downloadRemoteFile RemoteFile {..} = do
-    logInfo $ fromString $ "Fetching remote file: " <> rfPath
-    downloadFile (getUrl rfUrl) rfPath
 
 restyle
     :: ( HasLogFunc env

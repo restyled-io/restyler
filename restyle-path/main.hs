@@ -2,10 +2,12 @@ module Main (main) where
 
 import RIO
 
-import Restyler.App.Class (HasProcess(..), HasSystem(..))
-import Restyler.Config (Config(..))
+import Conduit (runResourceT, sinkFile)
+import Data.Text (unpack)
+import Network.HTTP.Simple hiding (Request)
+import Restyler.App.Class (HasDownloadFile(..), HasProcess(..), HasSystem(..))
+import Restyler.Config (Config(..), loadConfig)
 import Restyler.Restyler.Run (runRestylers_)
-import Restyler.Setup (loadConfig)
 import qualified RIO.Directory as Directory
 import UnliftIO.Environment (getArgs, lookupEnv)
 import qualified UnliftIO.Process as Process
@@ -26,6 +28,11 @@ instance HasSystem App where
 instance HasProcess App where
     callProcess = Process.callProcess
     readProcess = Process.readProcess
+
+instance HasDownloadFile App where
+    downloadFile url path = liftIO $ do
+        request <- parseRequest $ unpack url
+        runResourceT $ httpSink request $ \_ -> sinkFile path
 
 main :: IO ()
 main = do

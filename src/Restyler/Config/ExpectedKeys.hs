@@ -1,16 +1,37 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Restyler.Config.ExpectedKeys
-    ( validateObjectKeys
+    ( genericParseJSONValidated
+    , validateObjectKeys
     , validateExpectedKeyBy
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
-import Data.Aeson.Types (Parser)
+import Data.Aeson
+import Data.Aeson.Types
 import Data.Either (lefts)
 import Data.Function (on)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
+import GHC.Generics
+import GHC.Generics.Selectors
 import Text.EditDistance
+
+genericParseJSONValidated
+    :: forall a
+     . (Generic a, GFromJSON Zero (Rep a), Selectors (Rep a))
+    => Options
+    -> Value
+    -> Parser a
+genericParseJSONValidated opts = \case
+    v@(Object o) -> do
+        let keys = map (fieldLabelModifier opts) $ selectors (Proxy @(Rep a))
+        validateObjectKeys keys o
+        genericParseJSON opts v
+    v -> genericParseJSON opts v
 
 -- | Validate there are no unexpected keys in an Object
 --

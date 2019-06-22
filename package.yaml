@@ -64,6 +64,7 @@ library:
     - aeson
     - aeson-casing
     - ansi-terminal
+    - barbies
     - bytestring
     - conduit
     - edit-distance
@@ -80,6 +81,7 @@ library:
     - process
     - rio
     - safe
+    - semigroups
     - shakespeare
     - text
     - unordered-containers
@@ -107,6 +109,9 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - conduit
+      - http-conduit
+      - text
       - restyler
       - rio
       - unliftio
@@ -117,6 +122,7 @@ tests:
     source-dirs: test
     dependencies:
       - QuickCheck
+      - aeson
       - bytestring
       - github
       - hspec
