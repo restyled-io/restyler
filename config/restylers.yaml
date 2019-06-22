@@ -1,0 +1,146 @@
+# WIP: I'm still converting the in-code data to this file
+
+references:
+  defaults: &defaults
+    documentation: []
+    arguments: []
+    include:
+      - "**/*"
+    interpreters: []
+    supports_arg_sep: true
+    supports_multiple_paths: true
+
+restylers:
+  - stylish-haskell:
+      <<: *defaults
+      image: "restyled/restyler-stylish-haskell:c0ba83d"
+      command:
+        - stylish-haskell
+        - --inplace
+      documentation: https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Stylish-Haskell
+      include:
+        - "**/*.hs"
+
+# allRestylers :: [Restyler]
+# allRestylers =
+#     [ (baseRestyler "stylish-haskell")
+#         { rImage = "restyled/restyler-stylish-haskell:c0ba83d"
+#         , rCommand = ["stylish-haskell", "--inplace"]
+#         , rDocumentation = [wiki "/Common-Errors:-Stylish-Haskell"]
+#         , rInclude = ["**/*.hs"]
+#         }
+#     , (baseRestyler "prettier")
+#         { rImage = "restyled/restyler-prettier:8cd304f"
+#         , rCommand = ["prettier", "--write"]
+#         , rInclude = ["**/*.js", "**/*.jsx", "**/*.yml", "**/*.yaml"]
+#         }
+#     , (baseRestyler "hindent")
+#         { rInclude = ["**/*.hs"]
+#         , rSupportsArgSep = False
+#         , rSupportsMultiplePaths = False
+#         }
+#     , (baseRestyler "brittany")
+#         { rImage = "restyled/restyler-brittany:caa75f3"
+#         , rCommand = ["brittany", "--write-mode", "inplace"]
+#         , rDocumentation = [wiki "/Common-Errors:-Brittany"]
+#         , rInclude = ["**/*.hs"]
+#         , rSupportsArgSep = False
+#         }
+#     , (baseRestyler "shfmt")
+#         { rImage = "restyled/restyler-shfmt:95f0cfe"
+#         , rCommand = ["shfmt", "-w"]
+#         , rInclude = ["**/*.sh", "**/*.bash"]
+#         , rInterpreters = [Sh, Bash]
+#         }
+#     , (baseRestyler "astyle")
+#         { rInclude =
+#             [ "**/*.c" -- C
+#             , "**/*.cpp" -- C++
+#             , "**/*.cs" -- C#
+#             , "**/*.h" -- C/C++/C#/Objective-C
+#             --, "**/*.java" -- Leave Java to google-java-format
+#             , "**/*.m" -- Objective-C
+#             , "**/*.mm" -- Objective-C++
+#             ]
+#         , rSupportsArgSep = False
+#         }
+#     , (baseRestyler "autopep8")
+#         { rCommand = ["autopep8", "--in-place"]
+#         , rInclude = ["**/*.py"]
+#         , rInterpreters = [Python]
+#         }
+#     , (baseRestyler "php-cs-fixer")
+#         { rCommand = ["php-cs-fixer", "fix"]
+#         , rImage = "restyled/restyler-php-cs-fixer:1bda900"
+#         , rInclude = ["**/*.php"]
+#         , rSupportsMultiplePaths = False
+#         }
+#     , (baseRestyler "elm-format")
+#         { rCommand = ["elm-format", "--yes"]
+#         , rInclude = ["**/*.elm"]
+#         }
+#     , (baseRestyler "rubocop")
+#         -- required to operate correctly
+#         { rCommand = ["rubocop", "--auto-correct"]
+#         -- almost certainly desired, but not necessarily
+#         , rArguments = ["--fail-level", "fatal"]
+#         , rInclude = ["**/*.rb"]
+#         , rInterpreters = [Ruby]
+#         }
+#     , (baseRestyler "rustfmt") { rInclude = ["**/*.rs"] }
+#     , (baseRestyler "terraform")
+#         { rCommand = ["terraform", "fmt"]
+#         , rDocumentation = [wiki "/Common-Errors:-Rustfmt"]
+#         , rInclude = ["**/*.tf"]
+#         , rSupportsMultiplePaths = False
+#         }
+#     , (baseRestyler "dfmt")
+#         { rImage = "restyled/restyler-dfmt:f3b58e0"
+#         , rCommand = ["dfmt", "--inplace"]
+#         , rInclude = ["**/*.d"]
+#         }
+#     , (baseRestyler "google-java-format")
+#         { rImage = "restyled/restyler-google-java-format:39b1d8f"
+#         , rCommand = ["google-java-format", "--replace"]
+#         , rInclude = ["**/*.java"]
+#         , rSupportsArgSep = False
+#         }
+#     , (baseRestyler "hlint")
+#         { rImage = "restyled/restyler-hlint:efbd99c"
+#         , rCommand = ["hlint", "lint", "--refactor", "--refactor-options=-i"]
+#         , rInclude = ["**/*.hs"]
+#         , rDocumentation = [wiki "/Common-Errors:-HLint"]
+#         , rSupportsMultiplePaths = False
+#         , rSupportsArgSep = False
+#         }
+#     , (baseRestyler "pg_format")
+#         { rImage = "restyled/restyler-pg_format:9862f49"
+#         , rCommand = ["pg_format-inplace"]
+#         , rInclude = ["**/*.sql"]
+#         , rSupportsArgSep = False
+#         , rSupportsMultiplePaths = False
+#         }
+#     ]
+#     where wiki = ("https://github.com/restyled-io/restyled.io/wiki" <>)
+
+# namedRestyler :: MonadPlus m => Text -> m Restyler
+# namedRestyler =
+#     either fail pure
+#         . validateExpectedKeyBy "restyler" rName allRestylers
+#         . unpack
+
+# unsafeNamedRestyler :: Text -> Restyler
+# unsafeNamedRestyler = either error id . namedRestyler
+
+# baseRestyler :: String -> Restyler
+# baseRestyler name = Restyler
+#     { rName = name
+#     , rImage = "restyled/restyler-" <> name
+#     , rCommand = [name]
+#     , rDocumentation = []
+#     , rArguments = []
+#     , rInclude = ["**/*"]
+#     , rInterpreters = []
+#     , rSupportsArgSep = True
+#     , rSupportsMultiplePaths = True
+#     }

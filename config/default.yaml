@@ -1,0 +1,79 @@
+# Default Restyler Configuration
+#
+# Overall notes:
+#
+# - All keys are optional and default as shown
+# - The entire config can also be just a list of values, which will be
+#   interpretted as specifying the restylers key
+#
+####
+
+# Do anything at all?
+enabled: true
+
+# Push the style fixes directly to the original PR
+#
+# This setting implies pull_requests: false for origin PRs, and has no effect on
+# forked PRs (since we can't push to those).
+#
+auto: false
+
+# Download remote files before restyling
+#
+# Example:
+#
+#   remote_files:
+#     - url: https://raw.github.com/.../hlint.yaml
+#       path: .hlint.yaml
+#
+# Files must be publically accessible.
+#
+remote_files: []
+
+# Open Restyle PRs?
+pull_requests: true
+
+# Leave comments on the original PR linking to the Restyle PR?
+comments: true
+
+# Set commit statuses on the original PR?
+statuses:
+  # Red status in the case of differences found
+  differences: true
+  # Green status in the case of no differences found
+  no_differences: true
+  # Red status if we encounter errors restyling
+  error: true
+
+# Request review on the Restyle PR?
+#
+# Possible values:
+#
+#   author: From the author of the original PR
+#   owner: From the owner of the repository
+#
+# One value will apply to origin and forked PRs, but you can also specify
+# separate values (as shown).
+#
+request_review:
+  origin: author
+  forked: owner
+
+# Add labels to any created Restyle PRs
+#
+# These can be used to tell other automation to avoid our PRs.
+#
+labels: []
+
+# Which restylers to run. See restylers.yaml for their defaults.
+restylers:
+  - astyle
+  - autopep8
+  - elm-format
+  - php-cs-fixer
+  - prettier
+  - rubocop
+  - rustfmt
+  - shfmt
+  - stylish-haskell
+  - terraform

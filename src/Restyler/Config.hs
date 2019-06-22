@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Restyler.Config
     ( Config(..)
     , HasConfig(..)
@@ -15,8 +17,10 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
 import Data.Bool (bool)
+import Data.FileEmbed (embedFile)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Vector as V
+import qualified Data.Yaml as Yaml
 import GitHub.Data (IssueLabel)
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.RequestReview
@@ -24,24 +28,16 @@ import Restyler.Config.Statuses
 import Restyler.RemoteFile
 import Restyler.Restyler
 
--- | Top-level configuration object
 data Config = Config
     { cEnabled :: Bool
-    -- ^ Do anything at all?
     , cAuto :: Bool
-    -- ^ Just push the restyling, don't comment?
     , cRemoteFiles :: [RemoteFile]
-    -- ^ Any remote configuration files to fetch before restyling
+    , cPullRequestsEnabled :: Bool
     , cCommentsEnabled :: Bool
-    -- ^ Leave Comments?
     , cStatuses :: Statuses
-    -- ^ Send PR statuses?
     , cRequestReview :: Maybe RequestReviewConfig
-    -- ^ Request review for Restyle PRs?
     , cLabels :: [Name IssueLabel]
-    -- ^ Labels to add to Restyle PRs
     , cRestylers :: [Restyler]
-    -- ^ What restylers to run
     }
     deriving (Eq, Show, Generic)
 
@@ -54,6 +50,7 @@ instance FromJSON Config where
             [ "enabled"
             , "auto"
             , "remote_files"
+            , "pull_requests"
             , "comments"
             , "statuses"
             , "request_review"
@@ -65,6 +62,7 @@ instance FromJSON Config where
             <$> o .:? "enabled" .!= cEnabled defaultConfig
             <*> o .:? "auto" .!= cAuto defaultConfig
             <*> o .:? "remote_files" .!= cRemoteFiles defaultConfig
+            <*> o .:? "pull_requests" .!= cPullRequestsEnabled defaultConfig
             <*> o .:? "comments" .!= cCommentsEnabled defaultConfig
             <*> o .:? "statuses" .!= cStatuses defaultConfig
             <*> o .:? "request_review" .!= cRequestReview defaultConfig
@@ -92,27 +90,11 @@ whenConfigJust
     :: HasConfig env => (Config -> Maybe a) -> (a -> RIO env ()) -> RIO env ()
 whenConfigJust check act = traverse_ act . check =<< view configL
 
--- | Default configuration
---
--- - Enabled
--- - Not Auto
--- - Leave comments
--- - Send statuses
--- - Don't request review
--- - No labels
--- - Run most restylers
---
+-- brittany-disable-next-binding
+
 defaultConfig :: Config
-defaultConfig = Config
-    { cEnabled = True
-    , cAuto = False
-    , cRemoteFiles = []
-    , cCommentsEnabled = True
-    , cStatuses = defaultStatusesConfig
-    , cRequestReview = Nothing
-    , cLabels = []
-    , cRestylers = defaultRestylers
-    }
+defaultConfig = either (error . Yaml.prettyPrintParseException) id
+    $ Yaml.decodeEither' $(embedFile "config/default.yaml")
 
 -- | @.restyled.yaml@
 configPath :: FilePath

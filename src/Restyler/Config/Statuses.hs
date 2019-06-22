@@ -1,6 +1,5 @@
 module Restyler.Config.Statuses
     ( Statuses(..)
-    , defaultStatusesConfig
     )
 where
 
@@ -34,11 +33,9 @@ instance FromJSON Statuses where
                 <*> o .:? "no-differences"
 
         Statuses
-            <$> o .:? "differences" .!= sDifferences
-            <*> noDifferences .!= sNoDifferences
-            <*> o .:? "error" .!= sError
-      where
-        Statuses{..} = defaultStatusesConfig
+            <$> o .:? "differences" .!= True
+            <*> noDifferences .!= True
+            <*> o .:? "error" .!= True
     parseJSON (Aeson.Bool b) = pure Statuses
         { sDifferences = b
         , sNoDifferences = b
@@ -49,7 +46,3 @@ instance FromJSON Statuses where
 instance ToJSON Statuses where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
-
-defaultStatusesConfig :: Statuses
-defaultStatusesConfig =
-    Statuses {sDifferences = True, sNoDifferences = True, sError = True}

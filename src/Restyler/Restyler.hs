@@ -1,6 +1,5 @@
 module Restyler.Restyler
     ( Restyler(..)
-    , defaultRestylers
     , allRestylers
     , namedRestyler
     , unsafeNamedRestyler
@@ -91,20 +90,6 @@ instance ToJSON Restyler where
                 ]
             ]
         ]
-
-defaultRestylers :: [Restyler]
-defaultRestylers =
-    [ unsafeNamedRestyler "stylish-haskell"
-    , unsafeNamedRestyler "prettier"
-    , unsafeNamedRestyler "shfmt"
-    , unsafeNamedRestyler "astyle"
-    , unsafeNamedRestyler "autopep8"
-    , unsafeNamedRestyler "php-cs-fixer"
-    , unsafeNamedRestyler "elm-format"
-    , unsafeNamedRestyler "rubocop"
-    , unsafeNamedRestyler "rustfmt"
-    , unsafeNamedRestyler "terraform"
-    ]
 
 allRestylers :: [Restyler]
 allRestylers =
