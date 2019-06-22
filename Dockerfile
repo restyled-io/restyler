@@ -17,6 +17,7 @@ RUN stack install --dependencies-only
 COPY app /src/app
 COPY restyle-path /src/restyle-path
 COPY src /src/src
+COPY config /src/config
 COPY LICENSE /src/
 RUN stack install
 
