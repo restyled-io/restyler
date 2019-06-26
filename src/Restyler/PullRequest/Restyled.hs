@@ -77,7 +77,7 @@ createRestyledPullRequest results = do
             (requestOneReviewer user)
 
     whenConfig cComments $ do
-        logInfo "Leaving commit of Restyled PR"
+        logInfo "Leaving comment of Restyled PR"
         leaveRestyledComment pr
 
     pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
