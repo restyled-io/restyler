@@ -61,8 +61,7 @@ restylerMain = do
     -- opened Restyle PR would stop updating at that point.
     whenConfig (not . cPullRequests) $ do
         sendPullRequestStatus $ DifferencesStatus jobUrl
-        logInfo "Not creating (or updating) Restyle PR, disabled by config"
-        exitWithInfo "Restyling successful"
+        exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
 
     mRestyledPullRequest <- view restyledPullRequestL
     restyledUrl <- case mRestyledPullRequest of
