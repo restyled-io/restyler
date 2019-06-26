@@ -49,6 +49,10 @@ test:
 watch:
 	stack build $(STACK_ARGUMENTS) --fast --pedantic --test --file-watch
 
+.PHONY: image
+image:
+	docker build --tag restyled/restyler .
+
 .PHONY: test.integration
 test.integration:
 	if [ "$(INTEGRATION_RESTYLER_BUILD)" -eq 1 ]; then \
