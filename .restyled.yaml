@@ -6,4 +6,7 @@ restylers:
       include:
         - "**/*.yaml"
         - "**/*.yml"
-  - hlint
+  - hlint:
+      include:
+        - "**/*.hs"
+        - "!src/Restyler/Config/ExpectedKeys.hs"
