@@ -159,6 +159,8 @@ loadConfig = do
 --
 -- Returns @'ConfigF' 'Identity'@ because defaulting has populated all fields.
 --
+-- May throw any @'ConfigError'@.
+--
 loadConfigF :: HasSystem env => FilePath -> RIO env (ConfigF Identity)
 loadConfigF path = handle (throwIO . ConfigErrorInvalidYaml) $ do
     exists <- doesFileExist path
@@ -172,8 +174,10 @@ loadConfigF path = handle (throwIO . ConfigErrorInvalidYaml) $ do
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
--- Errors (misconfigurations) are logged, but we still proceed with whatever
--- restylers we could configure (possibly none).
+-- May throw specifically
+--
+-- - @'ConfigErrorInvalidRestylers'@, or
+-- - @'ConfigErrorNoRestylers'@
 --
 resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
 resolveRestylers ConfigF {..} allRestylers = do
