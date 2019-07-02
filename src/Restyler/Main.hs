@@ -50,12 +50,11 @@ restylerMain = do
         gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
         gitMerge $ unpack $ pullRequestRestyledRef pullRequest
 
-        handleAny warnIgnore $ do
-            -- This will fail if other changes came in while we were restyling,
-            -- but it also means that we should be working on a Job for those
-            -- changes already
-            gitPush $ unpack $ pullRequestHeadRef pullRequest
-            exitWithInfo "Pushed Restyle commits to original PR"
+        -- This will fail if other changes came in while we were restyling, but
+        -- it also means that we should be working on a Job for those changes
+        -- already
+        handleAny warnIgnore $ gitPush $ unpack $ pullRequestHeadRef pullRequest
+        exitWithInfo "Pushed Restyle commits to original PR"
 
     -- NB there is the edge-case of switching this off mid-PR. A previously
     -- opened Restyle PR would stop updating at that point.
