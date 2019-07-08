@@ -40,3 +40,17 @@ f <$$> a = fmap f <$> a
 
 handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
 handles = flip catches
+
+-- | Find the index of one list within another
+--
+-- Not particularly optimised. Also, this may exist but Hoogle's down right now.
+--
+findIndex :: Eq a => [a] -> [a] -> Maybe Int
+findIndex needle = go 0
+  where
+    go _ [] = Nothing
+    go idx xs@(_ : rest)
+        | take l xs == needle = Just idx
+        | otherwise = go (idx + 1) rest
+
+    l = length needle

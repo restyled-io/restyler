@@ -37,3 +37,21 @@ spec = do
                 , "\n"
                 , "\n"
                 ]
+
+    describe "scrubGitHubToken" $ do
+        it "scrubs clone errors of ephemeral tokens" $ do
+            let errorMessage = concat
+                    [ "\nBranch 'if-non-unique-operator-channel-id' set up to track remote branch 'if-non-unique-operator-...skipping..."
+                    , "\nerror: failed to push some refs to 'https://x-access-token:v1.aaaaaaaaaabbbbbbbbbbbbbbbcccccccccdddddd@github.com/Foo/bar.git'"
+                    , "\n ! [rejected]        refactor-modules-restyled -> refactor-modules-restyled (stale info)"
+                    , "\nTo https://github.com/Foo/bar.git"
+                    ]
+
+                scrubbed = scrubGitHubToken errorMessage
+
+            scrubbed `shouldBe` concat
+                [ "\nBranch 'if-non-unique-operator-channel-id' set up to track remote branch 'if-non-unique-operator-...skipping..."
+                , "\nerror: failed to push some refs to 'https://<SCRUBBED>@github.com/Foo/bar.git'"
+                , "\n ! [rejected]        refactor-modules-restyled -> refactor-modules-restyled (stale info)"
+                , "\nTo https://github.com/Foo/bar.git"
+                ]
