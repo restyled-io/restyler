@@ -106,8 +106,7 @@ loadDefaultConfig = runRIO testApp $ do
 loadTestConfig :: MonadIO m => ByteString -> m (Either String Config)
 loadTestConfig content =
     runRIO testApp
-        $ fmap (first showConfigError)
-        $ try
+        $ tryTo showConfigError
         $ loadConfigFrom (ConfigContent content)
         $ const
         $ pure testRestylers

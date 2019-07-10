@@ -189,7 +189,7 @@ data ConfigSource
 --
 loadConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Identity)
 loadConfigF source =
-    handle (throwIO . ConfigErrorInvalidYaml)
+    handleTo ConfigErrorInvalidYaml
         $ resolveConfig
         <$> loadUserConfigF source
         <*> decodeThrow defaultConfigContent

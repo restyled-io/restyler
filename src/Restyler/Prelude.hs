@@ -41,6 +41,13 @@ f <$$> a = fmap f <$> a
 handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
 handles = flip catches
 
+handleTo
+    :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
+handleTo f = handle (throwIO . f)
+
+tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
+tryTo f = fmap (first f) . try
+
 -- | Find the index of one list within another
 --
 -- Not particularly optimised. Also, this may exist but Hoogle's down right now.
