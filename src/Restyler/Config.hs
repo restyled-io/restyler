@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
@@ -28,11 +29,11 @@ module Restyler.Config
     , whenConfigNonEmpty
     , whenConfigJust
 
-
     -- * Exported for use in tests
-    , defaultConfigContent
-    , resolveConfig
+    , ConfigSource(..)
+    , loadConfigFrom
     , resolveRestylers
+    , defaultConfigContent
     )
 where
 
@@ -149,28 +150,45 @@ instance Exception ConfigError
 --
 loadConfig
     :: (HasLogFunc env, HasSystem env, HasDownloadFile env) => RIO env Config
-loadConfig = do
-    config <- loadConfigF configPath
-    let restylersVersion = runIdentity $ cfRestylersVersion config
-    restylers <- getAllRestylersVersioned restylersVersion
+loadConfig =
+    loadConfigFrom (ConfigPath configPath)
+        $ getAllRestylersVersioned
+        . runIdentity
+        . cfRestylersVersion
+
+loadConfigFrom
+    :: HasSystem env
+    => ConfigSource
+    -> (ConfigF Identity -> RIO env [Restyler])
+    -> RIO env Config
+loadConfigFrom source f = do
+    config <- loadConfigF source
+    restylers <- f config
     resolveRestylers config restylers
 
--- | Load @.restyled.yaml@ if present and apply defaults
+data ConfigSource
+    = ConfigPath FilePath
+    | ConfigContent ByteString
+
+-- | Load configuration if present and apply defaults
 --
 -- Returns @'ConfigF' 'Identity'@ because defaulting has populated all fields.
 --
 -- May throw any @'ConfigError'@.
 --
-loadConfigF :: HasSystem env => FilePath -> RIO env (ConfigF Identity)
-loadConfigF path = handle (throwIO . ConfigErrorInvalidYaml) $ do
-    exists <- doesFileExist path
+loadConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Identity)
+loadConfigF source =
+    handle (throwIO . ConfigErrorInvalidYaml)
+        $ resolveConfig
+        <$> loadUserConfigF source
+        <*> decodeThrow defaultConfigContent
 
-    if exists
-        then
-            resolveConfig
-            <$> decodeFileThrow configPath
-            <*> decodeThrow defaultConfigContent
-        else decodeThrow defaultConfigContent
+loadUserConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Maybe)
+loadUserConfigF = \case
+    ConfigPath path -> do
+        exists <- doesFileExist path
+        bool (pure emptyConfig) (decodeFileThrow path) exists
+    ConfigContent content -> decodeThrow content
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --

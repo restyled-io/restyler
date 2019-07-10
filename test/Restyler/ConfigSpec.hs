@@ -18,9 +18,9 @@ import Restyler.Restyler
 spec :: Spec
 spec = do
     it "supports a simple, name-based syntax" $ do
-        defaultConfig <- getDefaultConfig
+        defaultConfig <- loadDefaultConfig
 
-        result <- resolvedConfig
+        result <- loadTestConfig
             $ C8.unlines ["---", "- stylish-haskell", "- prettier"]
 
         result `shouldBe` Right defaultConfig
@@ -31,19 +31,19 @@ spec = do
             }
 
     it "has a setting for globally disabling" $ do
-        result <- resolvedConfig $ C8.unlines
+        result <- loadTestConfig $ C8.unlines
             ["---", "enabled: false", "restylers:", "- stylish-haskell"]
 
         fmap cEnabled result `shouldBe` Right False
 
     it "allows re-configuring includes" $ do
-        defaultConfig <- getDefaultConfig
+        defaultConfig <- loadDefaultConfig
 
-        result1 <- resolvedConfig $ C8.unlines
+        result1 <- loadTestConfig $ C8.unlines
             ["---", "- stylish-haskell:", "    include:", "    - \"**/*.lhs\""]
-        result2 <- resolvedConfig $ C8.unlines
+        result2 <- loadTestConfig $ C8.unlines
             ["---", "- stylish-haskell:", "    include:", "    - \"**/*.lhs\""]
-        result3 <- resolvedConfig $ C8.unlines
+        result3 <- loadTestConfig $ C8.unlines
             [ "---"
             , "restylers:"
             , "- stylish-haskell:"
@@ -63,10 +63,10 @@ spec = do
             }
 
     it "has good errors for unknown name" $ do
-        result1 <- resolvedConfig $ C8.unlines ["---", "- uknown-name"]
-        result2 <- resolvedConfig $ C8.unlines
+        result1 <- loadTestConfig $ C8.unlines ["---", "- uknown-name"]
+        result2 <- loadTestConfig $ C8.unlines
             ["---", "- uknown-name:", "    arguments:", "    - --foo"]
-        result3 <- resolvedConfig $ C8.unlines
+        result3 <- loadTestConfig $ C8.unlines
             [ "---"
             , "restylers:"
             , "- uknown-name:"
@@ -82,10 +82,10 @@ spec = do
             "Unexpected Restyler name \"uknown-name\""
 
     it "provides suggestions for close matches" $ do
-        result1 <- resolvedConfig $ C8.unlines ["---", "- hindex"]
-        result2 <- resolvedConfig
+        result1 <- loadTestConfig $ C8.unlines ["---", "- hindex"]
+        result2 <- loadTestConfig
             $ C8.unlines ["---", "- hindex:", "    arguments:", "    - --foo"]
-        result3 <- resolvedConfig $ C8.unlines
+        result3 <- loadTestConfig $ C8.unlines
             ["---", "restylers:", "- hindex:", "    arguments:", "    - --foo"]
 
         result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
@@ -96,19 +96,21 @@ hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
 
-getDefaultConfig :: MonadIO m => m Config
-getDefaultConfig = runRIO testApp $ do
+-- | Load just the default config, for comparisons against examples
+loadDefaultConfig :: MonadIO m => m Config
+loadDefaultConfig = runRIO testApp $ do
     config <- decodeThrow defaultConfigContent
     resolveRestylers config testRestylers
 
-resolvedConfig :: MonadIO m => ByteString -> m (Either String Config)
-resolvedConfig content =
-    runRIO testApp $ fmap (first showConfigError) $ try $ do
-        config <-
-            resolveConfig
-            <$> decodeThrow content
-            <*> decodeThrow defaultConfigContent
-        resolveRestylers config testRestylers
+-- | Load a @'ByteString'@ as configuration
+loadTestConfig :: MonadIO m => ByteString -> m (Either String Config)
+loadTestConfig content =
+    runRIO testApp
+        $ fmap (first showConfigError)
+        $ try
+        $ loadConfigFrom (ConfigContent content)
+        $ const
+        $ pure testRestylers
 
 showConfigError :: ConfigError -> String
 showConfigError = \case
