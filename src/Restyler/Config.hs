@@ -124,6 +124,10 @@ data Config = Config
     , cRequestReview :: RequestReviewConfig
     , cLabels :: [Name IssueLabel]
     , cRestylers :: [Restyler]
+    -- ^ TODO: @'NonEmpty'@
+    --
+    -- It's true, but what's the benefit?
+    --
     }
     deriving (Eq, Show, Generic)
 
@@ -137,6 +141,13 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml Yaml.ParseException
+    -- ^ TODO: should errors in our @default.yaml@ show up here?
+    --
+    -- They would right now. That could be confusing since that's a programmer
+    -- error on my part and not something user-actionable. We may just move our
+    -- handle/throw down into @'loadUserConfigF'@ and let issues decoding the
+    -- default explode all the way out as @'OtherError'@s
+    --
     | ConfigErrorInvalidRestylers [String]
     | ConfigErrorNoRestylers
     deriving Show
