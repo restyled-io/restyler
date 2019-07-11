@@ -113,7 +113,7 @@ loadTestConfig content =
 
 showConfigError :: ConfigError -> String
 showConfigError = \case
-    ConfigErrorInvalidYaml ex -> prettyPrintParseException ex
+    ConfigErrorInvalidYaml _ ex -> prettyPrintParseException ex
     ConfigErrorInvalidRestylers es -> unlines es
     ConfigErrorNoRestylers -> "No restylers"
 

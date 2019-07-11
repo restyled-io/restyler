@@ -25,6 +25,7 @@ data TestApp = TestApp
 
     -- System
     , taReadFile :: FilePath -> RIO TestApp Text
+    , taReadFileBS :: FilePath -> RIO TestApp ByteString
     , taGetCurrentDirectory :: RIO TestApp FilePath
     , taSetCurrentDirectory :: FilePath -> RIO TestApp ()
     , taDoesFileExist :: FilePath -> RIO TestApp Bool
@@ -40,6 +41,7 @@ testApp :: TestApp
 testApp = TestApp
     { taLogFunc = mkLogFunc $ \_ _ _ _ -> pure ()
     , taReadFile = error "readFile"
+    , taReadFileBS = error "readFileBS"
     , taGetCurrentDirectory = error "getCurrentDirectory"
     , taSetCurrentDirectory = error "setCurrentDirectory"
     , taDoesFileExist = error "doesFileExist"
@@ -52,6 +54,7 @@ instance HasLogFunc TestApp where
 
 instance HasSystem TestApp where
     readFile = asksAp1 taReadFile
+    readFileBS = asksAp1 taReadFileBS
     getCurrentDirectory = asksAp taGetCurrentDirectory
     setCurrentDirectory = asksAp1 taSetCurrentDirectory
     doesFileExist = asksAp1 taDoesFileExist

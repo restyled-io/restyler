@@ -75,8 +75,13 @@ toErrorBody :: AppError -> String
 toErrorBody = reflow . \case
     PullRequestFetchError e -> showGitHubError e
     PullRequestCloneError e -> show e
-    ConfigurationError (ConfigErrorInvalidYaml e) ->
-        Yaml.prettyPrintParseException e
+    ConfigurationError (ConfigErrorInvalidYaml yaml e) -> unlines
+        [ "Yaml parse exception:"
+        , Yaml.prettyPrintParseException e
+        , ""
+        , "Original input:"
+        , unpack $ decodeUtf8 yaml
+        ]
     ConfigurationError (ConfigErrorInvalidRestylers es) ->
         "Invalid Restylers:" <> unlines (map ("  - " <>) es)
     ConfigurationError ConfigErrorNoRestylers -> "No Restylers configured"
@@ -160,7 +165,7 @@ dieAppError :: AppError -> IO a
 dieAppError e = do
     hPutStrLn stderr $ prettyAppError e
     exitWith $ ExitFailure $ case e of
-        ConfigurationError (ConfigErrorInvalidYaml _) -> 10
+        ConfigurationError (ConfigErrorInvalidYaml _ _) -> 10
         ConfigurationError (ConfigErrorInvalidRestylers _) -> 11
         ConfigurationError ConfigErrorNoRestylers -> 12
         RestylerError _ _ -> 20

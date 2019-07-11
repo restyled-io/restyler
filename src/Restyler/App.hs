@@ -61,6 +61,10 @@ instance HasSystem StartupApp where
         logDebug $ "readFile: " <> displayShow path
         appIO SystemError $ readFileUtf8 path
 
+    readFileBS path = do
+        logDebug $ "readFileBS: " <> displayShow path
+        appIO SystemError $ readFileBinary path
+
 instance HasProcess StartupApp where
     callProcess cmd args = do
         -- N.B. this includes access tokens in log messages when used for
@@ -136,6 +140,7 @@ instance HasSystem App where
     setCurrentDirectory = runApp . setCurrentDirectory
     doesFileExist = runApp . doesFileExist
     readFile = runApp . readFile
+    readFileBS = runApp . readFileBS
 
 instance HasExit App where
     exitSuccess = runApp exitSuccess

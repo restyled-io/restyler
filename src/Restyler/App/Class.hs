@@ -29,6 +29,8 @@ class HasSystem env where
 
     readFile :: FilePath -> RIO env Text
 
+    readFileBS :: FilePath -> RIO env ByteString
+
 class HasExit env where
     exitSuccess :: RIO env a
 

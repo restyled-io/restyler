@@ -8,7 +8,9 @@ where
 import RIO as X hiding (first, second)
 
 import Control.Error.Util as X (hush, note)
+import Control.Monad.Extra as X (maybeM)
 import Data.Bifunctor as X (first, second)
+import Data.Functor.Syntax as X ((<$$>))
 import GitHub.Data as X (Id, Name, URL(..), getUrl, mkId, mkName, untagName)
 import RIO.Char as X (isSpace)
 import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
@@ -31,12 +33,6 @@ withRIO f m = do
 --
 decodeUtf8 :: ByteString -> Text
 decodeUtf8 = T.decodeUtf8With T.lenientDecode
-
-infixl 4 <$$>
-
--- | @'fmap'@ for doubly-wrapped values
-(<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
-f <$$> a = fmap f <$> a
 
 handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
 handles = flip catches

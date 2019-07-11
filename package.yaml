@@ -66,10 +66,12 @@ library:
     - ansi-terminal
     - barbies
     - bytestring
+    - composition-extra
     - conduit
     - edit-distance
     - envparse
     - errors
+    - extra
     - file-embed
     - filepath
     - github

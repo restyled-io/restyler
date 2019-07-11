@@ -24,6 +24,7 @@ instance HasSystem App where
     setCurrentDirectory = Directory.setCurrentDirectory
     doesFileExist = Directory.doesFileExist
     readFile = readFileUtf8
+    readFileBS = readFileBinary
 
 instance HasProcess App where
     callProcess = Process.callProcess

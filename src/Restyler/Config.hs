@@ -46,7 +46,7 @@ import Data.Bool (bool)
 import Data.FileEmbed (embedFile)
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid (Last(..))
-import Data.Yaml (decodeFileThrow, decodeThrow)
+import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
@@ -140,14 +140,7 @@ instance ToJSON Config where
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 data ConfigError
-    = ConfigErrorInvalidYaml Yaml.ParseException
-    -- ^ TODO: should errors in our @default.yaml@ show up here?
-    --
-    -- They would right now. That could be confusing since that's a programmer
-    -- error on my part and not something user-actionable. We may just move our
-    -- handle/throw down into @'loadUserConfigF'@ and let issues decoding the
-    -- default explode all the way out as @'OtherError'@s
-    --
+    = ConfigErrorInvalidYaml ByteString Yaml.ParseException
     | ConfigErrorInvalidRestylers [String]
     | ConfigErrorNoRestylers
     deriving Show
@@ -181,25 +174,33 @@ data ConfigSource
     = ConfigPath FilePath
     | ConfigContent ByteString
 
+readConfigSource :: HasSystem env => ConfigSource -> RIO env (Maybe ByteString)
+readConfigSource = \case
+    ConfigPath path -> do
+        exists <- doesFileExist path
+        if exists then Just <$> readFileBS path else pure Nothing
+    ConfigContent content -> pure $ Just content
+
 -- | Load configuration if present and apply defaults
 --
 -- Returns @'ConfigF' 'Identity'@ because defaulting has populated all fields.
 --
--- May throw any @'ConfigError'@.
+-- May throw any @'ConfigError'@. May through raw @'Yaml.ParseException'@s if
+-- there is a programmer error in our static default configuration YAML.
 --
 loadConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Identity)
 loadConfigF source =
-    handleTo ConfigErrorInvalidYaml
-        $ resolveConfig
+    resolveConfig
         <$> loadUserConfigF source
         <*> decodeThrow defaultConfigContent
 
 loadUserConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Maybe)
-loadUserConfigF = \case
-    ConfigPath path -> do
-        exists <- doesFileExist path
-        bool (pure emptyConfig) (decodeFileThrow path) exists
-    ConfigContent content -> decodeThrow content
+loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSource
+
+-- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
+decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
+decodeThrow' content =
+    handleTo (ConfigErrorInvalidYaml content) $ decodeThrow content
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
