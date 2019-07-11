@@ -28,7 +28,8 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.Restyler (Restyler(..))
-import System.Exit (die)
+import System.Exit (ExitCode(..), exitWith)
+import System.IO (hPutStrLn, stderr)
 import Text.Wrap
 
 data AppError
@@ -167,7 +168,7 @@ warnIgnore ex = logWarn $ "Caught " <> displayShow ex <> ", ignoring."
 -- Ensures __all__ exceptions (besides @'ExitCode'@s) go through:
 --
 -- @
--- 'die' . 'prettyAppError'
+-- 'dieAppError'
 -- @
 --
 dieAppErrorHandlers :: [Handler IO ()]
@@ -175,7 +176,19 @@ dieAppErrorHandlers =
     [Handler dieAppError, Handler $ exceptExit $ dieAppError . OtherError]
 
 dieAppError :: AppError -> IO a
-dieAppError = die . prettyAppError
+dieAppError e = do
+    hPutStrLn stderr $ prettyAppError e
+    exitWith $ ExitFailure $ case e of
+        ConfigurationError (ConfigErrorInvalidYaml _) -> 10
+        ConfigurationError (ConfigErrorInvalidRestylers _) -> 11
+        ConfigurationError ConfigErrorNoRestylers -> 12
+        RestylerError _ _ -> 20
+        GitHubError _ _ -> 30
+        PullRequestFetchError _ -> 31
+        PullRequestCloneError _ -> 32
+        HttpError _ -> 40
+        SystemError _ -> 50
+        OtherError _ -> 99
 
 exceptExit :: Applicative f => (SomeException -> f ()) -> SomeException -> f ()
 exceptExit f ex = maybe (f ex) ignore $ fromException ex
