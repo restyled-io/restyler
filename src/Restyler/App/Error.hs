@@ -11,9 +11,6 @@ module Restyler.App.Error
 
     -- * Lower-level helpers
     , warnIgnore
-
-    -- * Exported only for direct testing
-    , scrubGitHubToken
     )
 where
 
@@ -61,22 +58,6 @@ prettyAppError :: AppError -> String
 prettyAppError =
     format <$> toErrorTitle <*> toErrorBody <*> toErrorDocumentation
     where format title body docs = title <> ":\n\n" <> body <> docs
-
--- | /Naively/ scrub ephemeral tokens from error messages
---
--- If there's an error cloning or pushing, it may show the remote's URL which
--- will include the "x-access-token:...@github.com" secret. These are ephemeral
--- and only valid for less than 5 minutes, but we shouldn't show them anyway.
---
--- This function naively strips the 58 characters before "@github.com" which
--- addresses known error messages and should fail-safe by over-scrubbing when it
--- gets something wrong.
---
-scrubGitHubToken :: String -> String
-scrubGitHubToken msg = maybe msg rebuild $ findIndex "@github.com" msg
-  where
-    rebuild i = take (i - tokenLen) msg <> "<SCRUBBED>" <> drop i msg
-    tokenLen = 58
 
 toErrorTitle :: AppError -> String
 toErrorTitle = trouble . \case

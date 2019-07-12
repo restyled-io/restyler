@@ -47,17 +47,3 @@ handleTo f = handle (throwIO . f)
 
 tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
 tryTo f = fmap (first f) . try
-
--- | Find the index of one list within another
---
--- Not particularly optimised. Also, this may exist but Hoogle's down right now.
---
-findIndex :: Eq a => [a] -> [a] -> Maybe Int
-findIndex needle = go 0
-  where
-    go _ [] = Nothing
-    go idx xs@(_ : rest)
-        | take l xs == needle = Just idx
-        | otherwise = go (idx + 1) rest
-
-    l = length needle
