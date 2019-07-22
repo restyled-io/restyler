@@ -68,9 +68,13 @@ test.integration:
 	    --job-url https://example.com \
 	    --color=always "$(INTEGRATION_PULL_REQUEST)"
 
+DOC_ROOT = $(shell stack path --work-dir .stack-work-docs --local-doc-root)
+DOC_S3_PREFIX = /restyler
+
 .PHONY: docs
 docs:
 	stack $(STACK_ARGUMENTS) --work-dir .stack-work-docs build --haddock
-	aws s3 sync --acl public-read --delete \
-	  $$(stack path --work-dir .stack-work-docs --local-doc-root)/ \
-	  s3://docs.restyled.io/restyler/
+	find .stack-work-docs -type f -name '*.html' -exec \
+	  sed -i 's|$(DOC_ROOT)|$(DOC_S3_PREFIX)|g' {} +
+	aws s3 sync --acl public-read --delete $(DOC_ROOT)/ \
+	  s3://docs.restyled.io$(DOC_S3_PREFIX)/
