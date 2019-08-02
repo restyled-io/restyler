@@ -69,6 +69,7 @@ jobs:
             docker build --tag "${release_image}:${release_tag}" .
             docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
             docker push "${release_image}:${release_tag}"
+            docker push "${release_image}:latest"
       - persist_to_workspace:
           root: workspace
           paths:
