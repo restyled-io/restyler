@@ -65,10 +65,12 @@ jobs:
             mkdir -p workspace
             echo "$release_tag" > workspace/release-tag
             echo "$release_image" > workspace/release-image
-
             docker build --tag "${release_image}:${release_tag}" .
             docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
             docker push "${release_image}:${release_tag}"
+            docker tag \
+              "${release_image}:${release_tag}" \
+              "${release_image}:latest"
             docker push "${release_image}:latest"
       - persist_to_workspace:
           root: workspace
