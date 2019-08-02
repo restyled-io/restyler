@@ -92,6 +92,36 @@ spec = do
         result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
         result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
+    it "can specify a full Restyler" $ do
+        result <- loadTestConfig $ C8.unlines
+            [ "restylers:"
+            , "  - name: foo"
+            , "    image: restyled/restyler-foo"
+            , "    command: [foo]"
+            , "    arguments: []"
+            , "    include: []"
+            , "    interpreters: []"
+            , "    supports_arg_sep: false"
+            , "    supports_multiple_paths: false"
+            , "    documentation: []"
+            , "    include:"
+            , "      - \"**/*.js\""
+            , "      - \"**/*.jsx\""
+            ]
+
+        result `shouldSatisfy` isRight
+
+    it "handles invalid indentation nicely" $ do
+        result <- loadTestConfig $ C8.unlines
+            [ "restylers:"
+            , "  - prettier:"
+            , "    include:"
+            , "      - \"**/*.js\""
+            , "      - \"**/*.jsx\""
+            ]
+
+        result `shouldSatisfy` hasError "do you have incorrect indentation"
+
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False

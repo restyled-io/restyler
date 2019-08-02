@@ -24,7 +24,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import Data.Aeson.Types (typeMismatch)
+import Data.Aeson.Types (Parser, modifyFailure, typeMismatch)
 import qualified Data.HashMap.Lazy as HM
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
@@ -66,8 +66,13 @@ instance FromJSON ConfigRestyler where
     parseJSON (String name) = pure $ ConfigRestyler $ lookupRestyler name
     parseJSON v@(Object o) = case HM.toList o of
         [(name, vo@(Object _))] -> configRestyler name <$> parseJSON vo
-        _ -> ConfigRestyler . const <$> parseJSON v
+        _ -> suffixFailure
+            "\n\nDid you intend to specify a full Restyler object, or do you have incorrect indentation for a named override?"
+            $ ConfigRestyler . const . Right <$> parseJSON v
     parseJSON v = typeMismatch "Name, or name with overrides" v
+
+suffixFailure :: String -> Parser a -> Parser a
+suffixFailure x = modifyFailure (<> x)
 
 lookupRestyler :: Text -> [Restyler] -> Either String Restyler
 lookupRestyler name restylers =
