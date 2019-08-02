@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# Invocation script for a simpler restyle-path executable, which will restyle
+# all given paths locally.
+#
+# Installation:
+#
+#   1. Have ~/.local/bin on $PATH
+#   2. cp {this} ~/.local/bin/restyle-path
+#
+# Usage:
+#
+#   1. cd {some-project}
+#   2. restyle-path {some-path} {some-other-path} ...
+#
+# Development (i.e. to run a locally-modified version):
+#
+#   1. cd {restyler-source}
+#   2. docker build --tag quay.io/restyled-io/restyler .
+#   3. Follow Usage
+#
+#   NOTE: a pre-existing ~/.local/bin/restyle-path will use the updated image,
+#   it need not be re-installed.
+#
+###
+exec docker run -it --rm \
+  --env DEBUG=1 \
+  --env HOST_DIRECTORY="$PWD" \
+  --volume "$PWD":/code \
+  --volume /tmp:/tmp \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  --entrypoint restyle-path \
+  quay.io/restyled-io/restyler "$@"
