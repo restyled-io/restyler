@@ -50,5 +50,8 @@ ENV GIT_AUTHOR_EMAIL=commits@restyled.io
 ENV GIT_COMMITTER_NAME=Restyled.io
 ENV GIT_COMMITTER_EMAIL=commits@restyled.io
 
+VOLUME /code
+WORKDIR /code
+
 ENTRYPOINT ["/bin/restyler"]
 CMD ["--help"]
