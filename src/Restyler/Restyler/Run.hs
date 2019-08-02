@@ -17,12 +17,18 @@ import Restyler.App.Error
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Git
+import Restyler.Options
 import Restyler.Restyler
 import Restyler.RestylerResult
 
 -- | Runs the given @'Restyler'@s over the files and report results
 runRestylers
-    :: (HasLogFunc env, HasSystem env, HasProcess env, HasGit env)
+    :: ( HasLogFunc env
+       , HasOptions env
+       , HasSystem env
+       , HasProcess env
+       , HasGit env
+       )
     => [Restyler]
     -> [FilePath]
     -> RIO env [RestylerResult]
@@ -30,7 +36,7 @@ runRestylers = runRestylersWith runRestyler
 
 -- | Runs the given @'Restyler'@s but without committing or reporting results
 runRestylers_
-    :: (HasLogFunc env, HasSystem env, HasProcess env)
+    :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
     => [Restyler]
     -> [FilePath]
     -> RIO env ()
@@ -63,7 +69,12 @@ filterRestylePaths r = filterM (r `shouldRestyle`)
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
-    :: (HasLogFunc env, HasSystem env, HasProcess env, HasGit env)
+    :: ( HasLogFunc env
+       , HasOptions env
+       , HasSystem env
+       , HasProcess env
+       , HasGit env
+       )
     => Restyler
     -> [FilePath]
     -> RIO env RestylerResult
@@ -74,7 +85,7 @@ runRestyler r paths = do
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
-    :: (HasLogFunc env, HasSystem env, HasProcess env)
+    :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
     => Restyler
     -> [FilePath]
     -> RIO env ()
@@ -96,9 +107,12 @@ runRestyler_ r@Restyler {..} paths = if rSupportsMultiplePaths
         dockerRunRestyler r [path]
 
 dockerRunRestyler
-    :: (HasSystem env, HasProcess env) => Restyler -> [FilePath] -> RIO env ()
+    :: (HasOptions env, HasSystem env, HasProcess env)
+    => Restyler
+    -> [FilePath]
+    -> RIO env ()
 dockerRunRestyler r@Restyler {..} paths = do
-    cwd <- getCurrentDirectory
+    cwd <- getHostDirectory
     handle toRestylerError
         $ callProcess "docker"
         $ ["run", "--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
@@ -108,3 +122,8 @@ dockerRunRestyler r@Restyler {..} paths = do
   where
     toRestylerError (SystemError ex) = throwIO $ RestylerError r ex
     toRestylerError ex = throwIO ex
+
+getHostDirectory :: (HasOptions env, HasSystem env) => RIO env FilePath
+getHostDirectory = do
+    mHostDirectory <- oHostDirectory <$> view optionsL
+    maybe getCurrentDirectory pure mHostDirectory

@@ -13,6 +13,7 @@ import Test.Hspec as X
 import Test.QuickCheck as X
 
 import Restyler.App.Class
+import Restyler.Options
 import Restyler.Restyler
 
 -- | A versatile app for use with @'runRIO'@
@@ -22,6 +23,7 @@ import Restyler.Restyler
 --
 data TestApp = TestApp
     { taLogFunc :: LogFunc
+    , taOptions :: Options
 
     -- System
     , taReadFile :: FilePath -> RIO TestApp Text
@@ -40,6 +42,7 @@ data TestApp = TestApp
 testApp :: TestApp
 testApp = TestApp
     { taLogFunc = mkLogFunc $ \_ _ _ _ -> pure ()
+    , taOptions = testOptions
     , taReadFile = error "readFile"
     , taReadFileBS = error "readFileBS"
     , taGetCurrentDirectory = error "getCurrentDirectory"
@@ -49,8 +52,23 @@ testApp = TestApp
     , taReadProcess = error "readProcess"
     }
 
+testOptions :: Options
+testOptions = Options
+    { oAccessToken = error "oAccessToken"
+    , oLogLevel = error "oLogLevel"
+    , oLogColor = error "oLogColor"
+    , oOwner = error "oOwner"
+    , oRepo = error "oRepo"
+    , oPullRequest = error "oPullRequest"
+    , oJobUrl = error "oJobUrl"
+    , oHostDirectory = Nothing
+    }
+
 instance HasLogFunc TestApp where
     logFuncL = lens taLogFunc $ \x y -> x { taLogFunc = y }
+
+instance HasOptions TestApp where
+    optionsL = lens taOptions $ \x y -> x { taOptions = y }
 
 instance HasSystem TestApp where
     readFile = asksAp1 taReadFile

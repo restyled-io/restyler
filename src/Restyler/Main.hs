@@ -76,6 +76,7 @@ restylerMain = do
 
 restyle
     :: ( HasLogFunc env
+       , HasOptions env
        , HasConfig env
        , HasPullRequest env
        , HasSystem env

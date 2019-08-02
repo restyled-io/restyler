@@ -29,6 +29,7 @@ data EnvOptions = EnvOptions
 data CLIOptions = CLIOptions
     { coColor :: ColorOption
     , coJobUrl :: Maybe URL
+    , coHostDirectory :: Maybe FilePath
     , coPullRequestSpec :: PullRequestSpec
     }
 
@@ -41,6 +42,7 @@ data Options = Options
     , oRepo :: Name Repo
     , oPullRequest :: IssueNumber
     , oJobUrl :: Maybe URL
+    , oHostDirectory :: Maybe FilePath
     }
 
 class HasOptions env where
@@ -70,6 +72,7 @@ parseOptions = do
         , oRepo = prsRepo coPullRequestSpec
         , oPullRequest = prsPullRequest coPullRequestSpec
         , oJobUrl = coJobUrl
+        , oHostDirectory = coHostDirectory
         }
 
 -- brittany-disable-next-binding
@@ -92,6 +95,11 @@ optionsParser = CLIOptions
         (  long "job-url"
         <> metavar "URL"
         <> help "Link to Job on restyled.io"
+        ))
+    <*> optional (strOption
+        (  long "host-directory"
+        <> metavar "PATH"
+        <> help "Path to host directory of sources"
         ))
     <*> argument (eitherReader parseSpec)
         (  metavar "<owner>/<name>#<number>"
