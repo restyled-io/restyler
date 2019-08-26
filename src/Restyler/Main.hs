@@ -38,7 +38,7 @@ restylerMain = do
     results <- restyle
     logDebug $ "Restyling results: " <> displayShow results
 
-    unless (any restylerCommittedChanges results) $ do
+    unlessM wasRestyled $ do
         clearRestyledComments
         closeRestyledPullRequest
         sendPullRequestStatus $ NoDifferencesStatus jobUrl
@@ -89,6 +89,11 @@ restyle = do
     pullRequest <- view pullRequestL
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
     runRestylers restylers pullRequestPaths
+
+wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
+wasRestyled = do
+    headRef <- pullRequestHeadRef <$> view pullRequestL
+    not . null <$> changedPaths headRef
 
 changedPaths :: HasGit env => Text -> RIO env [FilePath]
 changedPaths branch = do
