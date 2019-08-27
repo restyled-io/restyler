@@ -5,16 +5,24 @@ module Restyler.App.Class
     , exitWithInfo
     , HasProcess(..)
     , HasDownloadFile(..)
+
+    -- * GitHub
     , HasGitHub(..)
     , runGitHubFirst
     , runGitHub_
+
+    -- ** Higher-level actions
+    , getPullRequestLabelNames
     )
 where
 
 import Restyler.Prelude
 
+import GitHub.Data (IssueLabel(..), PullRequest(..))
 import GitHub.Data.Request
+import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)
 import GitHub.Request
+import Restyler.PullRequest
 import qualified RIO.Vector as V
 
 class HasWorkingDirectory env where
@@ -61,3 +69,13 @@ runGitHubFirst f = (V.!? 0) <$> runGitHub (f 1)
 runGitHub_
     :: (HasGitHub env, ParseResponse m a) => GenRequest m k a -> RIO env ()
 runGitHub_ = void . runGitHub
+
+getPullRequestLabelNames
+    :: HasGitHub env => PullRequest -> RIO env (Vector (Name IssueLabel))
+getPullRequestLabelNames pullRequest = do
+    labels <- handleAny (const $ pure mempty) $ runGitHub $ labelsOnIssueR
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        (pullRequestIssueId pullRequest)
+        FetchAll
+    pure $ labelName <$> labels

@@ -46,6 +46,8 @@ import Data.Bool (bool)
 import Data.FileEmbed (embedFile)
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid (Last(..))
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
 import GitHub.Data (IssueLabel, User)
@@ -82,6 +84,7 @@ data ConfigF f = ConfigF
     , cfStatuses :: f Statuses
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
+    , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
     , cfRestylers :: f (SketchyList ConfigRestyler)
     , cfRestylersVersion :: f String
     }
@@ -123,6 +126,7 @@ data Config = Config
     , cStatuses :: Statuses
     , cRequestReview :: RequestReviewConfig
     , cLabels :: [Name IssueLabel]
+    , cIgnoreLabels :: Set (Name IssueLabel)
     , cRestylers :: [Restyler]
     -- ^ TODO: @'NonEmpty'@
     --
@@ -223,6 +227,7 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cStatuses = runIdentity cfStatuses
         , cRequestReview = runIdentity cfRequestReview
         , cLabels = unSketchy $ runIdentity cfLabels
+        , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
         , cRestylers = restylers
         }
   where

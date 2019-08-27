@@ -63,6 +63,13 @@ request_review: none
 #
 labels: []
 
+# Labels to ignore
+#
+# PRs with any of these labels will be ignored by Restyled.
+#
+ignore_labels:
+  - restyled-ignore
+
 # Which restylers to run
 #
 # See restyled-io/restylers repository for their defaults.

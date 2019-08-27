@@ -17,6 +17,8 @@ import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
 import RIO.Text as X (encodeUtf8, pack, unpack)
 import Safe as X (fromJustNote)
 
+import qualified Data.Foldable as F
+import qualified Data.Set as Set
 import qualified RIO.Text as T
 
 -- | Like @'withReader'@ for @'RIO'@
@@ -43,3 +45,9 @@ handleTo f = handle (throwIO . f)
 
 tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
 tryTo f = fmap (first f) . try
+
+intersects :: (Foldable t1, Foldable t2, Ord a) => t1 a -> t2 a -> Bool
+intersects a b = not $ Set.null $ Set.intersection a' b'
+  where
+    a' = Set.fromList $ F.toList a
+    b' = Set.fromList $ F.toList b
