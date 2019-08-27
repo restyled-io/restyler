@@ -54,6 +54,10 @@ restylerSetup = do
     config <- mapAppError ConfigurationError loadConfig
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
+    labels <- getPullRequestLabelNames pullRequest
+    when (labels `intersects` cIgnoreLabels config)
+        $ exitWithInfo "Ignoring PR based on its labels"
+
     logInfo $ "Restyling " <> displayShow (pullRequestSpec pullRequest)
     logInfo $ displayRestyled pullRequest mRestyledPullRequest
     logDebug $ displayConfig config
