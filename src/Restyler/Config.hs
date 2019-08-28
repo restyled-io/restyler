@@ -43,13 +43,16 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Barbie
 import Data.Bool (bool)
+import qualified Data.ByteString.Char8 as C8
 import Data.FileEmbed (embedFile)
+import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid (Last(..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
+import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
@@ -149,6 +152,20 @@ data ConfigError
     | ConfigErrorNoRestylers
     deriving Show
 
+configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
+configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
+    . Yaml.modifyYamlProblem modify
+  where
+    modify msg
+        | isCannotStart msg && hasTabIndent yaml
+        = msg
+            <> "\n\nThis may be caused by your source file containing tabs."
+            <> "\nYAML forbids tabs for indentation. See https://yaml.org/faq.html."
+        | otherwise
+        = msg
+    isCannotStart = ("character that cannot start any token" `isInfixOf`)
+    hasTabIndent = ("\n\t" `C8.isInfixOf`)
+
 instance Exception ConfigError
 
 -- | Load a fully-inflated @'Config'@
@@ -204,7 +221,7 @@ loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSource
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
 decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
 decodeThrow' content =
-    handleTo (ConfigErrorInvalidYaml content) $ decodeThrow content
+    handleTo (configErrorInvalidYaml content) $ decodeThrow content
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
