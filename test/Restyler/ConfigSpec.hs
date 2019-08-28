@@ -122,6 +122,12 @@ spec = do
 
         result `shouldSatisfy` hasError "do you have incorrect indentation"
 
+    it "handles tabs nicely" $ do
+        result <- loadTestConfig
+            $ C8.unlines ["statuses:", "\tdifferences: false"]
+
+        result `shouldSatisfy` hasError "contains tabs"
+
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
