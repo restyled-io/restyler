@@ -92,7 +92,7 @@ restyle = do
 
 wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
 wasRestyled = do
-    headRef <- pullRequestHeadRef <$> view pullRequestL
+    headRef <- pullRequestLocalHeadRef <$> view pullRequestL
     not . null <$> changedPaths headRef
 
 changedPaths :: HasGit env => Text -> RIO env [FilePath]
