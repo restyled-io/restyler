@@ -149,6 +149,9 @@ data ConfigError
     | ConfigErrorNoRestylers
     deriving Show
 
+configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
+configErrorInvalidYaml = ConfigErrorInvalidYaml
+
 instance Exception ConfigError
 
 -- | Load a fully-inflated @'Config'@
@@ -204,7 +207,7 @@ loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSource
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
 decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
 decodeThrow' content =
-    handleTo (ConfigErrorInvalidYaml content) $ decodeThrow content
+    handleTo (configErrorInvalidYaml content) $ decodeThrow content
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
