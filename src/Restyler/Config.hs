@@ -157,14 +157,14 @@ configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
     . Yaml.modifyYamlProblem modify
   where
     modify msg
-        | isCannotStart msg && hasTab yaml
+        | isCannotStart msg && hasTabIndent yaml
         = msg
             <> "\n\nThis may be caused by your source file containing tabs."
-            <> "\nYAML forbids tabs. See https://yaml.org/faq.html."
+            <> "\nYAML forbids tabs for indentation. See https://yaml.org/faq.html."
         | otherwise
         = msg
     isCannotStart = ("character that cannot start any token" `isInfixOf`)
-    hasTab = ('\t' `C8.elem`)
+    hasTabIndent = ("\n\t" `C8.isInfixOf`)
 
 instance Exception ConfigError
 
