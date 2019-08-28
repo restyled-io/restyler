@@ -43,13 +43,16 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.Barbie
 import Data.Bool (bool)
+import qualified Data.ByteString.Char8 as C8
 import Data.FileEmbed (embedFile)
+import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid (Last(..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
+import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
@@ -150,7 +153,18 @@ data ConfigError
     deriving Show
 
 configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
-configErrorInvalidYaml = ConfigErrorInvalidYaml
+configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
+    . Yaml.modifyYamlProblem modify
+  where
+    modify msg
+        | isCannotStart msg && hasTab yaml
+        = msg
+            <> "\n\nThis may be caused by your source file containing tabs."
+            <> "\nYAML forbids tabs. See https://yaml.org/faq.html."
+        | otherwise
+        = msg
+    isCannotStart = ("character that cannot start any token" `isInfixOf`)
+    hasTab = ('\t' `C8.elem`)
 
 instance Exception ConfigError
 

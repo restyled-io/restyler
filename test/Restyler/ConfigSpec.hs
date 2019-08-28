@@ -126,7 +126,7 @@ spec = do
         result <- loadTestConfig
             $ C8.unlines ["statuses:", "\tdifferences: false"]
 
-        result `shouldSatisfy` hasError "contains tabs"
+        result `shouldSatisfy` hasError "containing tabs"
 
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
