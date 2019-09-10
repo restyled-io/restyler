@@ -34,7 +34,7 @@ remote_files: []
 pull_requests: true
 
 # Leave comments on the original PR linking to the Restyle PR?
-comments: true
+comments: false
 
 # Set commit statuses on the original PR?
 statuses:
