@@ -80,6 +80,7 @@ restylers:
   - elm-format
   - php-cs-fixer
   - prettier
+  - prettier-yaml
   - rubocop
   - rustfmt
   - shfmt
@@ -93,4 +94,4 @@ restylers:
 # re-specify the default in your own config if you prefer to avoid update
 # surprises.
 #
-restylers_version: "20190628"
+restylers_version: "20190910"
