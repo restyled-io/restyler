@@ -90,7 +90,7 @@ restylers:
 #
 # This should correspond to a ref on the restyled-io/restylers repository,
 # usually it's a tag that is a date of when that set was released. You could
-# re-specific the default in your own config if you prefer to avoid update
+# re-specify the default in your own config if you prefer to avoid update
 # surprises.
 #
 restylers_version: "20190628"
