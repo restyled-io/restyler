@@ -77,15 +77,28 @@ ignore_labels:
 restylers:
   - astyle
   - autopep8
+  - black
+  # - brittany
+  - dfmt
   - elm-format
+  # - google-java-format
+  # - hindent
+  # - hlint
+  - jdt
+  - pg_format
   - php-cs-fixer
   - prettier
+  - prettier-markdown
   - prettier-yaml
+  - prettier-ruby
+  - reorder-python-imports
   - rubocop
   - rustfmt
+  - shellharden
   - shfmt
   - stylish-haskell
   - terraform
+  - yapf
 
 # Version of the set of Restylers to run
 #
