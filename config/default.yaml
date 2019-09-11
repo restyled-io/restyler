@@ -84,7 +84,7 @@ restylers:
   # - google-java-format
   # - hindent
   # - hlint
-  - jdt
+  # - jdt
   - pg_format
   - php-cs-fixer
   - prettier
