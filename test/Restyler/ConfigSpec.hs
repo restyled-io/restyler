@@ -168,12 +168,12 @@ testRestylers =
     , someRestyler { rName = "prettier-markdown" }
     , someRestyler { rName = "prettier-ruby" }
     , someRestyler { rName = "prettier-yaml" }
+    , someRestyler { rName = "reorder-python-imports" }
     , someRestyler { rName = "rubocop" }
     , someRestyler { rName = "rustfmt" }
-    , someRestyler { rName = "reorder-python-imports" }
-    , someRestyler { rName = "yapf" }
     , someRestyler { rName = "shellharden" }
     , someRestyler { rName = "shfmt" }
     , someRestyler { rName = "stylish-haskell" }
     , someRestyler { rName = "terraform" }
+    , someRestyler { rName = "yapf" }
     ]
