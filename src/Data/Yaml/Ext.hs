@@ -23,6 +23,7 @@ modifyInvalidYaml f = \case
     ex@OtherParseException{} -> ex
     ex@NonStringKeyAlias{} -> ex
     ex@CyclicIncludes{} -> ex
+    ex@LoadSettingsException{} -> ex
 
 modifyYamlProblem :: (String -> String) -> ParseException -> ParseException
 modifyYamlProblem f = modifyInvalidYaml $ \case
