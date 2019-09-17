@@ -5,7 +5,7 @@ module Restyler.Prelude
 where
 
 -- Prefer Bifunctor first/second not Arrow
-import RIO as X hiding (first, second)
+import RIO as X hiding (exitSuccess, first, second)
 
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (maybeM)

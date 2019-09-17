@@ -25,7 +25,6 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.Restyler (Restyler(..))
-import System.Exit (ExitCode(..), exitWith)
 import System.IO (hPutStrLn, stderr)
 import Text.Wrap
 
