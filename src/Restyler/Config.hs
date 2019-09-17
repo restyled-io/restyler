@@ -101,9 +101,7 @@ emptyConfig = bmap getLast bmempty
 instance FromJSON (ConfigF Maybe) where
     parseJSON a@(Array _) = do
         restylers <- parseJSON a
-        pure emptyConfig
-            { cfRestylers = Just restylers
-            }
+        pure emptyConfig { cfRestylers = Just restylers }
     parseJSON v = genericParseJSONValidated (aesonPrefix snakeCase) v
 
 instance FromJSON (ConfigF Identity) where

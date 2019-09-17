@@ -25,7 +25,7 @@ instance ToJSON Include where
     toJSON (Negated p) = toJSON $ "!" <> pack (decompile p)
 
 instance IsString Include where
-    fromString ('!':rest) = Negated $ compile rest
+    fromString ('!' : rest) = Negated $ compile rest
     fromString x = Include $ compile x
 
 -- | Determine if a set of @'Include'@s match a file

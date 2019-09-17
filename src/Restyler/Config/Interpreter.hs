@@ -18,8 +18,8 @@ data Interpreter
     deriving (Eq, Show)
 
 instance FromJSON Interpreter where
-    parseJSON = withText "Interpreter"
-        $ either fail pure . readInterpreter . unpack
+    parseJSON =
+        withText "Interpreter" $ either fail pure . readInterpreter . unpack
 
 instance ToJSON Interpreter where
     -- N.B. this may not always work, but it works for now

@@ -18,6 +18,8 @@ data Statuses = Statuses
     }
     deriving (Eq, Show, Generic)
 
+-- brittany-disable-next-binding
+
 instance FromJSON Statuses where
     parseJSON (Object o) = do
         validateObjectKeys ["differences", "no_differences", "error"] o
