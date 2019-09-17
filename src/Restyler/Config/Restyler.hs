@@ -62,6 +62,8 @@ configRestyler name override = ConfigRestyler $ \restylers -> do
     restyler <- lookupRestyler name restylers
     pure $ overrideRestyler restyler override
 
+-- brittany-disable-next-binding
+
 instance FromJSON ConfigRestyler where
     parseJSON (String name) = pure $ ConfigRestyler $ lookupRestyler name
     parseJSON v@(Object o) = case HM.toList o of

@@ -23,7 +23,8 @@ spec = do
             let
                 pretty = prettyAppError $ OtherError $ toException BigError
                     { beMessage = "Something has gone terrible, terribly wrong"
-                    , beDocumentation = "http://example.com/some/ungodly/long/url?with=all&the=stuff#here-too"
+                    , beDocumentation =
+                        "http://example.com/some/ungodly/long/url?with=all&the=stuff#here-too"
                     , beContext = ["Oof", "Something", "Is", "Really bad"]
                     }
 

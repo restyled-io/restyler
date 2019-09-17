@@ -39,8 +39,7 @@ newtype ReviewRequest = ReviewRequest
     }
 
 instance FromJSON ReviewRequest where
-    parseJSON = withObject "ReviewRequest" $ \o -> ReviewRequest
-        <$> o .: "url"
+    parseJSON = withObject "ReviewRequest" $ \o -> ReviewRequest <$> o .: "url"
 
 createReviewRequest
     :: Auth

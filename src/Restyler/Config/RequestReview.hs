@@ -48,7 +48,9 @@ data RequestReviewConfig = RequestReviewConfig
     deriving (Eq, Show, Generic)
 
 bothFrom :: RequestReviewFrom -> RequestReviewConfig
-bothFrom x = RequestReviewConfig {rrcOrigin = x, rrcForked = x}
+bothFrom x = RequestReviewConfig { rrcOrigin = x, rrcForked = x }
+
+-- brittany-disable-next-binding
 
 instance FromJSON RequestReviewConfig where
     parseJSON (String t) =

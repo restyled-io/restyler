@@ -41,8 +41,8 @@ instance HasOptions StartupApp where
     optionsL = lens appOptions $ \x y -> x { appOptions = y }
 
 instance HasWorkingDirectory StartupApp where
-    workingDirectoryL = lens appWorkingDirectory $ \x y ->
-        x { appWorkingDirectory = y }
+    workingDirectoryL =
+        lens appWorkingDirectory $ \x y -> x { appWorkingDirectory = y }
 
 instance HasSystem StartupApp where
     getCurrentDirectory = do
@@ -64,6 +64,8 @@ instance HasSystem StartupApp where
     readFileBS path = do
         logDebug $ "readFileBS: " <> displayShow path
         appIO SystemError $ readFileBinary path
+
+-- brittany-disable-next-binding
 
 instance HasProcess StartupApp where
     callProcess cmd args = do
@@ -132,8 +134,8 @@ instance HasPullRequest App where
     pullRequestL = lens appPullRequest $ \x y -> x { appPullRequest = y }
 
 instance HasRestyledPullRequest App where
-    restyledPullRequestL = lens appRestyledPullRequest $ \x y ->
-        x { appRestyledPullRequest = y }
+    restyledPullRequestL =
+        lens appRestyledPullRequest $ \x y -> x { appRestyledPullRequest = y }
 
 instance HasSystem App where
     getCurrentDirectory = runApp getCurrentDirectory

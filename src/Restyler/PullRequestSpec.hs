@@ -24,10 +24,11 @@ data PullRequestSpec = PullRequestSpec
     deriving Eq
 
 instance Show PullRequestSpec where
-    show PullRequestSpec {..} = unpack
-        $  untagName prsOwner <> "/"
-        <> untagName prsRepo  <> "#"
-        <> toPathPart prsPullRequest
+    show PullRequestSpec {..} = unpack $ mconcat
+        [ untagName prsOwner <> "/"
+        , untagName prsRepo <> "#"
+        , toPathPart prsPullRequest
+        ]
 
 -- | Parse @\<owner>\/\<name>#\<number>@ into a @'PullRequestSpec'@
 parseSpec :: String -> Either String PullRequestSpec
