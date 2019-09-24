@@ -113,15 +113,16 @@ dockerRunRestyler
     -> RIO env ()
 dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getHostDirectory
-    handle toRestylerError
-        $ callProcess "docker"
+    ec <-
+        callProcessExitCode "docker"
         $ ["run", "--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]
         <> map ("./" <>) paths
-  where
-    toRestylerError (SystemError ex) = throwIO $ RestylerError r ex
-    toRestylerError ex = throwIO ex
+
+    case ec of
+        ExitSuccess -> pure ()
+        ExitFailure s -> throwIO $ RestylerExitFailure r s paths
 
 getHostDirectory :: (HasOptions env, HasSystem env) => RIO env FilePath
 getHostDirectory = do

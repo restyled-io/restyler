@@ -34,6 +34,7 @@ data TestApp = TestApp
 
     -- Process
     , taCallProcess :: String -> [String] -> RIO TestApp ()
+    , taCallProcessExitCode :: String -> [String] -> RIO TestApp ExitCode
     , taReadProcess :: String -> [String] -> String -> RIO TestApp String
 
     -- Add our other capabilities if/when tests require them
@@ -49,6 +50,7 @@ testApp = TestApp
     , taSetCurrentDirectory = error "setCurrentDirectory"
     , taDoesFileExist = error "doesFileExist"
     , taCallProcess = error "callProcess"
+    , taCallProcessExitCode = error "callProcessExitCode"
     , taReadProcess = error "readProcess"
     }
 
@@ -79,6 +81,7 @@ instance HasSystem TestApp where
 
 instance HasProcess TestApp where
     callProcess = asksAp2 taCallProcess
+    callProcessExitCode = asksAp2 taCallProcessExitCode
     readProcess = asksAp3 taReadProcess
 
 someRestyler :: Restyler

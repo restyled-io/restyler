@@ -33,6 +33,9 @@ instance HasSystem App where
 
 instance HasProcess App where
     callProcess = Process.callProcess
+    callProcessExitCode cmd args = Process.withCreateProcess proc
+        $ \_ _ _ p -> Process.waitForProcess p
+        where proc = (Process.proc cmd args) { Process.delegate_ctlc = True }
     readProcess = Process.readProcess
 
 instance HasDownloadFile App where

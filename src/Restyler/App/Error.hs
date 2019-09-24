@@ -35,8 +35,8 @@ data AppError
     -- ^ We couldn't clone or checkout the PR's branch
     | ConfigurationError ConfigError
     -- ^ We couldn't load a @.restyled.yaml@
-    | RestylerError Restyler IOException
-    -- ^ A Restyler we ran exited non-zero
+    | RestylerExitFailure Restyler Int [FilePath]
+    -- ^ A Restyler we ran exited non-zero on the given paths
     | GitHubError DisplayGitHubRequest Error
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
@@ -63,7 +63,7 @@ toErrorTitle = trouble . \case
     PullRequestFetchError _ -> "fetching your Pull Request from GitHub"
     PullRequestCloneError _ -> "cloning your Pull Request branch"
     ConfigurationError _ -> "with your configuration"
-    RestylerError r _ -> "with the " <> rName r <> " restyler"
+    RestylerExitFailure r _ _ -> "with the " <> rName r <> " restyler"
     GitHubError _ _ -> "communicating with GitHub"
     SystemError _ -> "running a system command"
     HttpError _ -> "performing an HTTP request"
@@ -84,7 +84,13 @@ toErrorBody = reflow . \case
     ConfigurationError (ConfigErrorInvalidRestylers es) ->
         "Invalid Restylers:" <> unlines (map ("  - " <>) es)
     ConfigurationError ConfigErrorNoRestylers -> "No Restylers configured"
-    RestylerError _ e -> show e
+    RestylerExitFailure _ s paths ->
+        "Exited non-zero ("
+            <> show s
+            <> ") for the following paths, "
+            <> show paths
+            <> "."
+            <> "\nError information may be present in the stderr output above."
     GitHubError req e -> "Request: " <> show req <> "\n" <> showGitHubError e
     SystemError e -> show e
     HttpError e -> show e
@@ -95,7 +101,7 @@ toErrorDocumentation = formatDocs . \case
     ConfigurationError _ ->
         [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
         ]
-    RestylerError r _ -> rDocumentation r
+    RestylerExitFailure r _ _ -> rDocumentation r
     _ -> []
   where
     formatDocs [] = "\n"
@@ -164,16 +170,16 @@ dieAppError :: AppError -> IO a
 dieAppError e = do
     hPutStrLn stderr $ prettyAppError e
     exitWith $ ExitFailure $ case e of
-        ConfigurationError (ConfigErrorInvalidYaml _ _) -> 10
-        ConfigurationError (ConfigErrorInvalidRestylers _) -> 11
+        ConfigurationError ConfigErrorInvalidYaml{} -> 10
+        ConfigurationError ConfigErrorInvalidRestylers{} -> 11
         ConfigurationError ConfigErrorNoRestylers -> 12
-        RestylerError _ _ -> 20
-        GitHubError _ _ -> 30
-        PullRequestFetchError _ -> 31
-        PullRequestCloneError _ -> 32
-        HttpError _ -> 40
-        SystemError _ -> 50
-        OtherError _ -> 99
+        RestylerExitFailure{} -> 20
+        GitHubError{} -> 30
+        PullRequestFetchError{} -> 31
+        PullRequestCloneError{} -> 32
+        HttpError{} -> 40
+        SystemError{} -> 50
+        OtherError{} -> 99
 
 exceptExit :: Applicative f => (SomeException -> f ()) -> SomeException -> f ()
 exceptExit f ex = maybe (f ex) ignore $ fromException ex
