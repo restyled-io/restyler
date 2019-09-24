@@ -9,7 +9,6 @@ import Restyler.App.Error
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
-import qualified System.Process as Process
 
 spec :: Spec
 spec = do
@@ -29,20 +28,16 @@ spec = do
             filtered `shouldBe` []
 
     describe "runRestyler_" $ do
-        it "rescues exit code exceptions to RestylerError" $ do
-            let errCallProcess _ _ =
-                    mapAppError SystemError $ liftIO $ Process.callProcess
-                        "false"
-                        []
-                errMessage = "callProcess: false (exit 1): failed"
+        it "treats non-zero exit codes as RestylerExitFailure" $ do
+            let
                 runTestApp = runRIO testApp
                     { taGetCurrentDirectory = pure "/tmp/ignored"
-                    , taCallProcess = errCallProcess
+                    , taCallProcessExitCode = \_ _ -> pure $ ExitFailure 99
                     }
 
             runTestApp (runRestyler_ someRestyler ["foo bar"])
-                `shouldThrow` isRestylerError someRestyler errMessage
+                `shouldThrow` isRestylerExitFailure someRestyler 99
 
-isRestylerError :: Restyler -> String -> AppError -> Bool
-isRestylerError r msg (RestylerError re ex) = re == r && show ex == msg
-isRestylerError _ _ _ = False
+isRestylerExitFailure :: Restyler -> Int -> AppError -> Bool
+isRestylerExitFailure r se (RestylerExitFailure re s _) = re == r && se == s
+isRestylerExitFailure _ _ _ = False

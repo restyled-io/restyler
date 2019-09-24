@@ -50,6 +50,8 @@ exitWithInfo msg = do
 class HasProcess env where
     callProcess :: String -> [String] -> RIO env ()
 
+    callProcessExitCode :: String -> [String] -> RIO env ExitCode
+
     readProcess :: String -> [String] -> String -> RIO env String
 
 class HasDownloadFile env where

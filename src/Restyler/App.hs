@@ -78,6 +78,15 @@ instance HasProcess StartupApp where
         logDebug $ "call: " <> fromString cmd <> " " <> displayShow args
         appIO SystemError $ Process.callProcess cmd args
 
+    callProcessExitCode cmd args = do
+        logDebug $ "call: " <> fromString cmd <> " " <> displayShow args
+        ec <- appIO SystemError
+            $ Process.withCreateProcess proc
+            $ \_ _ _ p -> Process.waitForProcess p
+        ec <$ logDebug ("exit code: " <> displayShow ec)
+      where
+        proc = (Process.proc cmd args) { Process.delegate_ctlc = True }
+
     readProcess cmd args stdin' = do
         logDebug $ "read: " <> fromString cmd <> " " <> displayShow args
         output <- appIO SystemError $ Process.readProcess cmd args stdin'
@@ -149,6 +158,7 @@ instance HasExit App where
 
 instance HasProcess App where
     callProcess cmd = runApp . callProcess cmd
+    callProcessExitCode cmd = runApp . callProcessExitCode cmd
     readProcess cmd args = runApp . readProcess cmd args
 
 instance HasGit App where
