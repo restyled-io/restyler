@@ -15,6 +15,7 @@ import Data.List (nub)
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
+import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Git
@@ -22,7 +23,7 @@ import Restyler.Options
 import Restyler.Restyler
 import Restyler.RestylerResult
 
--- | Runs the given @'Restyler'@s over the files and report results
+-- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
     :: ( HasLogFunc env
        , HasOptions env
@@ -35,7 +36,7 @@ runRestylers
     -> RIO env [RestylerResult]
 runRestylers = runRestylersWith runRestyler
 
--- | Runs the given @'Restyler'@s but without committing or reporting results
+-- | @'runRestylers'@, but without committing or reporting results
 runRestylers_
     :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
     => Config
@@ -50,12 +51,13 @@ runRestylersWith
     -> [FilePath]
     -> RIO env [b]
 runRestylersWith run Config {..} allPaths = do
-    paths <- filterM doesFileExist allPaths
+    paths <- filterM doesFileExist $ filter included allPaths
 
     logDebug $ "Restylers: " <> displayShow (map rName cRestylers)
     logDebug $ "Paths: " <> displayShow paths
 
     for cRestylers $ \r -> run r =<< filterRestylePaths r paths
+    where included path = none (`match` path) cExclude
 
 filterRestylePaths
     :: HasSystem env => Restyler -> [FilePath] -> RIO env [FilePath]
