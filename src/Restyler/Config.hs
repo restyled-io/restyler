@@ -47,7 +47,7 @@ import qualified Data.ByteString.Char8 as C8
 import Data.FileEmbed (embedFile)
 import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
-import Data.Monoid (Last(..))
+import Data.Monoid (Alt(..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Yaml (decodeThrow)
@@ -97,8 +97,13 @@ data ConfigF f = ConfigF
     deriving anyclass (FunctorB, ProductB, ProductBC, ConstraintsB)
 
 -- | An empty @'ConfigF'@ of all @'Nothing'@s
+--
+-- N.B. the choice of @'getAlt'@ is somewhat arbitrary. We just need a @Maybe@
+-- wrapper @f a@ where @getX mempty@ is @Nothing@, but without a @Monoid a@
+-- constraint.
+--
 emptyConfig :: ConfigF Maybe
-emptyConfig = bmap getLast bmempty
+emptyConfig = bmap getAlt bmempty
 
 instance FromJSON (ConfigF Maybe) where
     parseJSON a@(Array _) = do
