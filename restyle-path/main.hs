@@ -6,7 +6,7 @@ import Conduit (runResourceT, sinkFile)
 import Data.Text (unpack)
 import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Class (HasDownloadFile(..), HasProcess(..), HasSystem(..))
-import Restyler.Config (Config(..), loadConfig)
+import Restyler.Config (loadConfig)
 import Restyler.Options
 import Restyler.Restyler.Run (runRestylers_)
 import qualified RIO.Directory as Directory
@@ -50,7 +50,7 @@ main = do
     options <- setupLog <$> logOptionsHandle stdout verbose
     withLogFunc options $ \logFunc -> runRIO (setupApp logFunc mDir) $ do
         config <- loadConfig
-        runRestylers_ (cRestylers config) =<< getArgs
+        runRestylers_ config =<< getArgs
   where
     setupLog = setLogUseTime False . setLogUseLoc False
     setupApp logFunc mDir = App
