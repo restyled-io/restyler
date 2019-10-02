@@ -85,10 +85,10 @@ restyle
        )
     => RIO env [RestylerResult]
 restyle = do
-    restylers <- cRestylers <$> view configL
+    config <- view configL
     pullRequest <- view pullRequestL
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
-    runRestylers restylers pullRequestPaths
+    runRestylers config pullRequestPaths
 
 wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
 wasRestyled = do
