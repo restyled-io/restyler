@@ -51,3 +51,7 @@ intersects a b = not $ Set.null $ Set.intersection a' b'
   where
     a' = Set.fromList $ F.toList a
     b' = Set.fromList $ F.toList b
+
+-- | Inverse of @'any'@
+none :: Foldable t => (a -> Bool) -> t a -> Bool
+none p = not . any p

@@ -56,6 +56,7 @@ import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
+import Restyler.Config.Glob
 import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
@@ -80,6 +81,7 @@ import Restyler.Restyler
 --
 data ConfigF f = ConfigF
     { cfEnabled :: f Bool
+    , cfExclude :: f (SketchyList Glob)
     , cfAuto :: f Bool
     , cfRemoteFiles :: f (SketchyList RemoteFile)
     , cfPullRequests :: f Bool
@@ -120,6 +122,7 @@ resolveConfig = bzipWith f
 --
 data Config = Config
     { cEnabled :: Bool
+    , cExclude :: [Glob]
     , cAuto :: Bool
     , cRemoteFiles :: [RemoteFile]
     , cPullRequests :: Bool
@@ -235,6 +238,7 @@ resolveRestylers ConfigF {..} allRestylers = do
 
     pure Config
         { cEnabled = runIdentity cfEnabled
+        , cExclude = unSketchy $ runIdentity cfExclude
         , cAuto = runIdentity cfAuto
         , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
         , cPullRequests = runIdentity cfPullRequests

@@ -11,6 +11,20 @@
 # Do anything at all?
 enabled: true
 
+# Patterns to exclude from all Restylers
+#
+# By default, we ignore directories that are often checked-in but rarely
+# represent project code. This glob is slightly complicated to match paths
+# within directories of these names appearing at any depth.
+#
+# This behavior can be disabled in your project with:
+#
+#   exclude: []
+#
+exclude:
+  - "**/node_modules/**/*"
+  - "**/vendor/**/*"
+
 # Push the style fixes directly to the original PR
 #
 # This setting implies pull_requests: false for origin PRs, and has no effect on
