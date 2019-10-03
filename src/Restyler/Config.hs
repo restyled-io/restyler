@@ -134,7 +134,7 @@ data Config = Config
     , cComments :: Bool
     , cStatuses :: Statuses
     , cRequestReview :: RequestReviewConfig
-    , cLabels :: [Name IssueLabel]
+    , cLabels :: Set (Name IssueLabel)
     , cIgnoreLabels :: Set (Name IssueLabel)
     , cRestylers :: [Restyler]
     -- ^ TODO: @'NonEmpty'@
@@ -250,7 +250,7 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cComments = runIdentity cfComments
         , cStatuses = runIdentity cfStatuses
         , cRequestReview = runIdentity cfRequestReview
-        , cLabels = unSketchy $ runIdentity cfLabels
+        , cLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
         , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfIgnoreLabels
         , cRestylers = restylers
         }

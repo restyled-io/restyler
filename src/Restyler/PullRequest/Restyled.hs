@@ -9,6 +9,7 @@ where
 
 import Restyler.Prelude
 
+import qualified Data.Set as Set
 import GitHub.Endpoints.GitData.References.Delete
 import GitHub.Endpoints.Issues.Labels
 import GitHub.Endpoints.PullRequests hiding (pullRequest)
@@ -60,7 +61,7 @@ createRestyledPullRequest results = do
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
 
-    whenConfigNonEmpty cLabels $ \labels -> do
+    whenConfigNonEmpty (Set.toList . cLabels) $ \labels -> do
         logInfo $ "Adding labels to Restyled PR (" <> displayShow labels <> ")"
         runGitHub_ $ addLabelsToIssueR
             (pullRequestOwnerName pr)
