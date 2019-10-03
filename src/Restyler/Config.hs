@@ -251,7 +251,7 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cStatuses = runIdentity cfStatuses
         , cRequestReview = runIdentity cfRequestReview
         , cLabels = unSketchy $ runIdentity cfLabels
-        , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
+        , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfIgnoreLabels
         , cRestylers = restylers
         }
   where
