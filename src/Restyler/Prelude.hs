@@ -8,8 +8,9 @@ where
 import RIO as X hiding (exitSuccess, first, second)
 
 import Control.Error.Util as X (hush, note)
-import Control.Monad.Extra as X (maybeM)
+import Control.Monad.Extra as X (eitherM, maybeM)
 import Data.Bifunctor as X (first, second)
+import Data.Bitraversable as X (Bitraversable, bimapM)
 import Data.Functor.Syntax as X ((<$$>))
 import GitHub.Data as X (Id, Name, URL(..), getUrl, mkId, mkName, untagName)
 import RIO.Char as X (isSpace)
@@ -20,6 +21,13 @@ import Safe as X (fromJustNote)
 import qualified Data.Foldable as F
 import qualified Data.Set as Set
 import qualified RIO.Text as T
+
+firstM :: (Bitraversable t, Applicative f) => (a -> f a') -> t a b -> f (t a' b)
+firstM f = bimapM f pure
+
+secondM
+    :: (Bitraversable t, Applicative f) => (b -> f b') -> t a b -> f (t a b')
+secondM = bimapM pure
 
 -- | Like @'withReader'@ for @'RIO'@
 withRIO :: (env' -> env) -> RIO env a -> RIO env' a

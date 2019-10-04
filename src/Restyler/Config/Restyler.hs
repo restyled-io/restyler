@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- | The Restyler attributes that can be used in a "named override"
 --
 -- The @'FromJSON'@ for @'Restyler'@ is the "obvious" and literal parser, it is
@@ -6,17 +8,17 @@
 -- Restyler and overrides some fields:
 --
 -- @
--- - hlint:
---     arguments:
---       - foo
---       - bar
+-- hlint:
+--   arguments:
+--     - foo
+--     - bar
 -- @
 --
 -- This module accomplishes that.
 --
 module Restyler.Config.Restyler
-    ( ConfigRestyler
-    , unConfigRestyler
+    ( RestylerOverrides
+    , overrideRestylers
     )
 where
 
@@ -24,16 +26,37 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import Data.Aeson.Types (Parser, modifyFailure, typeMismatch)
+import Data.Aeson.Types (Parser, typeMismatch)
+import Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as HM
+import qualified Data.Vector as V
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.SketchyList
 import Restyler.Restyler
 
+newtype RestylerOverrides = RestylerOverrides
+    { _unConfigRestylers :: HashMap String RestylerOverride
+    }
+
+-- brittany-disable-next-binding
+
+instance FromJSON RestylerOverrides where
+    parseJSON = fmap RestylerOverrides . \case
+        Object hm -> parseOverride hm
+        Array v -> parseLegacyList v
+        v -> typeMismatch "Restyler overrides object" v
+
+parseOverride :: HashMap Text Value -> Parser (HashMap String RestylerOverride)
+parseOverride = fmap HM.fromList . traverse parseOverrideElement . HM.toList
+
+parseOverrideElement :: (Text, Value) -> Parser (String, RestylerOverride)
+parseOverrideElement = bimapM (pure . unpack) parseJSON
+
 data RestylerOverride = RestylerOverride
-    { roImage :: Maybe String
+    { roEnabled :: Maybe Bool
+    , roImage :: Maybe String
     , roCommand :: Maybe (SketchyList String)
     , roArguments :: Maybe (SketchyList String)
     , roInclude :: Maybe (SketchyList Include)
@@ -41,41 +64,70 @@ data RestylerOverride = RestylerOverride
     }
     deriving (Eq, Show, Generic)
 
+instance FromJSON RestylerOverride where
+    parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
+
+defaultEnabled :: RestylerOverride -> RestylerOverride
+defaultEnabled ro@RestylerOverride {..} =
+    ro { roEnabled = roEnabled <|> Just True }
+
+overrideRestylers :: [Restyler] -> RestylerOverrides -> Either String [Restyler]
+overrideRestylers restylers (RestylerOverrides hm) =
+    map override restylers <$ validateRestylerNames
+  where
+    validateRestylerNames = traverse_ validateRestylerName $ HM.keys hm
+    validateRestylerName =
+        validateExpectedKeyBy "Restyler name" rName restylers
+
+    override base =
+        maybe base (overrideRestyler base) $ HM.lookup (rName base) hm
+
 overrideRestyler :: Restyler -> RestylerOverride -> Restyler
 overrideRestyler restyler@Restyler {..} RestylerOverride {..} = restyler
-    { rImage = fromMaybe rImage roImage
+    { rEnabled = fromMaybe rEnabled roEnabled
+    , rImage = fromMaybe rImage roImage
     , rCommand = maybe rCommand unSketchy roCommand
     , rArguments = maybe rArguments unSketchy roArguments
     , rInclude = maybe rInclude unSketchy roInclude
     , rInterpreters = maybe rInterpreters unSketchy roInterpreters
     }
 
-instance FromJSON RestylerOverride where
-    parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
+-- | Parse the legacy list-style format
+--
+-- NB. we don't preserve 100% of the behavior from before:
+--
+-- 1. Previously, you could put a whole @'Restyler'@ object as a list element
+--
+--    Now this is an (informative) error. If this is limitation is a problem for
+--    users, and the use-case is reasonable, we'll extend @'RestylerOverride'@.
+--
+-- 2. Presence in the list implies @enabled:true@ (as before), but non-presence
+--    no longer implies @enabled:false@
+--
+--    Users should migrate to the new-style config, but just adding
+--    @enabled:false@ to a list element would be respected too.
+--
+parseLegacyList :: Vector Value -> Parser (HashMap String RestylerOverride)
+parseLegacyList = fmap HM.fromList . traverse parseLegacyElement . V.toList
 
-newtype ConfigRestyler = ConfigRestyler
-    { unConfigRestyler :: [Restyler] -> Either String Restyler
-    }
+parseLegacyElement :: Value -> Parser (String, RestylerOverride)
+parseLegacyElement = \case
+    String name -> namedOverride name $ Object HM.empty
+    Object o -> case HM.toList o of
+        [(name, vo@(Object _))] -> namedOverride name vo
 
-configRestyler :: Text -> RestylerOverride -> ConfigRestyler
-configRestyler name override = ConfigRestyler $ \restylers -> do
-    restyler <- lookupRestyler name restylers
-    pure $ overrideRestyler restyler override
+        _ -> invalidLegacy
+    _ -> invalidLegacy
 
--- brittany-disable-next-binding
+namedOverride :: Text -> Value -> Parser (String, RestylerOverride)
+namedOverride name o = (unpack name, ) . defaultEnabled <$> parseJSON o
 
-instance FromJSON ConfigRestyler where
-    parseJSON (String name) = pure $ ConfigRestyler $ lookupRestyler name
-    parseJSON v@(Object o) = case HM.toList o of
-        [(name, vo@(Object _))] -> configRestyler name <$> parseJSON vo
-        _ -> suffixFailure
-            "\n\nDid you intend to specify a full Restyler object, or do you have incorrect indentation for a named override?"
-            $ ConfigRestyler . const . Right <$> parseJSON v
-    parseJSON v = typeMismatch "Name, or name with overrides" v
-
-suffixFailure :: String -> Parser a -> Parser a
-suffixFailure x = modifyFailure (<> x)
-
-lookupRestyler :: Text -> [Restyler] -> Either String Restyler
-lookupRestyler name restylers =
-    validateExpectedKeyBy "Restyler name" rName restylers $ unpack name
+invalidLegacy :: Parser a
+invalidLegacy = fail $ unlines
+    [ "Invalid restylers value: must be a name or name with overrides"
+    , ""
+    , "You may be using a feature previously supported in that list-style"
+    , "configuration format. Please adjust your configuration to the"
+    , "new object-style format."
+    , ""
+    ]

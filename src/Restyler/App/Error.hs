@@ -81,9 +81,19 @@ toErrorBody = reflow . \case
         , "Original input:"
         , unpack $ decodeUtf8 yaml
         ]
-    ConfigurationError (ConfigErrorInvalidRestylers es) ->
-        "Invalid Restylers:" <> unlines (map ("  - " <>) es)
-    ConfigurationError ConfigErrorNoRestylers -> "No Restylers configured"
+    ConfigurationError (ConfigErrorUnknownRestylers err) -> err
+    ConfigurationError (ConfigErrorInvalidRestylersYaml e) -> unlines
+        [ "Error loading restylers.yaml definition:"
+        , show e
+        , ""
+        , "==="
+        , ""
+        , "This could be caused by an invalid or too-old restylers_version in"
+        , "your configuration. Consider removing or updating it."
+        , ""
+        , "If that's not the case, this is a bug in our system that we are"
+        , "hopefully already working to fix."
+        ]
     RestylerExitFailure _ s paths ->
         "Exited non-zero ("
             <> show s
@@ -98,6 +108,8 @@ toErrorBody = reflow . \case
 
 toErrorDocumentation :: AppError -> String
 toErrorDocumentation = formatDocs . \case
+    ConfigurationError ConfigErrorInvalidRestylersYaml{} ->
+        ["https://github.com/restyled-io/restyled.io/wiki/Restyler-Versions"]
     ConfigurationError _ ->
         [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
         ]
@@ -171,8 +183,8 @@ dieAppError e = do
     hPutStrLn stderr $ prettyAppError e
     exitWith $ ExitFailure $ case e of
         ConfigurationError ConfigErrorInvalidYaml{} -> 10
-        ConfigurationError ConfigErrorInvalidRestylers{} -> 11
-        ConfigurationError ConfigErrorNoRestylers -> 12
+        ConfigurationError ConfigErrorUnknownRestylers{} -> 11
+        ConfigurationError ConfigErrorInvalidRestylersYaml{} -> 12
         RestylerExitFailure{} -> 20
         GitHubError{} -> 30
         PullRequestFetchError{} -> 31

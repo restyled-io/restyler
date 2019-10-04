@@ -53,11 +53,13 @@ runRestylersWith
 runRestylersWith run Config {..} allPaths = do
     paths <- filterM doesFileExist $ filter included allPaths
 
-    logDebug $ "Restylers: " <> displayShow (map rName cRestylers)
+    logDebug $ "Restylers: " <> displayShow (map rName restylers)
     logDebug $ "Paths: " <> displayShow paths
 
-    for cRestylers $ \r -> run r =<< filterRestylePaths r paths
-    where included path = none (`match` path) cExclude
+    for restylers $ \r -> run r =<< filterRestylePaths r paths
+  where
+    included path = none (`match` path) cExclude
+    restylers = filter rEnabled cRestylers
 
 filterRestylePaths
     :: HasSystem env => Restyler -> [FilePath] -> RIO env [FilePath]

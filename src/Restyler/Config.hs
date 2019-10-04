@@ -90,7 +90,7 @@ data ConfigF f = ConfigF
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
     , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
-    , cfRestylers :: f (SketchyList ConfigRestyler)
+    , cfRestylers :: f RestylerOverrides
     , cfRestylersVersion :: f String
     }
     deriving stock Generic
@@ -154,8 +154,8 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
-    | ConfigErrorInvalidRestylers [String]
-    | ConfigErrorNoRestylers
+    | ConfigErrorUnknownRestylers String
+    | ConfigErrorInvalidRestylersYaml SomeException
     deriving Show
 
 configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
@@ -183,7 +183,8 @@ loadConfig
     :: (HasLogFunc env, HasSystem env, HasDownloadFile env) => RIO env Config
 loadConfig =
     loadConfigFrom (ConfigPath configPath)
-        $ getAllRestylersVersioned
+        $ handleTo ConfigErrorInvalidRestylersYaml
+        . getAllRestylersVersioned
         . runIdentity
         . cfRestylersVersion
 
@@ -231,15 +232,15 @@ decodeThrow' content =
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
--- May throw specifically
---
--- - @'ConfigErrorInvalidRestylers'@, or
--- - @'ConfigErrorNoRestylers'@
+-- May throw @'ConfigErrorUnknownRestylers'@.
 --
 resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
 resolveRestylers ConfigF {..} allRestylers = do
-    unless (null errs) $ throwIO $ ConfigErrorInvalidRestylers errs
-    when (null restylers) $ throwIO ConfigErrorNoRestylers
+    restylers <-
+        eitherM (throwIO . ConfigErrorUnknownRestylers) pure
+        $ pure
+        $ overrideRestylers allRestylers
+        $ runIdentity cfRestylers
 
     pure Config
         { cEnabled = runIdentity cfEnabled
@@ -254,12 +255,6 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfIgnoreLabels
         , cRestylers = restylers
         }
-  where
-    (errs, restylers) =
-        partitionEithers
-            $ map (($ allRestylers) . unConfigRestyler)
-            $ unSketchy
-            $ runIdentity cfRestylers
 
 class HasConfig env where
     configL :: Lens' env Config
