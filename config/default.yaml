@@ -65,9 +65,14 @@ statuses:
 #
 #   author: From the author of the original PR
 #   owner: From the owner of the repository
+#   none: Don't
 #
 # One value will apply to origin and forked PRs, but you can also specify
 # separate values.
+#
+#   request_review:
+#     origin: author
+#     forked: owner
 #
 request_review: none
 
