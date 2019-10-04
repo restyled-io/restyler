@@ -86,7 +86,8 @@ instance HasProcess TestApp where
 
 someRestyler :: Restyler
 someRestyler = Restyler
-    { rName = "test-restyler"
+    { rEnabled = True
+    , rName = "test-restyler"
     , rImage = "restyled/restyler-test-restyler"
     , rCommand = ["restyle"]
     , rDocumentation = []

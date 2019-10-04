@@ -16,7 +16,8 @@ import Restyler.Config.Interpreter
 import Restyler.RemoteFile
 
 data Restyler = Restyler
-    { rName :: String
+    { rEnabled :: Bool
+    , rName :: String
     , rImage :: String
     , rCommand :: [String]
     , rArguments :: [String]

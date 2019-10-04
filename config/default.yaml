@@ -89,36 +89,6 @@ labels: []
 ignore_labels:
   - restyled-ignore
 
-# Which restylers to run
-#
-# See restyled-io/restylers repository for their defaults.
-#
-restylers:
-  - astyle
-  - autopep8
-  - black
-  # - brittany
-  - dfmt
-  - elm-format
-  # - google-java-format
-  # - hindent
-  # - hlint
-  # - jdt
-  - pg_format
-  - php-cs-fixer
-  - prettier
-  - prettier-markdown
-  - prettier-yaml
-  - prettier-ruby
-  - reorder-python-imports
-  - rubocop
-  - rustfmt
-  - shellharden
-  - shfmt
-  - stylish-haskell
-  - terraform
-  - yapf
-
 # Version of the set of Restylers to run
 #
 # This should correspond to a ref on the restyled-io/restylers repository,
@@ -126,4 +96,33 @@ restylers:
 # re-specify the default in your own config if you prefer to avoid update
 # surprises.
 #
-restylers_version: "20190910"
+restylers_version: "20191004"
+
+# Override Restylers behavior
+#
+# Example:
+#
+#   ---
+#   restylers:
+#     # disable a Restyler enabled by default
+#     prettier:
+#       enabled: false
+#
+#     # enable a Restyler disabled by default
+#     hlint:
+#       enabled: true
+#
+#     # adjust what files a Restyler runs on
+#     brittany:
+#       include:
+#         - "**/*.hs"
+#         - "!test/**/*"
+#
+#     # even use your own Restyler image (must be publicly pullable)
+#     stylish-haskell:
+#       image: pbrisbin/restyler-style-haskell:bugfix
+#
+# The empty object means to override nothing and accept the defaults defined in
+# the restyled-io/restylers repository for the configured restylers_version.
+#
+restylers: {}
