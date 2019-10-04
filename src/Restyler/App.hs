@@ -101,7 +101,7 @@ instance HasDownloadFile StartupApp where
     downloadFile url path = do
         logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
         appIO HttpError $ do
-            request <- parseRequest $ unpack url
+            request <- parseRequestThrow $ unpack url
             runResourceT $ httpSink request $ \_ -> sinkFile path
 
 instance HasGitHub StartupApp where

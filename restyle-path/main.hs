@@ -40,7 +40,7 @@ instance HasProcess App where
 
 instance HasDownloadFile App where
     downloadFile url path = liftIO $ do
-        request <- parseRequest $ unpack url
+        request <- parseRequestThrow $ unpack url
         runResourceT $ httpSink request $ \_ -> sinkFile path
 
 main :: IO ()
