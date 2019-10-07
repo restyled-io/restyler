@@ -1,10 +1,7 @@
 # Default Restyler Configuration
 #
-# Overall notes:
-#
-# - All keys are optional and default as shown
-# - The entire config can also be just a list of values, which will be
-#   interpreted as specifying the restylers key
+# All keys are optional and default as shown. All list values can also be given
+# a single value, to indicate a single-element list.
 #
 ####
 
@@ -67,7 +64,7 @@ statuses:
 #   owner: From the owner of the repository
 #   none: Don't
 #
-# One value will apply to origin and forked PRs, but you can also specify
+# One value will apply to both origin and forked PRs, but you can also specify
 # separate values.
 #
 #   request_review:
@@ -99,6 +96,18 @@ ignore_labels:
 restylers_version: "20191004"
 
 # Override Restylers behavior
+#
+# Commonly-used keys:
+#
+# - enabled: true|false
+# - arguments: additional argument(s) to pass when invoked
+# - include: patterns to identify files to restyle
+# - interpreters: interpreters to look for in extension-less files
+#
+# Other valid keys:
+#
+# - image: Docker image to run, can be anything publically-accessible
+# - command: actual executable invoked
 #
 # Example:
 #
