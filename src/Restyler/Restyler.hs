@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Restyler.Restyler
     ( Restyler(..)
     , getAllRestylersVersioned
@@ -8,6 +10,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
+import qualified Data.HashMap.Lazy as HM
 import Data.Yaml (decodeFileThrow)
 import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
@@ -30,7 +33,26 @@ data Restyler = Restyler
     deriving (Eq, Show, Generic)
 
 instance FromJSON Restyler where
-    parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
+    parseJSON =
+        genericParseJSONValidated (aesonPrefix snakeCase) . upgradeEnabled
+
+-- | Upgrade values from @restylers.yaml@ that lack an @enabled@ key
+--
+-- Hard-code a value from the list based on the default configuration present
+-- here before such a key existed.
+--
+upgradeEnabled :: Value -> Value
+upgradeEnabled =
+    overObject $ override "enabled" $ Bool . maybe True enabled . HM.lookup
+        "name"
+  where
+    overObject f = \case
+        Object o -> Object $ f o
+        v -> v
+    override k f o = HM.insertWith const k (f o) o
+    enabled = (`notElem` disabledRestylers)
+    disabledRestylers =
+        ["brittany", "google-java-format", "hindent", "hlint", "jdt"]
 
 instance ToJSON Restyler where
     toJSON = genericToJSON $ aesonPrefix snakeCase
