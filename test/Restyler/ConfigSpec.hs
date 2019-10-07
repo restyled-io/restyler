@@ -72,7 +72,7 @@ spec = do
             result <- loadTestConfig $ C8.unlines ["---", "- hindent"]
 
             result `shouldBe` Right defaultConfig
-                { cRestylers = testRestylersWith
+                { cRestylers = testRestylersDisabledWith
                     $ someRestyler { rName = "hindent", rEnabled = True }
                 }
 
@@ -106,7 +106,7 @@ spec = do
             result1 `shouldBe` result2
             result2 `shouldBe` result3
             result3 `shouldBe` Right defaultConfig
-                { cRestylers = testRestylersWith $ someRestyler
+                { cRestylers = testRestylersDisabledWith $ someRestyler
                     { rName = "stylish-haskell"
                     , rInclude = [Include "**/*.lhs"]
                     }
@@ -201,6 +201,12 @@ testRestylers =
 
 testRestylersWith :: Restyler -> [Restyler]
 testRestylersWith restyler = map (replaceByName restyler) testRestylers
+
+testRestylersDisabledWith :: Restyler -> [Restyler]
+testRestylersDisabledWith restyler = map
+    (replaceByName restyler . disable)
+    testRestylers
+    where disable r = r { rEnabled = False }
 
 replaceByName :: Restyler -> Restyler -> Restyler
 replaceByName a b

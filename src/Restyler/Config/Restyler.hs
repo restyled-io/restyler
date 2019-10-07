@@ -36,16 +36,17 @@ import Restyler.Config.Interpreter
 import Restyler.Config.SketchyList
 import Restyler.Restyler
 
-newtype RestylerOverrides = RestylerOverrides
-    { _unConfigRestylers :: HashMap String RestylerOverride
+data RestylerOverrides = RestylerOverrides
+    { _roLegacy :: Bool
+    , _roOverrides :: HashMap String RestylerOverride
     }
 
 -- brittany-disable-next-binding
 
 instance FromJSON RestylerOverrides where
-    parseJSON = fmap RestylerOverrides . \case
-        Object hm -> parseOverride hm
-        Array v -> parseLegacyList v
+    parseJSON = \case
+        Object hm -> RestylerOverrides False <$> parseOverride hm
+        Array v -> RestylerOverrides True <$> parseLegacyList v
         v -> typeMismatch "Restyler overrides object" v
 
 parseOverride :: HashMap Text Value -> Parser (HashMap String RestylerOverride)
@@ -72,7 +73,7 @@ defaultEnabled ro@RestylerOverride {..} =
     ro { roEnabled = roEnabled <|> Just True }
 
 overrideRestylers :: [Restyler] -> RestylerOverrides -> Either String [Restyler]
-overrideRestylers restylers (RestylerOverrides hm) =
+overrideRestylers restylers (RestylerOverrides legacy hm) =
     map override restylers <$ validateRestylerNames
   where
     validateRestylerNames = traverse_ validateRestylerName $ HM.keys hm
@@ -80,7 +81,12 @@ overrideRestylers restylers (RestylerOverrides hm) =
         validateExpectedKeyBy "Restyler name" rName restylers
 
     override base =
-        maybe base (overrideRestyler base) $ HM.lookup (rName base) hm
+        maybe (disabledIfLegacy base) (overrideRestyler base)
+            $ HM.lookup (rName base) hm
+
+    disabledIfLegacy r
+        | legacy = r { rEnabled = False }
+        | otherwise = r
 
 overrideRestyler :: Restyler -> RestylerOverride -> Restyler
 overrideRestyler restyler@Restyler {..} RestylerOverride {..} = restyler
