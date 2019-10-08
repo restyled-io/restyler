@@ -8,11 +8,12 @@ where
 
 import Restyler.Prelude
 
-import Data.Aeson
+import Data.Aeson hiding (Result(..))
 import Data.Aeson.Casing
 import Data.Aeson.Types (Parser, modifyFailure)
 import Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as HM
+import Data.Validation
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
@@ -49,22 +50,26 @@ suffixIncorrectIndentation = modifyFailure (<> msg)
     where msg = "\n\nDo you have incorrect indentation for a named override?"
 
 overrideRestylers
-    :: [Restyler] -> Maybe [RestylerOverride] -> Either String [Restyler]
-overrideRestylers restylers = maybe (pure restylers)
-    $ traverse (overrideRestyler restylersMap)
+    :: [Restyler] -> Maybe [RestylerOverride] -> Either [String] [Restyler]
+overrideRestylers restylers =
+    maybe (pure restylers) (toEither . overrideRestylers' restylers)
+
+-- | @'overrideRestylers'@ in @'Validation'@
+overrideRestylers'
+    :: [Restyler] -> [RestylerOverride] -> Validation [String] [Restyler]
+overrideRestylers' restylers = traverse $ overrideRestyler restylersMap
   where
     restylersMap :: HashMap String Restyler
     restylersMap = HM.fromList $ map (rName &&& id) restylers
 
 overrideRestyler
-    :: HashMap String Restyler -> RestylerOverride -> Either String Restyler
-overrideRestyler restylers RestylerOverride {..} = do
-    restyler@Restyler {..} <- lookupExpectedKeyBy
-        "Restyler name"
-        restylers
-        roName
-
-    pure restyler
+    :: HashMap String Restyler
+    -> RestylerOverride
+    -> Validation [String] Restyler
+overrideRestyler restylers RestylerOverride {..} =
+    override <$> lookupExpectedKeyBy "Restyler name" restylers roName
+  where
+    override restyler@Restyler {..} = restyler
         { rEnabled = fromMaybe True roEnabled
         , rImage = fromMaybe rImage roImage
         , rCommand = maybe rCommand unSketchy roCommand
@@ -72,3 +77,10 @@ overrideRestyler restylers RestylerOverride {..} = do
         , rInclude = maybe rInclude unSketchy roInclude
         , rInterpreters = maybe rInterpreters unSketchy roInterpreters
         }
+
+lookupExpectedKeyBy
+    :: String -> HashMap String v -> String -> Validation [String] v
+lookupExpectedKeyBy label hm k =
+    case validateExpectedKeyBy label fst (HM.toList hm) k of
+        Left e -> Failure [e]
+        Right (_k, v) -> Success v

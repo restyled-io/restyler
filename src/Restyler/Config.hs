@@ -154,7 +154,7 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
-    | ConfigErrorUnknownRestylers String
+    | ConfigErrorUnknownRestylers [String]
     | ConfigErrorInvalidRestylersYaml SomeException
     deriving Show
 

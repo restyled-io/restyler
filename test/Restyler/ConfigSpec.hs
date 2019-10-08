@@ -81,6 +81,15 @@ spec = do
         result3 `shouldSatisfy` hasError
             "Unexpected Restyler name \"uknown-name\""
 
+    it "reports multiple unknown names at once" $ do
+        result <- loadTestConfig
+            $ C8.unlines ["---", "- unknown-name-1", "- unknown-name-2"]
+
+        result `shouldSatisfy` hasError
+            "Unexpected Restyler name \"unknown-name-1\""
+        result `shouldSatisfy` hasError
+            "Unexpected Restyler name \"unknown-name-2\""
+
     it "provides suggestions for close matches" $ do
         result1 <- loadTestConfig $ C8.unlines ["---", "- hindex"]
         result2 <- loadTestConfig
@@ -158,7 +167,7 @@ loadTestConfig content =
 showConfigError :: ConfigError -> String
 showConfigError = \case
     ConfigErrorInvalidYaml _ ex -> prettyPrintParseException ex
-    ConfigErrorUnknownRestylers err -> err
+    ConfigErrorUnknownRestylers errs -> unlines errs
     ConfigErrorInvalidRestylersYaml ex -> show ex
 
 testRestylers :: [Restyler]

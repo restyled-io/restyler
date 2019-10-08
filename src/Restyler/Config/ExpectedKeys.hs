@@ -5,7 +5,6 @@ module Restyler.Config.ExpectedKeys
     ( genericParseJSONValidated
     , validateObjectKeys
     , validateExpectedKeyBy
-    , lookupExpectedKeyBy
     )
 where
 
@@ -74,10 +73,6 @@ validateExpectedKeyBy label f as k = note msg $ find ((== k) . f) as
             guard $ d <= length k `div` 2
             pure k'
         )
-
-lookupExpectedKeyBy :: String -> HashMap String v -> String -> Either String v
-lookupExpectedKeyBy label hm k =
-    snd <$> validateExpectedKeyBy label fst (HM.toList hm) k
 
 nearestElem :: String -> [String] -> Maybe (String, Int)
 nearestElem x = minimumByMaybe (compare `on` snd) . map (id &&& editDistance x)
