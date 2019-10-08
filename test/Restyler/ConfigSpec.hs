@@ -17,137 +17,124 @@ import Restyler.Restyler
 
 spec :: Spec
 spec = do
+    it "supports a simple, name-based syntax" $ do
+        defaultConfig <- loadDefaultConfig
+
+        result <- loadTestConfig
+            $ C8.unlines ["---", "- stylish-haskell", "- prettier"]
+
+        result `shouldBe` Right defaultConfig
+            { cRestylers =
+                [ someRestyler { rName = "stylish-haskell" }
+                , someRestyler { rName = "prettier" }
+                ]
+            }
+
     it "has a setting for globally disabling" $ do
-        result <- loadTestConfig $ C8.unlines ["---", "enabled: false"]
+        result <- loadTestConfig $ C8.unlines
+            ["---", "enabled: false", "restylers:", "- stylish-haskell"]
 
         fmap cEnabled result `shouldBe` Right False
 
+    it "allows re-configuring includes" $ do
+        defaultConfig <- loadDefaultConfig
+
+        result1 <- loadTestConfig $ C8.unlines
+            ["---", "- stylish-haskell:", "    include:", "    - \"**/*.lhs\""]
+        result2 <- loadTestConfig $ C8.unlines
+            ["---", "- stylish-haskell:", "    include:", "    - \"**/*.lhs\""]
+        result3 <- loadTestConfig $ C8.unlines
+            [ "---"
+            , "restylers:"
+            , "- stylish-haskell:"
+            , "    include:"
+            , "    - \"**/*.lhs\""
+            ]
+
+        result1 `shouldBe` result2
+        result2 `shouldBe` result3
+        result3 `shouldBe` Right defaultConfig
+            { cRestylers =
+                [ someRestyler
+                      { rName = "stylish-haskell"
+                      , rInclude = [Include "**/*.lhs"]
+                      }
+                ]
+            }
+
+    it "has good errors for unknown name" $ do
+        result1 <- loadTestConfig $ C8.unlines ["---", "- uknown-name"]
+        result2 <- loadTestConfig $ C8.unlines
+            ["---", "- uknown-name:", "    arguments:", "    - --foo"]
+        result3 <- loadTestConfig $ C8.unlines
+            [ "---"
+            , "restylers:"
+            , "- uknown-name:"
+            , "    arguments:"
+            , "    - --foo"
+            ]
+
+        result1 `shouldSatisfy` hasError
+            "Unexpected Restyler name \"uknown-name\""
+        result2 `shouldSatisfy` hasError
+            "Unexpected Restyler name \"uknown-name\""
+        result3 `shouldSatisfy` hasError
+            "Unexpected Restyler name \"uknown-name\""
+
+    it "provides suggestions for close matches" $ do
+        result1 <- loadTestConfig $ C8.unlines ["---", "- hindex"]
+        result2 <- loadTestConfig
+            $ C8.unlines ["---", "- hindex:", "    arguments:", "    - --foo"]
+        result3 <- loadTestConfig $ C8.unlines
+            ["---", "restylers:", "- hindex:", "    arguments:", "    - --foo"]
+
+        result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
+        result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
+        result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
+
+    it "can specify a Restyler with name" $ do
+        defaultConfig <- loadDefaultConfig
+
+        result <- loadTestConfig $ C8.unlines
+            [ "restylers:"
+            , "  - name: hindent"
+            , "    image: restyled/restyler-foo"
+            , "    command: [foo]"
+            , "    arguments: []"
+            , "    include:"
+            , "      - \"**/*.js\""
+            , "      - \"**/*.jsx\""
+            ]
+
+        result `shouldBe` Right defaultConfig
+            { cRestylers =
+                [ someRestyler
+                      { rEnabled = True
+                      , rName = "hindent"
+                      , rImage = "restyled/restyler-foo"
+                      , rCommand = ["foo"]
+                      , rArguments = []
+                      , rInclude = [Include "**/*.js", Include "**/*.jsx"]
+                      }
+                ]
+            }
+
+    it "handles invalid indentation nicely" $ do
+        result <- loadTestConfig $ C8.unlines
+            [ "restylers:"
+            , "  - prettier:"
+            , "    include:"
+            , "      - \"**/*.js\""
+            , "      - \"**/*.jsx\""
+            ]
+
+        result `shouldSatisfy` hasError "Do you have incorrect indentation"
 
     it "handles tabs nicely" $ do
         result <- loadTestConfig
             $ C8.unlines ["statuses:", "\tdifferences: false"]
 
         result `shouldSatisfy` hasError "containing tabs"
-
-    it "allows re-configuring includes" $ do
-        defaultConfig <- loadDefaultConfig
-
-        result <- loadTestConfig $ C8.unlines
-            [ "---"
-            , "restylers:"
-            , "  stylish-haskell:"
-            , "    include:"
-            , "    - \"**/*.lhs\""
-            ]
-
-        result `shouldBe` Right defaultConfig
-            { cRestylers = testRestylersWith $ someRestyler
-                { rName = "stylish-haskell"
-                , rInclude = [Include "**/*.lhs"]
-                }
-            }
-
-    it "has good errors for unknown name" $ do
-        result <- loadTestConfig $ C8.unlines
-            [ "---"
-            , "restylers:"
-            , "  uknown-name:"
-            , "    arguments:"
-            , "    - --foo"
-            ]
-
-        result `shouldSatisfy` hasError
-            "Unexpected Restyler name \"uknown-name\""
-
-    it "provides suggestions for close matches" $ do
-        result <- loadTestConfig $ C8.unlines
-            ["---", "restylers:", "  hindex:", "    arguments:", "    - --foo"]
-
-        result `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-
-    context "legacy list-style format" $ do
-        it "supports a simple, name-based syntax" $ do
-            defaultConfig <- loadDefaultConfig
-
-            result <- loadTestConfig $ C8.unlines ["---", "- hindent"]
-
-            result `shouldBe` Right defaultConfig
-                { cRestylers = testRestylersDisabledWith
-                    $ someRestyler { rName = "hindent", rEnabled = True }
-                }
-
-        it "allows re-configuring includes" $ do
-            defaultConfig <- loadDefaultConfig
-
-            result1 <-
-                loadTestConfig
-                    $ C8.unlines
-                          [ "---"
-                          , "- stylish-haskell:"
-                          , "    include:"
-                          , "    - \"**/*.lhs\""
-                          ]
-            result2 <-
-                loadTestConfig
-                    $ C8.unlines
-                          [ "---"
-                          , "- stylish-haskell:"
-                          , "    include:"
-                          , "    - \"**/*.lhs\""
-                          ]
-            result3 <- loadTestConfig $ C8.unlines
-                [ "---"
-                , "restylers:"
-                , "- stylish-haskell:"
-                , "    include:"
-                , "    - \"**/*.lhs\""
-                ]
-
-            result1 `shouldBe` result2
-            result2 `shouldBe` result3
-            result3 `shouldBe` Right defaultConfig
-                { cRestylers = testRestylersDisabledWith $ someRestyler
-                    { rName = "stylish-haskell"
-                    , rInclude = [Include "**/*.lhs"]
-                    }
-                }
-
-        it "has good errors for unknown name" $ do
-            result1 <- loadTestConfig $ C8.unlines ["---", "- uknown-name"]
-            result2 <- loadTestConfig $ C8.unlines
-                ["---", "- uknown-name:", "    arguments:", "    - --foo"]
-            result3 <- loadTestConfig $ C8.unlines
-                [ "---"
-                , "restylers:"
-                , "- uknown-name:"
-                , "    arguments:"
-                , "    - --foo"
-                ]
-
-            result1 `shouldSatisfy` hasError
-                "Unexpected Restyler name \"uknown-name\""
-            result2 `shouldSatisfy` hasError
-                "Unexpected Restyler name \"uknown-name\""
-            result3 `shouldSatisfy` hasError
-                "Unexpected Restyler name \"uknown-name\""
-
-        it "provides suggestions for close matches" $ do
-            result1 <- loadTestConfig $ C8.unlines ["---", "- hindex"]
-            result2 <- loadTestConfig $ C8.unlines
-                ["---", "- hindex:", "    arguments:", "    - --foo"]
-            result3 <-
-                loadTestConfig
-                    $ C8.unlines
-                          [ "---"
-                          , "restylers:"
-                          , "- hindex:"
-                          , "    arguments:"
-                          , "    - --foo"
-                          ]
-
-            result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-            result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-            result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
@@ -198,17 +185,3 @@ testRestylers =
     , someRestyler { rName = "terraform" }
     , someRestyler { rName = "yapf" }
     ]
-
-testRestylersWith :: Restyler -> [Restyler]
-testRestylersWith restyler = map (replaceByName restyler) testRestylers
-
-testRestylersDisabledWith :: Restyler -> [Restyler]
-testRestylersDisabledWith restyler = map
-    (replaceByName restyler . disable)
-    testRestylers
-    where disable r = r { rEnabled = False }
-
-replaceByName :: Restyler -> Restyler -> Restyler
-replaceByName a b
-    | rName a == rName b = a
-    | otherwise = b
