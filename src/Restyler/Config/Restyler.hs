@@ -72,10 +72,3 @@ overrideRestyler restylers RestylerOverride {..} = do
         , rInclude = maybe rInclude unSketchy roInclude
         , rInterpreters = maybe rInterpreters unSketchy roInterpreters
         }
-
--- TODO: Move to ExpectedKeys so that it can reuse internals such that
--- validation makes the \"safe\" HM.!. unnecessary
-lookupExpectedKeyBy :: String -> HashMap String v -> String -> Either String v
-lookupExpectedKeyBy label hm name =
-    unsafeLookup <$ validateExpectedKeyBy label id (HM.keys hm) name
-    where unsafeLookup = hm HM.! name
