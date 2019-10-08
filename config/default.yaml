@@ -95,43 +95,86 @@ ignore_labels:
 #
 restylers_version: "20191004"
 
-# Override Restylers behavior
+# Restylers to run, and how
 #
-# Commonly-used keys:
+# Setting this key to null accepts the defaults of the restylers_version named
+# above, including which Restylers to run.
 #
-# - enabled: true|false
-# - arguments: additional argument(s) to pass when invoked
-# - include: patterns to identify files to restyle
-# - interpreters: interpreters to look for in extension-less files
+# Restylers can be specified in three ways:
 #
-# Other valid keys:
-#
-# - image: Docker image to run, can be anything publically-accessible
-# - command: actual executable invoked
-#
-# Example:
+# A string, which means to run that Restyler with all defaults
 #
 #   ---
 #   restylers:
-#     # disable a Restyler enabled by default
-#     prettier:
-#       enabled: false
+#     - prettier
 #
-#     # enable a Restyler disabled by default
-#     hlint:
-#       enabled: true
+# A single key, that is a name, and override value:
 #
-#     # adjust what files a Restyler runs on
-#     brittany:
+#   ---
+#   restylers:
+#     - prettier:
+#         include:
+#           - "**/*.js"
+#
+# An object with a name key
+#
+#   ---
+#   restylers:
+#     - name: prettier:
 #       include:
-#         - "**/*.hs"
-#         - "!test/**/*"
+#         - "**/*.js"
 #
-#     # even use your own Restyler image (must be publicly pullable)
-#     stylish-haskell:
-#       image: pbrisbin/restyler-style-haskell:bugfix
+# All three of the above are equivalent. The latter two are useful if you want
+# to run the same Restyler multiple ways:
 #
-# The empty object means to override nothing and accept the defaults defined in
-# the restyled-io/restylers repository for the configured restylers_version.
+#   ---
+#   restylers:
+#     - name: prettier
+#       arguments: ["--one-thing"]
+#       include: ["needs-one-thing/**/*.js"]
 #
-restylers: {}
+#     - name: prettier
+#       arguments: ["--another"]
+#       include: ["needs-another/**/*.js"]
+#
+# Valid keys in the override object are:
+#
+# - enabled: true|false
+#
+#   Restylers present in the list are considered enabled and those not in the
+#   list are considered not enabled, however this key is an explicit way to
+#   disable a Restyler without removing it from the list (e.g. temporarily).
+#
+# - arguments: string or array of string
+#
+#   Any additional argument(s) to pass to the restyling command.
+#
+# - include: pattern or array of pattern
+#
+#   Pattern(s) to match files that should be Restyled.
+#
+#   NOTE: these are processed in order, so be careful you don't accidentally do
+#   something like:
+#
+#     - "!/bad-file.hs"
+#     - "**/*.hs"
+#
+#   which says to exclude bad-file.hs, then immediately re-includes it via the
+#   wildcard.
+#
+# - interpreters: interpreter or array of interpreters
+#
+#   Extension-less files will be Restyled if they match interpreter(s) given
+#   here. Valid values are sh, bash, python, and ruby.
+#
+# Less-commonly needed:
+#
+# - image: string
+#
+#   The Docker image to run. Can be anything publicly pull-able.
+#
+# - command: string or array of string
+#
+#   The command (and any required argument(s)) to perform the Restyling.
+#
+restylers: null

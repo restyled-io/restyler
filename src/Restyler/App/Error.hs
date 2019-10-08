@@ -81,7 +81,7 @@ toErrorBody = reflow . \case
         , "Original input:"
         , unpack $ decodeUtf8 yaml
         ]
-    ConfigurationError (ConfigErrorUnknownRestylers err) -> err
+    ConfigurationError (ConfigErrorUnknownRestylers errs) -> unlines errs
     ConfigurationError (ConfigErrorInvalidRestylersYaml e) -> unlines
         [ "Error loading restylers.yaml definition:"
         , show e

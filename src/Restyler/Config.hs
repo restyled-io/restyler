@@ -90,7 +90,7 @@ data ConfigF f = ConfigF
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
     , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
-    , cfRestylers :: f RestylerOverrides
+    , cfRestylers :: f (Maybe (SketchyList RestylerOverride))
     , cfRestylersVersion :: f String
     }
     deriving stock Generic
@@ -154,7 +154,7 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
-    | ConfigErrorUnknownRestylers String
+    | ConfigErrorUnknownRestylers [String]
     | ConfigErrorInvalidRestylersYaml SomeException
     deriving Show
 
@@ -240,7 +240,8 @@ resolveRestylers ConfigF {..} allRestylers = do
         eitherM (throwIO . ConfigErrorUnknownRestylers) pure
         $ pure
         $ overrideRestylers allRestylers
-        $ runIdentity cfRestylers
+        $ unSketchy
+        <$> runIdentity cfRestylers
 
     pure Config
         { cEnabled = runIdentity cfEnabled
