@@ -101,6 +101,11 @@ spec = do
         result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
         result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
+    it "doesn't loop on empty overrides" $ do
+        result <- loadTestConfig $ C8.unlines ["- hindent: {}"]
+
+        result `shouldSatisfy` isRight
+
     it "can specify a Restyler with name" $ do
         defaultConfig <- loadDefaultConfig
 
