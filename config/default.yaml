@@ -93,7 +93,7 @@ ignore_labels:
 # re-specify the default in your own config if you prefer to avoid update
 # surprises.
 #
-restylers_version: "20191004"
+restylers_version: "20191012"
 
 # Restylers to run, and how
 #
