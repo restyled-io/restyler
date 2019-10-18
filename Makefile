@@ -61,7 +61,7 @@ test.integration:
 	if [ "$(INTEGRATION_RESTYLER_BUILD)" -eq 1 ]; then \
 	  $(MAKE) image && \
 	  docker tag restyled/restyler \
-	    $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) .; \
+	    $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG); \
 	fi
 	docker run -it --rm \
 	  --env DEBUG=1 \
