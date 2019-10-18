@@ -79,7 +79,7 @@ jobs:
 
             heroku config:set --app restyled-io \
               "RESTYLER_TAG=$sha" \
-              "RESTYLER_IMAGE=restyled/restyler "
+              "RESTYLER_IMAGE=restyled/restyler"
 
             notify "restyled-io[restyler]" "Deployed at $sha"
 
