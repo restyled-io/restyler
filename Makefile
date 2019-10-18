@@ -47,12 +47,20 @@ watch:
 
 .PHONY: image
 image:
-	docker build --tag restyled/restyler .
+	docker run -it --rm \
+	  --volume /var/run/docker.sock:/var/run/docker.sock \
+	  --volume "$(HOME)"/.docker/config.json:/root/.docker/config.json:ro \
+	  --volume "$(PWD)":/build:ro \
+	  --workdir /build \
+	  restyled/ops:v5 docker-build-remote-cache \
+	  restyled/restyler \
+	  --build-arg "REVISION=testing"
 
 .PHONY: test.integration
 test.integration:
 	if [ "$(INTEGRATION_RESTYLER_BUILD)" -eq 1 ]; then \
-	  docker build --tag \
+	  $(MAKE) image && \
+	  docker tag restyled/restyler \
 	    $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) .; \
 	fi
 	docker run -it --rm \
