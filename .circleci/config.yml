@@ -49,7 +49,7 @@ jobs:
 
   image:
     docker:
-      - image: quay.io/restyled-io/ops
+      - image: restyled/ops:v5
     steps:
       - checkout
       - setup_remote_docker:
@@ -78,7 +78,7 @@ jobs:
 
   release:
     docker:
-      - image: quay.io/restyled-io/ops
+      - image: restyled/ops:v5
     steps:
       - attach_workspace:
           at: /tmp/workspace
