@@ -16,7 +16,7 @@
 # Development (i.e. to run a locally-modified version):
 #
 #   1. cd {restyler-source}
-#   2. docker build --tag quay.io/restyled-io/restyler .
+#   2. docker build --tag restyled/restyler:master .
 #   3. Follow Usage
 #
 #   NOTE: a pre-existing ~/.local/bin/restyle-path will use the updated image,
@@ -30,4 +30,4 @@ exec docker run -it --rm \
   --volume /tmp:/tmp \
   --volume /var/run/docker.sock:/var/run/docker.sock \
   --entrypoint restyle-path \
-  quay.io/restyled-io/restyler "$@"
+  restyled/restyler:master "$@"

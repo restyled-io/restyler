@@ -1,3 +1,4 @@
+# yamllint disable-line rule:line-length
 version: 2.0
 
 jobs:
@@ -17,7 +18,6 @@ jobs:
           command: git ls-files | xargs md5sum > digest
       - restore_cache:
           keys:
-            # yamllint disable-line rule:line-length
             - v3-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
             - v3-{{ .Branch }}-{{ checksum "stack.yaml" }}-
             - v3-{{ .Branch }}
@@ -31,13 +31,11 @@ jobs:
             make setup setup.lint
             curl "$HLINT_YAML_SRC" > .hlint.yaml
           environment:
-            # yamllint disable-line rule:line-length
             HLINT_YAML_SRC: https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml
       - run:
           name: Build
           command: make build
       - save_cache:
-          # yamllint disable-line rule:line-length
           key: v3-{{ .Branch }}-{{ checksum "stack.yaml" }}-{{ checksum "digest" }}
           paths:
             - ~/.stack
@@ -51,61 +49,46 @@ jobs:
 
   image:
     docker:
-      - image: quay.io/restyled-io/ops
+      - image: restyled/ops:v5
     steps:
       - checkout
       - setup_remote_docker:
-         docker_layer_caching: true
+          version: 18.09.3
       - run:
           name: Build
           command: |
-            release_tag=b$CIRCLE_BUILD_NUM
-            release_image=quay.io/restyled-io/restyler
+            sha=${CIRCLE_SHA1:0:10}
+            release_image=restyled/restyler:$sha
 
-            mkdir -p workspace
-            echo "$release_tag" > workspace/release-tag
-            echo "$release_image" > workspace/release-image
-            docker build --tag "${release_image}:${release_tag}" .
-            docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
-            docker push "${release_image}:${release_tag}"
-            docker tag \
-              "${release_image}:${release_tag}" \
-              "${release_image}:latest"
-            docker push "${release_image}:latest"
-      - persist_to_workspace:
-          root: workspace
-          paths:
-            - release-tag
-            - release-image
+            docker login \
+              -u "$DOCKERHUB_USERNAME" \
+              -p "$DOCKERHUB_PASSWORD"
+
+            # NB. Implicitly moves :latest forward.
+            docker-build-remote-cache "$release_image" \
+              --build-arg "REVISION=$CIRCLE_SHA1"
 
   release:
     docker:
-      - image: quay.io/restyled-io/ops
+      - image: restyled/ops:v5
     steps:
-      - attach_workspace:
-          at: /tmp/workspace
       - run:
           name: Release
           command: |
-            read -r release_tag < /tmp/workspace/release-tag
-            read -r release_image < /tmp/workspace/release-image
+            sha=${CIRCLE_SHA1:0:10}
 
             heroku config:set --app restyled-io \
-              "RESTYLER_TAG=$release_tag" \
-              "RESTYLER_IMAGE=$release_image"
+              "RESTYLER_TAG=$sha" \
+              "RESTYLER_IMAGE=restyled/restyler "
 
-            notify "restyled-io[restyler]" "Deploy of $release_tag successful"
+            notify "restyled-io[restyler]" "Deployed at $sha"
 
 workflows:
   version: 2
   build_and_release:
     jobs:
       - build
-      - image:
-          filters:
-            branches:
-              only:
-                - master
+      - image
       - release:
           requires:
             - build
