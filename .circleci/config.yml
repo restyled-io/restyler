@@ -58,7 +58,7 @@ jobs:
           name: Build
           command: |
             sha=${CIRCLE_SHA1:0:10}
-            release_image=restyled/restyled.io:$sha
+            release_image=restyled/restyler:$sha
 
             docker login \
               -u "$DOCKERHUB_USERNAME" \
