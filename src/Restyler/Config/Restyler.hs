@@ -40,10 +40,7 @@ instance FromJSON RestylerOverride where
 
 namedOverride :: Text -> HashMap Text Value -> Parser RestylerOverride
 namedOverride name =
-    parseJSON
-        . Object
-        . HM.insertWith const "name" (String name)
-        . HM.delete name
+    parseJSON . Object . insertIfMissing "name" (String name) . HM.delete name
 
 suffixIncorrectIndentation :: Parser a -> Parser a
 suffixIncorrectIndentation = modifyFailure (<> msg)

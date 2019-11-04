@@ -130,6 +130,8 @@ tests:
       - bytestring
       - github
       - hspec
+      - lens
+      - lens-aeson
       - process
       - restyler
       - rio

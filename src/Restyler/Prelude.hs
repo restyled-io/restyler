@@ -19,6 +19,8 @@ import RIO.Text as X (encodeUtf8, pack, unpack)
 import Safe as X (fromJustNote)
 
 import qualified Data.Foldable as F
+import Data.HashMap.Lazy (HashMap)
+import qualified Data.HashMap.Lazy as HM
 import qualified Data.Set as Set
 import qualified RIO.Text as T
 
@@ -63,3 +65,6 @@ intersects a b = not $ Set.null $ Set.intersection a' b'
 -- | Inverse of @'any'@
 none :: Foldable t => (a -> Bool) -> t a -> Bool
 none p = not . any p
+
+insertIfMissing :: (Eq k, Hashable k) => k -> v -> HashMap k v -> HashMap k v
+insertIfMissing = HM.insertWith $ flip const

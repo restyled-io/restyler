@@ -3,6 +3,9 @@
 module Restyler.Restyler
     ( Restyler(..)
     , getAllRestylersVersioned
+
+    -- * Exported for testing
+    , upgradeEnabled
     )
 where
 
@@ -49,7 +52,7 @@ upgradeEnabled =
     overObject f = \case
         Object o -> Object $ f o
         v -> v
-    override k f o = HM.insertWith const k (f o) o
+    override k f o = insertIfMissing k (f o) o
     enabled = (`notElem` disabledRestylers)
     disabledRestylers =
         ["brittany", "google-java-format", "hindent", "hlint", "jdt"]
