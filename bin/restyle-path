@@ -23,6 +23,8 @@
 #   it need not be re-installed.
 #
 ###
+: "${RESTYLER_TAG:=:master}"
+
 exec docker run -it --rm \
   --env DEBUG=1 \
   --env HOST_DIRECTORY="$PWD" \
@@ -30,4 +32,4 @@ exec docker run -it --rm \
   --volume /tmp:/tmp \
   --volume /var/run/docker.sock:/var/run/docker.sock \
   --entrypoint restyle-path \
-  restyled/restyler:master "$@"
+  "restyled/restyler$RESTYLER_TAG" "$@"
