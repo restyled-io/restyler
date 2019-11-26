@@ -33,6 +33,7 @@ restylerSetup
 restylerSetup = do
     Options {..} <- view optionsL
 
+    logInfo "Restyler starting"
     pullRequest <-
         mapAppError toPullRequestFetchError $ runGitHub $ pullRequestR
             oOwner
@@ -49,6 +50,7 @@ restylerSetup = do
         closeRestyledPullRequest' pullRequest mRestyledPullRequest
         exitWithInfo "Source Pull Request is closed"
 
+    logInfo "Cloning repository"
     setupClone pullRequest
 
     config <- mapAppError ConfigurationError loadConfig
