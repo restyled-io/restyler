@@ -49,7 +49,7 @@ jobs:
 
   image:
     docker:
-      - image: restyled/ops:v5
+      - image: restyled/ops:v7
     steps:
       - checkout
       - setup_remote_docker:
@@ -70,17 +70,15 @@ jobs:
 
   release:
     docker:
-      - image: restyled/ops:v5
+      - image: restyled/ops:v7
     steps:
       - run:
           name: Release
           command: |
             sha=${CIRCLE_SHA1:0:10}
-
-            heroku config:set --app restyled-io \
-              "RESTYLER_TAG=$sha" \
-              "RESTYLER_IMAGE=restyled/restyler"
-
+            ecs-deploy-restyled \
+              --env restyled-backend RESTYLER_TAG "$sha" \
+              --env restyled-backend RESTYLER_IMAGE restyled/restyler
             notify "restyled-io[restyler]" "Deployed at $sha"
 
 workflows:
