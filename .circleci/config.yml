@@ -76,7 +76,11 @@ jobs:
           name: Release
           command: |
             sha=${CIRCLE_SHA1:0:10}
-            ecs-deploy-restyled \
+            ecs deploy restyled-prod webhooks \
+              --region us-east-1 \
+              --no-deregister \
+              --rollback \
+              --timeout 900 \
               --env restyled-backend RESTYLER_TAG "$sha" \
               --env restyled-backend RESTYLER_IMAGE restyled/restyler
             notify "restyled-io[restyler]" "Deployed at $sha"
