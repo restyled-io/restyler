@@ -120,7 +120,9 @@ dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getHostDirectory
     ec <-
         callProcessExitCode "docker"
-        $ ["run", "--rm", "--net", "none", "--volume", cwd <> ":/code", rImage]
+        $ ["run", "--rm"]
+        <> restrictions
+        <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]
         <> map ("./" <>) paths
@@ -128,6 +130,16 @@ dockerRunRestyler r@Restyler {..} paths = do
     case ec of
         ExitSuccess -> pure ()
         ExitFailure s -> throwIO $ RestylerExitFailure r s paths
+
+-- brittany-disable-next-bindings
+
+restrictions :: [String]
+restrictions =
+    [ "--net", "none"
+    , "--cap-drop", "all"
+    , "--cpu-shares", "128"
+    , "--memory", "512m"
+    ]
 
 getHostDirectory :: (HasOptions env, HasSystem env) => RIO env FilePath
 getHostDirectory = do
