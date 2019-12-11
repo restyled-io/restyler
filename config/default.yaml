@@ -47,7 +47,14 @@ pull_requests: true
 # Leave comments on the original PR linking to the Restyle PR?
 comments: false
 
-# Set commit statuses on the original PR?
+# Set commit statuses?
+#
+# A single value can be used to disable/enable all:
+#
+#   statuses: false
+#
+# Or separate values as shown in the below defaults:
+#
 statuses:
   # Red status in the case of differences found
   differences: true
@@ -61,11 +68,14 @@ statuses:
 # Possible values:
 #
 #   author: From the author of the original PR
-#   owner: From the owner of the repository
-#   none: Don't
+#   owner:  From the owner of the base repository
+#   none:   Don't
 #
-# One value will apply to both origin and forked PRs, but you can also specify
-# separate values.
+# One value will apply to both origin and forked PRs:
+#
+#   request_review: author
+#
+# but you can also specify separate values:
 #
 #   request_review:
 #     origin: author
@@ -76,6 +86,9 @@ request_review: none
 # Add labels to any created Restyle PRs
 #
 # These can be used to tell other automation to avoid our PRs.
+#
+#   labels:
+#     - pullassigner-ignore
 #
 labels: []
 
@@ -104,13 +117,11 @@ restylers_version: "20191206"
 #
 # A string, which means to run that Restyler with all defaults
 #
-#   ---
 #   restylers:
 #     - prettier
 #
 # A single key, that is a name, and override value:
 #
-#   ---
 #   restylers:
 #     - prettier:
 #         include:
@@ -118,7 +129,6 @@ restylers_version: "20191206"
 #
 # An object with a name key
 #
-#   ---
 #   restylers:
 #     - name: prettier:
 #       include:
@@ -127,7 +137,6 @@ restylers_version: "20191206"
 # All three of the above are equivalent. The latter two are useful if you want
 # to run the same Restyler multiple ways:
 #
-#   ---
 #   restylers:
 #     - name: prettier
 #       arguments: ["--one-thing"]
