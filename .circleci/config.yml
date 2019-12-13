@@ -81,8 +81,8 @@ jobs:
               --no-deregister \
               --rollback \
               --timeout 900 \
-              --env restyled-backend RESTYLER_TAG "$sha" \
-              --env restyled-backend RESTYLER_IMAGE restyled/restyler
+              --env restyled RESTYLER_TAG "$sha" \
+              --env restyled RESTYLER_IMAGE restyled/restyler
             notify "restyled-io[restyler]" "Deployed at $sha"
 
 workflows:
