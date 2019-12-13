@@ -121,7 +121,7 @@ dockerRunRestyler r@Restyler {..} paths = do
     unrestricted <- oUnrestricted <$> view optionsL
     ec <-
         callProcessExitCode "docker"
-        $ ["run", "--rm"]
+        $ ["run", "--rm", "--net", "none"]
         <> bool restrictions [] unrestricted
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
@@ -136,8 +136,7 @@ dockerRunRestyler r@Restyler {..} paths = do
 
 restrictions :: [String]
 restrictions =
-    [ "--net", "none"
-    , "--cap-drop", "all"
+    [ "--cap-drop", "all"
     , "--cpu-shares", "128"
     , "--memory", "512m"
     ]
