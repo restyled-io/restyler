@@ -4,13 +4,14 @@ import RIO
 
 import Conduit (runResourceT, sinkFile)
 import Data.Text (unpack)
+import qualified Env
 import Network.HTTP.Simple hiding (Request)
 import Restyler.App.Class (HasDownloadFile(..), HasProcess(..), HasSystem(..))
 import Restyler.Config (loadConfig)
 import Restyler.Options
 import Restyler.Restyler.Run (runRestylers_)
 import qualified RIO.Directory as Directory
-import UnliftIO.Environment (getArgs, lookupEnv)
+import UnliftIO.Environment (getArgs)
 import qualified UnliftIO.Process as Process
 
 data App = App
@@ -43,17 +44,27 @@ instance HasDownloadFile App where
         request <- parseRequestThrow $ unpack url
         runResourceT $ httpSink request $ \_ -> sinkFile path
 
+data EnvOptions = EnvOptions
+    { eoHostDirectory :: Maybe FilePath
+    , eoVerbose :: Bool
+    }
+
+-- brittany-disable-next-binding
+envParser :: Env.Parser Env.Error EnvOptions
+envParser = EnvOptions
+    <$> optional (Env.var Env.str "HOST_DIRECTORY" Env.keep)
+    <*> Env.switch "DEBUG" Env.keep
+
 main :: IO ()
 main = do
-    mDir <- lookupEnv "HOST_DIRECTORY"
-    verbose <- maybe False (/= "") <$> lookupEnv "DEBUG"
-    options <- setupLog <$> logOptionsHandle stdout verbose
-    withLogFunc options $ \logFunc -> runRIO (setupApp logFunc mDir) $ do
+    envOptions@EnvOptions {..} <- Env.parse id envParser
+    options <- setupLog <$> logOptionsHandle stdout eoVerbose
+    withLogFunc options $ \logFunc -> runRIO (setupApp logFunc envOptions) $ do
         config <- loadConfig
         runRestylers_ config =<< getArgs
   where
     setupLog = setLogUseTime False . setLogUseLoc False
-    setupApp logFunc mDir = App
+    setupApp logFunc EnvOptions {..} = App
         { appLogFunc = logFunc
         , appOptions = Options
             { oAccessToken = error "unused"
@@ -63,6 +74,6 @@ main = do
             , oRepo = error "unused"
             , oPullRequest = error "unused"
             , oJobUrl = error "unused"
-            , oHostDirectory = mDir
+            , oHostDirectory = eoHostDirectory
             }
         }
