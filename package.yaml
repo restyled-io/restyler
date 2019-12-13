@@ -113,6 +113,7 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - envparse
       - conduit
       - http-conduit
       - text
