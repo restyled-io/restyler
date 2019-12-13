@@ -47,6 +47,7 @@ instance HasDownloadFile App where
 data EnvOptions = EnvOptions
     { eoHostDirectory :: Maybe FilePath
     , eoVerbose :: Bool
+    , eoUnrestricted :: Bool
     }
 
 -- brittany-disable-next-binding
@@ -54,6 +55,7 @@ envParser :: Env.Parser Env.Error EnvOptions
 envParser = EnvOptions
     <$> optional (Env.var Env.str "HOST_DIRECTORY" Env.keep)
     <*> Env.switch "DEBUG" Env.keep
+    <*> Env.switch "UNRESTRICTED" Env.keep
 
 main :: IO ()
 main = do
@@ -75,5 +77,6 @@ main = do
             , oPullRequest = error "unused"
             , oJobUrl = error "unused"
             , oHostDirectory = eoHostDirectory
+            , oUnrestricted = eoUnrestricted
             }
         }

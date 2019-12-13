@@ -24,6 +24,7 @@ data ColorOption
 data EnvOptions = EnvOptions
     { eoAccessToken :: Text
     , eoLogLevel :: LogLevel
+    , eoUnrestricted :: Bool
     }
 
 data CLIOptions = CLIOptions
@@ -43,6 +44,7 @@ data Options = Options
     , oPullRequest :: IssueNumber
     , oJobUrl :: Maybe URL
     , oHostDirectory :: Maybe FilePath
+    , oUnrestricted :: Bool
     }
 
 class HasOptions env where
@@ -73,6 +75,7 @@ parseOptions = do
         , oPullRequest = prsPullRequest coPullRequestSpec
         , oJobUrl = coJobUrl
         , oHostDirectory = coHostDirectory
+        , oUnrestricted = eoUnrestricted
         }
 
 -- brittany-disable-next-binding
@@ -81,6 +84,7 @@ envParser = EnvOptions
     <$> Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
         (Env.help "GitHub access token with write access to the repository")
     <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
+    <*> Env.switch "UNRESTRICTED" Env.keep
 
 -- brittany-disable-next-binding
 optionsParser :: Parser CLIOptions

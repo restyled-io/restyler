@@ -118,10 +118,11 @@ dockerRunRestyler
     -> RIO env ()
 dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getHostDirectory
+    unrestricted <- oUnrestricted <$> view optionsL
     ec <-
         callProcessExitCode "docker"
         $ ["run", "--rm"]
-        <> restrictions
+        <> bool restrictions [] unrestricted
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]

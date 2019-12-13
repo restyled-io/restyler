@@ -64,6 +64,7 @@ testOptions = Options
     , oPullRequest = error "oPullRequest"
     , oJobUrl = error "oJobUrl"
     , oHostDirectory = Nothing
+    , oUnrestricted = False
     }
 
 instance HasLogFunc TestApp where
