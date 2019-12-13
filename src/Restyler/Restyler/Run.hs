@@ -132,14 +132,8 @@ dockerRunRestyler r@Restyler {..} paths = do
         ExitSuccess -> pure ()
         ExitFailure s -> throwIO $ RestylerExitFailure r s paths
 
--- brittany-disable-next-bindings
-
 restrictions :: [String]
-restrictions =
-    [ "--cap-drop", "all"
-    , "--cpu-shares", "128"
-    , "--memory", "512m"
-    ]
+restrictions = ["--cap-drop", "all", "--cpu-shares", "128", "--memory", "512m"]
 
 getHostDirectory :: (HasOptions env, HasSystem env) => RIO env FilePath
 getHostDirectory = do
