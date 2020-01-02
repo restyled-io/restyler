@@ -11,8 +11,8 @@ enabled: true
 # Patterns to exclude from all Restylers
 #
 # By default, we ignore directories that are often checked-in but rarely
-# represent project code. This glob is slightly complicated to match paths
-# within directories of these names appearing at any depth.
+# represent project code. Some globs are slightly complicated to match paths
+# within directories of names appearing at any depth.
 #
 # This behavior can be disabled in your project with:
 #
@@ -21,6 +21,7 @@ enabled: true
 exclude:
   - "**/node_modules/**/*"
   - "**/vendor/**/*"
+  - ".github/workflows/**/*" # https://github.com/restyled-io/restyler/issues/73
 
 # Push the style fixes directly to the original PR
 #
