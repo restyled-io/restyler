@@ -96,6 +96,7 @@ instance HasFS TestApp where
 instance HasSystem TestApp where
     readFile = FS.readFileUtf8
     readFileBS = FS.readFileBinary
+    writeFile = FS.writeFileUtf8
     getCurrentDirectory = FS.getCurrentDirectory
     setCurrentDirectory = FS.setCurrentDirectory
     doesFileExist = FS.doesFileExist
@@ -115,6 +116,7 @@ someRestyler = Restyler
     , rArguments = []
     , rInclude = ["**/*"]
     , rInterpreters = []
+    , rDelimiters = Nothing
     , rSupportsArgSep = True
     , rSupportsMultiplePaths = True
     }

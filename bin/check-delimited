@@ -1,0 +1,41 @@
+#!/bin/sh
+set -e
+
+export STACK_YAML=$PWD/stack.yaml
+
+tmp=$(mktemp -d)
+trap 'cd - && rm -rf "$tmp"' EXIT
+
+cd "$tmp"
+
+cat >.restyled.yaml <<'EOM'
+restylers:
+  - name: jq
+    include:
+      - "**/*.hs"
+    delimiters:
+      start: "[aesonQQ|"
+      end: "|]"
+EOM
+
+cat >example.hs <<'EOM'
+{-# LANGUAGE QuasiQuotes #-}
+
+module Main where
+
+main :: IO ()
+main = print [aesonQQ|
+    {
+       "foo": "bar",
+      "baz":   true
+     }
+    |]
+EOM
+
+git init
+git add .restyled.yaml example.hs
+git commit -m "Add example file"
+
+DEBUG=1 UNRESTRICTED=1 stack exec restyle-path -- example.hs
+
+git diff

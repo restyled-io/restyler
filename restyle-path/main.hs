@@ -32,6 +32,7 @@ instance HasSystem App where
     doesFileExist = Directory.doesFileExist
     readFile = readFileUtf8
     readFileBS = readFileBinary
+    writeFile = writeFileUtf8
 
 instance HasProcess App where
     callProcess = Process.callProcess
