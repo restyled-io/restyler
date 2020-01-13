@@ -80,6 +80,10 @@ instance HasSystem StartupApp where
         logDebug $ "readFileBS: " <> displayShow path
         appIO SystemError $ readFileBinary path
 
+    writeFile path content = do
+        logDebug $ "writeFile: " <> displayShow path
+        appIO SystemError $ writeFileUtf8 path content
+
 -- brittany-disable-next-binding
 
 instance HasProcess StartupApp where
@@ -170,6 +174,7 @@ instance HasSystem App where
     listDirectory = runApp . listDirectory
     readFile = runApp . readFile
     readFileBS = runApp . readFileBS
+    writeFile x = runApp . writeFile x
 
 instance HasExit App where
     exitSuccess = runApp exitSuccess

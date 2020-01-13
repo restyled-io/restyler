@@ -34,6 +34,7 @@ instance HasSystem App where
     listDirectory = Directory.listDirectory
     readFile = readFileUtf8
     readFileBS = readFileBinary
+    writeFile = writeFileUtf8
 
 instance HasProcess App where
     callProcess = Process.callProcess
