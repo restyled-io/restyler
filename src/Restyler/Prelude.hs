@@ -14,7 +14,8 @@ import Data.Bitraversable as X (Bitraversable, bimapM)
 import Data.Functor.Syntax as X ((<$$>))
 import GitHub.Data as X (Id, Name, URL(..), getUrl, mkId, mkName, untagName)
 import RIO.Char as X (isSpace)
-import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
+import RIO.List as X
+    (dropWhileEnd, find, headMaybe, minimumByMaybe, minimumMaybe)
 import RIO.Text as X (encodeUtf8, pack, unpack)
 import Safe as X (fromJustNote)
 

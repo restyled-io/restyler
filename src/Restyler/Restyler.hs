@@ -19,6 +19,7 @@ import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Delimited
 import Restyler.RemoteFile
 
 data Restyler = Restyler
@@ -29,6 +30,7 @@ data Restyler = Restyler
     , rArguments :: [String]
     , rInclude :: [Include]
     , rInterpreters :: [Interpreter]
+    , rDelimiters :: Maybe Delimiters
     , rSupportsArgSep :: Bool
     , rSupportsMultiplePaths :: Bool
     , rDocumentation :: [String]

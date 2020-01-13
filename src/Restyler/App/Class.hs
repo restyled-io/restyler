@@ -39,6 +39,8 @@ class HasSystem env where
 
     readFileBS :: FilePath -> RIO env ByteString
 
+    writeFile :: FilePath -> Text -> RIO env ()
+
 class HasExit env where
     exitSuccess :: RIO env a
 
