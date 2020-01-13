@@ -23,7 +23,7 @@ import RIO.List as X
     , minimumByMaybe
     , minimumMaybe
     )
-import RIO.Text as X (pack, unpack)
+import RIO.Text as X (encodeUtf8, pack, unpack)
 import Safe as X (fromJustNote)
 
 import qualified Data.Foldable as F

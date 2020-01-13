@@ -17,6 +17,7 @@ import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.SketchyList
+import Restyler.Delimited
 import Restyler.Restyler
 
 data RestylerOverride = RestylerOverride
@@ -27,6 +28,7 @@ data RestylerOverride = RestylerOverride
     , roArguments :: Maybe (SketchyList String)
     , roInclude :: Maybe (SketchyList Include)
     , roInterpreters :: Maybe (SketchyList Interpreter)
+    , roDelimiters :: Maybe Delimiters
     }
     deriving (Eq, Show, Generic)
 
@@ -96,6 +98,7 @@ overrideRestyler restylers RestylerOverride {..}
         , rArguments = maybe rArguments unSketchy roArguments
         , rInclude = maybe rInclude unSketchy roInclude
         , rInterpreters = maybe rInterpreters unSketchy roInterpreters
+        , rDelimiters = roDelimiters <|> rDelimiters
         }
 
 lookupExpectedKeyBy

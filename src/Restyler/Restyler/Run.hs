@@ -18,6 +18,7 @@ import Restyler.Config
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Delimited
 import Restyler.Git
 import Restyler.Options
 import Restyler.Restyler
@@ -95,21 +96,32 @@ runRestyler_
     -> [FilePath]
     -> RIO env ()
 runRestyler_ _ [] = pure ()
-runRestyler_ r@Restyler {..} paths = if rSupportsMultiplePaths
-    then do
-        logInfo
-            $ "Restyling "
-            <> displayShow paths
-            <> " via "
-            <> displayShow rName
-        dockerRunRestyler r paths
-    else for_ paths $ \path -> do
-        logInfo
-            $ "Restyling "
-            <> displayShow path
-            <> " via "
-            <> displayShow rName
-        dockerRunRestyler r [path]
+runRestyler_ r paths =
+    case rDelimiters r of
+        Nothing -> runRestyler' r paths
+        Just ds -> restyleDelimited ds (runRestyler' r) paths
+
+runRestyler'
+    :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
+    => Restyler
+    -> [FilePath]
+    -> RIO env ()
+runRestyler' r@Restyler {..} paths =
+    if rSupportsMultiplePaths
+        then do
+            logInfo
+                $ "Restyling "
+                <> displayShow paths
+                <> " via "
+                <> displayShow rName
+            dockerRunRestyler r paths
+        else for_ paths $ \path -> do
+            logInfo
+                $ "Restyling "
+                <> displayShow path
+                <> " via "
+                <> displayShow rName
+            dockerRunRestyler r [path]
 
 dockerRunRestyler
     :: (HasOptions env, HasSystem env, HasProcess env)
