@@ -17,7 +17,7 @@ import Restyler.Restyler
 
 spec :: Spec
 spec = do
-    it "supports a simple, name-based syntax" $ do
+    it "supports a simple, name-based syntax" $ example $ do
         defaultConfig <- loadDefaultConfig
 
         result <- loadTestConfig
@@ -30,13 +30,13 @@ spec = do
                 ]
             }
 
-    it "has a setting for globally disabling" $ do
+    it "has a setting for globally disabling" $ example $ do
         result <- loadTestConfig $ C8.unlines
             ["---", "enabled: false", "restylers:", "- stylish-haskell"]
 
         fmap cEnabled result `shouldBe` Right False
 
-    it "allows re-configuring includes" $ do
+    it "allows re-configuring includes" $ example $ do
         defaultConfig <- loadDefaultConfig
 
         result1 <- loadTestConfig $ C8.unlines
@@ -62,7 +62,7 @@ spec = do
                 ]
             }
 
-    it "has good errors for unknown name" $ do
+    it "has good errors for unknown name" $ example $ do
         result1 <- loadTestConfig $ C8.unlines ["---", "- uknown-name"]
         result2 <- loadTestConfig $ C8.unlines
             ["---", "- uknown-name:", "    arguments:", "    - --foo"]
@@ -81,7 +81,7 @@ spec = do
         result3 `shouldSatisfy` hasError
             "Unexpected Restyler name \"uknown-name\""
 
-    it "reports multiple unknown names at once" $ do
+    it "reports multiple unknown names at once" $ example $ do
         result <- loadTestConfig
             $ C8.unlines ["---", "- unknown-name-1", "- unknown-name-2"]
 
@@ -90,7 +90,7 @@ spec = do
         result `shouldSatisfy` hasError
             "Unexpected Restyler name \"unknown-name-2\""
 
-    it "provides suggestions for close matches" $ do
+    it "provides suggestions for close matches" $ example $ do
         result1 <- loadTestConfig $ C8.unlines ["---", "- hindex"]
         result2 <- loadTestConfig
             $ C8.unlines ["---", "- hindex:", "    arguments:", "    - --foo"]
@@ -101,12 +101,12 @@ spec = do
         result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
         result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
-    it "doesn't loop on empty overrides" $ do
+    it "doesn't loop on empty overrides" $ example $ do
         result <- loadTestConfig $ C8.unlines ["- hindent: {}"]
 
         result `shouldSatisfy` isRight
 
-    it "can specify a Restyler with name" $ do
+    it "can specify a Restyler with name" $ example $ do
         defaultConfig <- loadDefaultConfig
 
         result <- loadTestConfig $ C8.unlines
@@ -133,7 +133,7 @@ spec = do
                 ]
             }
 
-    it "handles invalid indentation nicely" $ do
+    it "handles invalid indentation nicely" $ example $ do
         result <- loadTestConfig $ C8.unlines
             [ "restylers:"
             , "  - prettier:"
@@ -144,7 +144,7 @@ spec = do
 
         result `shouldSatisfy` hasError "Do you have incorrect indentation"
 
-    it "handles tabs nicely" $ do
+    it "handles tabs nicely" $ example $ do
         result <- loadTestConfig
             $ C8.unlines ["statuses:", "\tdifferences: false"]
 

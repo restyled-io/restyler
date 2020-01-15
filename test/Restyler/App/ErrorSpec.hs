@@ -19,7 +19,7 @@ instance Exception BigError
 spec :: Spec
 spec = do
     describe "prettyError" $ do
-        it "wraps really big exceptions (no particularly well)" $ do
+        it "wraps really big exceptions (no particularly well)" $ example $ do
             let
                 pretty = prettyAppError $ OtherError $ toException BigError
                     { beMessage = "Something has gone terrible, terribly wrong"
