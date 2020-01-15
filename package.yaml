@@ -129,6 +129,7 @@ tests:
       - QuickCheck
       - aeson
       - bytestring
+      - containers
       - github
       - hspec
       - lens

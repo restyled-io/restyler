@@ -156,14 +156,17 @@ hasError _ _ = False
 
 -- | Load just the default config, for comparisons against examples
 loadDefaultConfig :: MonadIO m => m Config
-loadDefaultConfig = runRIO testApp $ do
-    config <- decodeThrow defaultConfigContent
-    resolveRestylers config testRestylers
+loadDefaultConfig = do
+    app <- liftIO $ testApp "/" []
+    runRIO app $ do
+        config <- decodeThrow defaultConfigContent
+        resolveRestylers config testRestylers
 
 -- | Load a @'ByteString'@ as configuration
 loadTestConfig :: MonadIO m => ByteString -> m (Either String Config)
-loadTestConfig content =
-    runRIO testApp
+loadTestConfig content = do
+    app <- liftIO $ testApp "/" []
+    runRIO app
         $ tryTo showConfigError
         $ loadConfigFrom (ConfigContent content)
         $ const

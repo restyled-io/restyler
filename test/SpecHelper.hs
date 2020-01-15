@@ -15,6 +15,8 @@ import Test.QuickCheck as X
 import Restyler.App.Class
 import Restyler.Options
 import Restyler.Restyler
+import RIO.Test.FS (FS, HasFS(..))
+import qualified RIO.Test.FS as FS
 
 -- | A versatile app for use with @'runRIO'@
 --
@@ -26,11 +28,7 @@ data TestApp = TestApp
     , taOptions :: Options
 
     -- System
-    , taReadFile :: FilePath -> RIO TestApp Text
-    , taReadFileBS :: FilePath -> RIO TestApp ByteString
-    , taGetCurrentDirectory :: RIO TestApp FilePath
-    , taSetCurrentDirectory :: FilePath -> RIO TestApp ()
-    , taDoesFileExist :: FilePath -> RIO TestApp Bool
+    , taFS :: FS
 
     -- Process
     , taCallProcess :: String -> [String] -> RIO TestApp ()
@@ -40,19 +38,18 @@ data TestApp = TestApp
     -- Add our other capabilities if/when tests require them
     }
 
-testApp :: TestApp
-testApp = TestApp
-    { taLogFunc = mkLogFunc $ \_ _ _ _ -> pure ()
-    , taOptions = testOptions
-    , taReadFile = error "readFile"
-    , taReadFileBS = error "readFileBS"
-    , taGetCurrentDirectory = error "getCurrentDirectory"
-    , taSetCurrentDirectory = error "setCurrentDirectory"
-    , taDoesFileExist = error "doesFileExist"
-    , taCallProcess = error "callProcess"
-    , taCallProcessExitCode = error "callProcessExitCode"
-    , taReadProcess = error "readProcess"
-    }
+testApp :: FilePath -> [(FilePath, Text)] -> IO TestApp
+testApp cwd files = do
+    fs <- FS.build cwd files
+
+    pure TestApp
+        { taLogFunc = mkLogFunc $ \_ _ _ _ -> pure ()
+        , taOptions = testOptions
+        , taFS = fs
+        , taCallProcess = error "callProcess"
+        , taCallProcessExitCode = error "callProcessExitCode"
+        , taReadProcess = error "readProcess"
+        }
 
 testOptions :: Options
 testOptions = Options
@@ -73,12 +70,15 @@ instance HasLogFunc TestApp where
 instance HasOptions TestApp where
     optionsL = lens taOptions $ \x y -> x { taOptions = y }
 
+instance HasFS TestApp where
+    fsL = lens taFS $ \x y -> x { taFS = y }
+
 instance HasSystem TestApp where
-    readFile = asksAp1 taReadFile
-    readFileBS = asksAp1 taReadFileBS
-    getCurrentDirectory = asksAp taGetCurrentDirectory
-    setCurrentDirectory = asksAp1 taSetCurrentDirectory
-    doesFileExist = asksAp1 taDoesFileExist
+    readFile = FS.readFileUtf8
+    readFileBS = FS.readFileBinary
+    getCurrentDirectory = FS.getCurrentDirectory
+    setCurrentDirectory = FS.setCurrentDirectory
+    doesFileExist = FS.doesFileExist
 
 instance HasProcess TestApp where
     callProcess = asksAp2 taCallProcess
@@ -99,17 +99,7 @@ someRestyler = Restyler
     , rSupportsMultiplePaths = True
     }
 
--- | @'asks'@ a function off the environment and apply it
-asksAp :: MonadReader r m => (r -> m a) -> m a
-asksAp f = join $ asks f
-
--- | Same, but apply it to 1 argument
-asksAp1 :: MonadReader r m => (r -> a -> m b) -> a -> m b
-asksAp1 f x = do
-    f' <- asks f
-    f' x
-
--- | Same, but apply it to 2 arguments
+-- | @'asks'@ for a function of 2 arguments
 asksAp2 :: MonadReader r m => (r -> a -> b -> m c) -> a -> b -> m c
 asksAp2 f x y = do
     f' <- asks f
