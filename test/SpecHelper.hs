@@ -1,6 +1,7 @@
 module SpecHelper
     ( TestApp(..)
     , testApp
+    , runTestApp
     , someRestyler
 
     -- * Re-exports
@@ -64,6 +65,11 @@ testApp cwd files = do
         , taCallProcessExitCode = error "callProcessExitCode"
         , taReadProcess = error "readProcess"
         }
+
+runTestApp :: RIO TestApp a -> IO a
+runTestApp f = do
+    app <- testApp "/" []
+    runRIO app f
 
 testOptions :: Options
 testOptions = Options
