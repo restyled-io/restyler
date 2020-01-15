@@ -20,11 +20,11 @@ instance Arbitrary Named where
 
 spec :: Spec
 spec = describe "parseSpec" $ do
-    it "parses correctly" $ do
+    it "parses correctly" $ example $ do
         parseSpec "foo/bar#1" `shouldBe` Right (pullRequestSpec "foo" "bar" 1)
         parseSpec "baz/bat#2" `shouldBe` Right (pullRequestSpec "baz" "bat" 2)
 
-    it "errors on invalid input" $ do
+    it "errors on invalid input" $ example $ do
         parseSpec "foo/bar" `shouldSatisfy` isLeft
         parseSpec "bar#2" `shouldSatisfy` isLeft
         parseSpec "foo/bar#baz" `shouldSatisfy` isLeft

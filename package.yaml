@@ -132,6 +132,7 @@ tests:
       - containers
       - github
       - hspec
+      - hspec-expectations-lifted
       - lens
       - lens-aeson
       - process

@@ -20,14 +20,14 @@ spec = do
             Just enabled -> ["name" .= name, "enabled" .= enabled]
 
     describe "upgradeEnabled" $ do
-        it "upgrades missing enabled key based on name" $ do
+        it "upgrades missing enabled key based on name" $ example $ do
             let stylish = upgradedValue "stylish-haskell" Nothing
                 hindent = upgradedValue "hindent" Nothing
 
             stylish ^? key "enabled" . _Bool `shouldBe` Just True
             hindent ^? key "enabled" . _Bool `shouldBe` Just False
 
-        it "respects configs that have the key already" $ do
+        it "respects configs that have the key already" $ example $ do
             let stylish = upgradedValue "stylish-haskell" $ Just False
                 hindent = upgradedValue "hindent" $ Just True
 
