@@ -1,6 +1,6 @@
 # This PR has differences such that all Restylers known at the time I made it
 # will run, making it a great test PR.
-INTEGRATION_PULL_REQUEST ?= restyled-io/restylers\#10
+INTEGRATION_PULL_REQUEST ?= restyled-io/demo\#46
 INTEGRATION_RESTYLER_IMAGE ?= restyled/restyler
 INTEGRATION_RESTYLER_TAG ?= :latest
 INTEGRATION_RESTYLER_BUILD ?= 1
