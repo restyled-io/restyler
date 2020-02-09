@@ -82,8 +82,7 @@ restylers_version:
 	git pull --rebase
 	sed -i 's/^\(restylers_version: "\).*"$$/\1$(RESTYLERS_VERSION)"/' config/default.yaml
 	git commit config/default.yaml -m "Bump default restylers_version"
-	@echo "Refusing to push for now. This task is untested."
-	@echo git push
+	git push
 
 DOC_ROOT = $(shell stack path --work-dir .stack-work-docs --local-doc-root)
 DOC_S3_PREFIX = /restyler
