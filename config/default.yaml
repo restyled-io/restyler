@@ -147,6 +147,51 @@ restylers_version: "20200209"
 #       arguments: ["--another"]
 #       include: ["needs-another/**/*.js"]
 #
+# Overriding rule:
+#
+# - A customized restyler overrides a default restyler if they have the same `name`.
+#
+# - Missing attributes in a customized restyler will extend from the default.
+#
+# An example of default restyler for markdown is as below:
+#
+#   ```
+#     name: prettier-markdown
+#     command:
+#       - prettier
+#     arguments:
+#       - "--print-width"
+#       - "80"
+#       - "--prose-wrap"
+#       - always
+#     include: ["**/*.md"]
+#   ```
+#
+#   And if in your '.restyled.yaml' there is a customized one:
+#
+#   ```
+#   restylers:
+#     - name: prettier-markdown
+#       command:
+#         - prettier
+#       arguments:
+#         - "--print-width"
+#         - "120"
+#   ```
+#
+#   Finally the effective setting would be:
+#
+#   ```
+#   restylers:
+#     - name: prettier-markdown
+#       command:
+#         - prettier
+#       arguments:
+#         - "--print-width"
+#         - "120"
+#     include: ["**/*.md"]
+#   ```
+#
 # Valid keys in the override object are:
 #
 # - enabled: true|false
