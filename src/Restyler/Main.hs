@@ -62,15 +62,7 @@ restylerMain = do
         sendPullRequestStatus $ DifferencesStatus jobUrl
         exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
 
-    mRestyledPullRequest <- view restyledPullRequestL
-    restyledUrl <- case mRestyledPullRequest of
-        Just restyledPr -> do
-            updateRestyledPullRequest
-            pure $ simplePullRequestHtmlUrl restyledPr
-        Nothing -> do
-            restyledPr <- createRestyledPullRequest results
-            pure $ pullRequestHtmlUrl restyledPr
-
+    restyledUrl <- createOrUpdateRestyledPullRequest results
     sendPullRequestStatus $ DifferencesStatus $ Just restyledUrl
     exitWithInfo "Restyling successful"
 

@@ -8,7 +8,7 @@ where
 import RIO as X hiding (exitSuccess, first, second)
 
 import Control.Error.Util as X (hush, note)
-import Control.Monad.Extra as X (eitherM, maybeM)
+import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Data.Bifunctor as X (first, second)
 import Data.Bitraversable as X (Bitraversable, bimapM)
 import Data.Functor.Syntax as X ((<$$>))
@@ -68,3 +68,6 @@ none p = not . any p
 
 insertIfMissing :: (Eq k, Hashable k) => k -> v -> HashMap k v -> HashMap k v
 insertIfMissing = HM.insertWith $ flip const
+
+with :: (Traversable t, Applicative f) => t a -> (a -> f b) -> f (t a)
+with ma f = for ma $ \a -> a <$ f a
