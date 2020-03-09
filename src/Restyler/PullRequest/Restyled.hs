@@ -144,10 +144,9 @@ closeRestyledPullRequest' pullRequest mRestyledPr =
                 }
 
         logInfo $ "Closing restyled PR: " <> displayShow spec
-        runGitHub_ $ updatePullRequestR
-            (pullRequestOwnerName pullRequest)
-            (pullRequestRepoName pullRequest)
-            (simplePullRequestNumber restyledPr)
+        editRestyledPullRequest
+            pullRequest
+            restyledPr
             EditPullRequest
                 { editPullRequestTitle = Nothing
                 , editPullRequestBody = Nothing
@@ -162,6 +161,18 @@ closeRestyledPullRequest' pullRequest mRestyledPr =
             (pullRequestOwnerName pullRequest)
             (pullRequestRepoName pullRequest)
             (mkName Proxy $ "heads/" <> branch)
+
+editRestyledPullRequest
+    :: HasGitHub env
+    => PullRequest
+    -> SimplePullRequest
+    -> EditPullRequest
+    -> RIO env ()
+editRestyledPullRequest pullRequest restyledPr =
+    runGitHub_ . updatePullRequestR
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        (simplePullRequestNumber restyledPr)
 
 -- | Commit and push to current branch
 updateOriginalPullRequest :: (HasPullRequest env, HasGit env) => RIO env ()
