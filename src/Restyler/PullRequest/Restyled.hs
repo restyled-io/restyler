@@ -110,6 +110,21 @@ updateRestyledPullRequest = do
 
     with mRestyledPr $ \restyledPr -> do
         logInfo "Updating existing Restyle PR"
+
+        when (simplePullRequestState restyledPr == StateClosed) $ do
+            logInfo "Restyle PR was closed, re-opening"
+            editRestyledPullRequest
+                pullRequest
+                restyledPr
+                EditPullRequest
+                    { editPullRequestTitle = Nothing
+                    , editPullRequestBody = Nothing
+                    , editPullRequestState = Just StateOpen
+                    , editPullRequestBase = Nothing
+                    , editPullRequestMaintainerCanModify = Nothing
+                    }
+
+        logInfo "Pushing to Restyle commits to existing branch"
         gitPushForce $ unpack $ pullRequestRestyledRef pullRequest
 
 -- | Close the Restyled PR, if we know of it
