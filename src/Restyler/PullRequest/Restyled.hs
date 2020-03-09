@@ -1,6 +1,5 @@
 module Restyler.PullRequest.Restyled
-    ( createRestyledPullRequest
-    , updateRestyledPullRequest
+    ( createOrUpdateRestyledPullRequest
     , closeRestyledPullRequest
     , closeRestyledPullRequest'
     , updateOriginalPullRequest
@@ -24,7 +23,21 @@ import Restyler.PullRequest
 import Restyler.PullRequestSpec
 import Restyler.RestylerResult
 
--- | Commit and push to the (new) restyled branch, and open a PR for it
+createOrUpdateRestyledPullRequest
+    :: ( HasLogFunc env
+       , HasOptions env
+       , HasConfig env
+       , HasPullRequest env
+       , HasGit env
+       , HasGitHub env
+       , HasRestyledPullRequest env
+       )
+    => [RestylerResult]
+    -> RIO env URL
+createOrUpdateRestyledPullRequest results = fromMaybeM
+    (pullRequestHtmlUrl <$> createRestyledPullRequest results)
+    (simplePullRequestHtmlUrl <$$> updateRestyledPullRequest)
+
 createRestyledPullRequest
     :: ( HasCallStack
        , HasLogFunc env
@@ -83,11 +96,21 @@ createRestyledPullRequest results = do
 
     pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
 
--- | Commit and force-push to the (existing) restyled branch
-updateRestyledPullRequest :: (HasPullRequest env, HasGit env) => RIO env ()
+updateRestyledPullRequest
+    :: ( HasLogFunc env
+       , HasPullRequest env
+       , HasRestyledPullRequest env
+       , HasGit env
+       , HasGitHub env
+       )
+    => RIO env (Maybe SimplePullRequest)
 updateRestyledPullRequest = do
-    rBranch <- pullRequestRestyledRef <$> view pullRequestL
-    gitPushForce $ unpack rBranch
+    pullRequest <- view pullRequestL
+    mRestyledPr <- view restyledPullRequestL
+
+    with mRestyledPr $ \restyledPr -> do
+        logInfo "Updating existing Restyle PR"
+        gitPushForce $ unpack $ pullRequestRestyledRef pullRequest
 
 -- | Close the Restyled PR, if we know of it
 closeRestyledPullRequest
