@@ -2,7 +2,6 @@ module Restyler.PullRequest.Restyled
     ( createOrUpdateRestyledPullRequest
     , closeRestyledPullRequest
     , closeRestyledPullRequest'
-    , updateOriginalPullRequest
     )
 where
 
@@ -188,8 +187,3 @@ editRestyledPullRequest pullRequest restyledPr =
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (simplePullRequestNumber restyledPr)
-
--- | Commit and push to current branch
-updateOriginalPullRequest :: (HasPullRequest env, HasGit env) => RIO env ()
-updateOriginalPullRequest =
-    gitPush . unpack . pullRequestHeadRef =<< view pullRequestL
