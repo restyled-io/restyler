@@ -23,7 +23,8 @@ import Restyler.PullRequestSpec
 import Restyler.RestylerResult
 
 createOrUpdateRestyledPullRequest
-    :: ( HasLogFunc env
+    :: ( HasCallStack
+       , HasLogFunc env
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
@@ -33,9 +34,16 @@ createOrUpdateRestyledPullRequest
        )
     => [RestylerResult]
     -> RIO env URL
-createOrUpdateRestyledPullRequest results = fromMaybeM
-    (pullRequestHtmlUrl <$> createRestyledPullRequest results)
-    (simplePullRequestHtmlUrl <$$> updateRestyledPullRequest)
+createOrUpdateRestyledPullRequest results = do
+    -- N.B. we always force-push (with lease). There are various edge-cases that
+    -- could mean an "-restyled" branch already exists and 99% of the time we
+    -- can be sure it's ours. Force-pushing doesn't hurt when it's not needed
+    -- (provided we know it's our branch, of course).
+    gitPushForce . unpack . pullRequestRestyledRef =<< view pullRequestL
+
+    fromMaybeM
+        (pullRequestHtmlUrl <$> createRestyledPullRequest results)
+        (simplePullRequestHtmlUrl <$$> reopenRestyledPullRequest)
 
 createRestyledPullRequest
     :: ( HasCallStack
@@ -43,7 +51,6 @@ createRestyledPullRequest
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
-       , HasGit env
        , HasGitHub env
        )
     => [RestylerResult]
@@ -51,12 +58,6 @@ createRestyledPullRequest
 createRestyledPullRequest results = do
     mJobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
-
-    -- N.B. we always force-push. There are various edge-cases that could mean
-    -- an "-restyled" branch already exists and 99% of the time we can be sure
-    -- it's ours. Force-pushing doesn't hurt when it's not needed (provided we
-    -- know it's our branch, of course).
-    gitPushForce . unpack $ pullRequestRestyledRef pullRequest
 
     let restyledTitle = "Restyle " <> pullRequestTitle pullRequest
         restyledBody =
@@ -95,23 +96,19 @@ createRestyledPullRequest results = do
 
     pr <$ logInfo ("Opened Restyled PR " <> displayShow (pullRequestSpec pr))
 
-updateRestyledPullRequest
+reopenRestyledPullRequest
     :: ( HasLogFunc env
        , HasPullRequest env
        , HasRestyledPullRequest env
-       , HasGit env
        , HasGitHub env
        )
     => RIO env (Maybe SimplePullRequest)
-updateRestyledPullRequest = do
-    pullRequest <- view pullRequestL
+reopenRestyledPullRequest = do
     mRestyledPr <- view restyledPullRequestL
 
-    with mRestyledPr $ \restyledPr -> do
-        logInfo "Updating existing Restyle PR"
-
+    with mRestyledPr $ \restyledPr ->
         when (simplePullRequestState restyledPr == StateClosed) $ do
-            logInfo "Restyle PR was closed, re-opening"
+            pullRequest <- view pullRequestL
             editRestyledPullRequest
                 pullRequest
                 restyledPr
@@ -123,8 +120,11 @@ updateRestyledPullRequest = do
                     , editPullRequestMaintainerCanModify = Nothing
                     }
 
-        logInfo "Pushing to Restyle commits to existing branch"
-        gitPushForce $ unpack $ pullRequestRestyledRef pullRequest
+            logInfo $ "Reopened Restyled PR " <> displayShow PullRequestSpec
+                { prsOwner = pullRequestOwnerName pullRequest
+                , prsRepo = pullRequestRepoName pullRequest
+                , prsPullRequest = simplePullRequestNumber restyledPr
+                }
 
 -- | Close the Restyled PR, if we know of it
 closeRestyledPullRequest
