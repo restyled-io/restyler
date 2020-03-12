@@ -149,32 +149,33 @@ closeRestyledPullRequest'
     -> Maybe SimplePullRequest
     -> RIO env ()
 closeRestyledPullRequest' pullRequest mRestyledPr =
-    for_ mRestyledPr $ \restyledPr -> do
-        let
-            spec = PullRequestSpec
-                { prsOwner = pullRequestOwnerName pullRequest
-                , prsRepo = pullRequestRepoName pullRequest
-                , prsPullRequest = simplePullRequestNumber restyledPr
-                }
+    for_ mRestyledPr $ \restyledPr ->
+        when (simplePullRequestState restyledPr == StateOpen) $ do
+            let
+                spec = PullRequestSpec
+                    { prsOwner = pullRequestOwnerName pullRequest
+                    , prsRepo = pullRequestRepoName pullRequest
+                    , prsPullRequest = simplePullRequestNumber restyledPr
+                    }
 
-        logInfo $ "Closing restyled PR: " <> displayShow spec
-        editRestyledPullRequest
-            pullRequest
-            restyledPr
-            EditPullRequest
-                { editPullRequestTitle = Nothing
-                , editPullRequestBody = Nothing
-                , editPullRequestState = Just StateClosed
-                , editPullRequestBase = Nothing
-                , editPullRequestMaintainerCanModify = Nothing
-                }
+            logInfo $ "Closing restyled PR: " <> displayShow spec
+            editRestyledPullRequest
+                pullRequest
+                restyledPr
+                EditPullRequest
+                    { editPullRequestTitle = Nothing
+                    , editPullRequestBody = Nothing
+                    , editPullRequestState = Just StateClosed
+                    , editPullRequestBase = Nothing
+                    , editPullRequestMaintainerCanModify = Nothing
+                    }
 
-        let branch = pullRequestRestyledRef pullRequest
-        logInfo $ "Deleting restyled branch: " <> displayShow branch
-        runGitHub_ $ deleteReferenceR
-            (pullRequestOwnerName pullRequest)
-            (pullRequestRepoName pullRequest)
-            (mkName Proxy $ "heads/" <> branch)
+            let branch = pullRequestRestyledRef pullRequest
+            logInfo $ "Deleting restyled branch: " <> displayShow branch
+            runGitHub_ $ deleteReferenceR
+                (pullRequestOwnerName pullRequest)
+                (pullRequestRepoName pullRequest)
+                (mkName Proxy $ "heads/" <> branch)
 
 editRestyledPullRequest
     :: HasGitHub env
