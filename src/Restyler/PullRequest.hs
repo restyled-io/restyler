@@ -124,7 +124,6 @@ pullRequestRestyledMod :: PullRequest -> PullRequestMod
 pullRequestRestyledMod pullRequest = mconcat
     [ optionsBase $ pullRequestRestyledBase pullRequest
     , optionsHead $ pullRequestRestyledRefQualified pullRequest
-    , stateAll
     ]
 
 --------------------------------------------------------------------------------
