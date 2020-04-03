@@ -25,7 +25,7 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.Restyler (Restyler(..))
-import System.IO (hPutStrLn, stderr)
+import System.IO (hPutStrLn)
 import Text.Wrap
 
 data AppError

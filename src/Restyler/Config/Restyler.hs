@@ -11,7 +11,6 @@ import Restyler.Prelude
 import Data.Aeson hiding (Result(..))
 import Data.Aeson.Casing
 import Data.Aeson.Types (Parser, modifyFailure)
-import Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as HM
 import Data.Validation
 import Restyler.Config.ExpectedKeys

@@ -7,7 +7,6 @@ where
 import Restyler.Prelude
 
 import Data.Aeson
-import Data.String (IsString(..))
 import System.FilePath.Glob (Pattern, compile, decompile, match)
 
 data Include

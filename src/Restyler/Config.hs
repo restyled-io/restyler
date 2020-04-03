@@ -41,14 +41,12 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import Data.Barbie
-import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as C8
 import Data.FileEmbed (embedFile)
+import Data.Functor.Barbie
 import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid (Alt(..))
-import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
@@ -94,7 +92,7 @@ data ConfigF f = ConfigF
     , cfRestylersVersion :: f String
     }
     deriving stock Generic
-    deriving anyclass (FunctorB, ProductB, ProductBC, ConstraintsB)
+    deriving anyclass (FunctorB, ApplicativeB, ConstraintsB)
 
 -- | An empty @'ConfigF'@ of all @'Nothing'@s
 --

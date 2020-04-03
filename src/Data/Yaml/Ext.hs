@@ -21,6 +21,7 @@ modifyInvalidYaml f = \case
 
     ex@AesonException{} -> ex
     ex@OtherParseException{} -> ex
+    ex@NonStringKey{} -> ex
     ex@NonStringKeyAlias{} -> ex
     ex@CyclicIncludes{} -> ex
     ex@LoadSettingsException{} -> ex

@@ -8,7 +8,7 @@ where
 import Restyler.Prelude
 
 import qualified Data.Yaml as Yaml
-import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import GitHub.Endpoints.PullRequests
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config

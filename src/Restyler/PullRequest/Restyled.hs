@@ -10,7 +10,7 @@ import Restyler.Prelude
 import qualified Data.Set as Set
 import GitHub.Endpoints.GitData.References.Delete
 import GitHub.Endpoints.Issues.Labels
-import GitHub.Endpoints.PullRequests hiding (pullRequest)
+import GitHub.Endpoints.PullRequests
 import GitHub.Endpoints.PullRequests.ReviewRequests
 import Restyler.App.Class
 import Restyler.Comment

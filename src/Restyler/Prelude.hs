@@ -15,11 +15,10 @@ import Data.Functor.Syntax as X ((<$$>))
 import GitHub.Data as X (Id, Name, URL(..), getUrl, mkId, mkName, untagName)
 import RIO.Char as X (isSpace)
 import RIO.List as X (dropWhileEnd, find, headMaybe, minimumByMaybe)
-import RIO.Text as X (encodeUtf8, pack, unpack)
+import RIO.Text as X (pack, unpack)
 import Safe as X (fromJustNote)
 
 import qualified Data.Foldable as F
-import Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Set as Set
 import qualified RIO.Text as T

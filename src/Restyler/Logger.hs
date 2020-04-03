@@ -7,7 +7,6 @@ where
 
 import Restyler.Prelude
 
-import Data.ByteString (ByteString)
 import Data.ByteString.Builder (toLazyByteString)
 import qualified Data.ByteString.Char8 as BS8
 import Restyler.Options

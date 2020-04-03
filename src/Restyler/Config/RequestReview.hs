@@ -11,7 +11,6 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
-import Data.Bool (bool)
 import GitHub.Data (User)
 import Restyler.Config.ExpectedKeys
 import Restyler.PullRequest

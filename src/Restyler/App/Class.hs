@@ -18,7 +18,7 @@ where
 
 import Restyler.Prelude
 
-import GitHub.Data (IssueLabel(..), PullRequest(..))
+import GitHub.Data (IssueLabel(..))
 import GitHub.Data.Request
 import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)
 import GitHub.Request

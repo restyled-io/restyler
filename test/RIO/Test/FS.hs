@@ -19,7 +19,6 @@ where
 
 import RIO hiding (readFileBinary, readFileUtf8, writeFileUtf8)
 
-import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import RIO.FilePath ((</>))
 import RIO.List (isPrefixOf)

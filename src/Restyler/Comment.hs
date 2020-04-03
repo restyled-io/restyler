@@ -8,7 +8,7 @@ import Restyler.Prelude
 
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import GitHub.Endpoints.Issues.Comments hiding (comment, comments)
+import GitHub.Endpoints.Issues.Comments
 import Restyler.App.Class
 import Restyler.App.Error (warnIgnore)
 import qualified Restyler.Content as Content

@@ -12,9 +12,6 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Types
-import Data.Either (lefts)
-import Data.Function (on)
-import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
 import GHC.Generics
 import GHC.Generics.Selectors
