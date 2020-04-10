@@ -10,7 +10,6 @@
 
 # N.B. must be kept in sync with package.yaml
 - arguments:
-  - -XAutoDeriveTypeable
   - -XBangPatterns
   - -XBinaryLiterals
   - -XConstraintKinds
@@ -32,7 +31,6 @@
   - -XGeneralizedNewtypeDeriving
   - -XInstanceSigs
   - -XKindSignatures
-  - -XMonadFailDesugaring
   - -XMultiParamTypeClasses
   - -XMultiWayIf
   - -XNamedFieldPuns
