@@ -12,11 +12,14 @@ newtype Named = Named Text
     deriving newtype (Eq, Show)
 
 instance Arbitrary Named where
-    arbitrary = Named . pack <$> arbitrary `suchThat` all goodChar
+    arbitrary = arbitrary `suchThatMap` mkNamed
       where
-        goodChar c
-            | isSpace c = False
-            | otherwise = c `notElem` ['/', '#']
+        mkNamed :: String -> Maybe Named
+        mkNamed s
+            | null s = Nothing
+            | any isSpace s = Nothing
+            | any (`elem` ['/', '#']) s = Nothing
+            | otherwise = Just $ Named $ pack s
 
 spec :: Spec
 spec = describe "parseSpec" $ do
@@ -31,7 +34,7 @@ spec = describe "parseSpec" $ do
 
     it "round-trips" $ property $ \(Named owner, Named name, Positive num) ->
         let prSpec = pullRequestSpec owner name num
-        in parseSpec (show prSpec) == Right prSpec
+        in parseSpec (unpack $ textDisplay prSpec) == Right prSpec
 
 pullRequestSpec :: Text -> Text -> Int -> PullRequestSpec
 pullRequestSpec owner name num = PullRequestSpec

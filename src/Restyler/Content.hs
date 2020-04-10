@@ -8,7 +8,7 @@ where
 
 import Restyler.Prelude
 
-import GitHub.Data (unIssueNumber)
+import GitHub.Data (IssueNumber, unIssueNumber)
 import Restyler.PullRequest
 import Restyler.Restyler
 import Restyler.RestylerResult
@@ -17,15 +17,15 @@ import Text.Shakespeare.Text (st)
 -- brittany-disable-next-binding
 
 commentBody
-    :: PullRequest -- ^ Restyled PR
+    :: IssueNumber -- ^ Restyled PR Number
     -> Text
-commentBody pullRequest = [st|
+commentBody n = [st|
 Hey there-
 
 I'm a [bot][homepage], here to let you know that some code in this PR might not
 match the team's automated styling. I ran the team's auto-reformatting tools on
 the files changed in this PR and found some differences. Those differences can
-be seen in ##{unIssueNumber $ pullRequestNumber pullRequest}.
+be seen in ##{unIssueNumber n}.
 
 Please see that Pull Request's description for more details.
 

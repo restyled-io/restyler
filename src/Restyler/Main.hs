@@ -11,9 +11,9 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.PullRequest.Restyled
 import Restyler.PullRequest.Status
 import Restyler.RemoteFile
+import Restyler.RestyledPullRequest
 import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
@@ -38,17 +38,19 @@ restylerMain = do
     results <- restyle
     logDebug $ "Restyling results: " <> displayShow results
 
+    pullRequest <- view pullRequestL
+    mRestyledPullRequest <- view restyledPullRequestL
+
     unlessM wasRestyled $ do
-        clearRestyledComments
-        closeRestyledPullRequest
+        clearRestyledComments pullRequest
+        traverse_ closeRestyledPullRequest mRestyledPullRequest
         sendPullRequestStatus $ NoDifferencesStatus jobUrl
         exitWithInfo "No style differences found"
 
     whenM isAutoPush $ do
         logInfo "Pushing Restyle commits to original PR"
-        pullRequest <- view pullRequestL
         gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
-        gitMerge $ unpack $ pullRequestRestyledRef pullRequest
+        gitMerge $ unpack $ pullRequestRestyledHeadRef pullRequest
 
         -- This will fail if other changes came in while we were restyling, but
         -- it also means that we should be working on a Job for those changes
@@ -62,8 +64,11 @@ restylerMain = do
         sendPullRequestStatus $ DifferencesStatus jobUrl
         exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
 
-    restyledUrl <- createOrUpdateRestyledPullRequest results
-    sendPullRequestStatus $ DifferencesStatus $ Just restyledUrl
+    url <- restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
+        Nothing -> createRestyledPullRequest pullRequest results
+        Just pr -> updateRestyledPullRequest pr results
+
+    sendPullRequestStatus $ DifferencesStatus $ Just url
     exitWithInfo "Restyling successful"
 
 restyle

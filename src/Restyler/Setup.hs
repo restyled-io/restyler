@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+
 
 module Restyler.Setup
     ( restylerSetup
@@ -15,8 +15,9 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.PullRequest.Restyled
-import Restyler.PullRequestSpec
+import Restyler.RestyledPullRequest
+-- import Restyler.PullRequest.Restyled
+-- import Restyler.PullRequestSpec
 
 restylerSetup
     :: ( HasCallStack
@@ -29,7 +30,7 @@ restylerSetup
        , HasDownloadFile env
        , HasGitHub env
        )
-    => RIO env (PullRequest, Maybe SimplePullRequest, Config)
+    => RIO env (PullRequest, Maybe RestyledPullRequest, Config)
 restylerSetup = do
     Options {..} <- view optionsL
 
@@ -40,14 +41,10 @@ restylerSetup = do
             oRepo
             oPullRequest
 
-    mRestyledPullRequest <-
-        handleAny (const $ pure Nothing)
-        $ runGitHubFirst
-        $ pullRequestsForR oOwner oRepo
-        $ pullRequestRestyledMod pullRequest
+    mRestyledPullRequest <- findRestyledPullRequest pullRequest
 
     when (pullRequestIsClosed pullRequest) $ do
-        closeRestyledPullRequest' pullRequest mRestyledPullRequest
+        traverse_ closeRestyledPullRequest mRestyledPullRequest
         exitWithInfo "Source Pull Request is closed"
 
     logInfo "Cloning repository"
@@ -60,10 +57,17 @@ restylerSetup = do
     when (labels `intersects` cIgnoreLabels config)
         $ exitWithInfo "Ignoring PR based on its labels"
 
-    logInfo $ "Restyling " <> displayShow (pullRequestSpec pullRequest)
-    logInfo $ displayRestyled pullRequest mRestyledPullRequest
-    logDebug $ displayConfig config
+    case mRestyledPullRequest of
+        Nothing -> do
+            logInfo "No existing Restyled PR"
+            gitCheckout $ unpack $ pullRequestRestyledHeadRef pullRequest
+        Just pr -> do
+            logInfo $ "Existing Restyled PR is " <> display pr
+            gitCheckout $ unpack $ restyledPullRequestHeadRef pr
 
+    logInfo $ "Restyling " <> display pullRequest
+    -- TODO: instance Display PullRequest
+    logDebug $ displayConfig config
     pure (pullRequest, mRestyledPullRequest, config)
 
 displayConfig :: Config -> Utf8Builder
@@ -73,13 +77,6 @@ displayConfig =
         . ("Resolved configuration\n" <>)
         . decodeUtf8
         . Yaml.encode
-
-displayRestyled :: PullRequest -> Maybe SimplePullRequest -> Utf8Builder
-displayRestyled pr = \case
-    Nothing -> "Restyled PR does not exist"
-    Just rpr -> "Restyled PR is " <> displayShow (pullRequestSpec pr)
-        { prsPullRequest = simplePullRequestNumber rpr
-        }
 
 setupClone
     :: ( HasCallStack
@@ -107,7 +104,6 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
         (unpack $ pullRequestLocalHeadRef pullRequest)
 
     gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
-    gitCheckout $ unpack $ pullRequestRestyledRef pullRequest
 
 toPullRequestFetchError :: AppError -> AppError
 toPullRequestFetchError (GitHubError _ e) = PullRequestFetchError e
