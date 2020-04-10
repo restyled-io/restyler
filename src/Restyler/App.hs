@@ -19,6 +19,7 @@ import Restyler.Git
 import Restyler.Logger
 import Restyler.Options
 import Restyler.PullRequest
+import Restyler.RestyledPullRequest
 import Restyler.Setup
 import qualified RIO.Directory as Directory
 import qualified System.Exit as Exit
@@ -123,7 +124,7 @@ data App = App
     -- ^ Configuration loaded from @.restyled.yaml@
     , appPullRequest :: PullRequest
     -- ^ Original Pull Request being restyled
-    , appRestyledPullRequest :: Maybe SimplePullRequest
+    , appRestyledPullRequest :: Maybe RestyledPullRequest
     -- ^ Possible pre-existing Restyle Pull Request
     }
 

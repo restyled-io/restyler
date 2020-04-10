@@ -16,25 +16,22 @@ import Restyler.PullRequest
 
 -- | Leave a comment on the original PR, mentioning the given Restyled PR
 leaveRestyledComment
-    :: (HasCallStack, HasPullRequest env, HasGitHub env)
-    => PullRequest
+    :: (HasCallStack, HasGitHub env)
+    => PullRequest -- ^ Original PR
+    -> IssueNumber -- ^ Restyled PR Number
     -> RIO env ()
-leaveRestyledComment restyledPr = do
-    pullRequest <- view pullRequestL
-
-    runGitHub_ $ createCommentR
-        (pullRequestOwnerName pullRequest)
-        (pullRequestRepoName pullRequest)
-        (pullRequestNumber pullRequest)
-        (Content.commentBody restyledPr)
+leaveRestyledComment pullRequest n = runGitHub_ $ createCommentR
+    (pullRequestOwnerName pullRequest)
+    (pullRequestRepoName pullRequest)
+    (pullRequestNumber pullRequest)
+    (Content.commentBody n)
 
 -- | Locate any comments left by us on the origin PR and delete them
 clearRestyledComments
-    :: (HasCallStack, HasLogFunc env, HasPullRequest env, HasGitHub env)
-    => RIO env ()
-clearRestyledComments = do
-    pullRequest <- view pullRequestL
-
+    :: (HasCallStack, HasLogFunc env, HasGitHub env)
+    => PullRequest
+    -> RIO env ()
+clearRestyledComments pullRequest = do
     comments <- runGitHub $ commentsR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)

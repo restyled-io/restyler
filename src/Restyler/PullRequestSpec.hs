@@ -21,10 +21,10 @@ data PullRequestSpec = PullRequestSpec
     , prsRepo :: Name Repo
     , prsPullRequest :: IssueNumber
     }
-    deriving Eq
+    deriving stock (Eq, Show)
 
-instance Show PullRequestSpec where
-    show PullRequestSpec {..} = unpack $ mconcat
+instance Display PullRequestSpec where
+    textDisplay PullRequestSpec {..} = mconcat
         [ untagName prsOwner <> "/"
         , untagName prsRepo <> "#"
         , toPathPart prsPullRequest

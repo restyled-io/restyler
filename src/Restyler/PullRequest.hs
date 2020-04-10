@@ -1,18 +1,17 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Restyler.PullRequest
     ( PullRequest
     , pullRequestHtmlUrl
     , pullRequestNumber
+    , pullRequestTitle
+    , pullRequestState
     , HasPullRequest(..)
-    , SimplePullRequest
-    , simplePullRequestNumber
-    , simplePullRequestHtmlUrl
-    , HasRestyledPullRequest(..)
     , pullRequestOwnerName
     , pullRequestRepoName
     , pullRequestUserLogin
     , pullRequestCloneUrl
     , pullRequestCloneUrlToken
-    , pullRequestSpec
     , pullRequestIssueId
     , pullRequestIsClosed
     , pullRequestIsFork
@@ -22,9 +21,8 @@ module Restyler.PullRequest
     , pullRequestHeadSha
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
-    , pullRequestRestyledBase
-    , pullRequestRestyledRef
-    , pullRequestRestyledMod
+    , pullRequestRestyledBaseRef
+    , pullRequestRestyledHeadRef
     )
 where
 
@@ -33,11 +31,15 @@ import Restyler.Prelude
 import GitHub.Data
 import Restyler.PullRequestSpec
 
+instance Display PullRequest where
+    textDisplay pullRequest = textDisplay PullRequestSpec
+        { prsOwner = pullRequestOwnerName pullRequest
+        , prsRepo = pullRequestRepoName pullRequest
+        , prsPullRequest = pullRequestNumber pullRequest
+        }
+
 class HasPullRequest env where
     pullRequestL :: Lens' env PullRequest
-
-class HasRestyledPullRequest env where
-    restyledPullRequestL :: Lens' env (Maybe SimplePullRequest)
 
 pullRequestOwnerName :: HasCallStack => PullRequest -> Name Owner
 pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
@@ -69,13 +71,6 @@ pullRequestCloneUrlToken token pullRequest =
         <> "/"
         <> untagName (pullRequestRepoName pullRequest)
         <> ".git"
-
-pullRequestSpec :: HasCallStack => PullRequest -> PullRequestSpec
-pullRequestSpec pullRequest = PullRequestSpec
-    { prsOwner = pullRequestOwnerName pullRequest
-    , prsRepo = pullRequestRepoName pullRequest
-    , prsPullRequest = pullRequestNumber pullRequest
-    }
 
 -- | Some API actions need to treat the PR like an Issue
 pullRequestIssueId :: PullRequest -> Id Issue
@@ -112,19 +107,13 @@ pullRequestLocalHeadRef pullRequest@PullRequest {..}
     | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestNumber
     | otherwise = pullRequestCommitRef pullRequestHead
 
-pullRequestRestyledBase :: PullRequest -> Text
-pullRequestRestyledBase pullRequest
+pullRequestRestyledBaseRef :: PullRequest -> Text
+pullRequestRestyledBaseRef pullRequest
     | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
     | otherwise = pullRequestHeadRef pullRequest
 
-pullRequestRestyledRef :: PullRequest -> Text
-pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
-
-pullRequestRestyledMod :: PullRequest -> PullRequestMod
-pullRequestRestyledMod pullRequest = mconcat
-    [ optionsBase $ pullRequestRestyledBase pullRequest
-    , optionsHead $ pullRequestRestyledRefQualified pullRequest
-    ]
+pullRequestRestyledHeadRef :: PullRequest -> Text
+pullRequestRestyledHeadRef = ("restyled/" <>) . pullRequestLocalHeadRef
 
 --------------------------------------------------------------------------------
 -- Internal functions below this point
@@ -132,12 +121,6 @@ pullRequestRestyledMod pullRequest = mconcat
 
 pullRequestOwner :: HasCallStack => PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
-
-pullRequestRestyledRefQualified :: HasCallStack => PullRequest -> Text
-pullRequestRestyledRefQualified pullRequest =
-    toPathPart (pullRequestOwnerName pullRequest)
-        <> ":"
-        <> pullRequestRestyledRef pullRequest
 
 -- |
 --
