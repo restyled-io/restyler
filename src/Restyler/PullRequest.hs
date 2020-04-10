@@ -23,7 +23,6 @@ module Restyler.PullRequest
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
     , pullRequestRestyledBase
-    , pullRequestRestyledRef
     , pullRequestRestyledMod
     )
 where
@@ -117,13 +116,10 @@ pullRequestRestyledBase pullRequest
     | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
     | otherwise = pullRequestHeadRef pullRequest
 
-pullRequestRestyledRef :: PullRequest -> Text
-pullRequestRestyledRef = (<> "-restyled") . pullRequestLocalHeadRef
-
-pullRequestRestyledMod :: PullRequest -> PullRequestMod
-pullRequestRestyledMod pullRequest = mconcat
+pullRequestRestyledMod :: PullRequest -> Text -> PullRequestMod
+pullRequestRestyledMod pullRequest restyledRef = mconcat
     [ optionsBase $ pullRequestRestyledBase pullRequest
-    , optionsHead $ pullRequestRestyledRefQualified pullRequest
+    , optionsHead $ qualifyRef pullRequest restyledRef
     ]
 
 --------------------------------------------------------------------------------
@@ -133,11 +129,11 @@ pullRequestRestyledMod pullRequest = mconcat
 pullRequestOwner :: HasCallStack => PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
 
-pullRequestRestyledRefQualified :: HasCallStack => PullRequest -> Text
-pullRequestRestyledRefQualified pullRequest =
+qualifyRef :: HasCallStack => PullRequest -> Text -> Text
+qualifyRef pullRequest ref =
     toPathPart (pullRequestOwnerName pullRequest)
         <> ":"
-        <> pullRequestRestyledRef pullRequest
+        <> ref
 
 -- |
 --

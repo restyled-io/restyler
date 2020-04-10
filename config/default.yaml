@@ -45,6 +45,12 @@ remote_files: []
 # Open Restyle PRs?
 pull_requests: true
 
+# How to name the Restyle PRs branch
+#
+# The value {base} will be interpolated with the original PR's branch.
+#
+branch_name: "{base}-restyled"
+
 # Leave comments on the original PR linking to the Restyle PR?
 comments: false
 

@@ -1,4 +1,8 @@
 ---
+
+# N.B. beta-testing with alternative default
+branch_name: "restyled/{base}"
+
 restylers:
   - stylish-haskell
   - brittany

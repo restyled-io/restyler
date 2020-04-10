@@ -39,7 +39,9 @@ createOrUpdateRestyledPullRequest results = do
     -- could mean an "-restyled" branch already exists and 99% of the time we
     -- can be sure it's ours. Force-pushing doesn't hurt when it's not needed
     -- (provided we know it's our branch, of course).
-    gitPushForce . unpack . pullRequestRestyledRef =<< view pullRequestL
+    pullRequest <- view pullRequestL
+    restyledRef <- view $ configL . to (configRestyledRef pullRequest)
+    gitPushForce $ unpack restyledRef
 
     fromMaybeM
         (pullRequestHtmlUrl <$> createRestyledPullRequest results)
@@ -59,6 +61,7 @@ createRestyledPullRequest results = do
     mJobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
 
+    restyledRef <- view $ configL . to (configRestyledRef pullRequest)
     let restyledTitle = "Restyle " <> pullRequestTitle pullRequest
         restyledBody =
             Content.pullRequestDescription mJobUrl pullRequest results
@@ -70,7 +73,7 @@ createRestyledPullRequest results = do
         CreatePullRequest
             { createPullRequestTitle = restyledTitle
             , createPullRequestBody = restyledBody
-            , createPullRequestHead = pullRequestRestyledRef pullRequest
+            , createPullRequestHead = restyledRef
             , createPullRequestBase = pullRequestRestyledBase pullRequest
             }
 
@@ -129,6 +132,7 @@ reopenRestyledPullRequest = do
 -- | Close the Restyled PR, if we know of it
 closeRestyledPullRequest
     :: ( HasLogFunc env
+       , HasConfig env
        , HasPullRequest env
        , HasRestyledPullRequest env
        , HasGitHub env
@@ -139,16 +143,18 @@ closeRestyledPullRequest = do
     -- doesn't give us much.
     pullRequest <- view pullRequestL
     mRestyledPr <- view restyledPullRequestL
+    restyledRef <- view $ configL . to (configRestyledRef pullRequest)
 
-    closeRestyledPullRequest' pullRequest mRestyledPr
+    closeRestyledPullRequest' pullRequest mRestyledPr restyledRef
 
 -- | Extracted for use during Setup (e.g. without @'HasPullRequest'@)
 closeRestyledPullRequest'
     :: (HasLogFunc env, HasGitHub env)
     => PullRequest
     -> Maybe SimplePullRequest
+    -> Text -- ^ Restyled branch ref
     -> RIO env ()
-closeRestyledPullRequest' pullRequest mRestyledPr =
+closeRestyledPullRequest' pullRequest mRestyledPr restyledRef =
     for_ mRestyledPr $ \restyledPr ->
         when (simplePullRequestState restyledPr == StateOpen) $ do
             let
@@ -170,12 +176,11 @@ closeRestyledPullRequest' pullRequest mRestyledPr =
                     , editPullRequestMaintainerCanModify = Nothing
                     }
 
-            let branch = pullRequestRestyledRef pullRequest
-            logInfo $ "Deleting restyled branch: " <> displayShow branch
+            logInfo $ "Deleting restyled branch: " <> displayShow restyledRef
             runGitHub_ $ deleteReferenceR
                 (pullRequestOwnerName pullRequest)
                 (pullRequestRepoName pullRequest)
-                (mkName Proxy $ "heads/" <> branch)
+                (mkName Proxy $ "heads/" <> restyledRef)
 
 editRestyledPullRequest
     :: HasGitHub env

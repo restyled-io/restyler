@@ -48,7 +48,8 @@ restylerMain = do
         logInfo "Pushing Restyle commits to original PR"
         pullRequest <- view pullRequestL
         gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
-        gitMerge $ unpack $ pullRequestRestyledRef pullRequest
+        restyledRef <- view $ configL . to (configRestyledRef pullRequest)
+        gitMerge $ unpack restyledRef
 
         -- This will fail if other changes came in while we were restyling, but
         -- it also means that we should be working on a Job for those changes

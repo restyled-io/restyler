@@ -23,6 +23,7 @@ module Restyler.Config
     ( Config(..)
     , ConfigError(..)
     , configPullRequestReviewer
+    , configRestyledRef
     , loadConfig
     , HasConfig(..)
     , whenConfig
@@ -53,6 +54,7 @@ import qualified Data.Yaml as Yaml
 import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
+import Restyler.Config.BranchName
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Glob
 import Restyler.Config.RequestReview
@@ -83,6 +85,7 @@ data ConfigF f = ConfigF
     , cfAuto :: f Bool
     , cfRemoteFiles :: f (SketchyList RemoteFile)
     , cfPullRequests :: f Bool
+    , cfBranchName :: f BranchName
     , cfComments :: f Bool
     , cfStatuses :: f Statuses
     , cfRequestReview :: f RequestReviewConfig
@@ -129,6 +132,7 @@ data Config = Config
     , cAuto :: Bool
     , cRemoteFiles :: [RemoteFile]
     , cPullRequests :: Bool
+    , cBranchName :: BranchName
     , cComments :: Bool
     , cStatuses :: Statuses
     , cRequestReview :: RequestReviewConfig
@@ -145,6 +149,10 @@ data Config = Config
 -- | If so configured, return the @'User'@ from whom to request review
 configPullRequestReviewer :: PullRequest -> Config -> Maybe (Name User)
 configPullRequestReviewer pr = determineReviewer pr . cRequestReview
+
+configRestyledRef :: PullRequest -> Config -> Text
+configRestyledRef pr Config {..} =
+    interpolateBranchName cBranchName $ pullRequestHeadRef pr
 
 instance ToJSON Config where
     toJSON = genericToJSON $ aesonPrefix snakeCase
@@ -247,6 +255,7 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cAuto = runIdentity cfAuto
         , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
         , cPullRequests = runIdentity cfPullRequests
+        , cBranchName = runIdentity cfBranchName
         , cComments = runIdentity cfComments
         , cStatuses = runIdentity cfStatuses
         , cRequestReview = runIdentity cfRequestReview

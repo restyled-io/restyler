@@ -55,6 +55,9 @@ handleTo f = handle (throwIO . f)
 tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
 tryTo f = fmap (first f) . try
 
+tryToM :: (MonadUnliftIO m, Exception e) => (e -> m b) -> m a -> m (Either b a)
+tryToM f = firstM f <=< try
+
 intersects :: (Foldable t1, Foldable t2, Ord a) => t1 a -> t2 a -> Bool
 intersects a b = not $ Set.null $ Set.intersection a' b'
   where
