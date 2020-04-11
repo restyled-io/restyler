@@ -183,8 +183,15 @@ editRestyledPullRequestState
     => IssueState
     -> RestyledPullRequest
     -> RIO env ()
-editRestyledPullRequestState state pr =
-    unless (restyledPullRequestState pr == state) $ do
+editRestyledPullRequestState state pr
+    | restyledPullRequestState pr == state
+    = logWarn
+        $ "Redundant update of Restyled PR "
+        <> display pr
+        <> " to "
+        <> displayShow state
+    | otherwise
+    = do
         logInfo
             $ "Updating Restyled PR "
             <> display pr
