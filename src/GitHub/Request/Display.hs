@@ -8,17 +8,16 @@ where
 
 import Prelude
 
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import GitHub.Request
+import RIO (Display)
 
 newtype DisplayGitHubRequest = DisplayGitHubRequest
-    { unDisplayGitHubRequest :: Text
+    { _unDisplayGitHubRequest :: Text
     }
-
-instance Show DisplayGitHubRequest where
-    show = unpack . unDisplayGitHubRequest
+    deriving newtype (Eq, Show, Display)
 
 displayGitHubRequest :: GenRequest m k a -> DisplayGitHubRequest
 displayGitHubRequest = DisplayGitHubRequest . \case

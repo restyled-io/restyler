@@ -159,8 +159,8 @@ errorPullRequestUrl url =
     handleAny warnIgnore $ sendPullRequestStatus $ ErrorStatus url
 
 -- | Ignore an exception, warning about it.
-warnIgnore :: (Show a, HasLogFunc env) => a -> RIO env ()
-warnIgnore ex = logWarn $ "Caught " <> displayShow ex <> ", ignoring."
+warnIgnore :: (Display a, HasLogFunc env) => a -> RIO env ()
+warnIgnore ex = logWarn $ "Caught " <> display ex <> ", ignoring."
 
 -- | Error handlers for overall execution
 --

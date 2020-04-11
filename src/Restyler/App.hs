@@ -100,14 +100,14 @@ instance HasExit StartupApp where
 
 instance HasDownloadFile StartupApp where
     downloadFile url path = do
-        logDebug $ "HTTP GET: " <> displayShow url <> " => " <> displayShow path
+        logDebug $ "HTTP GET: " <> display url <> " => " <> displayShow path
         appIO HttpError $ do
             request <- parseRequestThrow $ unpack url
             runResourceT $ httpSink request $ \_ -> sinkFile path
 
 instance HasGitHub StartupApp where
     runGitHub req = do
-        logDebug $ "GitHub request: " <> displayShow (displayGitHubRequest req)
+        logDebug $ "GitHub request: " <> display (displayGitHubRequest req)
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
         result <- liftIO $ do
             mgr <- getGlobalManager
