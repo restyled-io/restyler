@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Restyler.RestylerResult
     ( RestylerResult(..)
     , noPathsRestylerResult
@@ -15,15 +17,26 @@ data RestyleOutcome
     = NoPaths
     | NoChanges
     | ChangesCommitted [FilePath] Text
-    deriving Show
+
+instance Display RestyleOutcome where
+    display = \case
+        NoPaths -> "no paths to restyle"
+        NoChanges -> "nothing restyled"
+        ChangesCommitted paths sha ->
+            "updated "
+                <> displayShow (length paths)
+                <> " file(s),"
+                <> " commited in "
+                <> display sha
 
 data RestylerResult = RestylerResult
     { rrRestyler :: Restyler
     , rrOutcome :: RestyleOutcome
     }
 
-instance Show RestylerResult where
-    show RestylerResult {..} = rName rrRestyler <> ": " <> show rrOutcome
+instance Display RestylerResult where
+    display RestylerResult {..} =
+        fromString (rName rrRestyler) <> ": " <> display rrOutcome
 
 -- | A @'RestylerResult'@ indicating there were no paths to restyle
 noPathsRestylerResult :: Restyler -> RestylerResult
