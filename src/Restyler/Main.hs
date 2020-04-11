@@ -36,7 +36,7 @@ restylerMain = do
     whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
 
     results <- restyle
-    logDebug $ "Restyling results: " <> displayShow results
+    logDebug $ "Restyling results: " <> displayIntercalated ", " results
 
     pullRequest <- view pullRequestL
     mRestyledPullRequest <- view restyledPullRequestL

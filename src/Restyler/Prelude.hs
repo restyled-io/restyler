@@ -23,6 +23,9 @@ import qualified Data.HashMap.Lazy as HM
 import qualified Data.Set as Set
 import qualified RIO.Text as T
 
+-- Apparently they fixed a space leak in Data.List's version :shrug:
+import qualified Data.Text.Internal.Functions as List (intersperse)
+
 firstM :: (Bitraversable t, Applicative f) => (a -> f a') -> t a b -> f (t a' b)
 firstM f = bimapM f pure
 
@@ -44,6 +47,9 @@ withRIO f m = do
 --
 decodeUtf8 :: ByteString -> Text
 decodeUtf8 = T.decodeUtf8With T.lenientDecode
+
+displayIntercalated :: Display a => Utf8Builder -> [a] -> Utf8Builder
+displayIntercalated sep = mconcat . List.intersperse sep . map display
 
 handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
 handles = flip catches
