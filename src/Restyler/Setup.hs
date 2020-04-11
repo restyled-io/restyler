@@ -66,12 +66,11 @@ restylerSetup = do
             gitCheckout $ unpack $ restyledPullRequestHeadRef pr
 
     logInfo $ "Restyling " <> display pullRequest
-    -- TODO: instance Display PullRequest
-    logDebug $ displayConfig config
+    logDebug $ displayConfigYaml config
     pure (pullRequest, mRestyledPullRequest, config)
 
-displayConfig :: Config -> Utf8Builder
-displayConfig =
+displayConfigYaml :: Config -> Utf8Builder
+displayConfigYaml =
     fromString
         . unpack
         . ("Resolved configuration\n" <>)
