@@ -58,4 +58,4 @@ which I agree, see [here][level].
 
 ---
 
-[CHANGELOG](./CHANGELOG.md) | [LICENSE](./LICENSE)
+[CHANGELOG](./CHANGELOG.md) | [LICENSE](./LICENSE) | [DOCS](https://github.com/restyled-io/restyled.io/wiki)
