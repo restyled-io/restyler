@@ -221,3 +221,8 @@ findSiblingPullRequest pr ref =
     owner = pullRequestOwnerName pr
     repo = pullRequestRepoName pr
     qualifiedRef = toPathPart owner <> ":" <> ref
+
+pullRequestRestyledBaseRef :: PullRequest -> Text
+pullRequestRestyledBaseRef pullRequest
+    | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
+    | otherwise = pullRequestHeadRef pullRequest

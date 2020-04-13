@@ -21,7 +21,6 @@ module Restyler.PullRequest
     , pullRequestHeadSha
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
-    , pullRequestRestyledBaseRef
     , pullRequestRestyledHeadRef
     )
 where
@@ -106,11 +105,6 @@ pullRequestLocalHeadRef :: PullRequest -> Text
 pullRequestLocalHeadRef pullRequest@PullRequest {..}
     | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestNumber
     | otherwise = pullRequestCommitRef pullRequestHead
-
-pullRequestRestyledBaseRef :: PullRequest -> Text
-pullRequestRestyledBaseRef pullRequest
-    | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
-    | otherwise = pullRequestHeadRef pullRequest
 
 pullRequestRestyledHeadRef :: PullRequest -> Text
 pullRequestRestyledHeadRef = ("restyled/" <>) . pullRequestLocalHeadRef
