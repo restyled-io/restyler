@@ -14,6 +14,7 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import qualified Data.Set as Set
+import GitHub.Endpoints.GitData.References.Delete (deleteReferenceR)
 import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
 import GitHub.Endpoints.PullRequests
     ( CreatePullRequest(..)
@@ -35,6 +36,7 @@ import GitHub.Endpoints.PullRequests
 import GitHub.Endpoints.PullRequests.ReviewRequests
     (createReviewRequestR, requestOneReviewer)
 import Restyler.App.Class (HasGitHub, runGitHub, runGitHubFirst, runGitHub_)
+import Restyler.App.Error (warnIgnore)
 import Restyler.Comment (leaveRestyledComment)
 import Restyler.Config
 import qualified Restyler.Content as Content
@@ -176,7 +178,16 @@ updateRestyledPullRequest restyledPullRequest _results = do
 
 closeRestyledPullRequest
     :: (HasLogFunc env, HasGitHub env) => RestyledPullRequest -> RIO env ()
-closeRestyledPullRequest = editRestyledPullRequestState StateClosed
+closeRestyledPullRequest pr = do
+    editRestyledPullRequestState StateClosed pr
+
+    handleAny warnIgnore
+        $ runGitHub_
+        $ deleteReferenceR
+              (restyledPullRequestOwnerName pr)
+              (restyledPullRequestRepoName pr)
+        $ mkName Proxy
+        $ restyledPullRequestHeadRef pr
 
 editRestyledPullRequestState
     :: (HasLogFunc env, HasGitHub env)
