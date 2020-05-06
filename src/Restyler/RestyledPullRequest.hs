@@ -181,13 +181,10 @@ closeRestyledPullRequest
 closeRestyledPullRequest pr = do
     editRestyledPullRequestState StateClosed pr
 
-    handleAny warnIgnore
-        $ runGitHub_
-        $ deleteReferenceR
-              (restyledPullRequestOwnerName pr)
-              (restyledPullRequestRepoName pr)
-        $ mkName Proxy
-        $ restyledPullRequestHeadRef pr
+    handleAny warnIgnore $ runGitHub_ $ deleteReferenceR
+        (restyledPullRequestOwnerName pr)
+        (restyledPullRequestRepoName pr)
+        (mkName Proxy $ "heads/" <> restyledPullRequestHeadRef pr)
 
 editRestyledPullRequestState
     :: (HasLogFunc env, HasGitHub env)
