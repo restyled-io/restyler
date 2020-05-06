@@ -3,6 +3,7 @@
 module Restyler.Config.Restyler
     ( RestylerOverride
     , overrideRestylers
+    , legacyOverrideRestylers
     )
 where
 
@@ -14,6 +15,7 @@ import Data.Aeson.Types (Parser, modifyFailure)
 import qualified Data.HashMap.Lazy as HM
 import Data.Validation
 import Restyler.Config.ExpectedKeys
+import Restyler.Config.Glob
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.SketchyList
@@ -21,6 +23,7 @@ import Restyler.Restyler
 
 data RestylerOverride = RestylerOverride
     { roName :: String
+    -- ^ TODO: Make this @Glob@ once the @restylers@ key is gone
     , roEnabled :: Maybe Bool
     , roImage :: Maybe String
     , roCommand :: Maybe (SketchyList String)
@@ -45,24 +48,45 @@ suffixIncorrectIndentation :: Parser a -> Parser a
 suffixIncorrectIndentation = modifyFailure (<> msg)
     where msg = "\n\nDo you have incorrect indentation for a named override?"
 
-overrideRestylers
-    :: [Restyler] -> Maybe [RestylerOverride] -> Either [String] [Restyler]
-overrideRestylers restylers =
-    maybe (pure restylers) (toEither . overrideRestylers' restylers)
+overrideRestylers :: [Restyler] -> [RestylerOverride] -> [Restyler]
+overrideRestylers restylers overrides =
+    map (overrideRestyler overrides) restylers
 
--- | @'overrideRestylers'@ in @'Validation'@
-overrideRestylers'
+overrideRestyler :: [RestylerOverride] -> Restyler -> Restyler
+overrideRestyler overrides restyler@Restyler {..} = fromMaybe restyler $ do
+    RestylerOverride {..} <- find (matchOverride restyler) overrides
+
+    pure $ restyler
+        { rEnabled = fromMaybe rEnabled roEnabled
+        , rImage = fromMaybe rImage roImage
+        , rCommand = maybe rCommand unSketchy roCommand
+        , rArguments = maybe rArguments unSketchy roArguments
+        , rInclude = maybe rInclude unSketchy roInclude
+        , rInterpreters = maybe rInterpreters unSketchy roInterpreters
+        }
+
+matchOverride :: Restyler -> RestylerOverride -> Bool
+matchOverride Restyler {..} RestylerOverride {..} = glob roName `match` rName
+
+legacyOverrideRestylers
+    :: [Restyler] -> [RestylerOverride] -> Either [String] [Restyler]
+legacyOverrideRestylers restylers =
+    toEither . legacyOverrideRestylers' restylers
+
+-- | @'legacyOverrideRestylers'@ in @'Validation'@
+legacyOverrideRestylers'
     :: [Restyler] -> [RestylerOverride] -> Validation [String] [Restyler]
-overrideRestylers' restylers = traverse $ overrideRestyler restylersMap
+legacyOverrideRestylers' restylers = traverse
+    $ legacyOverrideRestyler restylersMap
   where
     restylersMap :: HashMap String Restyler
     restylersMap = HM.fromList $ map (rName &&& id) restylers
 
-overrideRestyler
+legacyOverrideRestyler
     :: HashMap String Restyler
     -> RestylerOverride
     -> Validation [String] Restyler
-overrideRestyler restylers RestylerOverride {..} =
+legacyOverrideRestyler restylers RestylerOverride {..} =
     override <$> lookupExpectedKeyBy "Restyler name" restylers roName
   where
     override restyler@Restyler {..} = restyler
