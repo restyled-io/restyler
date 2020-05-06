@@ -88,8 +88,9 @@ data ConfigF f = ConfigF
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
     , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
-    , cfRestylers :: f (Maybe (SketchyList RestylerOverride))
     , cfRestylersVersion :: f String
+    , cfRestylers :: f (Maybe (SketchyList RestylerOverride))
+    , cfOverrides :: f (Maybe (SketchyList RestylerOverride))
     }
     deriving stock Generic
     deriving anyclass (FunctorB, ApplicativeB, ConstraintsB)
@@ -187,7 +188,7 @@ loadConfig =
         . cfRestylersVersion
 
 loadConfigFrom
-    :: HasSystem env
+    :: (HasLogFunc env, HasSystem env)
     => ConfigSource
     -> (ConfigF Identity -> RIO env [Restyler])
     -> RIO env Config
@@ -232,14 +233,13 @@ decodeThrow' content =
 --
 -- May throw @'ConfigErrorUnknownRestylers'@.
 --
-resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
+resolveRestylers
+    :: HasLogFunc env => ConfigF Identity -> [Restyler] -> RIO env Config
 resolveRestylers ConfigF {..} allRestylers = do
-    restylers <-
-        eitherM (throwIO . ConfigErrorUnknownRestylers) pure
-        $ pure
-        $ overrideRestylers allRestylers
-        $ unSketchy
-        <$> runIdentity cfRestylers
+    restylers <- handleRestylers
+        (unSketchy <$> runIdentity cfRestylers)
+        (unSketchy <$> runIdentity cfOverrides)
+        allRestylers
 
     pure Config
         { cEnabled = runIdentity cfEnabled
@@ -254,6 +254,32 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfIgnoreLabels
         , cRestylers = restylers
         }
+
+handleRestylers
+    :: HasLogFunc env
+    => Maybe [RestylerOverride]
+    -> Maybe [RestylerOverride]
+    -> [Restyler]
+    -> RIO env [Restyler]
+handleRestylers Nothing Nothing restylers = pure restylers
+handleRestylers Nothing (Just overrides) restylers =
+    pure $ overrideRestylers restylers overrides
+handleRestylers (Just _) (Just overrides) restylers = do
+    restylersDeprecation "ignoring (using overrides instead)"
+    pure $ overrideRestylers restylers overrides
+handleRestylers (Just overrides) Nothing restylers = do
+    restylersDeprecation "please use overrides instead"
+    eitherM (throwIO . ConfigErrorUnknownRestylers) pure
+        $ pure
+        $ legacyOverrideRestylers restylers overrides
+
+restylersDeprecation :: HasLogFunc env => Utf8Builder -> RIO env ()
+restylersDeprecation msg =
+    logWarn
+        $ "Deprecated restylers key found, "
+        <> msg
+        <> ". See https://github.com/restyled-io/restyled.io/wiki/Configuring-Restyled"
+        <> " for more details."
 
 class HasConfig env where
     configL :: Lens' env Config

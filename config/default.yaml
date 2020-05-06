@@ -29,4 +29,7 @@ ignore_labels:
 
 restylers_version: "20200428"
 
+# Deprecated, use overrides instead
 restylers: null
+
+overrides: null
