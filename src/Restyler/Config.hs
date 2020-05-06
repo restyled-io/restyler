@@ -265,10 +265,10 @@ handleRestylers Nothing Nothing restylers = pure restylers
 handleRestylers Nothing (Just overrides) restylers =
     pure $ overrideRestylers restylers overrides
 handleRestylers (Just _) (Just overrides) restylers = do
-    restylersDeprecation "ignoring (using overrides instead)"
+    restylersDeprecation "discarding (using overrides instead)"
     pure $ overrideRestylers restylers overrides
 handleRestylers (Just overrides) Nothing restylers = do
-    restylersDeprecation "please use overrides instead"
+    restylersDeprecation "please configure overrides instead"
     eitherM (throwIO . ConfigErrorUnknownRestylers) pure
         $ pure
         $ legacyOverrideRestylers restylers overrides
@@ -276,7 +276,7 @@ handleRestylers (Just overrides) Nothing restylers = do
 restylersDeprecation :: HasLogFunc env => Utf8Builder -> RIO env ()
 restylersDeprecation msg =
     logWarn
-        $ "Deprecated restylers key found, "
+        $ "Deprecated restylers configuration in use, "
         <> msg
         <> ". See https://github.com/restyled-io/restyled.io/wiki/Configuring-Restyled"
         <> " for more details."
