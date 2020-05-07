@@ -8,7 +8,7 @@ where
 import SpecHelper
 
 import qualified Data.ByteString.Char8 as C8
-import Data.List (isInfixOf, partition)
+import Data.List (isInfixOf)
 import Data.Yaml (decodeThrow, prettyPrintParseException)
 import Restyler.Config
 import Restyler.Config.Include
@@ -132,38 +132,6 @@ spec = do
                 ]
             }
 
-    context "overrides" $ do
-        it "can override one Restyler without disabling others" $ example $ do
-            result <- assertTestConfig $ C8.unlines
-                ["overrides:", "  - name: astyle", "    enabled: false"]
-
-            let restylers = cRestylers result
-                astyle = find ((== "astyle") . rName) restylers
-            fmap rEnabled astyle `shouldBe` Just False
-            map rName restylers `shouldBe` map rName testRestylers
-
-        it "can override with a pattern" $ example $ do
-            result <- assertTestConfig $ C8.unlines
-                ["overrides:", "  - name: \"*\"", "    enabled: false"]
-
-            cRestylers result `shouldSatisfy` none rEnabled
-
-        it "applies first override to match" $ example $ do
-            result <-
-                assertTestConfig
-                    $ C8.unlines
-                          [ "overrides:"
-                          , "  - astyle"
-                          , "  - \"*\":"
-                          , "      enabled: false"
-                          ]
-
-            let
-                (astyles, nonAstyles) =
-                    partition ((== "astyle") . rName) $ cRestylers result
-            map rEnabled astyles `shouldBe` [True]
-            nonAstyles `shouldSatisfy` none rEnabled
-
     it "handles invalid indentation nicely" $ example $ do
         result <- loadTestConfig $ C8.unlines
             [ "restylers:"
@@ -202,10 +170,6 @@ loadTestConfig content = do
         $ loadConfigFrom (ConfigContent content)
         $ const
         $ pure testRestylers
-
--- | Load a @'ByteString'@ as configuration, fail on errors
-assertTestConfig :: MonadIO m => ByteString -> m Config
-assertTestConfig = either throwString pure <=< loadTestConfig
 
 showConfigError :: ConfigError -> String
 showConfigError = \case
