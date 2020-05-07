@@ -53,18 +53,44 @@ overrideRestylers restylers =
 -- | @'overrideRestylers'@ in @'Validation'@
 overrideRestylers'
     :: [Restyler] -> [RestylerOverride] -> Validation [String] [Restyler]
-overrideRestylers' restylers = traverse $ overrideRestyler restylersMap
+overrideRestylers' restylers overrides =
+    case length $ filter ((== "*") . roName) overrides of
+        0 -> explicits <$> getOverrides
+        1 -> replaced restylers <$> getOverrides
+        _ -> Failure ["TODO"]
   where
+    getOverrides = traverse (overrideRestyler restylersMap) overrides
+
     restylersMap :: HashMap String Restyler
     restylersMap = HM.fromList $ map (rName &&& id) restylers
+
+data Override = Explicit Restyler | Wildcard
+
+explicits :: [Override] -> [Restyler]
+explicits = concatMap $ \case
+    Explicit r -> [r]
+    Wildcard -> []
+
+replaced :: [Restyler] -> [Override] -> [Restyler]
+replaced restylers overrides = replaceWildcards others overrides
+  where
+    others = filter ((`notElem` overriden) . rName) restylers
+    overriden = map rName $ explicits overrides
+
+replaceWildcards :: [Restyler] -> [Override] -> [Restyler]
+replaceWildcards restylers = concatMap $ \case
+    Explicit r -> [r]
+    Wildcard -> restylers
 
 overrideRestyler
     :: HashMap String Restyler
     -> RestylerOverride
-    -> Validation [String] Restyler
-overrideRestyler restylers RestylerOverride {..} =
-    override <$> lookupExpectedKeyBy "Restyler name" restylers roName
+    -> Validation [String] Override
+overrideRestyler restylers RestylerOverride {..}
+    | roName == "*" = pure Wildcard
+    | otherwise = Explicit . override <$> defaults
   where
+    defaults = lookupExpectedKeyBy "Restyler name" restylers roName
     override restyler@Restyler {..} = restyler
         { rEnabled = fromMaybe True roEnabled
         , rImage = fromMaybe rImage roImage
