@@ -51,7 +51,11 @@ overrideRestylers restylers overrides =
     toEither $ case length $ filter ((== "*") . roName) overrides of
         0 -> explicits <$> getOverrides
         1 -> replaced restylers <$> getOverrides
-        _ -> Failure ["TODO"]
+        n -> Failure
+            [ "You may have at most 1 wildcard in restylers ("
+              <> show n
+              <> " found)"
+            ]
   where
     getOverrides = traverse (overrideRestyler restylersMap) overrides
 

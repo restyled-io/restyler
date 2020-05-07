@@ -204,6 +204,48 @@ spec = do
                        , ("yapf", True)
                        ]
 
+    it "can place * anywhere" $ example $ do
+        result <- assertTestConfig [st|
+            restylers:
+            - jdt
+            - "*"
+            - autopep8
+        |]
+
+        map (rName &&& rEnabled) (cRestylers result)
+            `shouldBe` [ ("jdt", True)
+                       , ("astyle", True)
+                       , ("black", True)
+                       , ("dfmt", True)
+                       , ("elm-format", True)
+                       , ("hindent", False)
+                       , ("pg_format", True)
+                       , ("php-cs-fixer", True)
+                       , ("prettier", True)
+                       , ("prettier-markdown", True)
+                       , ("prettier-ruby", True)
+                       , ("prettier-yaml", True)
+                       , ("reorder-python-imports", True)
+                       , ("rubocop", True)
+                       , ("rustfmt", True)
+                       , ("shellharden", True)
+                       , ("shfmt", True)
+                       , ("stylish-haskell", True)
+                       , ("terraform", True)
+                       , ("yapf", True)
+                       , ("autopep8", True)
+                       ]
+
+    it "errors for more than one *" $ example $ do
+        result <- loadTestConfig [st|
+            restylers:
+            - "*"
+            - jdt
+            - "*"
+        |]
+
+        result `shouldSatisfy` hasError "1 wildcard"
+
     it "handles invalid indentation nicely" $ example $ do
         result <- loadTestConfig [st|
             restylers:
