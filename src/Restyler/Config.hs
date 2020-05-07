@@ -235,8 +235,7 @@ decodeThrow' content =
 resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
 resolveRestylers ConfigF {..} allRestylers = do
     restylers <-
-        eitherM (throwIO . ConfigErrorInvalidRestylers) pure
-        $ pure
+        either (throwIO . ConfigErrorInvalidRestylers) pure
         $ overrideRestylers allRestylers
         $ unSketchy
         $ runIdentity cfRestylers
