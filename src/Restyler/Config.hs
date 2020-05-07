@@ -88,8 +88,8 @@ data ConfigF f = ConfigF
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
     , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
-    , cfRestylers :: f (Maybe (SketchyList RestylerOverride))
     , cfRestylersVersion :: f String
+    , cfRestylers :: f (SketchyList RestylerOverride)
     }
     deriving stock Generic
     deriving anyclass (FunctorB, ApplicativeB, ConstraintsB)
@@ -106,7 +106,7 @@ emptyConfig = bmap getAlt bmempty
 instance FromJSON (ConfigF Maybe) where
     parseJSON a@(Array _) = do
         restylers <- parseJSON a
-        pure emptyConfig { cfRestylers = Just restylers }
+        pure emptyConfig { cfRestylers = restylers }
     parseJSON v = genericParseJSONValidated (aesonPrefix snakeCase) v
 
 instance FromJSON (ConfigF Identity) where
@@ -152,7 +152,7 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
-    | ConfigErrorUnknownRestylers [String]
+    | ConfigErrorInvalidRestylers [String]
     | ConfigErrorInvalidRestylersYaml SomeException
     deriving Show
 
@@ -230,16 +230,16 @@ decodeThrow' content =
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
--- May throw @'ConfigErrorUnknownRestylers'@.
+-- May throw @'ConfigErrorInvalidRestylers'@.
 --
 resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
 resolveRestylers ConfigF {..} allRestylers = do
     restylers <-
-        eitherM (throwIO . ConfigErrorUnknownRestylers) pure
+        eitherM (throwIO . ConfigErrorInvalidRestylers) pure
         $ pure
         $ overrideRestylers allRestylers
         $ unSketchy
-        <$> runIdentity cfRestylers
+        $ runIdentity cfRestylers
 
     pure Config
         { cEnabled = runIdentity cfEnabled

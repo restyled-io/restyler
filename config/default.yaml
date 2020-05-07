@@ -30,4 +30,5 @@ ignore_labels:
 
 restylers_version: "20200428"
 
-restylers: null
+restylers:
+  - "*"
