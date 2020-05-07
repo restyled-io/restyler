@@ -46,15 +46,9 @@ suffixIncorrectIndentation = modifyFailure (<> msg)
     where msg = "\n\nDo you have incorrect indentation for a named override?"
 
 overrideRestylers
-    :: [Restyler] -> Maybe [RestylerOverride] -> Either [String] [Restyler]
-overrideRestylers restylers =
-    maybe (pure restylers) (toEither . overrideRestylers' restylers)
-
--- | @'overrideRestylers'@ in @'Validation'@
-overrideRestylers'
-    :: [Restyler] -> [RestylerOverride] -> Validation [String] [Restyler]
-overrideRestylers' restylers overrides =
-    case length $ filter ((== "*") . roName) overrides of
+    :: [Restyler] -> [RestylerOverride] -> Either [String] [Restyler]
+overrideRestylers restylers overrides =
+    toEither $ case length $ filter ((== "*") . roName) overrides of
         0 -> explicits <$> getOverrides
         1 -> replaced restylers <$> getOverrides
         _ -> Failure ["TODO"]

@@ -253,7 +253,7 @@ assertTestConfig = either throwString pure <=< loadTestConfig
 showConfigError :: ConfigError -> String
 showConfigError = \case
     ConfigErrorInvalidYaml _ ex -> prettyPrintParseException ex
-    ConfigErrorUnknownRestylers errs -> unlines errs
+    ConfigErrorInvalidRestylers errs -> unlines errs
     ConfigErrorInvalidRestylersYaml ex -> show ex
 
 testRestylers :: [Restyler]

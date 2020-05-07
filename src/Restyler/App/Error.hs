@@ -81,7 +81,7 @@ toErrorBody = reflow . \case
         , "Original input:"
         , unpack $ decodeUtf8 yaml
         ]
-    ConfigurationError (ConfigErrorUnknownRestylers errs) -> unlines errs
+    ConfigurationError (ConfigErrorInvalidRestylers errs) -> unlines errs
     ConfigurationError (ConfigErrorInvalidRestylersYaml e) -> unlines
         [ "Error loading restylers.yaml definition:"
         , show e
@@ -183,7 +183,7 @@ dieAppError e = do
     hPutStrLn stderr $ prettyAppError e
     exitWith $ ExitFailure $ case e of
         ConfigurationError ConfigErrorInvalidYaml{} -> 10
-        ConfigurationError ConfigErrorUnknownRestylers{} -> 11
+        ConfigurationError ConfigErrorInvalidRestylers{} -> 11
         ConfigurationError ConfigErrorInvalidRestylersYaml{} -> 12
         RestylerExitFailure{} -> 20
         GitHubError{} -> 30
