@@ -173,6 +173,37 @@ spec = do
                 ]
             }
 
+    it "supports * to indicate all other Restylers" $ example $ do
+        result <- assertTestConfig [st|
+            restylers:
+            - jdt
+            - "*"
+        |]
+
+        map (rName &&& rEnabled) (cRestylers result)
+            `shouldBe` [ ("jdt", True)
+                       , ("astyle", True)
+                       , ("autopep8", True)
+                       , ("black", True)
+                       , ("dfmt", True)
+                       , ("elm-format", True)
+                       , ("hindent", False)
+                       , ("pg_format", True)
+                       , ("php-cs-fixer", True)
+                       , ("prettier", True)
+                       , ("prettier-markdown", True)
+                       , ("prettier-ruby", True)
+                       , ("prettier-yaml", True)
+                       , ("reorder-python-imports", True)
+                       , ("rubocop", True)
+                       , ("rustfmt", True)
+                       , ("shellharden", True)
+                       , ("shfmt", True)
+                       , ("stylish-haskell", True)
+                       , ("terraform", True)
+                       , ("yapf", True)
+                       ]
+
     it "handles invalid indentation nicely" $ example $ do
         result <- loadTestConfig [st|
             restylers:
@@ -214,6 +245,10 @@ loadTestConfig content = do
         $ loadConfigFrom (ConfigContent $ encodeUtf8 $ dedent content)
         $ const
         $ pure testRestylers
+
+-- | Load a @'Text'@ as configuration, fail on errors
+assertTestConfig :: MonadIO m => Text -> m Config
+assertTestConfig = either throwString pure <=< loadTestConfig
 
 showConfigError :: ConfigError -> String
 showConfigError = \case
