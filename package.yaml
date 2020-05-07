@@ -137,5 +137,6 @@ tests:
       - process
       - restyler
       - rio
+      - shakespeare
       - text
       - yaml
