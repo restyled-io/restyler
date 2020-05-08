@@ -258,7 +258,6 @@ spec = do
         result `shouldSatisfy` hasError "Do you have incorrect indentation"
 
     it "handles tabs nicely" $ example $ do
-        pendingWith "hmmm"
         result <- loadTestConfig [st|
             statuses:
             	differences: false
@@ -354,7 +353,8 @@ assertTestConfig = either throwString pure <=< loadTestConfig
 
 showConfigError :: ConfigError -> String
 showConfigError = \case
-    ConfigErrorInvalidYaml _ ex -> prettyPrintParseException ex
+    ConfigErrorInvalidYaml yaml ex ->
+        unlines [prettyPrintParseException ex, "---", show yaml]
     ConfigErrorInvalidRestylers errs -> unlines errs
     ConfigErrorInvalidRestylersYaml ex -> show ex
 
@@ -386,6 +386,6 @@ testRestylers =
 dedent :: Text -> Text
 dedent x = T.unlines $ map (T.drop indent) ls
   where
-    ls = T.lines $ T.strip x
+    ls = T.lines $ T.dropWhileEnd isSpace $ T.dropWhile (== '\n') x
     indent = fromMaybe 0 $ minimumMaybe indents
     indents = map (T.length . T.takeWhile (== ' ')) ls
