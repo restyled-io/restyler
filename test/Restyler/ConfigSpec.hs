@@ -284,7 +284,7 @@ loadTestConfig content = do
     app <- liftIO $ testApp "/" []
     runRIO app
         $ tryTo showConfigError
-        $ loadConfigFrom (ConfigContent $ encodeUtf8 $ dedent content)
+        $ loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
         $ const
         $ pure testRestylers
 
