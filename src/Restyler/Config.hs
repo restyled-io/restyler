@@ -62,6 +62,7 @@ import Restyler.Config.Statuses
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
+import Control.Monad.Trans.Maybe (MaybeT(..))
 
 -- | A polymorphic representation of @'Config'@
 --
@@ -209,10 +210,7 @@ readConfigSource = \case
 
 readFirstConfigSource
     :: HasSystem env => [ConfigSource] -> RIO env (Maybe ByteString)
-readFirstConfigSource = findJust . fmap readConfigSource
-
-findJust :: Monad m => [m (Maybe a)] -> m (Maybe a)
-findJust = foldM (\acc x -> maybe x (pure . Just) acc) Nothing
+readFirstConfigSource = runMaybeT . asum . fmap (MaybeT . readConfigSource)
 
 -- | Load configuration if present and apply defaults
 --
