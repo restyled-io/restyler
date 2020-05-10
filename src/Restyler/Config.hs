@@ -34,6 +34,7 @@ module Restyler.Config
     , loadConfigFrom
     , resolveRestylers
     , defaultConfigContent
+    , configPaths
     )
 where
 

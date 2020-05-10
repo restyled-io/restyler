@@ -266,6 +266,18 @@ spec = do
 
         result `shouldSatisfy` hasError "containing tabs"
 
+    it "alternate config doesn't exist, should be default config" $ example $ do
+        defaultConfig <- loadDefaultConfig
+        config <- loadAlternateConfig "ignored.yml"
+        config `shouldBe` Right defaultConfig
+
+    it "alternate config exists, override default config" $ example $ do
+        defaultConfig <- loadDefaultConfig
+        config <- loadAlternateConfig ".github/restyled.yml"
+        config `shouldBe` Right defaultConfig
+            { cRestylers = [someRestyler { rName = "stylish-haskell" }]
+            }
+
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
@@ -277,6 +289,24 @@ loadDefaultConfig = do
     runRIO app $ do
         config <- decodeThrow defaultConfigContent
         resolveRestylers config testRestylers
+
+-- | Given a fileName, try to load an alternate config from filesystem
+loadAlternateConfig :: MonadIO m => String -> m (Either String Config)
+loadAlternateConfig fileName = do
+    app <- liftIO $ testApp
+        "/"
+        [ ( "/" ++ fileName
+          , [st|
+            restylers:
+            - name: stylish-haskell
+        |]
+          )
+        ]
+    runRIO app
+        $ tryTo showConfigError
+        $ loadConfigFrom (ConfigPath <$> configPaths)
+        $ const
+        $ pure testRestylers
 
 -- | Load a @'Text'@ as configuration
 loadTestConfig :: MonadIO m => Text -> m (Either String Config)
