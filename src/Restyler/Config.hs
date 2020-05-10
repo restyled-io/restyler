@@ -40,6 +40,7 @@ where
 
 import Restyler.Prelude
 
+import Control.Monad.Trans.Maybe (MaybeT(..))
 import Data.Aeson
 import Data.Aeson.Casing
 import qualified Data.ByteString.Char8 as C8
@@ -63,7 +64,6 @@ import Restyler.Config.Statuses
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
-import Control.Monad.Trans.Maybe (MaybeT(..))
 
 -- | A polymorphic representation of @'Config'@
 --
