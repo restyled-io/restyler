@@ -57,6 +57,11 @@ jobs:
       - run:
           name: Build
           command: |
+            if [ -n "$CIRCLE_PR_USERNAME" ]; then
+              echo "Skipping image (Fork PR: $CIRCLE_PR_USERNAME)"
+              exit 0
+            fi
+
             sha=${CIRCLE_SHA1:0:10}
             release_image=restyled/restyler:$sha
 
