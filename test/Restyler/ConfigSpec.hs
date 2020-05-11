@@ -266,17 +266,65 @@ spec = do
 
         result `shouldSatisfy` hasError "containing tabs"
 
-    it "alternate config doesn't exist, should be default config" $ example $ do
+    it "handles no configuration" $ example $ do
         defaultConfig <- loadDefaultConfig
-        config <- loadAlternateConfig "ignored.yml"
-        config `shouldBe` Right defaultConfig
+        app <- liftIO $ testApp "/" []
 
-    it "alternate config exists, override default config" $ example $ do
-        defaultConfig <- loadDefaultConfig
-        config <- loadAlternateConfig ".github/restyled.yml"
-        config `shouldBe` Right defaultConfig
-            { cRestylers = [someRestyler { rName = "stylish-haskell" }]
-            }
+        result <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom (map ConfigPath configPaths)
+            $ const
+            $ pure testRestylers
+
+        result `shouldBe` Right defaultConfig
+
+    it "tries alternative configurations" $ example $ do
+        app <- liftIO $ testApp
+            "/"
+            [("/a", "enabled: true\n"), ("/b", "enabled: false\n")]
+
+        aConfig <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        bConfig <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        fmap cEnabled aConfig `shouldBe` Right True
+        fmap cEnabled bConfig `shouldBe` Right False
+
+    it "doesn't skip configurations if there are errors" $ example $ do
+        app <- liftIO
+            $ testApp "/" [("/a", "{[^\n"), ("/b", "enabled: false\n")]
+
+        result <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        result `shouldSatisfy` isLeft
+
+    it "doesn't attempt to read unused configurations" $ example $ do
+        app <- liftIO $ testApp "/" [("/a", "enabled: false\n"), ("/b", "[{^")]
+
+        result <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        fmap cEnabled result `shouldBe` Right False
 
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
@@ -289,24 +337,6 @@ loadDefaultConfig = do
     runRIO app $ do
         config <- decodeThrow defaultConfigContent
         resolveRestylers config testRestylers
-
--- | Given a fileName, try to load an alternate config from filesystem
-loadAlternateConfig :: MonadIO m => String -> m (Either String Config)
-loadAlternateConfig fileName = do
-    app <- liftIO $ testApp
-        "/"
-        [ ( "/" ++ fileName
-          , [st|
-            restylers:
-            - name: stylish-haskell
-        |]
-          )
-        ]
-    runRIO app
-        $ tryTo showConfigError
-        $ loadConfigFrom (ConfigPath <$> configPaths)
-        $ const
-        $ pure testRestylers
 
 -- | Load a @'Text'@ as configuration
 loadTestConfig :: MonadIO m => Text -> m (Either String Config)
