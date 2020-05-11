@@ -182,7 +182,7 @@ instance Exception ConfigError
 loadConfig
     :: (HasLogFunc env, HasSystem env, HasDownloadFile env) => RIO env Config
 loadConfig =
-    loadConfigFrom (ConfigPath <$> configPaths)
+    loadConfigFrom (map ConfigPath configPaths)
         $ handleTo ConfigErrorInvalidRestylersYaml
         . getAllRestylersVersioned
         . runIdentity
