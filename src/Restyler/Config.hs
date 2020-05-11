@@ -287,4 +287,3 @@ configPaths =
     , ".github/restyled.yaml"
     , ".github/restyled.yml"
     ]
-
