@@ -73,6 +73,8 @@ jobs:
             docker-build-remote-cache "$release_image" \
               --build-arg "REVISION=$CIRCLE_SHA1"
 
+            echo "Restyler image: $release_image"
+
   release:
     docker:
       - image: restyled/ops:v8
