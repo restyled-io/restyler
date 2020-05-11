@@ -34,11 +34,13 @@ module Restyler.Config
     , loadConfigFrom
     , resolveRestylers
     , defaultConfigContent
+    , configPaths
     )
 where
 
 import Restyler.Prelude
 
+import Control.Monad.Trans.Maybe (MaybeT(..))
 import Data.Aeson
 import Data.Aeson.Casing
 import qualified Data.ByteString.Char8 as C8
@@ -180,7 +182,7 @@ instance Exception ConfigError
 loadConfig
     :: (HasLogFunc env, HasSystem env, HasDownloadFile env) => RIO env Config
 loadConfig =
-    loadConfigFrom (ConfigPath configPath)
+    loadConfigFrom (map ConfigPath configPaths)
         $ handleTo ConfigErrorInvalidRestylersYaml
         . getAllRestylersVersioned
         . runIdentity
@@ -188,11 +190,11 @@ loadConfig =
 
 loadConfigFrom
     :: HasSystem env
-    => ConfigSource
+    => [ConfigSource]
     -> (ConfigF Identity -> RIO env [Restyler])
     -> RIO env Config
-loadConfigFrom source f = do
-    config <- loadConfigF source
+loadConfigFrom sources f = do
+    config <- loadConfigF sources
     restylers <- f config
     resolveRestylers config restylers
 
@@ -200,12 +202,15 @@ data ConfigSource
     = ConfigPath FilePath
     | ConfigContent ByteString
 
-readConfigSource :: HasSystem env => ConfigSource -> RIO env (Maybe ByteString)
-readConfigSource = \case
-    ConfigPath path -> do
-        exists <- doesFileExist path
-        if exists then Just <$> readFileBS path else pure Nothing
-    ConfigContent content -> pure $ Just content
+readConfigSources
+    :: HasSystem env => [ConfigSource] -> RIO env (Maybe ByteString)
+readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
+  where
+    go = \case
+        ConfigPath path -> do
+            exists <- doesFileExist path
+            if exists then Just <$> readFileBS path else pure Nothing
+        ConfigContent content -> pure $ Just content
 
 -- | Load configuration if present and apply defaults
 --
@@ -214,14 +219,14 @@ readConfigSource = \case
 -- May throw any @'ConfigError'@. May through raw @'Yaml.ParseException'@s if
 -- there is a programmer error in our static default configuration YAML.
 --
-loadConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Identity)
-loadConfigF source =
+loadConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Identity)
+loadConfigF sources =
     resolveConfig
-        <$> loadUserConfigF source
+        <$> loadUserConfigF sources
         <*> decodeThrow defaultConfigContent
 
-loadUserConfigF :: HasSystem env => ConfigSource -> RIO env (ConfigF Maybe)
-loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSource
+loadUserConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Maybe)
+loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
 decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
@@ -273,5 +278,10 @@ whenConfigJust check act = traverse_ act . check =<< view configL
 defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")
 
-configPath :: FilePath
-configPath = ".restyled.yaml"
+configPaths :: [FilePath]
+configPaths =
+    [ ".restyled.yaml"
+    , ".restyled.yml"
+    , ".github/restyled.yaml"
+    , ".github/restyled.yml"
+    ]

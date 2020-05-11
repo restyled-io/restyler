@@ -266,6 +266,66 @@ spec = do
 
         result `shouldSatisfy` hasError "containing tabs"
 
+    it "handles no configuration" $ example $ do
+        defaultConfig <- loadDefaultConfig
+        app <- liftIO $ testApp "/" []
+
+        result <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom (map ConfigPath configPaths)
+            $ const
+            $ pure testRestylers
+
+        result `shouldBe` Right defaultConfig
+
+    it "tries alternative configurations" $ example $ do
+        app <- liftIO $ testApp
+            "/"
+            [("/a", "enabled: true\n"), ("/b", "enabled: false\n")]
+
+        aConfig <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        bConfig <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        fmap cEnabled aConfig `shouldBe` Right True
+        fmap cEnabled bConfig `shouldBe` Right False
+
+    it "doesn't skip configurations if there are errors" $ example $ do
+        app <- liftIO
+            $ testApp "/" [("/a", "{[^\n"), ("/b", "enabled: false\n")]
+
+        result <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        result `shouldSatisfy` isLeft
+
+    it "doesn't attempt to read unused configurations" $ example $ do
+        app <- liftIO $ testApp "/" [("/a", "enabled: false\n"), ("/b", "[{^")]
+
+        result <-
+            runRIO app
+            $ tryTo showConfigError
+            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+            $ const
+            $ pure testRestylers
+
+        fmap cEnabled result `shouldBe` Right False
+
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
@@ -284,7 +344,7 @@ loadTestConfig content = do
     app <- liftIO $ testApp "/" []
     runRIO app
         $ tryTo showConfigError
-        $ loadConfigFrom (ConfigContent $ encodeUtf8 $ dedent content)
+        $ loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
         $ const
         $ pure testRestylers
 
