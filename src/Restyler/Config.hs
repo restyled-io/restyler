@@ -202,16 +202,15 @@ data ConfigSource
     = ConfigPath FilePath
     | ConfigContent ByteString
 
-readConfigSource :: HasSystem env => ConfigSource -> RIO env (Maybe ByteString)
-readConfigSource = \case
-    ConfigPath path -> do
-        exists <- doesFileExist path
-        if exists then Just <$> readFileBS path else pure Nothing
-    ConfigContent content -> pure $ Just content
-
-readFirstConfigSource
+readConfigSources
     :: HasSystem env => [ConfigSource] -> RIO env (Maybe ByteString)
-readFirstConfigSource = runMaybeT . asum . fmap (MaybeT . readConfigSource)
+readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
+  where
+    go = \case
+        ConfigPath path -> do
+            exists <- doesFileExist path
+            if exists then Just <$> readFileBS path else pure Nothing
+        ConfigContent content -> pure $ Just content
 
 -- | Load configuration if present and apply defaults
 --
@@ -227,8 +226,7 @@ loadConfigF sources =
         <*> decodeThrow defaultConfigContent
 
 loadUserConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Maybe)
-loadUserConfigF =
-    maybeM (pure emptyConfig) decodeThrow' . readFirstConfigSource
+loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
 decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
