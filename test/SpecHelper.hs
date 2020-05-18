@@ -9,7 +9,8 @@ module SpecHelper
     )
 where
 
-import Restyler.Prelude as X
+import Restyler.Prelude as X hiding
+    (readFileBinary, readFileUtf8, writeFileUtf8)
 import Test.Hspec as X hiding
     ( expectationFailure
     , shouldBe

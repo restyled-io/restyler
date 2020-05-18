@@ -11,6 +11,7 @@ import Restyler.App.Error
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
+import qualified RIO
 import RIO.Test.FS (writeFileUnreadable)
 
 spec :: Spec
@@ -19,7 +20,7 @@ spec = do
         it "ignores unreadable (invalid utf-8 byte) files" $ do
             -- Capture the UTF-8 exception we see on such files
             ex <- handle (pure @IO @IOException) $ do
-                void $ readFileUtf8
+                void $ RIO.readFileUtf8
                     "test/files/AsanaMathJax_Alphabets-Regular.eot"
                 pure $ error "UTF-8 exception expected"
 
