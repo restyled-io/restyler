@@ -12,11 +12,27 @@ import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import qualified RIO
-import RIO.Test.FS (writeFileUnreadable)
+import RIO.Test.FS (writeFileUnreadable, writeFileUtf8)
 
 spec :: Spec
 spec = do
     describe "filterRestylePaths" $ do
+        it "does not bring excluded files back by shebang" $ do
+            pendingWith "Known bug"
+
+            filtered <- runTestApp $ do
+                writeFileUtf8 "/a" "#!/bin/sh\necho A\n"
+                writeFileUtf8 "/b" "#!/bin/sh\necho B\n"
+
+                filterRestylePaths
+                    someRestyler
+                        { rInclude = ["**/*.sh", "!b"]
+                        , rInterpreters = [Sh]
+                        }
+                    ["a", "b"]
+
+            filtered `shouldBe` ["a"]
+
         it "ignores unreadable (invalid utf-8 byte) files" $ do
             -- Capture the UTF-8 exception we see on such files
             ex <- handle (pure @IO @IOException) $ do
