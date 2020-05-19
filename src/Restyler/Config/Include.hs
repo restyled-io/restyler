@@ -1,5 +1,6 @@
 module Restyler.Config.Include
     ( Include(..)
+    , explicit
     , includePath
     )
 where
@@ -26,6 +27,10 @@ instance ToJSON Include where
 instance IsString Include where
     fromString ('!' : rest) = Negated $ compile rest
     fromString x = Include $ compile x
+
+-- | Build an @'Include'@ matching a path exactly
+explicit :: FilePath -> Include
+explicit = Include . compile
 
 -- | Determine if a set of @'Include'@s match a file
 --

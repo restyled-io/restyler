@@ -10,10 +10,12 @@ module RIO.Test.FS
     , readFileUtf8
     , readFileBinary
     , writeFileUtf8
+    , writeFileExecutable
     , writeFileUnreadable
     , getCurrentDirectory
     , setCurrentDirectory
     , doesFileExist
+    , isFileExecutable
     )
 where
 
@@ -22,6 +24,7 @@ import RIO hiding (readFileBinary, readFileUtf8, writeFileUtf8)
 import qualified Data.Map.Strict as Map
 import RIO.FilePath ((</>))
 import RIO.List (isPrefixOf)
+import qualified System.Directory as Directory
 
 class HasFS env where
     fsL :: Lens' env FS
@@ -42,17 +45,42 @@ data FS' = FS'
     }
 
 data ReadableFile
-    = ReadableFile Text
+    = ReadableFile (Text, Directory.Permissions)
     | UnreadableFile IOException
+
+normalFile :: Text -> ReadableFile
+normalFile x = ReadableFile
+    ( x
+    , Directory.emptyPermissions
+        { Directory.readable = True
+        , Directory.writable = True
+        , Directory.executable = False
+        , Directory.searchable = True
+        }
+    )
+
+executableFile :: Text -> ReadableFile
+executableFile x = ReadableFile
+    ( x
+    , Directory.emptyPermissions
+        { Directory.readable = True
+        , Directory.writable = True
+        , Directory.executable = True
+        , Directory.searchable = True
+        }
+    )
 
 build :: MonadIO m => FilePath -> [(FilePath, Text)] -> m FS
 build cwd files = FS <$> newIORef FS'
     { fsCwd = cwd
-    , fsFiles = Map.fromList $ map (second ReadableFile) files
+    , fsFiles = Map.fromList $ map (second normalFile) files
     }
 
 readFileUtf8 :: HasFS env => FilePath -> RIO env Text
-readFileUtf8 path' = do
+readFileUtf8 = fmap fst . readFile
+
+readFile :: HasFS env => FilePath -> RIO env (Text, Directory.Permissions)
+readFile path' = do
     path <- getAbsolutePath path'
     mContent <- Map.lookup path . fsFiles <$> readFS'
 
@@ -61,14 +89,17 @@ readFileUtf8 path' = do
         -- file. However, you should be intentional about testing such a
         -- scenario and use writeFileUnreadable to set it up explicitly.
         Nothing -> error $ "File does not exist: " <> path
-        Just (ReadableFile contents) -> pure contents
+        Just (ReadableFile x) -> pure x
         Just (UnreadableFile ex) -> throwIO ex
 
 readFileBinary :: HasFS env => FilePath -> RIO env ByteString
 readFileBinary = fmap encodeUtf8 . readFileUtf8
 
 writeFileUtf8 :: HasFS env => FilePath -> Text -> RIO env ()
-writeFileUtf8 path = writeFile path . ReadableFile
+writeFileUtf8 path = writeFile path . normalFile
+
+writeFileExecutable :: HasFS env => FilePath -> Text -> RIO env ()
+writeFileExecutable path = writeFile path . executableFile
 
 writeFileUnreadable :: HasFS env => FilePath -> IOException -> RIO env ()
 writeFileUnreadable path = writeFile path . UnreadableFile
@@ -88,6 +119,9 @@ doesFileExist :: HasFS env => FilePath -> RIO env Bool
 doesFileExist path' = do
     path <- getAbsolutePath path'
     Map.member path . fsFiles <$> readFS'
+
+isFileExecutable :: HasFS env => FilePath -> RIO env Bool
+isFileExecutable = fmap (Directory.executable . snd) . readFile
 
 -- |
 --

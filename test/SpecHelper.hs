@@ -100,6 +100,7 @@ instance HasSystem TestApp where
     getCurrentDirectory = FS.getCurrentDirectory
     setCurrentDirectory = FS.setCurrentDirectory
     doesFileExist = FS.doesFileExist
+    isFileExecutable = FS.isFileExecutable
 
 instance HasProcess TestApp where
     callProcess = asksAp2 taCallProcess

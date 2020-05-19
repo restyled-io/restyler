@@ -30,6 +30,7 @@ instance HasSystem App where
     getCurrentDirectory = Directory.getCurrentDirectory
     setCurrentDirectory = Directory.setCurrentDirectory
     doesFileExist = Directory.doesFileExist
+    isFileExecutable = fmap Directory.executable . Directory.getPermissions
     readFile = readFileUtf8
     readFileBS = readFileBinary
 

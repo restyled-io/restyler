@@ -1,6 +1,6 @@
 module Restyler.Config.Interpreter
     ( Interpreter(..)
-    , hasInterpreter
+    , readInterpreter
     )
 where
 
@@ -19,36 +19,37 @@ data Interpreter
 
 instance FromJSON Interpreter where
     parseJSON =
-        withText "Interpreter" $ either fail pure . readInterpreter . unpack
+        withText "Interpreter"
+            $ either fail pure
+            . intepreterFromString
+            . unpack
 
 instance ToJSON Interpreter where
     -- N.B. this may not always work, but it works for now
     toJSON = toJSON . T.toLower . tshow
 
--- | Does that path start with a /shebang/ for the given @'Interpreter'@
-hasInterpreter :: Text -> Interpreter -> Bool
-contents `hasInterpreter` interpreter = fromMaybe False $ do
+readInterpreter :: Text -> Maybe Interpreter
+readInterpreter contents = do
     line <- headMaybe $ T.lines contents
-    foundInterpreter <- parseInterpreter . unpack $ T.strip line
-    pure $ foundInterpreter == interpreter
+    parseInterpreter . unpack $ T.strip line
 
 -- | TODO: Megaparsec?
 parseInterpreter :: String -> Maybe Interpreter
 parseInterpreter ('#' : '!' : rest) =
-    hush $ readInterpreter =<< case words rest of
+    hush $ intepreterFromString =<< case words rest of
         [exec] -> pure $ takeFileName exec
         ["/usr/bin/env", arg] -> pure arg
         _ -> Left "Unexpected shebang length"
 
 parseInterpreter _ = Nothing
 
-readInterpreter :: String -> Either String Interpreter
-readInterpreter "sh" = Right Sh
-readInterpreter "bash" = Right Bash
-readInterpreter "python" = Right Python
-readInterpreter "python2" = Right Python
-readInterpreter "python2.7" = Right Python
-readInterpreter "python3" = Right Python
-readInterpreter "python3.6" = Right Python
-readInterpreter "ruby" = Right Ruby
-readInterpreter x = Left $ "Unknown executable: " <> x
+intepreterFromString :: String -> Either String Interpreter
+intepreterFromString "sh" = Right Sh
+intepreterFromString "bash" = Right Bash
+intepreterFromString "python" = Right Python
+intepreterFromString "python2" = Right Python
+intepreterFromString "python2.7" = Right Python
+intepreterFromString "python3" = Right Python
+intepreterFromString "python3.6" = Right Python
+intepreterFromString "ruby" = Right Ruby
+intepreterFromString x = Left $ "Unknown executable: " <> x

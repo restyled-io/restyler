@@ -58,6 +58,12 @@ instance HasSystem StartupApp where
         logDebug $ "doesFileExist: " <> displayShow path
         appIO SystemError $ Directory.doesFileExist path
 
+    isFileExecutable path = do
+        logDebug $ "isFileExecutable: " <> displayShow path
+        appIO SystemError
+            $ Directory.executable
+            <$> Directory.getPermissions path
+
     readFile path = do
         logDebug $ "readFile: " <> displayShow path
         appIO SystemError $ readFileUtf8 path
@@ -151,6 +157,7 @@ instance HasSystem App where
     getCurrentDirectory = runApp getCurrentDirectory
     setCurrentDirectory = runApp . setCurrentDirectory
     doesFileExist = runApp . doesFileExist
+    isFileExecutable = runApp . isFileExecutable
     readFile = runApp . readFile
     readFileBS = runApp . readFileBS
 

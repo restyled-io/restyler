@@ -63,7 +63,9 @@ runRestylersWith run Config {..} allPaths = do
 
 -- | Run each @'Restyler'@ with appropriate paths out of the given set
 --
--- This is primarily extracted for testing
+-- Input is expected to be files (not directories), filtered for existence, and
+-- processed through global @exclude@ already. This is extracted for specific
+-- testing of Restyler @include@ and @intepreter@ configuration handling.
 --
 withFilteredPaths
     :: HasSystem env
@@ -71,19 +73,28 @@ withFilteredPaths
     -> [FilePath]
     -> (Restyler -> [FilePath] -> RIO env a)
     -> RIO env [a]
-withFilteredPaths restylers paths run =
-    for restylers $ \r -> run r =<< filterRestylePaths r paths
+withFilteredPaths restylers paths run = do
+    withInterpreters <- traverse addExecutableInterpreter paths
+    for restylers $ \r ->
+        run r $ map fst $ filter (r `shouldRestyle`) withInterpreters
 
-filterRestylePaths
-    :: HasSystem env => Restyler -> [FilePath] -> RIO env [FilePath]
-filterRestylePaths r = filterM (r `shouldRestyle`)
+addExecutableInterpreter
+    :: HasSystem env => FilePath -> RIO env (FilePath, Maybe Interpreter)
+addExecutableInterpreter path = do
+    isExec <- isFileExecutable path
+
+    (path, ) <$> if isExec
+        then readInterpreter <$> readFile path
+        else pure Nothing
+
+shouldRestyle :: Restyler -> (FilePath, Maybe Interpreter) -> Bool
+Restyler {..} `shouldRestyle` (path, mInterpreter)
+    | matchesInterpreter = includePath (explicit path : rInclude) path
+    | otherwise = includePath rInclude path
   where
-    Restyler {..} `shouldRestyle` path
-        | includePath rInclude path = pure True
-        | null rInterpreters = pure False
-        | otherwise = do
-            contents <- readFile path `catchAny` \_ -> pure ""
-            pure $ any (contents `hasInterpreter`) rInterpreters
+    matchesInterpreter = fromMaybe False $ do
+        interpreter <- mInterpreter
+        pure $ interpreter `elem` rInterpreters
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler

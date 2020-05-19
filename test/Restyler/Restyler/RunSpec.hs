@@ -12,17 +12,15 @@ import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import qualified RIO
-import RIO.Test.FS (writeFileUnreadable, writeFileUtf8)
+import RIO.Test.FS (writeFileExecutable, writeFileUnreadable)
 
 spec :: Spec
 spec = do
     describe "withFilteredPaths" $ do
-        it "does not bring excluded files back by shebang" $ do
-            pendingWith "Known bug"
-
+        fit "does not bring excluded files back by shebang" $ do
             filtered <- runTestApp $ do
-                writeFileUtf8 "/a" "#!/bin/sh\necho A\n"
-                writeFileUtf8 "/b" "#!/bin/sh\necho B\n"
+                writeFileExecutable "/a" "#!/bin/sh\necho A\n"
+                writeFileExecutable "/b" "#!/bin/sh\necho B\n"
 
                 withFilteredPaths
                     [ someRestyler

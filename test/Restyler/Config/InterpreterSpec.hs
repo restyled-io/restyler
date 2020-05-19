@@ -10,19 +10,18 @@ import Restyler.Config.Interpreter
 
 spec :: Spec
 spec = do
-    describe "hasIntepreter" $ do
+    describe "readInterpreter" $ do
         it "can find a direct executable" $ example $ do
             let contents = T.unlines ["#!/bin/sh", "echo 1"]
 
-            (contents `hasInterpreter` Sh) `shouldBe` True
-            (contents `hasInterpreter` Bash) `shouldBe` False
+            readInterpreter contents `shouldBe` Just Sh
 
         it "can find a nested executable" $ example $ do
             let contents = T.unlines ["#!/usr/local/bin/bash", "echo 1"]
 
-            (contents `hasInterpreter` Bash) `shouldBe` True
+            readInterpreter contents `shouldBe` Just Bash
 
         it "can find something via /usr/bin/env" $ example $ do
             let contents = T.unlines ["#!/usr/bin/env python", "print 1"]
 
-            (contents `hasInterpreter` Python) `shouldBe` True
+            readInterpreter contents `shouldBe` Just Python

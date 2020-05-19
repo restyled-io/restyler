@@ -129,6 +129,7 @@ tests:
       - aeson
       - bytestring
       - containers
+      - directory
       - github
       - hspec
       - hspec-expectations-lifted
