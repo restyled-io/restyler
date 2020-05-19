@@ -80,7 +80,7 @@ withFilteredPaths restylers paths run = do
 
 addExecutableInterpreter
     :: HasSystem env => FilePath -> RIO env (FilePath, Maybe Interpreter)
-addExecutableInterpreter path = do
+addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
     isExec <- isFileExecutable path
 
     (path, ) <$> if isExec
