@@ -17,7 +17,7 @@ import RIO.Test.FS (writeFileExecutable, writeFileUnreadable)
 spec :: Spec
 spec = do
     describe "withFilteredPaths" $ do
-        fit "does not bring excluded files back by shebang" $ do
+        it "does not bring excluded files back by shebang" $ do
             filtered <- runTestApp $ do
                 writeFileExecutable "/a" "#!/bin/sh\necho A\n"
                 writeFileExecutable "/b" "#!/bin/sh\necho B\n"
