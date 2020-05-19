@@ -16,7 +16,7 @@ import RIO.Test.FS (writeFileUnreadable, writeFileUtf8)
 
 spec :: Spec
 spec = do
-    describe "filterRestylePaths" $ do
+    describe "withFilteredPaths" $ do
         it "does not bring excluded files back by shebang" $ do
             pendingWith "Known bug"
 
@@ -24,14 +24,20 @@ spec = do
                 writeFileUtf8 "/a" "#!/bin/sh\necho A\n"
                 writeFileUtf8 "/b" "#!/bin/sh\necho B\n"
 
-                filterRestylePaths
-                    someRestyler
+                withFilteredPaths
+                    [ someRestyler
+                        { rInclude = ["**/*.sh"]
+                        , rInterpreters = [Sh]
+                        }
+                    , someRestyler
                         { rInclude = ["**/*.sh", "!b"]
                         , rInterpreters = [Sh]
                         }
+                    ]
                     ["a", "b"]
+                    (const pure)
 
-            filtered `shouldBe` ["a"]
+            filtered `shouldBe` [["a", "b"], ["a"]]
 
         it "ignores unreadable (invalid utf-8 byte) files" $ do
             -- Capture the UTF-8 exception we see on such files
@@ -43,14 +49,16 @@ spec = do
             runTestApp $ do
                 writeFileUnreadable "invalid.eot" ex
 
-                filtered <- filterRestylePaths
-                    someRestyler
-                        { rInclude = ["!**/*.eot"]
-                        , rInterpreters = [Ruby]
-                        }
+                filtered <- withFilteredPaths
+                    [ someRestyler
+                          { rInclude = ["!**/*.eot"]
+                          , rInterpreters = [Ruby]
+                          }
+                    ]
                     ["invalid.eot"]
+                    (const pure)
 
-                liftIO $ filtered `shouldBe` []
+                liftIO $ filtered `shouldBe` [[]]
 
         describe "runRestyler_" $ do
             it "treats non-zero exit codes as RestylerExitFailure" $ do

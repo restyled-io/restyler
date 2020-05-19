@@ -5,7 +5,7 @@ module Restyler.Restyler.Run
     -- * Exported for testing only
     , runRestyler
     , runRestyler_
-    , filterRestylePaths
+    , withFilteredPaths
     )
 where
 
@@ -46,20 +46,33 @@ runRestylers_ config = void . runRestylersWith runRestyler_ config
 
 runRestylersWith
     :: (HasSystem env, HasLogFunc env)
-    => (Restyler -> [FilePath] -> RIO env b)
+    => (Restyler -> [FilePath] -> RIO env a)
     -> Config
     -> [FilePath]
-    -> RIO env [b]
+    -> RIO env [a]
 runRestylersWith run Config {..} allPaths = do
     paths <- filterM doesFileExist $ filter included allPaths
 
     logDebug $ "Restylers: " <> displayShow (map rName restylers)
     logDebug $ "Paths: " <> displayShow paths
 
-    for restylers $ \r -> run r =<< filterRestylePaths r paths
+    withFilteredPaths restylers paths run
   where
     included path = none (`match` path) cExclude
     restylers = filter rEnabled cRestylers
+
+-- | Run each @'Restyler'@ with appropriate paths out of the given set
+--
+-- This is primarily extracted for testing
+--
+withFilteredPaths
+    :: HasSystem env
+    => [Restyler]
+    -> [FilePath]
+    -> (Restyler -> [FilePath] -> RIO env a)
+    -> RIO env [a]
+withFilteredPaths restylers paths run =
+    for restylers $ \r -> run r =<< filterRestylePaths r paths
 
 filterRestylePaths
     :: HasSystem env => Restyler -> [FilePath] -> RIO env [FilePath]
