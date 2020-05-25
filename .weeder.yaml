@@ -1,2 +1,10 @@
 - package:
-  - name: jwt
+  - name: restyler
+  - section:
+    - name: test:test
+    - message:
+      - name: Weeds exported
+      - module:
+        - name: RIO.Test.FS
+        - identifier: fsL
+        - identifier: writeFileUtf8

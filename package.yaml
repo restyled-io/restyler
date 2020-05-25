@@ -135,7 +135,6 @@ tests:
       - hspec-expectations-lifted
       - lens
       - lens-aeson
-      - process
       - restyler
       - rio
       - shakespeare
