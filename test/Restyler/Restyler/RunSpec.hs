@@ -58,20 +58,20 @@ spec = do
 
                 liftIO $ filtered `shouldBe` [[]]
 
-        describe "runRestyler_" $ do
-            it "treats non-zero exit codes as RestylerExitFailure" $ do
-                let
-                    runTestApp' f = do
-                        app <- testApp "/" []
-                        runRIO
-                            app
-                                { taCallProcessExitCode = \_ _ ->
-                                    pure $ ExitFailure 99
-                                }
-                            f
+    describe "runRestyler_" $ do
+        it "treats non-zero exit codes as RestylerExitFailure" $ do
+            let
+                runTestApp' f = do
+                    app <- testApp "/" []
+                    runRIO
+                        app
+                            { taCallProcessExitCode = \_ _ ->
+                                pure $ ExitFailure 99
+                            }
+                        f
 
-                runTestApp' (runRestyler_ someRestyler ["foo bar"])
-                    `shouldThrow` isRestylerExitFailure someRestyler 99
+            runTestApp' (runRestyler_ someRestyler ["foo bar"])
+                `shouldThrow` isRestylerExitFailure someRestyler 99
 
 isRestylerExitFailure :: Restyler -> Int -> AppError -> Bool
 isRestylerExitFailure r se (RestylerExitFailure re s _) = re == r && se == s
