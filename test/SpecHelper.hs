@@ -4,6 +4,10 @@ module SpecHelper
     , runTestApp
     , someRestyler
 
+    -- * Config
+    , loadDefaultConfig
+    , testRestylers
+
     -- * Re-exports
     , module X
     )
@@ -28,7 +32,9 @@ import Test.Hspec as X hiding
 import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
+import Data.Yaml (decodeThrow)
 import Restyler.App.Class
+import Restyler.Config
 import Restyler.Options
 import Restyler.Restyler
 import RIO.Test.FS (FS, HasFS(..))
@@ -132,3 +138,33 @@ asksAp3 :: MonadReader r m => (r -> a -> b -> c -> m d) -> a -> b -> c -> m d
 asksAp3 f x y z = do
     f' <- asks f
     f' x y z
+
+loadDefaultConfig :: RIO env Config
+loadDefaultConfig = do
+    config <- decodeThrow defaultConfigContent
+    resolveRestylers config testRestylers
+
+testRestylers :: [Restyler]
+testRestylers =
+    [ someRestyler { rName = "astyle" }
+    , someRestyler { rName = "autopep8" }
+    , someRestyler { rName = "black" }
+    , someRestyler { rName = "dfmt" }
+    , someRestyler { rName = "elm-format" }
+    , someRestyler { rName = "hindent", rEnabled = False }
+    , someRestyler { rName = "jdt", rEnabled = False }
+    , someRestyler { rName = "pg_format" }
+    , someRestyler { rName = "php-cs-fixer" }
+    , someRestyler { rName = "prettier" }
+    , someRestyler { rName = "prettier-markdown" }
+    , someRestyler { rName = "prettier-ruby" }
+    , someRestyler { rName = "prettier-yaml" }
+    , someRestyler { rName = "reorder-python-imports" }
+    , someRestyler { rName = "rubocop" }
+    , someRestyler { rName = "rustfmt" }
+    , someRestyler { rName = "shellharden" }
+    , someRestyler { rName = "shfmt" }
+    , someRestyler { rName = "stylish-haskell" }
+    , someRestyler { rName = "terraform" }
+    , someRestyler { rName = "yapf" }
+    ]
