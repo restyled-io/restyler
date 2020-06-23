@@ -17,6 +17,7 @@ import RIO.Char as X (isSpace)
 import RIO.List as X
     ( dropWhileEnd
     , find
+    , genericLength
     , headMaybe
     , maximumByMaybe
     , maximumMaybe

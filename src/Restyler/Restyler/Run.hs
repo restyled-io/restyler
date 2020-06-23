@@ -15,6 +15,7 @@ import Data.List (nub)
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
+import Restyler.Config.ChangedPaths
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
@@ -56,7 +57,21 @@ runRestylersWith run Config {..} allPaths = do
     logDebug $ "Restylers: " <> displayShow (map rName restylers)
     logDebug $ "Paths: " <> displayShow paths
 
-    withFilteredPaths restylers paths run
+    let lenPaths = genericLength paths
+        maxPaths = cpcMaximum cChangedPaths
+        maxPathsLogMessage =
+            "Number of changed paths ("
+                <> displayShow lenPaths
+                <> ") is greater than configured maxium ("
+                <> displayShow maxPaths
+                <> ")"
+
+    if lenPaths > maxPaths
+        then case cpcOutcome cChangedPaths of
+            MaximumChangedPathsOutcomeSkip -> [] <$ logWarn maxPathsLogMessage
+            MaximumChangedPathsOutcomeError ->
+                throwIO $ RestyleError $ utf8BuilderToText maxPathsLogMessage
+        else withFilteredPaths restylers paths run
   where
     included path = none (`match` path) cExclude
     restylers = filter rEnabled cRestylers
