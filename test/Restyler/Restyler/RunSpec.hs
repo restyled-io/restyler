@@ -92,8 +92,9 @@ spec = do
                             }
                         f
 
-            runTestApp' (runRestyler_ someRestyler ["foo bar"])
-                `shouldThrow` isRestylerExitFailure someRestyler 99
+            runTestApp' (runRestyler_ someRestyler ["foo"]) `shouldThrow` \case
+                RestylerExitFailure re s _ -> re == someRestyler && s == 99
+                _ -> False
 
 mkPaths :: Int -> [FilePath]
 mkPaths n = map (\i -> "/" <> show i <> ".txt") [1 .. n]
@@ -111,7 +112,3 @@ setMaximum m cp = cp { cpcMaximum = m }
 
 setOutcomeSkip :: ChangedPathsConfig -> ChangedPathsConfig
 setOutcomeSkip cp = cp { cpcOutcome = MaximumChangedPathsOutcomeSkip }
-
-isRestylerExitFailure :: Restyler -> Int -> AppError -> Bool
-isRestylerExitFailure r se (RestylerExitFailure re s _) = re == r && se == s
-isRestylerExitFailure _ _ _ = False
