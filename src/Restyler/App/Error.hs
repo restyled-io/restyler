@@ -37,6 +37,8 @@ data AppError
     -- ^ We couldn't load a @.restyled.yaml@
     | RestylerExitFailure Restyler Int [FilePath]
     -- ^ A Restyler we ran exited non-zero on the given paths
+    | RestyleError Text
+    -- ^ Unable to Restyle for a known reason (given as user-facing message)
     | GitHubError DisplayGitHubRequest Error
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
@@ -64,6 +66,7 @@ toErrorTitle = trouble . \case
     PullRequestCloneError _ -> "cloning your Pull Request branch"
     ConfigurationError _ -> "with your configuration"
     RestylerExitFailure r _ _ -> "with the " <> rName r <> " restyler"
+    RestyleError _ -> "restyling"
     GitHubError _ _ -> "communicating with GitHub"
     SystemError _ -> "running a system command"
     HttpError _ -> "performing an HTTP request"
@@ -101,6 +104,7 @@ toErrorBody = reflow . \case
             <> show paths
             <> "."
             <> "\nError information may be present in the stderr output above."
+    RestyleError msg -> unpack msg
     GitHubError req e -> "Request: " <> show req <> "\n" <> showGitHubError e
     SystemError e -> show e
     HttpError e -> show e
@@ -114,6 +118,9 @@ toErrorDocumentation = formatDocs . \case
         [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
         ]
     RestylerExitFailure r _ _ -> rDocumentation r
+    RestyleError _ ->
+        [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error"
+        ]
     _ -> []
   where
     formatDocs [] = "\n"
@@ -186,6 +193,7 @@ dieAppError e = do
         ConfigurationError ConfigErrorInvalidRestylers{} -> 11
         ConfigurationError ConfigErrorInvalidRestylersYaml{} -> 12
         RestylerExitFailure{} -> 20
+        RestyleError{} -> 25
         GitHubError{} -> 30
         PullRequestFetchError{} -> 31
         PullRequestCloneError{} -> 32

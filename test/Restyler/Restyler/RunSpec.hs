@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Restyler.Restyler.RunSpec
@@ -8,11 +9,13 @@ where
 import SpecHelper
 
 import Restyler.App.Error
+import Restyler.Config
+import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import qualified RIO
-import RIO.Test.FS (writeFileExecutable, writeFileUnreadable)
+import RIO.Test.FS (writeFileExecutable, writeFileUnreadable, writeFileUtf8)
 
 spec :: Spec
 spec = do
@@ -58,6 +61,25 @@ spec = do
 
                 liftIO $ filtered `shouldBe` [[]]
 
+    describe "runRestylers_" $ do
+        context "maximum changed paths" $ do
+            it "has a default maximum" $ do
+                runChangedPaths (mkPaths 1001) id `shouldThrow` \case
+                    RestyleError message ->
+                        message
+                            == "Number of changed paths (1001) is greater than configured maxium (1000)"
+                    _ -> False
+
+            it "can be configured" $ do
+                runChangedPaths (mkPaths 11) (setMaximum 10) `shouldThrow` \case
+                    RestyleError message ->
+                        message
+                            == "Number of changed paths (11) is greater than configured maxium (10)"
+                    _ -> False
+
+            it "can be configured to skip" $ do
+                runChangedPaths (mkPaths 1001) setOutcomeSkip `shouldReturn` ()
+
     describe "runRestyler_" $ do
         it "treats non-zero exit codes as RestylerExitFailure" $ do
             let
@@ -72,6 +94,23 @@ spec = do
 
             runTestApp' (runRestyler_ someRestyler ["foo bar"])
                 `shouldThrow` isRestylerExitFailure someRestyler 99
+
+mkPaths :: Int -> [FilePath]
+mkPaths n = map (\i -> "/" <> show i <> ".txt") [1 .. n]
+
+runChangedPaths
+    :: [FilePath] -> (ChangedPathsConfig -> ChangedPathsConfig) -> IO ()
+runChangedPaths paths f = runTestApp $ do
+    for_ paths $ \path -> writeFileUtf8 path ""
+    config <- loadDefaultConfig
+    let updatedConfig = config { cChangedPaths = f $ cChangedPaths config }
+    runRestylers_ updatedConfig paths
+
+setMaximum :: Natural -> ChangedPathsConfig -> ChangedPathsConfig
+setMaximum m cp = cp { cpcMaximum = m }
+
+setOutcomeSkip :: ChangedPathsConfig -> ChangedPathsConfig
+setOutcomeSkip cp = cp { cpcOutcome = MaximumChangedPathsOutcomeSkip }
 
 isRestylerExitFailure :: Restyler -> Int -> AppError -> Bool
 isRestylerExitFailure r se (RestylerExitFailure re s _) = re == r && se == s
