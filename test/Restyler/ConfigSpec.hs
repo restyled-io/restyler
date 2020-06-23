@@ -10,7 +10,7 @@ import SpecHelper
 
 import Data.List (isInfixOf)
 import qualified Data.Text as T
-import Data.Yaml (decodeThrow, prettyPrintParseException)
+import Data.Yaml (prettyPrintParseException)
 import Restyler.Config
 import Restyler.Config.Include
 import Restyler.Restyler
@@ -19,7 +19,7 @@ import Text.Shakespeare.Text (st)
 spec :: Spec
 spec = do
     it "supports a simple, name-based syntax" $ example $ do
-        defaultConfig <- loadDefaultConfig
+        defaultConfig <- loadDefaultConfig'
 
         result <- loadTestConfig [st|
             ---
@@ -45,7 +45,7 @@ spec = do
         fmap cEnabled result `shouldBe` Right False
 
     it "allows re-configuring includes" $ example $ do
-        defaultConfig <- loadDefaultConfig
+        defaultConfig <- loadDefaultConfig'
 
         result1 <- loadTestConfig [st|
             ---
@@ -147,7 +147,7 @@ spec = do
         result `shouldSatisfy` isRight
 
     it "can specify a Restyler with name" $ example $ do
-        defaultConfig <- loadDefaultConfig
+        defaultConfig <- loadDefaultConfig'
 
         result <- loadTestConfig [st|
             restylers:
@@ -266,7 +266,7 @@ spec = do
         result `shouldSatisfy` hasError "containing tabs"
 
     it "handles no configuration" $ example $ do
-        defaultConfig <- loadDefaultConfig
+        defaultConfig <- loadDefaultConfig'
         app <- liftIO $ testApp "/" []
 
         result <-
@@ -330,12 +330,10 @@ hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
 
 -- | Load just the default config, for comparisons against examples
-loadDefaultConfig :: MonadIO m => m Config
-loadDefaultConfig = do
+loadDefaultConfig' :: MonadIO m => m Config
+loadDefaultConfig' = do
     app <- liftIO $ testApp "/" []
-    runRIO app $ do
-        config <- decodeThrow defaultConfigContent
-        resolveRestylers config testRestylers
+    runRIO app loadDefaultConfig
 
 -- | Load a @'Text'@ as configuration
 loadTestConfig :: MonadIO m => Text -> m (Either String Config)
@@ -357,31 +355,6 @@ showConfigError = \case
         unlines [prettyPrintParseException ex, "---", show yaml]
     ConfigErrorInvalidRestylers errs -> unlines errs
     ConfigErrorInvalidRestylersYaml ex -> show ex
-
-testRestylers :: [Restyler]
-testRestylers =
-    [ someRestyler { rName = "astyle" }
-    , someRestyler { rName = "autopep8" }
-    , someRestyler { rName = "black" }
-    , someRestyler { rName = "dfmt" }
-    , someRestyler { rName = "elm-format" }
-    , someRestyler { rName = "hindent", rEnabled = False }
-    , someRestyler { rName = "jdt", rEnabled = False }
-    , someRestyler { rName = "pg_format" }
-    , someRestyler { rName = "php-cs-fixer" }
-    , someRestyler { rName = "prettier" }
-    , someRestyler { rName = "prettier-markdown" }
-    , someRestyler { rName = "prettier-ruby" }
-    , someRestyler { rName = "prettier-yaml" }
-    , someRestyler { rName = "reorder-python-imports" }
-    , someRestyler { rName = "rubocop" }
-    , someRestyler { rName = "rustfmt" }
-    , someRestyler { rName = "shellharden" }
-    , someRestyler { rName = "shfmt" }
-    , someRestyler { rName = "stylish-haskell" }
-    , someRestyler { rName = "terraform" }
-    , someRestyler { rName = "yapf" }
-    ]
 
 dedent :: Text -> Text
 dedent x = T.unlines $ map (T.drop indent) ls
