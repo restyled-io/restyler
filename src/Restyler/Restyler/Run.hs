@@ -62,7 +62,7 @@ runRestylersWith run Config {..} allPaths = do
         maxPathsLogMessage =
             "Number of changed paths ("
                 <> displayShow lenPaths
-                <> ") is greater than configured maxium ("
+                <> ") is greater than configured maximum ("
                 <> displayShow maxPaths
                 <> ")"
 

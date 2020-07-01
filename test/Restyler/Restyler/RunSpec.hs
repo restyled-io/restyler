@@ -67,14 +67,14 @@ spec = do
                 runChangedPaths (mkPaths 1001) id `shouldThrow` \case
                     RestyleError message ->
                         message
-                            == "Number of changed paths (1001) is greater than configured maxium (1000)"
+                            == "Number of changed paths (1001) is greater than configured maximum (1000)"
                     _ -> False
 
             it "can be configured" $ do
                 runChangedPaths (mkPaths 11) (setMaximum 10) `shouldThrow` \case
                     RestyleError message ->
                         message
-                            == "Number of changed paths (11) is greater than configured maxium (10)"
+                            == "Number of changed paths (11) is greater than configured maximum (10)"
                     _ -> False
 
             it "can be configured to skip" $ do
