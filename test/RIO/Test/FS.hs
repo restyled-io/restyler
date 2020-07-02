@@ -25,7 +25,7 @@ module RIO.Test.FS
     , writeFileUnreadable
     , getCurrentDirectory
     , setCurrentDirectory
-    , doesPathExist
+    -- , doesPathExist
     , doesFileExist
     , doesDirectoryExist
     , isFileExecutable
