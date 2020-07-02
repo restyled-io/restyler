@@ -11,7 +11,6 @@ import Restyler.Config (loadConfig)
 import Restyler.Options
 import Restyler.Restyler.Run (runRestylers_)
 import qualified RIO.Directory as Directory
-import RIO.FilePath ((</>))
 import UnliftIO.Environment (getArgs)
 import qualified UnliftIO.Process as Process
 
@@ -30,7 +29,9 @@ instance HasSystem App where
     getCurrentDirectory = Directory.getCurrentDirectory
     setCurrentDirectory = Directory.setCurrentDirectory
     doesFileExist = Directory.doesFileExist
+    doesDirectoryExist = Directory.doesDirectoryExist
     isFileExecutable = fmap Directory.executable . Directory.getPermissions
+    listDirectory = Directory.listDirectory
     readFile = readFileUtf8
     readFileBS = readFileBinary
 
@@ -65,7 +66,7 @@ main = do
     options <- setupLog <$> logOptionsHandle stdout eoVerbose
     withLogFunc options $ \logFunc -> runRIO (setupApp logFunc envOptions) $ do
         config <- loadConfig
-        runRestylers_ config =<< expandDirectories =<< getArgs
+        runRestylers_ config =<< getArgs
   where
     setupLog = setLogUseTime False . setLogUseLoc False
     setupApp logFunc EnvOptions {..} = App
@@ -83,15 +84,3 @@ main = do
             }
         }
 
-expandDirectories :: MonadIO m => [FilePath] -> m [FilePath]
-expandDirectories = fmap concat . traverse expandDirectory
-
-expandDirectory :: MonadIO m => FilePath -> m [FilePath]
-expandDirectory parent = do
-    isDirectory <- Directory.doesDirectoryExist parent
-
-    if isDirectory
-        then do
-            files <- Directory.listDirectory parent
-            expandDirectories $ map (parent </>) files
-        else pure [parent]

@@ -35,7 +35,11 @@ class HasSystem env where
 
     doesFileExist :: FilePath -> RIO env Bool
 
+    doesDirectoryExist :: FilePath -> RIO env Bool
+
     isFileExecutable :: FilePath -> RIO env Bool
+
+    listDirectory :: FilePath -> RIO env [FilePath]
 
     readFile :: FilePath -> RIO env Text
 
