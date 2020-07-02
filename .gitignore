@@ -1,4 +1,5 @@
 *.cabal
+*.dump-hi
 *.t.err
 .env*
 !.env.test
