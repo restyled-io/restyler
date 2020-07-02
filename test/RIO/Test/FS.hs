@@ -3,6 +3,17 @@
 -- This aims to be generic to the @"RIO"@ FS-related functions, but is of course
 -- only written to implement our own @'HasSystem'@ class so far.
 --
+-- Limitations:
+--
+-- - We try to store absolute paths and normalize function arguments as relative
+--   to the mocked current working directory. However, we don't do anything
+--   special with . or .. arguments.
+--
+-- - Directories work a bit like S3: they're just a common prefix shared by
+--   multiple keys. This means an empty directory cannot be modeled. You can
+--   make @'doesDirectoryExist'@ work with a file ending in @/@, but using
+--   @'listDirectory'@ on it will return @[""]@, which is not right.
+--
 module RIO.Test.FS
     ( HasFS(..)
     , FS
@@ -15,7 +26,9 @@ module RIO.Test.FS
     , getCurrentDirectory
     , setCurrentDirectory
     , doesFileExist
+    , doesDirectoryExist
     , isFileExecutable
+    , listDirectory
     )
 where
 
@@ -23,7 +36,7 @@ import RIO hiding (readFileBinary, readFileUtf8, writeFileUtf8)
 
 import qualified Data.Map.Strict as Map
 import RIO.FilePath ((</>))
-import RIO.List (isPrefixOf)
+import RIO.List (dropPrefix, dropWhileEnd, isPrefixOf)
 import qualified System.Directory as Directory
 
 class HasFS env where
@@ -120,14 +133,19 @@ doesFileExist path' = do
     path <- getAbsolutePath path'
     Map.member path . fsFiles <$> readFS'
 
+doesDirectoryExist :: HasFS env => FilePath -> RIO env Bool
+doesDirectoryExist path' = not . null <$> listDirectory path'
+
 isFileExecutable :: HasFS env => FilePath -> RIO env Bool
 isFileExecutable = fmap (Directory.executable . snd) . readFile
 
--- |
---
--- FIXME. We don't get too-too crazy here in terms of resolving "..", etc; we
--- just consider "/" as denoting an absolute path.
---
+listDirectory :: HasFS env => FilePath -> RIO env [FilePath]
+listDirectory path' = do
+    path <- getAbsolutePath path'
+    let prefix = dropWhileEnd (== '/') path <> "/"
+    paths <- Map.keys . fsFiles <$> readFS'
+    pure $ map (dropPrefix prefix) $ filter (prefix `isPrefixOf`) paths
+
 getAbsolutePath :: HasFS env => FilePath -> RIO env FilePath
 getAbsolutePath path
     | "/" `isPrefixOf` path = pure path

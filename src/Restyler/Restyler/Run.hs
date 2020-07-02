@@ -6,6 +6,7 @@ module Restyler.Restyler.Run
     , runRestyler
     , runRestyler_
     , withFilteredPaths
+    , findFiles
     )
 where
 
@@ -23,6 +24,7 @@ import Restyler.Git
 import Restyler.Options
 import Restyler.Restyler
 import Restyler.RestylerResult
+import RIO.FilePath ((</>))
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
@@ -52,7 +54,7 @@ runRestylersWith
     -> [FilePath]
     -> RIO env [a]
 runRestylersWith run Config {..} allPaths = do
-    paths <- filterM doesFileExist $ filter included allPaths
+    paths <- findFiles $ filter included allPaths
 
     logDebug $ "Restylers: " <> displayShow (map rName restylers)
     logDebug $ "Paths: " <> displayShow paths
@@ -178,3 +180,23 @@ getHostDirectory :: (HasOptions env, HasSystem env) => RIO env FilePath
 getHostDirectory = do
     mHostDirectory <- oHostDirectory <$> view optionsL
     maybe getCurrentDirectory pure mHostDirectory
+
+-- | Expand directory arguments and filter to only existing paths
+--
+-- The existence filtering is important for normal Restyling, where we may get
+-- path arguments of removed files in the PR. The expansion is important for
+-- @restyle-path@, where we may be given directories as arguments.
+--
+findFiles :: HasSystem env => [FilePath] -> RIO env [FilePath]
+findFiles = fmap concat . traverse go
+  where
+    go parent = do
+        isDirectory <- doesDirectoryExist parent
+
+        if isDirectory
+            then do
+                files <- listDirectory parent
+                findFiles $ map (parent </>) files
+            else do
+                isFile <- doesFileExist parent
+                pure [ parent | isFile ] -- too clever?

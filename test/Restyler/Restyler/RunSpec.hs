@@ -96,6 +96,20 @@ spec = do
                 RestylerExitFailure re s _ -> re == someRestyler && s == 99
                 _ -> False
 
+    describe "findFiles" $ do
+        it "expands and excludes" $ do
+            app <- testApp
+                "/foo"
+                [ ("/foo/bar/baz/bat", "")
+                , ("/foo/bar/baz/quix", "")
+                , ("/foo/bat/baz", "")
+                , ("/foo/foo", "")
+                , ("/foo/xxx", "")
+                ]
+
+            runRIO app (findFiles ["bar/baz", "bat", "xxx", "zzz"])
+                `shouldReturn` ["bar/baz/bat", "bar/baz/quix", "bat/baz", "xxx"]
+
 mkPaths :: Int -> [FilePath]
 mkPaths n = map (\i -> "/" <> show i <> ".txt") [1 .. n]
 
