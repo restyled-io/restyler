@@ -9,10 +9,10 @@
 --   to the mocked current working directory. However, we don't do anything
 --   special with . or .. arguments.
 --
--- - Directories work a bit like S3: they're just a common prefix shared by
---   multiple keys. This means an empty directory cannot be modeled. You can
---   make @'doesDirectoryExist'@ work with a file ending in @/@, but using
---   @'listDirectory'@ on it will return @[""]@, which is not right.
+-- - Directory support is limited. They work a bit like S3: they're just a
+--   common prefix shared by multiple files. An empty directory can be created
+--   by creating a file ending in @/@. Therefore, reading and writing to a
+--   \"directory\" could behave in surprising ways.
 --
 module RIO.Test.FS
     ( HasFS(..)
@@ -25,6 +25,7 @@ module RIO.Test.FS
     , writeFileUnreadable
     , getCurrentDirectory
     , setCurrentDirectory
+    , doesPathExist
     , doesFileExist
     , doesDirectoryExist
     , isFileExecutable
@@ -35,8 +36,8 @@ where
 import RIO hiding (readFileBinary, readFileUtf8, writeFileUtf8)
 
 import qualified Data.Map.Strict as Map
-import RIO.FilePath ((</>))
-import RIO.List (dropPrefix, dropWhileEnd, isPrefixOf)
+import RIO.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
+import RIO.List (dropPrefix, isPrefixOf)
 import qualified System.Directory as Directory
 
 class HasFS env where
@@ -128,13 +129,22 @@ getCurrentDirectory = fsCwd <$> readFS'
 setCurrentDirectory :: HasFS env => FilePath -> RIO env ()
 setCurrentDirectory cwd = modifyFS' $ \fs -> fs { fsCwd = cwd }
 
-doesFileExist :: HasFS env => FilePath -> RIO env Bool
-doesFileExist path' = do
+doesPathExist :: HasFS env => FilePath -> RIO env Bool
+doesPathExist path' = do
     path <- getAbsolutePath path'
     Map.member path . fsFiles <$> readFS'
 
+doesFileExist :: HasFS env => FilePath -> RIO env Bool
+doesFileExist path' =
+    (\isPath isDirectory -> isPath && not isDirectory)
+        <$> doesPathExist path'
+        <*> doesDirectoryExist path'
+
 doesDirectoryExist :: HasFS env => FilePath -> RIO env Bool
-doesDirectoryExist path' = not . null <$> listDirectory path'
+doesDirectoryExist path' = do
+    path <- getAbsolutePath path'
+    let prefix = addTrailingPathSeparator path
+    not . null <$> getPrefixed prefix
 
 isFileExecutable :: HasFS env => FilePath -> RIO env Bool
 isFileExecutable = fmap (Directory.executable . snd) . readFile
@@ -142,13 +152,17 @@ isFileExecutable = fmap (Directory.executable . snd) . readFile
 listDirectory :: HasFS env => FilePath -> RIO env [FilePath]
 listDirectory path' = do
     path <- getAbsolutePath path'
-    let prefix = dropWhileEnd (== '/') path <> "/"
-    paths <- Map.keys . fsFiles <$> readFS'
-    pure $ map (dropPrefix prefix) $ filter (prefix `isPrefixOf`) paths
+    let prefix = addTrailingPathSeparator path
+    filter (not . null) . map (dropPrefix prefix) <$> getPrefixed prefix
 
 getAbsolutePath :: HasFS env => FilePath -> RIO env FilePath
 getAbsolutePath path
-    | "/" `isPrefixOf` path = pure path
+    | isAbsolute path = pure path
     | otherwise = do
         FS' {..} <- readFS'
         pure $ fsCwd </> path
+
+getPrefixed :: HasFS env => String -> RIO env [FilePath]
+getPrefixed prefix = do
+    paths <- Map.keys . fsFiles <$> readFS'
+    pure $ filter (prefix `isPrefixOf`) paths
