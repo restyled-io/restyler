@@ -3,21 +3,26 @@ version: 2.1
 orbs:
   stack-build: pbrisbin/stack-build@2.0.0
   docker-build-cached: pbrisbin/docker-build-cached@1.0.0
-  aws-ecs: circleci/aws-ecs@0.0.10
+  aws-cli: circleci/aws-ecs@0.0.10
+  pushover: pbrisbin/pushover@1.0.0
 
 jobs:
-  notify:
-    machine:
-      image: ubuntu-1604:201903-01
+  update-stack-image:
+    executor: aws-cli/default
     steps:
-      - run: |
-          curl -s \
-            --form-string "token=$PUSHOVER_API_KEY" \
-            --form-string "user=$PUSHOVER_USER_KEY" \
-            --form-string "title=restyled-io[restyler]" \
-            --form-string "message=Deployed at ${CIRCLE_SHA1:0:10}" \
-            --form-string "priority=0" \
-            https://api.pushover.net/1/messages.json
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Update CloudFormation Stack
+          command: |
+            image=restyled/restyler:${CIRCLE_SHA1:0:10}
+            aws cloudformation update-stack \
+              --stack-name prod-services \
+              --use-previous-template \
+              --parameter "ParameterKey=RestylerImage,ParameterValue=$image" \
+              --capabilities CAPABILITY_NAMED_IAM
+            aws cloudformation wait stack-update-complete \
+              --stack-name prod-services
 
 references:
   master_only: &master_only
@@ -42,20 +47,16 @@ workflows:
           build-stages: builder
           extra-build-arguments: '--build-arg "REVISION=$CIRCLE_SHA1"'
 
-      - aws-ecs/deploy-service-update:
+      - update-stack-image:
           <<: *master_only
           name: release
-          aws-region: us-east-1
-          family: restyled-prod-webhooks
-          cluster-name: restyled-prod
-          service-name: webhooks
-          container-env-var-updates:
-            'container=restyled,name=RESTYLER_TAG,value=${CIRCLE_SHA1:0:10}'
-          requires:
-            - build
-            - image
+          requires: [build, image]
+          context: deploy-aws
 
-      - notify:
+      - pushover/notify:
           <<: *master_only
+          name: notify
           requires:
             - release
+          title: 'Restyled deployments'
+          message: 'restyler deployed at ${CIRCLE_SHA1:0:10}'
