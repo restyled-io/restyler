@@ -9,52 +9,43 @@ all: setup setup.lint setup.tools build lint test
 
 .PHONY: setup
 setup:
-	stack setup $(STACK_ARGUMENTS)
-	# Avoid ExitFailure (-9) (THIS MAY INDICATE OUT OF MEMORY)
-	stack build $(STACK_ARGUMENTS) -j 1 Cabal
-	stack build $(STACK_ARGUMENTS) --dependencies-only --test --no-run-tests
+	stack setup
+	stack build --dependencies-only --test --no-run-tests
 
 .PHONY: setup.lint
 setup.lint:
-	stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
-	  hlint \
-	  weeder
+	stack install --copy-compiler-tool hlint weeder
 
 .PHONY: setup.tools
 setup.tools:
-	stack install $(STACK_ARGUMENTS) --copy-compiler-tool \
+	stack install --copy-compiler-tool \
 	  brittany \
 	  fast-tags \
 	  stylish-haskell
 
 .PHONY: build
 build:
-	stack build $(STACK_ARGUMENTS) --pedantic --test --no-run-tests
+	stack build --pedantic --test --no-run-tests
 
 .PHONY: lint
 lint:
-	stack exec $(STACK_ARGUMENTS) hlint app src test
-	# Weeder doesn't work with stack-2.0 :(
-	# stack exec $(STACK_ARGUMENTS) weeder .
+	stack exec hlint app src test
+	stack exec weeder .
 
 .PHONY: test
 test:
-	stack build $(STACK_ARGUMENTS) --test
+	stack build --test
 
 .PHONY: watch
 watch:
-	stack build $(STACK_ARGUMENTS) --fast --pedantic --test --file-watch
+	stack build --fast --pedantic --test --file-watch
 
 .PHONY: image
 image:
-	docker run -it --rm \
-	  --volume /var/run/docker.sock:/var/run/docker.sock \
-	  --volume "$(HOME)"/.docker/config.json:/root/.docker/config.json:ro \
-	  --volume "$(PWD)":/build:ro \
-	  --workdir /build \
-	  restyled/ops:v5 docker-build-remote-cache \
-	  restyled/restyler \
-	  --build-arg "REVISION=testing"
+	docker build \
+	  --build-arg "REVISION=testing" \
+	  --tag restyled/restyler \
+	  .
 
 .PHONY: test.integration
 test.integration:
