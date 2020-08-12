@@ -75,6 +75,10 @@ restylers_version:
 	git commit config/default.yaml -m "Bump default restylers_version"
 	git push
 
+AWS ?= aws --profile restyled-ci
+
+DOC_BUCKET = prod-docs-bucket-llukv2ri46ew
+DOC_DISTRIBUTION_ID = EL0GPJF28P7EV
 DOC_ROOT = $(shell stack path --work-dir .stack-work-docs --local-doc-root)
 DOC_S3_PREFIX = /restyler
 
@@ -83,5 +87,7 @@ docs:
 	stack $(STACK_ARGUMENTS) --work-dir .stack-work-docs build --haddock
 	find .stack-work-docs -type f -name '*.html' -exec \
 	  sed -i 's|$(DOC_ROOT)|$(DOC_S3_PREFIX)|g' {} +
-	aws s3 sync --acl public-read --delete $(DOC_ROOT)/ \
-	  s3://docs.restyled.io$(DOC_S3_PREFIX)/
+	$(AWS) s3 sync --acl public-read --delete $(DOC_ROOT)/ \
+	  s3://$(DOC_BUCKET)$(DOC_S3_PREFIX)/
+	$(AWS) cloudfront create-invalidation \
+	  --distribution-id $(DOC_DISTRIBUTION_ID) --paths "$(DOC_S3_PREFIX)/*"
