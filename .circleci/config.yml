@@ -19,10 +19,11 @@ jobs:
             aws cloudformation update-stack \
               --stack-name prod-services \
               --use-previous-template \
-              --parameter "ParameterKey=Environment,UsePreviousValue=true" \
-              --parameter "ParameterKey=RestyledImage,UsePreviousValue=true" \
-              --parameter "ParameterKey=AppsWebhooksDesiredCount,UsePreviousValue=true" \
-              --parameter "ParameterKey=RestylerImage,ParameterValue=$image" \
+              --parameters \
+                "ParameterKey=Environment,UsePreviousValue=true" \
+                "ParameterKey=RestyledImage,UsePreviousValue=true" \
+                "ParameterKey=AppsWebhooksDesiredCount,UsePreviousValue=true" \
+                "ParameterKey=RestylerImage,ParameterValue=$image" \
               --capabilities CAPABILITY_NAMED_IAM
             aws cloudformation wait stack-update-complete \
               --stack-name prod-services
