@@ -32,7 +32,7 @@ labels: []
 ignore_labels:
   - restyled-ignore
 
-restylers_version: "20200817"
+restylers_version: "20200825"
 
 restylers:
   - "*"
