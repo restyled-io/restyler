@@ -40,9 +40,6 @@ End-to-end test that restyles an example Pull Request:
 make test.integration
 ```
 
-**NOTE**: This only works if you have local keys for our development GitHub App
-(i.e. `bin/get-access-token` works).
-
 ## `restyle-path`
 
 See [bin/restyle-path](./bin/restyle-path).
