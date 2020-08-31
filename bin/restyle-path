@@ -23,7 +23,7 @@
 #   it need not be re-installed.
 #
 ###
-: "${RESTYLER_TAG:=:master}"
+: "${RESTYLER_TAG:=:master-final}"
 
 exec docker run -it --rm \
   --env DEBUG=1 \
