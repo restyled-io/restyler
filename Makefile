@@ -79,15 +79,30 @@ restylers_version:
 
 AWS ?= aws --profile restyled-ci
 
-DOC_BUCKET = prod-docs-bucket-llukv2ri46ew
-DOC_DISTRIBUTION_ID = EL0GPJF28P7EV
-DOC_ROOT = $(shell stack path --work-dir .stack-work-docs --local-doc-root)
+DOC_ENVIRONMENT ?= prod
+
+DOC_BUCKET = $(shell \
+  $(AWS) cloudformation describe-stacks \
+    --stack-name $(DOC_ENVIRONMENT)-docs \
+    --query 'Stacks[*].Outputs[?OutputKey==`BucketName`].OutputValue' \
+    --output text \
+)
+
+DOC_DISTRIBUTION_ID = $(shell \
+  $(AWS) cloudformation describe-stacks \
+    --stack-name $(DOC_ENVIRONMENT)-docs \
+    --query 'Stacks[*].Outputs[?OutputKey==`DistributionId`].OutputValue' \
+    --output text \
+)
+
+DOC_ROOT = $(shell stack path --local-doc-root)
 DOC_S3_PREFIX = /restyler
 
 .PHONY: docs
 docs:
-	stack $(STACK_ARGUMENTS) --work-dir .stack-work-docs build --haddock
-	find .stack-work-docs -type f -name '*.html' -exec \
+	[ -n "$$STACK_WORK_DIR" ]
+	stack build --haddock
+	find "$$STACK_WORK_DIR" -type f -name '*.html' -exec \
 	  sed -i 's|$(DOC_ROOT)|$(DOC_S3_PREFIX)|g' {} +
 	$(AWS) s3 sync --acl public-read --delete $(DOC_ROOT)/ \
 	  s3://$(DOC_BUCKET)$(DOC_S3_PREFIX)/
