@@ -86,15 +86,43 @@ runRestylersWith run Config {..} allPaths = do
 -- testing of Restyler @include@ and @intepreter@ configuration handling.
 --
 withFilteredPaths
-    :: HasSystem env
+    :: (HasSystem env, HasLogFunc env)
     => [Restyler]
     -> [FilePath]
     -> (Restyler -> [FilePath] -> RIO env a)
     -> RIO env [a]
 withFilteredPaths restylers paths run = do
     withInterpreters <- traverse addExecutableInterpreter paths
-    for restylers $ \r ->
-        run r $ map fst $ filter (r `shouldRestyle`) withInterpreters
+
+    for restylers $ \r -> do
+        logDebug $ "Matching paths for " <> fromString (rName r)
+        filtered <- (`mapMaybeM` withInterpreters) $ \(path, mInterpreter) -> do
+            let matched = fromMaybe False $ do
+                    interpreter <- mInterpreter
+                    pure $ interpreter `elem` rInterpreters r
+                includes = if matched
+                    then explicit path : rInclude r
+                    else rInclude r
+                included = includePath includes path
+
+            for_ mInterpreter $ \interpreter ->
+                logDebug
+                    $ "Interpreter "
+                    <> displayShow interpreter
+                    <> ": "
+                    <> (if matched then "matched" else "no match")
+
+            logDebug
+                $ displayShow includes
+                <> " includes "
+                <> displayShow path
+                <> "? "
+                <> displayShow included
+
+            pure $ if included then Just path else Nothing
+
+        logDebug $ "Filtered paths for: " <> displayShow filtered
+        run r filtered
 
 addExecutableInterpreter
     :: HasSystem env => FilePath -> RIO env (FilePath, Maybe Interpreter)
@@ -104,15 +132,6 @@ addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
     (path, ) <$> if isExec
         then readInterpreter <$> readFile path
         else pure Nothing
-
-shouldRestyle :: Restyler -> (FilePath, Maybe Interpreter) -> Bool
-Restyler {..} `shouldRestyle` (path, mInterpreter)
-    | matchesInterpreter = includePath (explicit path : rInclude) path
-    | otherwise = includePath rInclude path
-  where
-    matchesInterpreter = fromMaybe False $ do
-        interpreter <- mInterpreter
-        pure $ interpreter `elem` rInterpreters
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
