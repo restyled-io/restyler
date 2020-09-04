@@ -58,7 +58,7 @@ test.integration:
 	fi
 	docker run -it --rm \
 	  --env DEBUG=1 \
-	  --env GITHUB_ACCESS_TOKEN=$$(../ops/tools/get-access-token $(INTEGRATION_APP_ENV) $(INTEGRATION_INSTALLATION_ID)) \
+	  --env GITHUB_ACCESS_TOKEN=$$(cd ../ops && ./tools/get-access-token $(INTEGRATION_APP_ENV) $(INTEGRATION_INSTALLATION_ID)) \
 	  --volume /tmp:/tmp \
 	  --volume /var/run/docker.sock:/var/run/docker.sock \
 	  $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) \
