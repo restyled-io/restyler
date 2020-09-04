@@ -31,3 +31,17 @@ spec = do
 
             includePath includes "foo/bar.py" `shouldBe` True
             includePath includes "foo/bar.pyc" `shouldBe` False
+
+        it "matches hidden files, if you know how" $ example $ do
+            let
+                includes =
+                    [ Include "**/*.json"
+                    , Include ".**/*.json"
+                    , Include ".**/.*.json"
+                    , Include "**/.*.json"
+                    ]
+
+            includePath includes "foo/bar.json" `shouldBe` True
+            includePath includes ".foo/bar.json" `shouldBe` True
+            includePath includes "foo/.bar.json" `shouldBe` True
+            includePath includes ".foo/.bar.json" `shouldBe` True
