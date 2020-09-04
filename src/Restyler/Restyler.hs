@@ -68,8 +68,7 @@ getAllRestylersVersioned
     => String
     -> RIO env [Restyler]
 getAllRestylersVersioned version = do
-    -- Should downloadRemoteFile handle "unless exists" itself?
-    unlessM (doesFileExist $ rfPath restylers) $ downloadRemoteFile restylers
+    downloadRemoteFile restylers
     decodeFileThrow $ rfPath restylers
   where
     restylers = RemoteFile
