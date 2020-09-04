@@ -64,9 +64,7 @@ instance ToJSON Restyler where
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 getAllRestylersVersioned
-    :: (HasLogFunc env, HasSystem env, HasDownloadFile env)
-    => String
-    -> RIO env [Restyler]
+    :: (HasLogFunc env, HasDownloadFile env) => String -> RIO env [Restyler]
 getAllRestylersVersioned version = do
     downloadRemoteFile restylers
     decodeFileThrow $ rfPath restylers
