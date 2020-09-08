@@ -63,4 +63,4 @@ getRestyleOutcome restyler = do
     if null changedPaths
         then pure NoChanges
         else ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage
-    where commitMessage = "Restyled by " <> rName restyler
+    where commitMessage = "style: Restyled by " <> rName restyler
