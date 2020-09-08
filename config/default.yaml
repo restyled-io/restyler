@@ -16,6 +16,9 @@ remote_files: []
 
 auto: false
 
+commit_template: |
+  Restyled by ${restyler.name}
+
 pull_requests: true
 
 comments: false

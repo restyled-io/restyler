@@ -55,6 +55,7 @@ import qualified Data.Yaml as Yaml
 import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
+import Restyler.CommitTemplate
 import Restyler.Config.ChangedPaths
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Glob
@@ -85,6 +86,7 @@ data ConfigF f = ConfigF
     , cfExclude :: f (SketchyList Glob)
     , cfChangedPaths :: f ChangedPathsConfig
     , cfAuto :: f Bool
+    , cfCommitTemplate :: f CommitTemplate
     , cfRemoteFiles :: f (SketchyList RemoteFile)
     , cfPullRequests :: f Bool
     , cfComments :: f Bool
@@ -132,6 +134,7 @@ data Config = Config
     , cExclude :: [Glob]
     , cChangedPaths :: ChangedPathsConfig
     , cAuto :: Bool
+    , cCommitTemplate :: CommitTemplate
     , cRemoteFiles :: [RemoteFile]
     , cPullRequests :: Bool
     , cComments :: Bool
@@ -253,6 +256,7 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cExclude = unSketchy $ runIdentity cfExclude
         , cChangedPaths = runIdentity cfChangedPaths
         , cAuto = runIdentity cfAuto
+        , cCommitTemplate = runIdentity cfCommitTemplate
         , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
         , cPullRequests = runIdentity cfPullRequests
         , cComments = runIdentity cfComments

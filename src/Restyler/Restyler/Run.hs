@@ -30,6 +30,7 @@ import RIO.FilePath ((</>))
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
     :: ( HasLogFunc env
+       , HasConfig env
        , HasOptions env
        , HasSystem env
        , HasProcess env
@@ -136,6 +137,7 @@ addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
     :: ( HasLogFunc env
+       , HasConfig env
        , HasOptions env
        , HasSystem env
        , HasProcess env

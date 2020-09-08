@@ -10,6 +10,8 @@ where
 
 import Restyler.Prelude
 
+import Restyler.CommitTemplate
+import Restyler.Config
 import Restyler.Git
 import Restyler.Restyler
 
@@ -46,7 +48,8 @@ noPathsRestylerResult r = RestylerResult r NoPaths
 --
 -- N.B. This will create commits if appropriate.
 --
-getRestylerResult :: HasGit env => Restyler -> RIO env RestylerResult
+getRestylerResult
+    :: (HasConfig env, HasGit env) => Restyler -> RIO env RestylerResult
 getRestylerResult r = RestylerResult r <$> getRestyleOutcome r
 
 -- | Does this @'RestylerResult'@ indicate changes were comitted?
@@ -56,11 +59,15 @@ restylerCommittedChanges = committedChanges . rrOutcome
     committedChanges (ChangesCommitted _ _) = True
     committedChanges _ = False
 
-getRestyleOutcome :: HasGit env => Restyler -> RIO env RestyleOutcome
+getRestyleOutcome
+    :: (HasConfig env, HasGit env) => Restyler -> RIO env RestyleOutcome
 getRestyleOutcome restyler = do
     changedPaths <- gitDiffNameOnly Nothing
 
     if null changedPaths
         then pure NoChanges
-        else ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage
-    where commitMessage = "Restyled by " <> rName restyler
+        else do
+            template <- cCommitTemplate <$> view configL
+            let inputs = CommitTemplateInputs { ctiRestyler = restyler }
+                commitMessage = renderCommitTemplate inputs template
+            ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage
