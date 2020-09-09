@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Invocation script for a simpler restyle-path executable, which will restyle
 # all given paths locally.
@@ -25,11 +25,15 @@
 ###
 : "${RESTYLER_TAG:=:master-final}"
 
-declare -a it=( )
+docker_run() {
+    if [ -t 0 ]; then
+        exec docker run -it "$@"
+    else
+        exec docker run -i "$@"
+    fi
+}
 
-[[ -t 0 ]] && it+=( -it  )
-
-exec docker run "${it[@]}" --rm \
+docker_run --rm \
   --env DEBUG=1 \
   --env HOST_DIRECTORY="$PWD" \
   --env UNRESTRICTED=1 \
