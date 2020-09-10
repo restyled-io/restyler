@@ -5,36 +5,36 @@
 
 packages:
 - completed:
-    hackage: barbies-2.0.0.0@sha256:673a2554477aafb79f6836e3f2c00cb2f1309d205985a5151ec818a5186b3a60,4233
+    hackage: barbies-2.0.2.0@sha256:fa6656b45c40f7d4ab1764d078c6878f37d37fab7f7135c061e9a5baa67943c0,4407
     pantry-tree:
-      size: 4126
-      sha256: 4399f288b19035903567fbf0ffc41c65b8de81480832539d0590f24837ac1c04
+      size: 4426
+      sha256: 5aa3ff178fe56b21250543384e8482de13f35ef57a06943178382b0f2e3eca24
   original:
-    hackage: barbies-2.0.0.0@sha256:673a2554477aafb79f6836e3f2c00cb2f1309d205985a5151ec818a5186b3a60,4233
+    hackage: barbies-2.0.2.0@sha256:fa6656b45c40f7d4ab1764d078c6878f37d37fab7f7135c061e9a5baa67943c0,4407
 - completed:
     hackage: envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30,2842
     pantry-tree:
       size: 1180
       sha256: 35044d67979fe2a5cff05cf8736a06a265592433cdd03e13a72908ceed892612
   original:
-    hackage: envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
+    hackage: envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30,2842
 - completed:
-    hackage: github-0.25@sha256:32e1ede86a04976e06740a5993fab5306c5dbfdd17e96d83b79e53b82195739e,7091
+    hackage: github-0.26@sha256:a9d4046325c3eb28cdc7bef2c3f5bb213328caeae0b7dce6f51de655f0bffaa1,7162
     pantry-tree:
-      size: 7412
-      sha256: 7cdaaf168051ed364ee9e2e565c63e2257755720fe5bfa287331e06581ea78f1
+      size: 7511
+      sha256: b71aab2984b268030c9e2617043575681134c1fe60dffbd5596e659c0a3e9aec
   original:
-    hackage: github-0.25@sha256:32e1ede86a04976e06740a5993fab5306c5dbfdd17e96d83b79e53b82195739e,7091
+    hackage: github-0.26@sha256:a9d4046325c3eb28cdc7bef2c3f5bb213328caeae0b7dce6f51de655f0bffaa1,7162
 - completed:
-    hackage: binary-instances-1@sha256:b17565598b8df3241f9b46fa8e3a3368ecc8e3f2eb175d7c28f319042a6f5c79,2613
+    hackage: binary-instances-1.0.0.1@sha256:e234be994da675479a3661f050d4a1d53565c9ed7786d9a68b7a29ba8b54b5a7,2659
     pantry-tree:
       size: 1035
-      sha256: 938ffc6990cac12681c657f7afa93737eecf335e6f0212d8c0b7c1ea3e0f40f4
+      sha256: 6086ebb4c6f3d28200f295c36495227b3cd762ab1de3dafa36f6ce8674a23a90
   original:
-    hackage: binary-instances-1@sha256:b17565598b8df3241f9b46fa8e3a3368ecc8e3f2eb175d7c28f319042a6f5c79,2613
+    hackage: binary-instances-1.0.0.1@sha256:e234be994da675479a3661f050d4a1d53565c9ed7786d9a68b7a29ba8b54b5a7,2659
 snapshots:
 - completed:
-    size: 491163
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/15/4.yaml
-    sha256: bc60043a06b58902b533baa80fb566c0ec495c41e428bc0f8c1e8c15b2a4c468
-  original: lts-15.4
+    size: 532383
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/10.yaml
+    sha256: 469d781ab6d2a4eceed6b31b6e4ec842dcd3cd1d11577972e86902603dce24df
+  original: lts-16.10
