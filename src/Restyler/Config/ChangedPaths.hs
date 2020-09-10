@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Restyler.Config.ChangedPaths
     ( ChangedPathsConfig(..)
     , MaximumChangedPathsOutcome(..)
@@ -16,7 +14,7 @@ data ChangedPathsConfig = ChangedPathsConfig
     { cpcMaximum :: Natural
     , cpcOutcome :: MaximumChangedPathsOutcome
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 instance FromJSON ChangedPathsConfig where
     parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
@@ -28,7 +26,7 @@ instance ToJSON ChangedPathsConfig where
 data MaximumChangedPathsOutcome
     = MaximumChangedPathsOutcomeSkip
     | MaximumChangedPathsOutcomeError
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance FromJSON MaximumChangedPathsOutcome where
     parseJSON = withText "MaximumChangedPathsOutcome" $ \case

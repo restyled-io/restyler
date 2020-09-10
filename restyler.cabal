@@ -1,0 +1,166 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 0e3ab9d1a4b466e6aec6263af36de8c8b3e34e114511ecf4b8afc20f41b445b1
+
+name:           restyler
+version:        0.2.0.0
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+
+library
+  exposed-modules:
+      Data.Yaml.Ext
+      GHC.Generics.Selectors
+      GitHub.Endpoints.GitData.References.Delete
+      GitHub.Endpoints.PullRequests.ReviewRequests
+      GitHub.Request.Display
+      Restyler.App
+      Restyler.App.Class
+      Restyler.App.Error
+      Restyler.Comment
+      Restyler.CommitTemplate
+      Restyler.Config
+      Restyler.Config.ChangedPaths
+      Restyler.Config.ExpectedKeys
+      Restyler.Config.Glob
+      Restyler.Config.Include
+      Restyler.Config.Interpreter
+      Restyler.Config.RequestReview
+      Restyler.Config.Restyler
+      Restyler.Config.SketchyList
+      Restyler.Config.Statuses
+      Restyler.Content
+      Restyler.Delimited
+      Restyler.Git
+      Restyler.Logger
+      Restyler.Main
+      Restyler.Options
+      Restyler.Prelude
+      Restyler.PullRequest
+      Restyler.PullRequest.Status
+      Restyler.PullRequestSpec
+      Restyler.RemoteFile
+      Restyler.RestyledPullRequest
+      Restyler.Restyler
+      Restyler.Restyler.Run
+      Restyler.RestylerResult
+      Restyler.Setup
+  other-modules:
+      Paths_restyler
+  hs-source-dirs:
+      src
+  default-extensions: BangPatterns DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies FlexibleContexts FlexibleInstances GADTs GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses NoImplicitPrelude NoMonomorphismRestriction OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies
+  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists
+  build-depends:
+      Glob
+    , aeson
+    , aeson-casing
+    , ansi-terminal
+    , barbies
+    , base
+    , bytestring
+    , composition-extra
+    , conduit
+    , containers
+    , edit-distance
+    , envparse
+    , errors
+    , extra
+    , file-embed
+    , filepath
+    , github
+    , http-client-tls
+    , http-conduit
+    , megaparsec
+    , mtl
+    , optparse-applicative
+    , process
+    , rio
+    , safe
+    , semigroups
+    , shakespeare
+    , text
+    , transformers
+    , unordered-containers
+    , validation
+    , vector
+    , word-wrap
+    , yaml
+  default-language: Haskell2010
+
+executable restyle-path
+  main-is: main.hs
+  other-modules:
+      Paths_restyler
+  hs-source-dirs:
+      restyle-path
+  default-extensions: BangPatterns DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies FlexibleContexts FlexibleInstances GADTs GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses NoImplicitPrelude NoMonomorphismRestriction OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies
+  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , conduit
+    , envparse
+    , http-conduit
+    , restyler
+    , rio
+    , text
+    , unliftio
+  default-language: Haskell2010
+
+executable restyler
+  main-is: main.hs
+  other-modules:
+      Paths_restyler
+  hs-source-dirs:
+      app
+  default-extensions: BangPatterns DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies FlexibleContexts FlexibleInstances GADTs GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses NoImplicitPrelude NoMonomorphismRestriction OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies
+  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , restyler
+  default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Restyler.App.ErrorSpec
+      Restyler.CommitTemplateSpec
+      Restyler.Config.ExpectedKeysSpec
+      Restyler.Config.IncludeSpec
+      Restyler.Config.InterpreterSpec
+      Restyler.ConfigSpec
+      Restyler.DelimitedSpec
+      Restyler.PullRequestSpecSpec
+      Restyler.Restyler.RunSpec
+      Restyler.RestylerSpec
+      RIO.Test.FS
+      SpecHelper
+      Paths_restyler
+  hs-source-dirs:
+      test
+  default-extensions: BangPatterns DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies FlexibleContexts FlexibleInstances GADTs GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses NoImplicitPrelude NoMonomorphismRestriction OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies
+  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists
+  build-depends:
+      QuickCheck
+    , aeson
+    , base
+    , bytestring
+    , containers
+    , directory
+    , github
+    , hspec
+    , hspec-expectations-lifted
+    , lens
+    , lens-aeson
+    , restyler
+    , rio
+    , shakespeare
+    , text
+    , yaml
+  default-language: Haskell2010

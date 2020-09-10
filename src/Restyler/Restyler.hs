@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-missing-local-signatures #-}
 
 module Restyler.Restyler
     ( Restyler(..)
@@ -35,7 +35,7 @@ data Restyler = Restyler
     , rSupportsMultiplePaths :: Bool
     , rDocumentation :: [String]
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 instance FromJSON Restyler where
     parseJSON =

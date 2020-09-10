@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Restyler.RestylerResult
     ( RestylerResult(..)
     , noPathsRestylerResult

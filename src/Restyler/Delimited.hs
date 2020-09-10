@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
-
 module Restyler.Delimited
     ( Delimiters(..)
     , restyleDelimited
@@ -25,7 +23,7 @@ data Delimiters = Delimiters
     { dStart :: Text
     , dEnd :: Text
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 instance FromJSON Delimiters where
     parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
@@ -38,21 +36,21 @@ data DelimitedPath = DelimitedPath
     { dpSource :: FilePath
     , dpParts :: [DelimitedPathPart]
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data DelimitedPathPart = DelimitedPathPart
     { dppIn :: Bool
     , dppPath :: FilePath
     , dppMeta :: Maybe DelimitedMeta
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 data DelimitedMeta = DelimitedMeta
     { dmLeading :: Text
     , dmTrailing :: Text
     , dmIndent :: Natural
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- | Restyle delimited content within paths using the given function
 restyleDelimited
@@ -161,10 +159,11 @@ readPart Delimiters {..} DelimitedPathPart {..}
             , maybe "" dmTrailing dppMeta
             , dEnd
             ]
-  where
-    indented content level =
-        let prefix = T.replicate (fromIntegral level) " "
-        in T.unlines $ map (prefix <>) $ T.lines content
+
+indented :: Text -> Natural -> Text
+indented content level =
+    let prefix = T.replicate (fromIntegral level) " "
+    in T.unlines $ map (prefix <>) $ T.lines content
 
 splitBetween :: Text -> Text -> Text -> [Either Text Text]
 splitBetween d1 d2 = zig

@@ -10,7 +10,7 @@ import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 
 data SketchyList a = One a | Many [a]
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 unSketchy :: SketchyList a -> [a]
 unSketchy (One i) = [i]

@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Restyler.App.Error
     ( AppError(..)
     , mapAppError
@@ -47,7 +45,7 @@ data AppError
     -- ^ Trouble performing some HTTP request
     | OtherError SomeException
     -- ^ Escape hatch for anything else
-    deriving Show
+    deriving stock Show
 
 instance Exception AppError
 
@@ -58,7 +56,9 @@ mapAppError f = handle $ throwIO . f
 prettyAppError :: AppError -> String
 prettyAppError =
     format <$> toErrorTitle <*> toErrorBody <*> toErrorDocumentation
-    where format title body docs = title <> ":\n\n" <> body <> docs
+  where
+    format :: String -> String -> String -> String
+    format title body docs = title <> ":\n\n" <> body <> docs
 
 toErrorTitle :: AppError -> String
 toErrorTitle = trouble . \case
@@ -71,7 +71,9 @@ toErrorTitle = trouble . \case
     SystemError _ -> "running a system command"
     HttpError _ -> "performing an HTTP request"
     OtherError _ -> "with something unexpected"
-    where trouble = ("We had trouble " <>)
+  where
+    trouble :: String -> String
+    trouble = ("We had trouble " <>)
 
 toErrorBody :: AppError -> String
 toErrorBody = reflow . \case

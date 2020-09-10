@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Restyler.Config.RequestReview
     ( RequestReviewConfig
     , determineReviewer
@@ -20,7 +18,7 @@ data RequestReviewFrom
     | RequestReviewFromAuthor
     | RequestReviewFromOwner
     | RequestReviewFrom (Name User)
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 instance FromJSON RequestReviewFrom where
     parseJSON = withText "RequestReviewFrom" $ pure . readRequestReviewFrom
@@ -42,7 +40,7 @@ data RequestReviewConfig = RequestReviewConfig
     { rrcOrigin :: RequestReviewFrom
     , rrcForked :: RequestReviewFrom
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 bothFrom :: RequestReviewFrom -> RequestReviewConfig
 bothFrom x = RequestReviewConfig { rrcOrigin = x, rrcForked = x }

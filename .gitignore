@@ -1,7 +1,3 @@
-*.cabal
-*.dump-hi
-*.t.err
 .env*
 !.env.test
 .stack-work*
-keys

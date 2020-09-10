@@ -16,7 +16,7 @@ data Statuses = Statuses
     , sNoDifferences :: Bool
     , sError :: Bool
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 -- brittany-disable-next-binding
 
