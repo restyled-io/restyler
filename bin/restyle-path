@@ -23,7 +23,7 @@
 #   it need not be re-installed.
 #
 ###
-: "${RESTYLER_TAG:=:master-final}"
+set -eu
 
 docker_run() {
   if [ -t 0 ]; then
@@ -33,6 +33,15 @@ docker_run() {
   fi
 }
 
+: "${RESTYLER_TAG:=:master-final}"
+: "${RESTYLER_PULL_IMAGE:=0}"
+
+image=restyled/restyler$RESTYLER_TAG
+
+if [ "$RESTYLER_PULL_IMAGE" -eq 1 ]; then
+  docker pull "$image"
+fi
+
 docker_run --interactive --rm \
   --env DEBUG=1 \
   --env HOST_DIRECTORY="$PWD" \
@@ -41,4 +50,4 @@ docker_run --interactive --rm \
   --volume /tmp:/tmp \
   --volume /var/run/docker.sock:/var/run/docker.sock \
   --entrypoint restyle-path \
-  "restyled/restyler$RESTYLER_TAG" "$@"
+  "$image" "$@"
