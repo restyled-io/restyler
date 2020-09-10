@@ -1,7 +1,8 @@
 module Restyler.RemoteFile
     ( RemoteFile(..)
     , downloadRemoteFile
-    ) where
+    )
+where
 
 import Restyler.Prelude
 

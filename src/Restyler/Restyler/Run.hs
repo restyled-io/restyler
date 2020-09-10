@@ -100,9 +100,12 @@ withFilteredPaths restylers paths run = do
     for restylers $ \r -> do
         logDebug $ "Matching paths for " <> fromString (rName r)
         filtered <- (`mapMaybeM` withInterpreters) $ \(path, mInterpreter) -> do
-            let matched = Just True == (do
-                    interpreter <- mInterpreter
-                    pure $ interpreter `elem` rInterpreters r)
+            let matched =
+                    Just True
+                        == (do
+                               interpreter <- mInterpreter
+                               pure $ interpreter `elem` rInterpreters r
+                           )
                 includes = if matched
                     then explicit path : rInclude r
                     else rInclude r
