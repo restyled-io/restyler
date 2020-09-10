@@ -5,7 +5,6 @@ where
 
 import SpecHelper
 
-import Control.Lens ((^?))
 import Data.Aeson
 import Data.Aeson.Lens
 import Restyler.Restyler (upgradeEnabled)

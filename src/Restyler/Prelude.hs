@@ -4,13 +4,11 @@ module Restyler.Prelude
     )
 where
 
--- Prefer Bifunctor first/second not Arrow
-import RIO as X hiding (exitSuccess, first, second)
+import RIO as X hiding (exitSuccess)
 
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
-import Data.Bifunctor as X (first, second)
-import Data.Bitraversable as X (Bitraversable, bimapM)
+import Data.Bitraversable as X (bimapM)
 import Data.Functor.Syntax as X ((<$$>))
 import GitHub.Data as X (Id, Name, URL(..), getUrl, mkId, mkName, untagName)
 import RIO.Char as X (isSpace)
@@ -34,13 +32,6 @@ import qualified RIO.Text as T
 
 -- Apparently they fixed a space leak in Data.List's version :shrug:
 import qualified Data.Text.Internal.Functions as List (intersperse)
-
-firstM :: (Bitraversable t, Applicative f) => (a -> f a') -> t a b -> f (t a' b)
-firstM f = bimapM f pure
-
-secondM
-    :: (Bitraversable t, Applicative f) => (b -> f b') -> t a b -> f (t a b')
-secondM = bimapM pure
 
 -- | Like @'withReader'@ for @'RIO'@
 withRIO :: (env' -> env) -> RIO env a -> RIO env' a
@@ -82,6 +73,3 @@ none p = not . any p
 
 insertIfMissing :: (Eq k, Hashable k) => k -> v -> HashMap k v -> HashMap k v
 insertIfMissing = HM.insertWith $ flip const
-
-with :: (Traversable t, Applicative f) => t a -> (a -> f b) -> f (t a)
-with ma f = for ma $ \a -> a <$ f a
