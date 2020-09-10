@@ -43,7 +43,7 @@ if [ "$RESTYLER_PULL_IMAGE" -eq 1 ]; then
 fi
 
 docker_run --interactive --rm \
-  --env DEBUG=1 \
+  --env DEBUG \
   --env HOST_DIRECTORY="$PWD" \
   --env UNRESTRICTED=1 \
   --volume "$PWD":/code \
