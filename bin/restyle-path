@@ -26,14 +26,14 @@
 : "${RESTYLER_TAG:=:master-final}"
 
 docker_run() {
-    if [ -t 0 ]; then
-        exec docker run -it "$@"
-    else
-        exec docker run -i "$@"
-    fi
+  if [ -t 0 ]; then
+    exec docker run --tty "$@"
+  else
+    exec docker run "$@"
+  fi
 }
 
-docker_run --rm \
+docker_run --interactive --rm \
   --env DEBUG=1 \
   --env HOST_DIRECTORY="$PWD" \
   --env UNRESTRICTED=1 \
