@@ -14,7 +14,7 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import qualified Data.Set as Set
-import GitHub.Endpoints.GitData.References.Delete (deleteReferenceR)
+import GitHub.Endpoints.GitData.References (deleteReferenceR)
 import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
 import GitHub.Endpoints.PullRequests
     ( CreatePullRequest(..)
