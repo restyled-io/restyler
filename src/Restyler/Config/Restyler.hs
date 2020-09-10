@@ -92,7 +92,7 @@ overrideRestyler restylers RestylerOverride {..}
   where
     defaults = lookupExpectedKeyBy "Restyler name" restylers roName
     override restyler@Restyler {..} = restyler
-        { rEnabled = fromMaybe True roEnabled
+        { rEnabled = Just False /= roEnabled
         , rImage = fromMaybe rImage roImage
         , rCommand = maybe rCommand unSketchy roCommand
         , rArguments = maybe rArguments unSketchy roArguments
