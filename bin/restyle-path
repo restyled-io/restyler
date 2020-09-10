@@ -16,7 +16,7 @@
 # Development (i.e. to run a locally-modified version):
 #
 #   1. cd {restyler-source}
-#   2. docker build --tag restyled/restyler:master .
+#   2. docker build --tag restyled/restyler:master-final .
 #   3. Follow Usage
 #
 #   NOTE: a pre-existing ~/.local/bin/restyle-path will use the updated image,
