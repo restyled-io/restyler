@@ -1,28 +1,4 @@
 #!/bin/sh
-#
-# Invocation script for a simpler restyle-path executable, which will restyle
-# all given paths locally.
-#
-# Installation:
-#
-#   1. Have ~/.local/bin on $PATH
-#   2. cp {this} ~/.local/bin/restyle-path
-#
-# Usage:
-#
-#   1. cd {some-project}
-#   2. restyle-path {some-path} {some-other-path} ...
-#
-# Development (i.e. to run a locally-modified version):
-#
-#   1. cd {restyler-source}
-#   2. docker build --tag restyled/restyler:master-final .
-#   3. Follow Usage
-#
-#   NOTE: a pre-existing ~/.local/bin/restyle-path will use the updated image,
-#   it need not be re-installed.
-#
-###
 set -eu
 
 docker_run() {
@@ -33,12 +9,62 @@ docker_run() {
   fi
 }
 
-: "${RESTYLER_TAG:=:master-final}"
-: "${RESTYLER_PULL_IMAGE:=0}"
+usage() {
+  cat <<'EOM'
+Usage: restyle-path [-t] [-p] [-d] <path...>
+Options:
+  -t            Docker tag of restyled/restyler image to run. Default is
+                master-final, which is continiously built on CI of our master
+                branch.
 
-image=restyled/restyler$RESTYLER_TAG
+  -p            Instruct restyle-path to explicitly pull this image, even if it
+                exists locally already.
 
-if [ "$RESTYLER_PULL_IMAGE" -eq 1 ]; then
+                This can be useful if recent changes (typically to configuration
+                handling) are causing the older image to no longer work.
+
+  -d            Log verbosely.
+
+Installation:
+  Copy this script somewhere on $PATH.
+EOM
+}
+
+tag=master-final
+pull=0
+
+while getopts ht:pd opt; do
+  case "$opt" in
+    h)
+      usage
+      exit 0
+      ;;
+    t)
+      tag=$OPTARG
+      ;;
+    p)
+      pull=1
+      ;;
+    d)
+      export DEBUG=1
+      ;;
+    \?)
+      echo "Invalid options $OPTARG" >&2
+      usage >&2
+      exit 64
+      ;;
+    :)
+      echo "$OPTARG requires an argument" >&2
+      usage >&2
+      exit 64
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+image=restyled/restyler:$tag
+
+if [ "$pull" -eq 1 ]; then
   docker pull "$image"
 fi
 
