@@ -1,12 +1,19 @@
----
+remote_files:
+  - url: https://raw.githubusercontent.com/pbrisbin/dotfiles/master/config/brittany/config.yaml
+    path: brittany.yaml
+  - url: https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml
+    path: .hlint.yaml
+  - url: https://raw.githubusercontent.com/pbrisbin/dotfiles/master/stylish-haskell.yaml
+    path: .stylish-haskell.yaml
+
+restylers_version: dev
+
 restylers:
+  - hlint
   - stylish-haskell
   - brittany
   - prettier:
       include:
         - "**/*.yaml"
         - "**/*.yml"
-  - hlint:
-      include:
-        - "**/*.hs"
-        - "!src/Restyler/Config/ExpectedKeys.hs"
+  - "*"
