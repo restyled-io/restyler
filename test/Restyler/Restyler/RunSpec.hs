@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
-
 module Restyler.Restyler.RunSpec
     ( spec
     )
@@ -82,7 +79,7 @@ spec = do
 
     describe "runRestyler_" $ do
         it "treats non-zero exit codes as RestylerExitFailure" $ do
-            let
+            let runTestApp' :: RIO TestApp a -> IO a
                 runTestApp' f = do
                     app <- testApp "/" []
                     runRIO

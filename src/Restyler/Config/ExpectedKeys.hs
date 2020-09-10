@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
-
 module Restyler.Config.ExpectedKeys
     ( genericParseJSONValidated
     , validateObjectKeys
@@ -42,6 +39,7 @@ validateObjectKeys ks =
         . map (validateExpectedKeyBy "key" id ks . unpack)
         . HM.keys
   where
+    toParser :: MonadFail m => [String] -> m ()
     toParser [] = pure ()
     toParser xs = fail $ unlines $ map ("- " <>) xs
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module Restyler.Restyler.Run
     ( runRestylers
     , runRestylers_
@@ -221,6 +223,7 @@ getHostDirectory = do
 findFiles :: HasSystem env => [FilePath] -> RIO env [FilePath]
 findFiles = fmap concat . traverse go
   where
+    go :: HasSystem env => FilePath -> RIO env [FilePath]
     go parent = do
         isDirectory <- doesDirectoryExist parent
 

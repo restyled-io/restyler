@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module GitHub.Request.Display
     ( DisplayGitHubRequest
     , displayGitHubRequest

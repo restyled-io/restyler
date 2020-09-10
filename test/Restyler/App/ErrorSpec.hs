@@ -12,9 +12,8 @@ data BigError = BigError
     , beDocumentation :: String
     , beContext :: [String]
     }
-    deriving Show
-
-instance Exception BigError
+    deriving stock Show
+    deriving anyclass Exception
 
 spec :: Spec
 spec = do

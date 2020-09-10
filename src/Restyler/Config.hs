@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_HADDOCK prune, ignore-exports #-}
 
@@ -148,7 +145,7 @@ data Config = Config
     -- It's true, but what's the benefit?
     --
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 -- | If so configured, return the @'User'@ from whom to request review
 configPullRequestReviewer :: PullRequest -> Config -> Maybe (Name User)
@@ -162,7 +159,7 @@ data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
     | ConfigErrorInvalidRestylers [String]
     | ConfigErrorInvalidRestylersYaml SomeException
-    deriving Show
+    deriving stock Show
 
 configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
 configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
@@ -212,6 +209,7 @@ readConfigSources
     :: HasSystem env => [ConfigSource] -> RIO env (Maybe ByteString)
 readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
   where
+    go :: HasSystem env => ConfigSource -> RIO env (Maybe ByteString)
     go = \case
         ConfigPath path -> do
             exists <- doesFileExist path

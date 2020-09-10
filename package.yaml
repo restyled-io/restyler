@@ -4,53 +4,33 @@ license: MIT
 
 default-extensions:
   - BangPatterns
-  - BinaryLiterals
-  - ConstraintKinds
   - DataKinds
-  - DefaultSignatures
-  - DeriveDataTypeable
+  - DeriveAnyClass
   - DeriveFoldable
   - DeriveFunctor
   - DeriveGeneric
+  - DeriveLift
   - DeriveTraversable
   - DerivingStrategies
-  - DoAndIfThenElse
-  - EmptyDataDecls
-  - ExistentialQuantification
   - FlexibleContexts
   - FlexibleInstances
-  - FunctionalDependencies
   - GADTs
   - GeneralizedNewtypeDeriving
-  - InstanceSigs
-  - KindSignatures
+  - LambdaCase
   - MultiParamTypeClasses
-  - MultiWayIf
-  - NamedFieldPuns
   - NoImplicitPrelude
+  - NoMonomorphismRestriction
   - OverloadedStrings
-  - PartialTypeSignatures
-  - PatternGuards
-  - PolyKinds
   - RankNTypes
   - RecordWildCards
   - ScopedTypeVariables
   - StandaloneDeriving
-  - TupleSections
+  - TypeApplications
   - TypeFamilies
-  - TypeSynonymInstances
-  - ViewPatterns
 
-  # Forcing addition of these in-module because of broken tooling
-  # - LambdaCase
-
-ghc-options: -Wall
-  -Wcompat
-  -Widentities
-  -Wincomplete-record-updates
-  -Wincomplete-uni-patterns
-  -Wpartial-fields
-  -Wredundant-constraints
+ghc-options: -Weverything
+  -Wno-unsafe
+  -Wno-missing-import-lists
 
 dependencies:
   - base

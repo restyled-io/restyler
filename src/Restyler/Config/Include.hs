@@ -15,7 +15,7 @@ data Include
     -- ^ @**\/*.hs@
     | Negated Pattern
     -- ^ @!**\/*.temp@
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance FromJSON Include where
     parseJSON = withText "Include pattern" $ pure . fromString . unpack

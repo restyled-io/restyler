@@ -14,7 +14,7 @@ data RemoteFile = RemoteFile
     { rfUrl :: URL
     , rfPath :: FilePath
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 instance FromJSON RemoteFile where
     parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase

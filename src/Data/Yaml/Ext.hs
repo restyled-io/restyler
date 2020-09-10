@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Data.Yaml.Ext
     ( modifyInvalidYaml
     , modifyYamlProblem

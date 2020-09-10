@@ -15,7 +15,7 @@ data Interpreter
     | Bash
     | Python
     | Ruby
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 instance FromJSON Interpreter where
     parseJSON =

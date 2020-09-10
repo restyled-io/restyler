@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Restyler.Config.Restyler
     ( RestylerOverride
     , overrideRestylers
@@ -30,7 +28,7 @@ data RestylerOverride = RestylerOverride
     , roInterpreters :: Maybe (SketchyList Interpreter)
     , roDelimiters :: Maybe Delimiters
     }
-    deriving (Eq, Show, Generic)
+    deriving stock (Eq, Show, Generic)
 
 instance FromJSON RestylerOverride where
     parseJSON = \case
@@ -45,7 +43,9 @@ namedOverride name =
 
 suffixIncorrectIndentation :: Parser a -> Parser a
 suffixIncorrectIndentation = modifyFailure (<> msg)
-    where msg = "\n\nDo you have incorrect indentation for a named override?"
+  where
+    msg :: String
+    msg = "\n\nDo you have incorrect indentation for a named override?"
 
 overrideRestylers
     :: [Restyler] -> [RestylerOverride] -> Either [String] [Restyler]
