@@ -16,7 +16,6 @@ import Data.Aeson.Casing
 import qualified Data.HashMap.Lazy as HM
 import Data.Yaml (decodeFileThrow)
 import Restyler.App.Class
-import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
@@ -38,8 +37,7 @@ data Restyler = Restyler
     deriving stock (Eq, Show, Generic)
 
 instance FromJSON Restyler where
-    parseJSON =
-        genericParseJSONValidated (aesonPrefix snakeCase) . upgradeEnabled
+    parseJSON = genericParseJSON (aesonPrefix snakeCase) . upgradeEnabled
 
 -- | Upgrade values from @restylers.yaml@ that lack an @enabled@ key
 --
