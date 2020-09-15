@@ -1,12 +1,3 @@
-# This PR has differences such that all Restylers known at the time I made it
-# will run, making it a great test PR.
-INTEGRATION_PULL_REQUEST ?= restyled-io/demo\#45
-INTEGRATION_APP_ENV ?= dev
-INTEGRATION_INSTALLATION_ID ?= 58920
-INTEGRATION_RESTYLER_IMAGE ?= restyled/restyler
-INTEGRATION_RESTYLER_TAG ?= :latest
-INTEGRATION_RESTYLER_BUILD ?= 1
-
 all: setup setup.lint setup.tools build lint test
 
 .PHONY: setup
@@ -48,22 +39,6 @@ image:
 	  --build-arg "REVISION=testing" \
 	  --tag restyled/restyler \
 	  .
-
-.PHONY: test.integration
-test.integration:
-	if [ "$(INTEGRATION_RESTYLER_BUILD)" -eq 1 ]; then \
-	  $(MAKE) image && \
-	  docker tag restyled/restyler \
-	    $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG); \
-	fi
-	docker run -it --rm \
-	  --env DEBUG=1 \
-	  --env GITHUB_ACCESS_TOKEN=$$(cd ../ops && ./tools/get-access-token $(INTEGRATION_APP_ENV) $(INTEGRATION_INSTALLATION_ID)) \
-	  --volume /tmp:/tmp \
-	  --volume /var/run/docker.sock:/var/run/docker.sock \
-	  $(INTEGRATION_RESTYLER_IMAGE)$(INTEGRATION_RESTYLER_TAG) \
-	    --job-url https://example.com \
-	    --color=always "$(INTEGRATION_PULL_REQUEST)"
 
 AWS ?= aws --profile restyled-ci
 
