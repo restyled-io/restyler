@@ -65,18 +65,6 @@ test.integration:
 	    --job-url https://example.com \
 	    --color=always "$(INTEGRATION_PULL_REQUEST)"
 
-RESTYLERS_VERSION ?=
-
-.PHONY: restylers_version
-restylers_version:
-	[ -n "$(RESTYLERS_VERSION)" ]
-	git stash --include-untracked || true
-	git checkout master
-	git pull --rebase
-	sed -i 's/^\(restylers_version: "\).*"$$/\1$(RESTYLERS_VERSION)"/' config/default.yaml
-	git commit config/default.yaml -m "Bump default restylers_version"
-	git push
-
 AWS ?= aws --profile restyled-ci
 
 DOC_ENVIRONMENT ?= prod
