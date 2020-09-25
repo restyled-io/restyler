@@ -13,22 +13,23 @@ module SpecHelper
     )
 where
 
-import Restyler.Prelude as X hiding
-    (readFileBinary, readFileUtf8, writeFileUtf8)
-import Test.Hspec as X hiding
-    ( expectationFailure
-    , shouldBe
-    , shouldContain
-    , shouldEndWith
-    , shouldMatchList
-    , shouldNotBe
-    , shouldNotContain
-    , shouldNotReturn
-    , shouldNotSatisfy
-    , shouldReturn
-    , shouldSatisfy
-    , shouldStartWith
-    )
+import Restyler.Prelude as X
+    hiding (readFileBinary, readFileUtf8, writeFileUtf8)
+import Test.Hspec as X
+    hiding
+        ( expectationFailure
+        , shouldBe
+        , shouldContain
+        , shouldEndWith
+        , shouldMatchList
+        , shouldNotBe
+        , shouldNotContain
+        , shouldNotReturn
+        , shouldNotSatisfy
+        , shouldReturn
+        , shouldSatisfy
+        , shouldStartWith
+        )
 import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
