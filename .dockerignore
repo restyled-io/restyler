@@ -2,8 +2,7 @@
 *.md
 .dockerignore
 .git
-.stack-work
-.stack-work-docs
+.stack-work*
 Dockerfile
 Makefile
 docs
