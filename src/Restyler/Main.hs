@@ -1,6 +1,7 @@
 module Restyler.Main
     ( restylerMain
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
