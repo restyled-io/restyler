@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# As a mini-integration test, we build local sources and use restyle-path on
+# ourselves with the built image.
+#
+###
+set -eu
+docker build --tag restyled/restyler:dev .
+find app src -name '*.hs' -exec ./bin/restyle-path -t dev {} +
+find .hlint.yaml .stylish-haskell.yaml brittany.yaml -delete
