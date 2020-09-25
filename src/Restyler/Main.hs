@@ -13,7 +13,6 @@ import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
-import Restyler.RemoteFile
 import Restyler.RestyledPullRequest
 import Restyler.Restyler.Run
 import Restyler.RestylerResult
@@ -33,12 +32,10 @@ restylerMain
        )
     => RIO env a
 restylerMain = do
-    jobUrl <- oJobUrl <$> view optionsL
-    whenConfigNonEmpty cRemoteFiles $ traverse_ downloadRemoteFile
-
     results <- restyle
     logDebug $ "Restyling results: " <> displayIntercalated ", " results
 
+    jobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
     mRestyledPullRequest <- view restyledPullRequestL
 
@@ -80,6 +77,7 @@ restyle
        , HasSystem env
        , HasProcess env
        , HasGit env
+       , HasDownloadFile env
        )
     => RIO env [RestylerResult]
 restyle = do

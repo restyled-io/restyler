@@ -58,6 +58,9 @@ data TestApp = TestApp
     , taCallProcessExitCode :: String -> [String] -> RIO TestApp ExitCode
     , taReadProcess :: String -> [String] -> String -> RIO TestApp String
 
+    -- DownloadFile
+    , taDownloadFile :: Text -> FilePath -> RIO TestApp ()
+
     -- Add our other capabilities if/when tests require them
     }
 
@@ -68,6 +71,7 @@ testApp cwd files = do
     pure TestApp
         { taLogFunc = mkLogFunc $ \_ _ _ _ -> pure ()
         , taOptions = testOptions
+        , taDownloadFile = \_url _path -> pure ()
         , taFS = fs
         , taCallProcess = error "callProcess"
         , taCallProcessExitCode = error "callProcessExitCode"
@@ -117,6 +121,9 @@ instance HasProcess TestApp where
     callProcess = asksAp2 taCallProcess
     callProcessExitCode = asksAp2 taCallProcessExitCode
     readProcess = asksAp3 taReadProcess
+
+instance HasDownloadFile TestApp where
+    downloadFile = asksAp2 taDownloadFile
 
 someRestyler :: Restyler
 someRestyler = Restyler
