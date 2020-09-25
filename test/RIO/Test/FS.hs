@@ -23,12 +23,14 @@ module RIO.Test.FS
     , writeFileUtf8
     , writeFileExecutable
     , writeFileUnreadable
+    , createFileLink
     , getCurrentDirectory
     , setCurrentDirectory
     -- , doesPathExist
     , doesFileExist
     , doesDirectoryExist
     , isFileExecutable
+    , isFileSymbolicLink
     , listDirectory
     )
 where
@@ -60,6 +62,7 @@ data FS' = FS'
 
 data ReadableFile
     = ReadableFile (Text, Directory.Permissions)
+    | Symlink FilePath
     | UnreadableFile IOException
 
 normalFile :: Text -> ReadableFile
@@ -104,6 +107,7 @@ readFile path' = do
         -- scenario and use writeFileUnreadable to set it up explicitly.
         Nothing -> error $ "File does not exist: " <> path
         Just (ReadableFile x) -> pure x
+        Just (Symlink target) -> readFile target
         Just (UnreadableFile ex) -> throwIO ex
 
 readFileBinary :: HasFS env => FilePath -> RIO env ByteString
@@ -117,6 +121,9 @@ writeFileExecutable path = writeFile path . executableFile
 
 writeFileUnreadable :: HasFS env => FilePath -> IOException -> RIO env ()
 writeFileUnreadable path = writeFile path . UnreadableFile
+
+createFileLink :: HasFS env => FilePath -> FilePath -> RIO env ()
+createFileLink target name = writeFile name $ Symlink target
 
 writeFile :: HasFS env => FilePath -> ReadableFile -> RIO env ()
 writeFile path' content = do
@@ -148,6 +155,15 @@ doesDirectoryExist path' = do
 
 isFileExecutable :: HasFS env => FilePath -> RIO env Bool
 isFileExecutable = fmap (Directory.executable . snd) . readFile
+
+isFileSymbolicLink :: HasFS env => FilePath -> RIO env Bool
+isFileSymbolicLink path' = do
+    path <- getAbsolutePath path'
+    maybe False check . Map.lookup path . fsFiles <$> readFS'
+  where
+    check = \case
+        Symlink _ -> True
+        _ -> False
 
 listDirectory :: HasFS env => FilePath -> RIO env [FilePath]
 listDirectory path' = do

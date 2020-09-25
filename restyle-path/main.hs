@@ -34,6 +34,7 @@ instance HasSystem App where
     doesFileExist = Directory.doesFileExist
     doesDirectoryExist = Directory.doesDirectoryExist
     isFileExecutable = fmap Directory.executable . Directory.getPermissions
+    isFileSymbolicLink = Directory.pathIsSymbolicLink
     listDirectory = Directory.listDirectory
     readFile = readFileUtf8
     readFileBS = readFileBinary

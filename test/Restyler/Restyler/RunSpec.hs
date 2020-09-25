@@ -12,7 +12,8 @@ import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import qualified RIO
-import RIO.Test.FS (writeFileExecutable, writeFileUnreadable, writeFileUtf8)
+import RIO.Test.FS
+    (createFileLink, writeFileExecutable, writeFileUnreadable, writeFileUtf8)
 
 spec :: Spec
 spec = do
@@ -106,6 +107,14 @@ spec = do
 
             runRIO app (findFiles ["bar/baz", "bat", "xxx", "zzz"])
                 `shouldReturn` ["bar/baz/bat", "bar/baz/quix", "bat/baz", "xxx"]
+
+        it "excludes symlinks" $ do
+            app <- testApp "/" []
+            runRIO app $ do
+                writeFileUtf8 "/foo/bar" ""
+                createFileLink "/foo/bar" "/foo/baz/bat"
+
+                findFiles ["foo"] `shouldReturn` ["foo/bar"]
 
 mkPaths :: Int -> [FilePath]
 mkPaths n = map (\i -> "/" <> show i <> ".txt") [1 .. n]

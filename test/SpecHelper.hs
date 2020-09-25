@@ -109,6 +109,7 @@ instance HasSystem TestApp where
     doesFileExist = FS.doesFileExist
     doesDirectoryExist = FS.doesDirectoryExist
     isFileExecutable = FS.isFileExecutable
+    isFileSymbolicLink = FS.isFileSymbolicLink
     listDirectory = FS.listDirectory
 
 instance HasProcess TestApp where
