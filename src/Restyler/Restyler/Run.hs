@@ -26,6 +26,7 @@ import Restyler.Config.Interpreter
 import Restyler.Delimited
 import Restyler.Git
 import Restyler.Options
+import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restyler
 import Restyler.RestylerResult
 import RIO.FilePath ((</>))
@@ -38,6 +39,7 @@ runRestylers
        , HasSystem env
        , HasProcess env
        , HasGit env
+       , HasDownloadFile env
        )
     => Config
     -> [FilePath]
@@ -46,14 +48,19 @@ runRestylers = runRestylersWith runRestyler
 
 -- | @'runRestylers'@, but without committing or reporting results
 runRestylers_
-    :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
+    :: ( HasLogFunc env
+       , HasOptions env
+       , HasSystem env
+       , HasProcess env
+       , HasDownloadFile env
+       )
     => Config
     -> [FilePath]
     -> RIO env ()
 runRestylers_ config = void . runRestylersWith runRestyler_ config
 
 runRestylersWith
-    :: (HasSystem env, HasLogFunc env)
+    :: (HasLogFunc env, HasSystem env, HasDownloadFile env)
     => (Restyler -> [FilePath] -> RIO env a)
     -> Config
     -> [FilePath]
@@ -78,7 +85,9 @@ runRestylersWith run Config {..} allPaths = do
             MaximumChangedPathsOutcomeSkip -> [] <$ logWarn maxPathsLogMessage
             MaximumChangedPathsOutcomeError ->
                 throwIO $ RestyleError $ utf8BuilderToText maxPathsLogMessage
-        else withFilteredPaths restylers paths run
+        else do
+            traverse_ downloadRemoteFile cRemoteFiles
+            withFilteredPaths restylers paths run
   where
     included path = none (`match` path) cExclude
     restylers = filter rEnabled cRestylers
