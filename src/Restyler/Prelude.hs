@@ -39,6 +39,11 @@ withRIO f m = do
     env <- asks f
     runRIO env m
 
+guardM :: (Monad m, Alternative m) => m Bool -> m ()
+guardM mb = do
+    b <- mb
+    guard b
+
 -- | Decode known-valid UTF-8
 --
 -- Uses @'lenientDecode'@:

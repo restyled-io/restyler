@@ -14,6 +14,7 @@ where
 
 import Restyler.Prelude
 
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List (nub)
 import Restyler.App.Class
 import Restyler.App.Error
@@ -231,6 +232,7 @@ findFiles = fmap concat . traverse go
             then do
                 files <- listDirectory parent
                 findFiles $ map (parent </>) files
-            else do
-                isFile <- doesFileExist parent
-                pure [ parent | isFile ] -- too clever?
+            else fmap maybeToList $ runMaybeT $ do
+                guardM $ lift $ doesFileExist parent
+                guardM $ lift $ not <$> isFileSymbolicLink parent
+                pure parent

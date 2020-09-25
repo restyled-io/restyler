@@ -69,6 +69,10 @@ instance HasSystem StartupApp where
             $ Directory.executable
             <$> Directory.getPermissions path
 
+    isFileSymbolicLink path = do
+        logDebug $ "isFileSymbolicLink: " <> displayShow path
+        appIO SystemError $ Directory.pathIsSymbolicLink path
+
     listDirectory path = do
         logDebug $ "listDirectory: " <> displayShow path
         appIO SystemError $ Directory.listDirectory path
@@ -172,6 +176,7 @@ instance HasSystem App where
     doesFileExist = runApp . doesFileExist
     doesDirectoryExist = runApp . doesDirectoryExist
     isFileExecutable = runApp . isFileExecutable
+    isFileSymbolicLink = runApp . isFileSymbolicLink
     listDirectory = runApp . listDirectory
     readFile = runApp . readFile
     readFileBS = runApp . readFileBS
