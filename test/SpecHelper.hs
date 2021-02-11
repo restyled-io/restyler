@@ -1,161 +1,66 @@
 module SpecHelper
-    ( TestApp(..)
-    , testApp
-    , runTestApp
-    , someRestyler
-
-    -- * Config
-    , loadDefaultConfig
-    , testRestylers
-
-    -- * Re-exports
-    , module X
+    ( module X
+    , module SpecHelper
     )
 where
 
 import Restyler.Prelude as X
-    hiding (readFileBinary, readFileUtf8, writeFileUtf8)
-import Test.Hspec as X
-    hiding
-        ( expectationFailure
-        , shouldBe
-        , shouldContain
-        , shouldEndWith
-        , shouldMatchList
-        , shouldNotBe
-        , shouldNotContain
-        , shouldNotReturn
-        , shouldNotSatisfy
-        , shouldReturn
-        , shouldSatisfy
-        , shouldStartWith
-        )
+import Test.Hspec as X hiding
+    ( expectationFailure
+    , shouldBe
+    , shouldContain
+    , shouldEndWith
+    , shouldMatchList
+    , shouldNotBe
+    , shouldNotContain
+    , shouldNotReturn
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
+    , shouldStartWith
+    )
 import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
-import Data.Yaml (decodeThrow)
-import Restyler.App.Class
+import Control.Monad.State
+import qualified Data.Yaml as Yaml
+import Restyler.App.Error
+import Restyler.Capabilities.DownloadFile
+import Restyler.Capabilities.DownloadFile.Staged
+import Restyler.Capabilities.Logger
+import Restyler.Capabilities.System
 import Restyler.Config
-import Restyler.Options
 import Restyler.Restyler
-import RIO.Test.FS (FS, HasFS(..))
-import qualified RIO.Test.FS as FS
 
--- | A versatile app for use with @'runRIO'@
---
--- Be sure to construct valid actions for the fields exercised in your test. The
--- initialization function (@'testApp'@) sets them all to @'error'@ values.
---
-data TestApp = TestApp
-    { taLogFunc :: LogFunc
-    , taOptions :: Options
+tryError :: MonadError e m => m a -> m (Either e a)
+tryError f = (Right <$> f) `catchError` (pure . Left)
 
-    -- System
-    , taFS :: FS
-
-    -- Process
-    , taCallProcess :: String -> [String] -> RIO TestApp ()
-    , taCallProcessExitCode :: String -> [String] -> RIO TestApp ExitCode
-    , taReadProcess :: String -> [String] -> String -> RIO TestApp String
-
-    -- DownloadFile
-    , taDownloadFile :: Text -> FilePath -> RIO TestApp ()
-
-    -- Add our other capabilities if/when tests require them
-    }
-
-testApp :: FilePath -> [(FilePath, Text)] -> IO TestApp
-testApp cwd files = do
-    fs <- FS.build cwd files
-
-    pure TestApp
-        { taLogFunc = mkLogFunc $ \_ _ _ _ -> pure ()
-        , taOptions = testOptions
-        , taDownloadFile = \_url _path -> pure ()
-        , taFS = fs
-        , taCallProcess = error "callProcess"
-        , taCallProcessExitCode = error "callProcessExitCode"
-        , taReadProcess = error "readProcess"
-        }
-
-runTestApp :: RIO TestApp a -> IO a
-runTestApp f = do
-    app <- testApp "/" []
-    runRIO app f
-
-testOptions :: Options
-testOptions = Options
-    { oAccessToken = error "oAccessToken"
-    , oLogLevel = error "oLogLevel"
-    , oLogColor = error "oLogColor"
-    , oOwner = error "oOwner"
-    , oRepo = error "oRepo"
-    , oPullRequest = error "oPullRequest"
-    , oJobUrl = error "oJobUrl"
-    , oHostDirectory = Nothing
-    , oUnrestricted = False
-    }
-
-instance HasLogFunc TestApp where
-    logFuncL = lens taLogFunc $ \x y -> x { taLogFunc = y }
-
-instance HasOptions TestApp where
-    optionsL = lens taOptions $ \x y -> x { taOptions = y }
-
-instance HasFS TestApp where
-    fsL = lens taFS $ \x y -> x { taFS = y }
-
-instance HasSystem TestApp where
-    readFile = FS.readFileUtf8
-    readFileBS = FS.readFileBinary
-    writeFile = FS.writeFileUtf8
-    getCurrentDirectory = FS.getCurrentDirectory
-    setCurrentDirectory = FS.setCurrentDirectory
-    doesFileExist = FS.doesFileExist
-    doesDirectoryExist = FS.doesDirectoryExist
-    isFileExecutable = FS.isFileExecutable
-    isFileSymbolicLink = FS.isFileSymbolicLink
-    listDirectory = FS.listDirectory
-
-instance HasProcess TestApp where
-    callProcess = asksAp2 taCallProcess
-    callProcessExitCode = asksAp2 taCallProcessExitCode
-    readProcess = asksAp3 taReadProcess
-
-instance HasDownloadFile TestApp where
-    downloadFile = asksAp2 taDownloadFile
-
-someRestyler :: Restyler
-someRestyler = Restyler
-    { rEnabled = True
-    , rName = "test-restyler"
-    , rImage = "restyled/restyler-test-restyler"
-    , rCommand = ["restyle"]
-    , rDocumentation = []
-    , rArguments = []
-    , rInclude = ["**/*"]
-    , rInterpreters = []
-    , rDelimiters = Nothing
-    , rSupportsArgSep = True
-    , rSupportsMultiplePaths = True
-    }
-
--- | @'asks'@ for a function of 2 arguments
-asksAp2 :: MonadReader r m => (r -> a -> b -> m c) -> a -> b -> m c
-asksAp2 f x y = do
-    f' <- asks f
-    f' x y
-
--- | Same, but apply it to 3 arguments
-asksAp3 :: MonadReader r m => (r -> a -> b -> c -> m d) -> a -> b -> c -> m d
-asksAp3 f x y z = do
-    f' <- asks f
-    f' x y z
-
-loadDefaultConfig :: RIO env Config
+loadDefaultConfig
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadDownloadFile m
+       , MonadError AppError m
+       , MonadState env m
+       , HasStagedDownloadFiles env
+       )
+    => m Config
 loadDefaultConfig = do
-    config <- decodeThrow defaultConfigContent
-    resolveRestylers config testRestylers
+    stageManifest "stable" testRestylers
+    loadConfigFrom [ConfigContent defaultConfigContent]
+
+stageManifest
+    :: (MonadState env m, HasStagedDownloadFiles env)
+    => Text
+    -> [Restyler]
+    -> m ()
+stageManifest channel =
+    stageDownloadFile (manifestUrl channel) . decodeUtf8 . Yaml.encode
+
+manifestUrl :: Text -> Text
+manifestUrl channel =
+    "https://docs.restyled.io/data-files/restylers/manifests/"
+        <> channel
+        <> "/restylers.yaml"
 
 testRestylers :: [Restyler]
 testRestylers =
@@ -181,3 +86,18 @@ testRestylers =
     , someRestyler { rName = "terraform" }
     , someRestyler { rName = "yapf" }
     ]
+
+someRestyler :: Restyler
+someRestyler = Restyler
+    { rEnabled = True
+    , rName = "test-restyler"
+    , rImage = "restyled/restyler-test-restyler"
+    , rCommand = ["restyle"]
+    , rDocumentation = []
+    , rArguments = []
+    , rInclude = ["**/*"]
+    , rInterpreters = []
+    , rDelimiters = Nothing
+    , rSupportsArgSep = True
+    , rSupportsMultiplePaths = True
+    }

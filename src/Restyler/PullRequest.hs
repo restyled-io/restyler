@@ -2,13 +2,9 @@
 
 module Restyler.PullRequest
     ( PullRequest
-    , pullRequestHtmlUrl
-    , pullRequestNumber
+    , IsPullRequest(..)
     , pullRequestTitle
-    , pullRequestState
     , HasPullRequest(..)
-    , pullRequestOwnerName
-    , pullRequestRepoName
     , pullRequestUserLogin
     , pullRequestCloneUrl
     , pullRequestCloneUrlToken
@@ -17,7 +13,6 @@ module Restyler.PullRequest
     , pullRequestIsFork
     , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
-    , pullRequestHeadRef
     , pullRequestHeadSha
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
@@ -27,7 +22,9 @@ where
 
 import Restyler.Prelude
 
-import GitHub.Data
+import GitHub.Data hiding
+    (pullRequestHtmlUrl, pullRequestNumber, pullRequestState)
+import qualified GitHub.Data as GH
 import Restyler.PullRequestSpec
 
 instance Display PullRequest where
@@ -40,11 +37,21 @@ instance Display PullRequest where
 class HasPullRequest env where
     pullRequestL :: Lens' env PullRequest
 
-pullRequestOwnerName :: HasCallStack => PullRequest -> Name Owner
-pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
+class IsPullRequest pr where
+    pullRequestOwnerName :: pr -> Name Owner
+    pullRequestRepoName :: pr -> Name Repo
+    pullRequestNumber :: pr -> IssueNumber
+    pullRequestState :: pr -> IssueState
+    pullRequestHeadRef :: pr -> Text
+    pullRequestHtmlUrl :: pr -> URL
 
-pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
-pullRequestRepoName = repoName . pullRequestRepo
+instance IsPullRequest PullRequest where
+    pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
+    pullRequestRepoName = repoName . pullRequestRepo
+    pullRequestNumber = GH.pullRequestNumber
+    pullRequestState = GH.pullRequestState
+    pullRequestHeadRef = pullRequestCommitRef . pullRequestHead
+    pullRequestHtmlUrl = GH.pullRequestHtmlUrl
 
 pullRequestUserLogin :: PullRequest -> Name User
 pullRequestUserLogin = simpleUserLogin . pullRequestUser
@@ -54,14 +61,14 @@ pullRequestUserLogin = simpleUserLogin . pullRequestUser
 -- This is a URL that will work if you are otherwised authorized to clone the
 -- repository (e.g.) you have an SSH key.
 --
-pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
+pullRequestCloneUrl :: PullRequest -> URL
 pullRequestCloneUrl =
     fromJustNote "Pull Request without clone URL"
         . repoCloneUrl
         . pullRequestRepo
 
 -- | Clone URL using the given Access Token
-pullRequestCloneUrlToken :: HasCallStack => Text -> PullRequest -> Text
+pullRequestCloneUrlToken :: Text -> PullRequest -> Text
 pullRequestCloneUrlToken token pullRequest =
     "https://x-access-token:"
         <> token
@@ -88,23 +95,20 @@ pullRequestIsNonDefaultBranch =
 pullRequestBaseRef :: PullRequest -> Text
 pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
 
-pullRequestHeadRef :: PullRequest -> Text
-pullRequestHeadRef = pullRequestCommitRef . pullRequestHead
-
 pullRequestHeadSha :: PullRequest -> Text
 pullRequestHeadSha = pullRequestCommitSha . pullRequestHead
 
 pullRequestRemoteHeadRef :: PullRequest -> Text
-pullRequestRemoteHeadRef pullRequest@PullRequest {..}
-    | pullRequestIsFork pullRequest
-    = "pull/" <> toPathPart pullRequestNumber <> "/head"
+pullRequestRemoteHeadRef pr
+    | pullRequestIsFork pr
+    = "pull/" <> toPathPart (pullRequestNumber pr) <> "/head"
     | otherwise
-    = pullRequestCommitRef pullRequestHead
+    = pullRequestCommitRef $ pullRequestHead pr
 
 pullRequestLocalHeadRef :: PullRequest -> Text
-pullRequestLocalHeadRef pullRequest@PullRequest {..}
-    | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestNumber
-    | otherwise = pullRequestCommitRef pullRequestHead
+pullRequestLocalHeadRef pr
+    | pullRequestIsFork pr = "pull-" <> toPathPart (pullRequestNumber pr)
+    | otherwise = pullRequestCommitRef $ pullRequestHead pr
 
 pullRequestRestyledHeadRef :: PullRequest -> Text
 pullRequestRestyledHeadRef = ("restyled/" <>) . pullRequestLocalHeadRef
@@ -113,13 +117,9 @@ pullRequestRestyledHeadRef = ("restyled/" <>) . pullRequestLocalHeadRef
 -- Internal functions below this point
 --------------------------------------------------------------------------------
 
-pullRequestOwner :: HasCallStack => PullRequest -> SimpleOwner
+pullRequestOwner :: PullRequest -> SimpleOwner
 pullRequestOwner = repoOwner . pullRequestRepo
 
--- |
---
--- N.B. The source of all partiality and @'HasCallStack'@ constraints
---
 pullRequestRepo :: HasCallStack => PullRequest -> Repo
 pullRequestRepo =
     fromJustNote "Pull Request without Repository" . pullRequestBaseRepo

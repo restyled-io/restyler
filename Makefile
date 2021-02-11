@@ -29,6 +29,13 @@ lint:
 test:
 	stack build --test
 
+.PHONY: test.integration
+test.integration:
+	docker build --tag restyled/restyler:test .
+	AWS_PROFILE=restyled restyled promote --debug \
+	  --image restyled/restyler:test stable
+
+
 .PHONY: watch
 watch:
 	stack build --fast --pedantic --test --file-watch

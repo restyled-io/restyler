@@ -2,7 +2,6 @@ module Restyler.RestyledPullRequest
     ( RestyledPullRequest
     , restyledPullRequestHeadRef
     , restyledPullRequestHtmlUrl
-    , HasRestyledPullRequest(..)
     , findRestyledPullRequest
     , createRestyledPullRequest
     , updateRestyledPullRequest
@@ -14,11 +13,9 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import qualified Data.Set as Set
-import GitHub.Endpoints.GitData.References (deleteReferenceR)
 import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
 import GitHub.Endpoints.PullRequests
     ( CreatePullRequest(..)
-    , EditPullRequest(..)
     , Issue
     , IssueNumber
     , IssueState(..)
@@ -31,16 +28,15 @@ import GitHub.Endpoints.PullRequests
     , pullRequestsForR
     , toPathPart
     , unIssueNumber
-    , updatePullRequestR
     )
 import GitHub.Endpoints.PullRequests.ReviewRequests
     (createReviewRequestR, requestOneReviewer)
-import Restyler.App.Class (HasGitHub, runGitHub, runGitHubFirst, runGitHub_)
-import Restyler.App.Error (warnIgnore)
+import Restyler.Capabilities.Git
+import Restyler.Capabilities.GitHub
+import Restyler.Capabilities.Logger
 import Restyler.Comment (leaveRestyledComment)
 import Restyler.Config
 import qualified Restyler.Content as Content
-import Restyler.Git (HasGit, gitPushForce)
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
@@ -58,6 +54,14 @@ data RestyledPullRequest = RestyledPullRequest
 restyledPullRequestIssueId :: RestyledPullRequest -> Id Issue
 restyledPullRequestIssueId =
     mkId Proxy . unIssueNumber . restyledPullRequestNumber
+
+instance IsPullRequest RestyledPullRequest where
+    pullRequestOwnerName = restyledPullRequestOwnerName
+    pullRequestRepoName = restyledPullRequestRepoName
+    pullRequestNumber = restyledPullRequestNumber
+    pullRequestState = restyledPullRequestState
+    pullRequestHeadRef = restyledPullRequestHeadRef
+    pullRequestHtmlUrl = restyledPullRequestHtmlUrl
 
 existingRestyledPullRequest
     :: PullRequest -- ^ Original PR
@@ -94,30 +98,29 @@ instance Display RestyledPullRequest where
         , prsPullRequest = restyledPullRequestNumber restyledPullRequest
         }
 
-class HasRestyledPullRequest env where
-    restyledPullRequestL :: Lens' env (Maybe RestyledPullRequest)
-
 findRestyledPullRequest
-    :: HasGitHub env => PullRequest -> RIO env (Maybe RestyledPullRequest)
-findRestyledPullRequest pullRequest =
-    runMaybeT $ findExisting ref <|> findExisting legacyRef
-  where
-    ref = pullRequestRestyledHeadRef pullRequest
-    legacyRef = pullRequestLocalHeadRef pullRequest <> "-restyled"
+    :: (MonadGitHub m, MonadReader env m, HasPullRequest env)
+    => m (Maybe RestyledPullRequest)
+findRestyledPullRequest = do
+    pullRequest <- view pullRequestL
+    let ref = pullRequestRestyledHeadRef pullRequest
+        legacyRef = pullRequestLocalHeadRef pullRequest <> "-restyled"
+        findExisting r = existingRestyledPullRequest pullRequest r
+            <$> MaybeT (findSiblingPullRequest pullRequest r)
 
-    findExisting r = existingRestyledPullRequest pullRequest r
-        <$> MaybeT (findSiblingPullRequest pullRequest r)
+    runMaybeT $ findExisting ref <|> findExisting legacyRef
 
 createRestyledPullRequest
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadGitHub m
+       , MonadGit m
+       , MonadReader env m
        , HasOptions env
        , HasConfig env
-       , HasGit env
-       , HasGitHub env
        )
     => PullRequest
     -> [RestylerResult]
-    -> RIO env RestyledPullRequest
+    -> m RestyledPullRequest
 createRestyledPullRequest pullRequest results = do
     gitPushForce $ unpack $ pullRequestRestyledHeadRef pullRequest
 
@@ -163,63 +166,22 @@ createRestyledPullRequest pullRequest results = do
     restyledPullRequest
         <$ logInfo ("Opened Restyled PR " <> display restyledPullRequest)
 
--- |
---
--- TODO: consider using results to update PR description.
---
 updateRestyledPullRequest
-    :: HasGit env
+    :: MonadGit m
     => RestyledPullRequest
     -> [RestylerResult]
-    -> RIO env RestyledPullRequest
+    -> m RestyledPullRequest
 updateRestyledPullRequest restyledPullRequest _results = do
     gitPushForce $ unpack $ restyledPullRequestHeadRef restyledPullRequest
     pure restyledPullRequest
 
-closeRestyledPullRequest
-    :: (HasLogFunc env, HasGitHub env) => RestyledPullRequest -> RIO env ()
+closeRestyledPullRequest :: MonadGitHub m => RestyledPullRequest -> m ()
 closeRestyledPullRequest pr = do
-    editRestyledPullRequestState StateClosed pr
-
-    handleAny warnIgnore $ runGitHub_ $ deleteReferenceR
-        (restyledPullRequestOwnerName pr)
-        (restyledPullRequestRepoName pr)
-        (mkName Proxy $ "heads/" <> restyledPullRequestHeadRef pr)
-
-editRestyledPullRequestState
-    :: (HasLogFunc env, HasGitHub env)
-    => IssueState
-    -> RestyledPullRequest
-    -> RIO env ()
-editRestyledPullRequestState state pr
-    | restyledPullRequestState pr == state
-    = logWarn
-        $ "Redundant update of Restyled PR "
-        <> display pr
-        <> " to "
-        <> displayShow state
-    | otherwise
-    = do
-        logInfo
-            $ "Updating Restyled PR "
-            <> display pr
-            <> " to "
-            <> displayShow state
-
-        runGitHub_ $ updatePullRequestR
-            (restyledPullRequestOwnerName pr)
-            (restyledPullRequestRepoName pr)
-            (restyledPullRequestNumber pr)
-            EditPullRequest
-                { editPullRequestTitle = Nothing
-                , editPullRequestBody = Nothing
-                , editPullRequestState = Just state
-                , editPullRequestBase = Nothing
-                , editPullRequestMaintainerCanModify = Nothing
-                }
+    editPullRequestState StateClosed pr
+    deleteHeadRef pr
 
 findSiblingPullRequest
-    :: HasGitHub env => PullRequest -> Text -> RIO env (Maybe SimplePullRequest)
+    :: MonadGitHub m => PullRequest -> Text -> m (Maybe SimplePullRequest)
 findSiblingPullRequest pr ref =
     runGitHubFirst
         $ pullRequestsForR owner repo

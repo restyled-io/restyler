@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b7c7c76527aaa8deac0dfd8786b50eb0e25759ae9a91a5498152e678e085ca0b
+-- hash: 1d6317fffdcbe827bf44ee765c0690ff3e80cc8f370d3a89e5f4f2b27ef39ed9
 
 name:           restyler
 version:        0.2.0.0
@@ -19,8 +19,19 @@ library
       GitHub.Endpoints.PullRequests.ReviewRequests
       GitHub.Request.Display
       Restyler.App
-      Restyler.App.Class
       Restyler.App.Error
+      Restyler.App.Setup
+      Restyler.App.Startup
+      Restyler.AppT
+      Restyler.Capabilities.DownloadFile
+      Restyler.Capabilities.Git
+      Restyler.Capabilities.GitHub
+      Restyler.Capabilities.Hushed
+      Restyler.Capabilities.Logger
+      Restyler.Capabilities.Process
+      Restyler.Capabilities.System
+      Restyler.CLI
+      Restyler.Clone
       Restyler.Comment
       Restyler.CommitTemplate
       Restyler.Config
@@ -35,7 +46,6 @@ library
       Restyler.Config.Statuses
       Restyler.Content
       Restyler.Delimited
-      Restyler.Git
       Restyler.Logger
       Restyler.Main
       Restyler.Options
@@ -48,7 +58,7 @@ library
       Restyler.Restyler
       Restyler.Restyler.Run
       Restyler.RestylerResult
-      Restyler.Setup
+      Restyler.WorkingDirectory
   other-modules:
       Paths_restyler
   hs-source-dirs:
@@ -73,6 +83,7 @@ library
     , file-embed
     , filepath
     , github
+    , http-client
     , http-client-tls
     , http-conduit
     , megaparsec
@@ -85,6 +96,7 @@ library
     , shakespeare
     , text
     , transformers
+    , unliftio
     , unordered-containers
     , validation
     , vector
@@ -105,6 +117,7 @@ executable restyle-path
     , conduit
     , envparse
     , http-conduit
+    , mtl
     , restyler
     , rio
     , text
@@ -129,6 +142,11 @@ test-suite test
   main-is: Spec.hs
   other-modules:
       Restyler.App.ErrorSpec
+      Restyler.Capabilities.DownloadFile.Staged
+      Restyler.Capabilities.Hushed.Except
+      Restyler.Capabilities.Logger.Null
+      Restyler.Capabilities.Process.Mock
+      Restyler.Capabilities.System.State
       Restyler.CommitTemplateSpec
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
@@ -138,7 +156,7 @@ test-suite test
       Restyler.PullRequestSpecSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
-      RIO.Test.FS
+      Restyler.TestApp
       SpecHelper
       Paths_restyler
   hs-source-dirs:
@@ -155,8 +173,10 @@ test-suite test
     , github
     , hspec
     , hspec-expectations-lifted
+    , http-client
     , lens
     , lens-aeson
+    , mtl
     , restyler
     , rio
     , shakespeare

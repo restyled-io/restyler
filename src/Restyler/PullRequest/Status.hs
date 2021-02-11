@@ -1,74 +1,73 @@
 module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
+    , errorPullRequest
     )
 where
 
 import Restyler.Prelude
 
-import GitHub.Endpoints.Repos.Statuses
-import Restyler.App.Class
+import GitHub.Data (NewStatus(..), StatusState(..))
+import Restyler.App.Error
+import Restyler.Capabilities.GitHub
 import Restyler.Config
 import Restyler.Config.Statuses
+import Restyler.Options
 import Restyler.PullRequest
 
 data PullRequestStatus
-    = NoDifferencesStatus (Maybe URL)
-    -- ^ We found no differences after restyling
+    = NoDifferencesStatus
     | DifferencesStatus (Maybe URL)
-    -- ^ We found differences and opened a restyled @'PullRequest'@
-    | ErrorStatus URL
-    -- ^ We encountered an error and can link to a Job
+    | ErrorStatus AppError
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus
-    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
+    :: ( MonadGitHub m
+       , MonadReader env m
+       , HasOptions env
+       , HasConfig env
+       , HasPullRequest env
+       )
     => PullRequestStatus
-    -> RIO env ()
-sendPullRequestStatus status =
+    -> m ()
+sendPullRequestStatus status = do
     whenConfig ((`shouldSendStatus` status) . cStatuses) $ do
+        mJobUrl <- oJobUrl <$> view optionsL
         pullRequest <- view pullRequestL
-        createHeadShaStatus pullRequest status
+        setPullRequestStatus pullRequest $ statusToStatus mJobUrl status
 
-createHeadShaStatus
-    :: (HasLogFunc env, HasGitHub env)
-    => PullRequest
-    -> PullRequestStatus
-    -> RIO env ()
-createHeadShaStatus pullRequest status = do
-    logInfo $ "Setting status of " <> shortStatus <> " for " <> shortSha
-    runGitHub_ $ createStatusR owner name sha $ statusToStatus status
-  where
-    owner = pullRequestOwnerName pullRequest
-    name = pullRequestRepoName pullRequest
-    sha = mkName Proxy $ pullRequestHeadSha pullRequest
-    shortSha = fromString $ take 7 $ unpack $ pullRequestHeadSha pullRequest
-    shortStatus = case status of
-        NoDifferencesStatus _ -> "no differences"
-        DifferencesStatus _ -> "differences"
-        ErrorStatus _ -> "error"
+errorPullRequest
+    :: ( MonadGitHub m
+       , MonadReader env m
+       , HasOptions env
+       , HasConfig env
+       , HasPullRequest env
+       )
+    => AppError
+    -> m ()
+errorPullRequest = sendPullRequestStatus . ErrorStatus
 
 shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
-shouldSendStatus Statuses {..} (NoDifferencesStatus _) = sNoDifferences
-shouldSendStatus Statuses {..} (DifferencesStatus _) = sDifferences
-shouldSendStatus Statuses {..} (ErrorStatus _) = sError
+shouldSendStatus Statuses {..} NoDifferencesStatus{} = sNoDifferences
+shouldSendStatus Statuses {..} DifferencesStatus{} = sDifferences
+shouldSendStatus Statuses {..} ErrorStatus{} = sError
 
-statusToStatus :: PullRequestStatus -> NewStatus
-statusToStatus (NoDifferencesStatus mUrl) = NewStatus
+statusToStatus :: Maybe URL -> PullRequestStatus -> NewStatus
+statusToStatus mUrl NoDifferencesStatus = NewStatus
     { newStatusState = StatusSuccess
     , newStatusTargetUrl = mUrl
     , newStatusDescription = Just "No differences"
     , newStatusContext = Just "restyled"
     }
-statusToStatus (DifferencesStatus mUrl) = NewStatus
+statusToStatus _ (DifferencesStatus mUrl) = NewStatus
     { newStatusState = StatusFailure
     , newStatusTargetUrl = mUrl
     , newStatusDescription = Just "Restyling found differences"
     , newStatusContext = Just "restyled"
     }
-statusToStatus (ErrorStatus url) = NewStatus
+statusToStatus mUrl (ErrorStatus _e) = NewStatus
     { newStatusState = StatusError
-    , newStatusTargetUrl = Just url
+    , newStatusTargetUrl = mUrl
     , newStatusDescription = Just "Error restyling"
     , newStatusContext = Just "restyled"
     }

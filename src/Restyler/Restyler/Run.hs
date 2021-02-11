@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections #-}
+
 
 module Restyler.Restyler.Run
     ( runRestylers
@@ -16,15 +16,19 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List (nub)
-import Restyler.App.Class
 import Restyler.App.Error
+import Restyler.Capabilities.DownloadFile
+import Restyler.Capabilities.Git
+import Restyler.Capabilities.Hushed
+import Restyler.Capabilities.Logger
+import Restyler.Capabilities.Process
+import Restyler.Capabilities.System
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
-import Restyler.Git
 import Restyler.Options
 import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restyler
@@ -33,38 +37,49 @@ import RIO.FilePath ((</>))
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadHushed m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadDownloadFile m
+       , MonadGit m
+       , MonadError AppError m
+       , MonadReader env m
        , HasConfig env
        , HasOptions env
-       , HasSystem env
-       , HasProcess env
-       , HasGit env
-       , HasDownloadFile env
        )
     => Config
     -> [FilePath]
-    -> RIO env [RestylerResult]
+    -> m [RestylerResult]
 runRestylers = runRestylersWith runRestyler
 
 -- | @'runRestylers'@, but without committing or reporting results
 runRestylers_
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadHushed m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadDownloadFile m
+       , MonadError AppError m
+       , MonadReader env m
        , HasOptions env
-       , HasSystem env
-       , HasProcess env
-       , HasDownloadFile env
        )
     => Config
     -> [FilePath]
-    -> RIO env ()
+    -> m ()
 runRestylers_ config = void . runRestylersWith runRestyler_ config
 
 runRestylersWith
-    :: (HasLogFunc env, HasSystem env, HasDownloadFile env)
-    => (Restyler -> [FilePath] -> RIO env a)
+    :: ( MonadLogger m
+       , MonadHushed m
+       , MonadSystem m
+       , MonadDownloadFile m
+       , MonadError AppError m
+       )
+    => (Restyler -> [FilePath] -> m a)
     -> Config
     -> [FilePath]
-    -> RIO env [a]
+    -> m [a]
 runRestylersWith run Config {..} allPaths = do
     paths <- findFiles $ filter included allPaths
 
@@ -84,7 +99,7 @@ runRestylersWith run Config {..} allPaths = do
         then case cpcOutcome cChangedPaths of
             MaximumChangedPathsOutcomeSkip -> [] <$ logWarn maxPathsLogMessage
             MaximumChangedPathsOutcomeError ->
-                throwIO $ RestyleError $ utf8BuilderToText maxPathsLogMessage
+                throwError $ RestyleError $ utf8BuilderToText maxPathsLogMessage
         else do
             traverse_ downloadRemoteFile cRemoteFiles
             withFilteredPaths restylers paths run
@@ -99,11 +114,11 @@ runRestylersWith run Config {..} allPaths = do
 -- testing of Restyler @include@ and @intepreter@ configuration handling.
 --
 withFilteredPaths
-    :: (HasSystem env, HasLogFunc env)
+    :: (MonadLogger m, MonadHushed m, MonadSystem m)
     => [Restyler]
     -> [FilePath]
-    -> (Restyler -> [FilePath] -> RIO env a)
-    -> RIO env [a]
+    -> (Restyler -> [FilePath] -> m a)
+    -> m [a]
 withFilteredPaths restylers paths run = do
     withInterpreters <- traverse addExecutableInterpreter paths
 
@@ -138,26 +153,30 @@ withFilteredPaths restylers paths run = do
         run r filtered
 
 addExecutableInterpreter
-    :: HasSystem env => FilePath -> RIO env (FilePath, Maybe Interpreter)
-addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
-    isExec <- isFileExecutable path
+    :: (MonadHushed m, MonadSystem m)
+    => FilePath
+    -> m (FilePath, Maybe Interpreter)
+addExecutableInterpreter path = do
+    mmInterpreter <- hushed $ do
+        isExec <- isFileExecutable path
+        if isExec then readInterpreter <$> readFile path else pure Nothing
 
-    (path, ) <$> if isExec
-        then readInterpreter <$> readFile path
-        else pure Nothing
+    pure (path, join mmInterpreter)
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadGit m
+       , MonadError AppError m
+       , MonadReader env m
        , HasConfig env
        , HasOptions env
-       , HasSystem env
-       , HasProcess env
-       , HasGit env
        )
     => Restyler
     -> [FilePath]
-    -> RIO env RestylerResult
+    -> m RestylerResult
 runRestyler r [] = pure $ noPathsRestylerResult r
 runRestyler r paths = do
     runRestyler_ r paths
@@ -165,20 +184,32 @@ runRestyler r paths = do
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
-    :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadError AppError m
+       , MonadReader env m
+       , HasOptions env
+       )
     => Restyler
     -> [FilePath]
-    -> RIO env ()
+    -> m ()
 runRestyler_ _ [] = pure ()
 runRestyler_ r paths = case rDelimiters r of
     Nothing -> runRestyler' r paths
     Just ds -> restyleDelimited ds (runRestyler' r) paths
 
 runRestyler'
-    :: (HasLogFunc env, HasOptions env, HasSystem env, HasProcess env)
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadError AppError m
+       , MonadReader env m
+       , HasOptions env
+       )
     => Restyler
     -> [FilePath]
-    -> RIO env ()
+    -> m ()
 runRestyler' r@Restyler {..} paths = if rSupportsMultiplePaths
     then do
         logInfo
@@ -196,10 +227,16 @@ runRestyler' r@Restyler {..} paths = if rSupportsMultiplePaths
         dockerRunRestyler r [path]
 
 dockerRunRestyler
-    :: (HasOptions env, HasSystem env, HasProcess env)
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadError AppError m
+       , MonadReader env m
+       , HasOptions env
+       )
     => Restyler
     -> [FilePath]
-    -> RIO env ()
+    -> m ()
 dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getHostDirectory
     unrestricted <- oUnrestricted <$> view optionsL
@@ -214,12 +251,13 @@ dockerRunRestyler r@Restyler {..} paths = do
 
     case ec of
         ExitSuccess -> pure ()
-        ExitFailure s -> throwIO $ RestylerExitFailure r s paths
+        ExitFailure s -> throwError $ RestylerExitFailure r s paths
 
 restrictions :: [String]
 restrictions = ["--cap-drop", "all", "--cpu-shares", "128", "--memory", "512m"]
 
-getHostDirectory :: (HasOptions env, HasSystem env) => RIO env FilePath
+getHostDirectory
+    :: (MonadSystem m, MonadReader env m, HasOptions env) => m FilePath
 getHostDirectory = do
     mHostDirectory <- oHostDirectory <$> view optionsL
     maybe getCurrentDirectory pure mHostDirectory
@@ -230,10 +268,10 @@ getHostDirectory = do
 -- path arguments of removed files in the PR. The expansion is important for
 -- @restyle-path@, where we may be given directories as arguments.
 --
-findFiles :: HasSystem env => [FilePath] -> RIO env [FilePath]
+findFiles :: MonadSystem m => [FilePath] -> m [FilePath]
 findFiles = fmap concat . traverse go
   where
-    go :: HasSystem env => FilePath -> RIO env [FilePath]
+    go :: MonadSystem m => FilePath -> m [FilePath]
     go parent = do
         isDirectory <- doesDirectoryExist parent
 

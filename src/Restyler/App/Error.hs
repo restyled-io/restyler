@@ -1,14 +1,8 @@
 module Restyler.App.Error
     ( AppError(..)
-    , mapAppError
     , prettyAppError
-
-    -- * Error handling
-    , errorPullRequest
-    , dieAppErrorHandlers
-
-    -- * Lower-level helpers
-    , warnIgnore
+    , ErrorDetails(..)
+    , appErrorDetails
     )
 where
 
@@ -17,13 +11,8 @@ import Restyler.Prelude
 import qualified Data.Yaml as Yaml
 import GitHub.Data (Error(..))
 import GitHub.Request.Display
-import Restyler.App.Class
-import Restyler.Config
-import Restyler.Options
-import Restyler.PullRequest
-import Restyler.PullRequest.Status
+import Network.HTTP.Client (HttpException)
 import Restyler.Restyler (Restyler(..))
-import System.IO (hPutStrLn)
 import Text.Wrap
 
 data AppError
@@ -31,8 +20,12 @@ data AppError
     -- ^ We couldn't fetch the @'PullRequest'@ to restyle
     | PullRequestCloneError IOException
     -- ^ We couldn't clone or checkout the PR's branch
-    | ConfigurationError ConfigError
-    -- ^ We couldn't load a @.restyled.yaml@
+    | ConfigErrorInvalidYaml ByteString Yaml.ParseException
+    -- ^ We couldn't load a @.restyled.yaml@ at all
+    | ConfigErrorInvalidRestylers [String]
+    -- ^ We couldn't load a @.restyled.yaml@'s Restylers
+    | ConfigErrorInvalidRestylersYaml Yaml.ParseException
+    -- ^ We couldn't load /our/ @restylers.yaml@
     | RestylerExitFailure Restyler Int [FilePath]
     -- ^ A Restyler we ran exited non-zero on the given paths
     | RestyleError Text
@@ -41,96 +34,139 @@ data AppError
     -- ^ We encountered a GitHub API error during restyling
     | SystemError IOException
     -- ^ Trouble reading a file or etc
-    | HttpError IOException
+    | HttpError HttpException
     -- ^ Trouble performing some HTTP request
     | OtherError SomeException
     -- ^ Escape hatch for anything else
     deriving stock Show
 
-instance Exception AppError
-
--- | Run a computation, and modify any thrown exceptions to @'AppError'@s
-mapAppError :: (MonadUnliftIO m, Exception e) => (e -> AppError) -> m a -> m a
-mapAppError f = handle $ throwIO . f
+instance Exception AppError where
+    displayException = prettyAppError
 
 prettyAppError :: AppError -> String
-prettyAppError =
-    format <$> toErrorTitle <*> toErrorBody <*> toErrorDocumentation
-  where
-    format :: String -> String -> String -> String
-    format title body docs = title <> ":\n\n" <> body <> docs
+prettyAppError = formatErrorDetails . appErrorDetails
 
-toErrorTitle :: AppError -> String
-toErrorTitle = trouble . \case
-    PullRequestFetchError _ -> "fetching your Pull Request from GitHub"
-    PullRequestCloneError _ -> "cloning your Pull Request branch"
-    ConfigurationError _ -> "with your configuration"
-    RestylerExitFailure r _ _ -> "with the " <> rName r <> " restyler"
-    RestyleError _ -> "restyling"
-    GitHubError _ _ -> "communicating with GitHub"
-    SystemError _ -> "running a system command"
-    HttpError _ -> "performing an HTTP request"
-    OtherError _ -> "with something unexpected"
-  where
-    trouble :: String -> String
-    trouble = ("We had trouble " <>)
+data ErrorDetails = ErrorDetails
+    { edActionAttempted :: String
+    , edDetails :: String
+    , edDocumentationUrls :: [String]
+    , edExitCode :: Int
+    }
 
-toErrorBody :: AppError -> String
-toErrorBody = reflow . \case
-    PullRequestFetchError e -> showGitHubError e
-    PullRequestCloneError e -> show e
-    ConfigurationError (ConfigErrorInvalidYaml yaml e) -> unlines
-        [ "Yaml parse exception:"
-        , Yaml.prettyPrintParseException e
-        , ""
-        , "Original input:"
-        , unpack $ decodeUtf8 yaml
-        ]
-    ConfigurationError (ConfigErrorInvalidRestylers errs) -> unlines errs
-    ConfigurationError (ConfigErrorInvalidRestylersYaml e) -> unlines
-        [ "Error loading restylers.yaml definition:"
-        , show e
-        , ""
-        , "==="
-        , ""
-        , "This could be caused by an invalid or too-old restylers_version in"
-        , "your configuration. Consider removing or updating it."
-        , ""
-        , "If that's not the case, this is a bug in our system that we are"
-        , "hopefully already working to fix."
-        ]
-    RestylerExitFailure _ s paths ->
-        "Exited non-zero ("
-            <> show s
-            <> ") for the following paths, "
-            <> show paths
-            <> "."
-            <> "\nError information may be present in the stderr output above."
-    RestyleError msg -> unpack msg
-    GitHubError req e -> "Request: " <> show req <> "\n" <> showGitHubError e
-    SystemError e -> show e
-    HttpError e -> show e
-    OtherError e -> show e
-
-toErrorDocumentation :: AppError -> String
-toErrorDocumentation = formatDocs . \case
-    ConfigurationError ConfigErrorInvalidRestylersYaml{} ->
-        ["https://github.com/restyled-io/restyled.io/wiki/Restyler-Versions"]
-    ConfigurationError _ ->
-        [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
-        ]
-    RestylerExitFailure r _ _ -> rDocumentation r
-    RestyleError _ ->
-        [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error"
-        ]
-    _ -> []
+formatErrorDetails :: ErrorDetails -> String
+formatErrorDetails ErrorDetails {..} =
+    "We had trouble "
+        <> edActionAttempted
+        <> ":\n\n"
+        <> reflow edDetails
+        <> formatDocs edDocumentationUrls
   where
     formatDocs [] = "\n"
     formatDocs [url] = "\nPlease see " <> url <> "\n"
     formatDocs urls = unlines $ "\nPlease see" : map ("  - " <>) urls
 
-showGitHubError :: Error -> String
-showGitHubError = \case
+appErrorDetails :: AppError -> ErrorDetails
+appErrorDetails = \case
+    PullRequestFetchError e -> ErrorDetails
+        { edActionAttempted = "fetching your Pull Request from GitHub"
+        , edDetails = githubErrorDetails e
+        , edDocumentationUrls = []
+        , edExitCode = 31
+        }
+    PullRequestCloneError e -> ErrorDetails
+        { edActionAttempted = "cloning your Pull Request branch"
+        , edDetails = show e
+        , edDocumentationUrls = []
+        , edExitCode = 32
+        }
+    ConfigErrorInvalidYaml yaml e -> ErrorDetails
+        { edActionAttempted = "with your configuration"
+        , edDetails = unlines
+            [ "Yaml parse exception:"
+            , Yaml.prettyPrintParseException e
+            , ""
+            , "Original input:"
+            , unpack $ decodeUtf8 yaml
+            ]
+        , edDocumentationUrls =
+            [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
+            ]
+        , edExitCode = 10
+        }
+    ConfigErrorInvalidRestylers errs -> ErrorDetails
+        { edActionAttempted = "with your configured Restylers"
+        , edDetails = unlines errs
+        , edDocumentationUrls =
+            [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
+            ]
+        , edExitCode = 11
+        }
+    ConfigErrorInvalidRestylersYaml e -> ErrorDetails
+        { edActionAttempted = "with our Restylers definitions"
+        , edDetails = unlines
+            [ "Error loading restylers.yaml definition:"
+            , show e
+            , ""
+            , "==="
+            , ""
+            , "This could be caused by an invalid or too-old restylers_version in"
+            , "your configuration. Consider removing or updating it."
+            , ""
+            , "If that's not the case, this is a bug in our system that we are"
+            , "hopefully already working to fix."
+            ]
+        , edDocumentationUrls =
+            [ "https://github.com/restyled-io/restyled.io/wiki/Restyler-Versions"
+            ]
+        , edExitCode = 12
+        }
+    RestylerExitFailure r s paths -> ErrorDetails
+        { edActionAttempted = "with the " <> rName r <> " restyler"
+        , edDetails =
+            "Exited non-zero ("
+            <> show s
+            <> ") for the following paths, "
+            <> show paths
+            <> "."
+            <> "\nError information may be present in the stderr output above."
+        , edDocumentationUrls = rDocumentation r
+        , edExitCode = 20
+        }
+    RestyleError msg -> ErrorDetails
+        { edActionAttempted = "restyling"
+        , edDetails = unpack msg
+        , edDocumentationUrls =
+            [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error"
+            ]
+        , edExitCode = 25
+        }
+    GitHubError req e -> ErrorDetails
+        { edActionAttempted = "communicating with GitHub"
+        , edDetails = "Request: " <> show req <> "\n" <> githubErrorDetails e
+        , edDocumentationUrls = []
+        , edExitCode = 30
+        }
+    SystemError e -> ErrorDetails
+        { edActionAttempted = "running a system command"
+        , edDetails = show e
+        , edDocumentationUrls = []
+        , edExitCode = 50
+        }
+    HttpError e -> ErrorDetails
+        { edActionAttempted = "performing an HTTP request"
+        , edDetails = show e
+        , edDocumentationUrls = []
+        , edExitCode = 40
+        }
+    OtherError e -> ErrorDetails
+        { edActionAttempted = "with something unexpected"
+        , edDetails = show e
+        , edDocumentationUrls = []
+        , edExitCode = 99
+        }
+
+githubErrorDetails :: Error -> String
+githubErrorDetails = \case
     HTTPError e -> "HTTP exception: " <> show e
     ParseError e -> "Unable to parse response: " <> unpack e
     JsonError e -> "Malformed response: " <> unpack e
@@ -143,68 +179,3 @@ reflow = indent . wrap
     wrap = unpack . wrapText wrapSettings 80 . pack
     wrapSettings =
         WrapSettings { preserveIndentation = True, breakLongWords = False }
-
--- | Error the original @'PullRequest'@ and re-throw the exception
-errorPullRequest
-    :: ( HasLogFunc env
-       , HasOptions env
-       , HasConfig env
-       , HasPullRequest env
-       , HasGitHub env
-       )
-    => SomeException
-    -> RIO env ()
-errorPullRequest = exceptExit $ \ex -> do
-    mJobUrl <- oJobUrl <$> view optionsL
-    traverse_ errorPullRequestUrl mJobUrl
-    throwIO ex
-
--- | Actually error the @'PullRequest'@, given the job-url to link to
-errorPullRequestUrl
-    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
-    => URL
-    -> RIO env ()
-errorPullRequestUrl url =
-    handleAny warnIgnore $ sendPullRequestStatus $ ErrorStatus url
-
--- | Ignore an exception, warning about it.
-warnIgnore :: (Display a, HasLogFunc env) => a -> RIO env ()
-warnIgnore ex = logWarn $ "Caught " <> display ex <> ", ignoring."
-
--- | Error handlers for overall execution
---
--- Usage:
---
--- > {- main routine -} `catches` dieAppErrorHandlers
---
--- Ensures __all__ exceptions (besides @'ExitCode'@s) go through:
---
--- @
--- 'dieAppError'
--- @
---
-dieAppErrorHandlers :: [Handler IO ()]
-dieAppErrorHandlers =
-    [Handler dieAppError, Handler $ exceptExit $ dieAppError . OtherError]
-
-dieAppError :: AppError -> IO a
-dieAppError e = do
-    hPutStrLn stderr $ prettyAppError e
-    exitWith $ ExitFailure $ case e of
-        ConfigurationError ConfigErrorInvalidYaml{} -> 10
-        ConfigurationError ConfigErrorInvalidRestylers{} -> 11
-        ConfigurationError ConfigErrorInvalidRestylersYaml{} -> 12
-        RestylerExitFailure{} -> 20
-        RestyleError{} -> 25
-        GitHubError{} -> 30
-        PullRequestFetchError{} -> 31
-        PullRequestCloneError{} -> 32
-        HttpError{} -> 40
-        SystemError{} -> 50
-        OtherError{} -> 99
-
-exceptExit :: Applicative f => (SomeException -> f ()) -> SomeException -> f ()
-exceptExit f ex = maybe (f ex) ignore $ fromException ex
-  where
-    ignore :: Applicative f => ExitCode -> f ()
-    ignore _ = pure ()

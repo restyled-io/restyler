@@ -6,35 +6,33 @@ where
 import SpecHelper
 
 import Restyler.App.Error
+import Restyler.Capabilities.Process.Mock
+import Restyler.Capabilities.System
+import Restyler.Capabilities.System.State
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
+import Restyler.TestApp
 import qualified RIO
-import RIO.Test.FS
-    (createFileLink, writeFileExecutable, writeFileUnreadable, writeFileUtf8)
 
 spec :: Spec
 spec = do
     describe "withFilteredPaths" $ do
-        it "does not bring excluded files back by shebang" $ do
-            filtered <- runTestApp $ do
-                writeFileExecutable "/a" "#!/bin/sh\necho A\n"
-                writeFileExecutable "/b" "#!/bin/sh\necho B\n"
+        it "does not bring excluded files back by shebang" $ runTestApp $ do
+            addExecutableFile "/a" "#!/bin/sh\necho A\n"
+            addExecutableFile "/b" "#!/bin/sh\necho B\n"
 
-                withFilteredPaths
-                    [ someRestyler
-                        { rInclude = ["**/*.sh"]
-                        , rInterpreters = [Sh]
-                        }
-                    , someRestyler
-                        { rInclude = ["**/*.sh", "!b"]
-                        , rInterpreters = [Sh]
-                        }
-                    ]
-                    ["a", "b"]
-                    (const pure)
+            filtered <- withFilteredPaths
+                [ someRestyler { rInclude = ["**/*.sh"], rInterpreters = [Sh] }
+                , someRestyler
+                    { rInclude = ["**/*.sh", "!b"]
+                    , rInterpreters = [Sh]
+                    }
+                ]
+                ["a", "b"]
+                (const pure)
 
             filtered `shouldBe` [["a", "b"], ["a"]]
 
@@ -46,7 +44,7 @@ spec = do
                 pure $ error "UTF-8 exception expected"
 
             runTestApp $ do
-                writeFileUnreadable "invalid.eot" ex
+                addUnreadableFile "invalid.eot" ex
 
                 filtered <- withFilteredPaths
                     [ someRestyler
@@ -57,78 +55,92 @@ spec = do
                     ["invalid.eot"]
                     (const pure)
 
-                liftIO $ filtered `shouldBe` [[]]
+                filtered `shouldBe` [[]]
 
     describe "runRestylers_" $ do
         context "maximum changed paths" $ do
-            it "has a default maximum" $ do
-                runChangedPaths (mkPaths 1001) id `shouldThrow` \case
-                    RestyleError message ->
+            it "has a default maximum" $ runTestApp $ do
+                config <- loadDefaultConfig
+                let paths = mkPaths 1001
+                traverse_ (`addNormalFile` "") paths
+
+                result <- tryError $ runRestylers_ config paths
+
+                result `shouldSatisfy` \case
+                    Left (RestyleError message) ->
                         message
                             == "Number of changed paths (1001) is greater than configured maximum (1000)"
                     _ -> False
 
-            it "can be configured" $ do
-                runChangedPaths (mkPaths 11) (setMaximum 10) `shouldThrow` \case
-                    RestyleError message ->
+            it "can be configured" $ runTestApp $ do
+                config <- loadDefaultConfig
+                let paths = mkPaths 11
+                    updatedConfig = config
+                        { cChangedPaths = (cChangedPaths config)
+                            { cpcMaximum = 10
+                            }
+                        }
+                traverse_ (`addNormalFile` "") paths
+
+                result <- tryError $ runRestylers_ updatedConfig paths
+
+                result `shouldSatisfy` \case
+                    Left (RestyleError message) ->
                         message
                             == "Number of changed paths (11) is greater than configured maximum (10)"
                     _ -> False
 
-            it "can be configured to skip" $ do
-                runChangedPaths (mkPaths 1001) setOutcomeSkip `shouldReturn` ()
+            it "can be configured to skip" $ runTestApp $ do
+                config <- loadDefaultConfig
+                let paths = mkPaths 1001
+                    updatedConfig = config
+                        { cChangedPaths = (cChangedPaths config)
+                            { cpcOutcome = MaximumChangedPathsOutcomeSkip
+                            }
+                        }
+                traverse_ (`addNormalFile` "") paths
+
+                runRestylers_ updatedConfig paths `shouldReturn` ()
 
     describe "runRestyler_" $ do
-        it "treats non-zero exit codes as RestylerExitFailure" $ do
-            let runTestApp' :: RIO TestApp a -> IO a
-                runTestApp' f = do
-                    app <- testApp "/" []
-                    runRIO
-                        app
-                            { taCallProcessExitCode = \_ _ ->
-                                pure $ ExitFailure 99
-                            }
-                        f
+        it "treats non-zero exit codes as RestylerExitFailure" $ runTestApp $ do
+            prependProcessMock
+                "docker"
+                (const True)
+                (const True)
+                (Right (ExitFailure 42, ""))
 
-            runTestApp' (runRestyler_ someRestyler ["foo"]) `shouldThrow` \case
-                RestylerExitFailure re s _ -> re == someRestyler && s == 99
+            result <- tryError $ runRestyler_ someRestyler ["foo"]
+
+            result `shouldSatisfy` \case
+                Left (RestylerExitFailure re s _) ->
+                    re == someRestyler && s == 42
                 _ -> False
 
-    describe "findFiles" $ do
-        it "expands and excludes" $ do
-            app <- testApp
-                "/foo"
-                [ ("/foo/bar/baz/bat", "")
-                , ("/foo/bar/baz/quix", "")
-                , ("/foo/bat/baz", "")
-                , ("/foo/foo", "")
-                , ("/foo/xxx", "")
-                ]
+        describe "findFiles" $ do
+            it "expands and excludes" $ runTestApp $ do
+                traverse_
+                    (uncurry addNormalFile)
+                    [ ("/foo/bar/baz/bat", "")
+                    , ("/foo/bar/baz/quix", "")
+                    , ("/foo/bat/baz", "")
+                    , ("/foo/foo", "")
+                    , ("/foo/xxx", "")
+                    ]
+                setCurrentDirectory "/foo"
 
-            runRIO app (findFiles ["bar/baz", "bat", "xxx", "zzz"])
-                `shouldReturn` ["bar/baz/bat", "bar/baz/quix", "bat/baz", "xxx"]
+                findFiles ["bar/baz", "bat", "xxx", "zzz"]
+                    `shouldReturn` [ "bar/baz/bat"
+                                   , "bar/baz/quix"
+                                   , "bat/baz"
+                                   , "xxx"
+                                   ]
 
-        it "excludes symlinks" $ do
-            app <- testApp "/" []
-            runRIO app $ do
-                writeFileUtf8 "/foo/bar" ""
-                createFileLink "/foo/bar" "/foo/baz/bat"
+            it "excludes symlinks" $ runTestApp $ do
+                addNormalFile "/foo/bar" ""
+                addSymlink "/foo/bar" "/foo/baz/bat"
 
                 findFiles ["foo"] `shouldReturn` ["foo/bar"]
 
 mkPaths :: Int -> [FilePath]
 mkPaths n = map (\i -> "/" <> show i <> ".txt") [1 .. n]
-
-runChangedPaths
-    :: [FilePath] -> (ChangedPathsConfig -> ChangedPathsConfig) -> IO ()
-runChangedPaths paths f = runTestApp $ do
-    for_ paths $ \path -> writeFileUtf8 path ""
-    config <- loadDefaultConfig
-    let updatedConfig = config { cChangedPaths = f $ cChangedPaths config }
-    runRestylers_ updatedConfig paths
-
-setMaximum :: Natural -> ChangedPathsConfig -> ChangedPathsConfig
-setMaximum m cp = cp { cpcMaximum = m }
-
-setOutcomeSkip :: ChangedPathsConfig -> ChangedPathsConfig
-setOutcomeSkip cp = cp { cpcOutcome = MaximumChangedPathsOutcomeSkip }

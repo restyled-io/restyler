@@ -1,12 +1,26 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Restyler.Prelude
     ( module X
     , module Restyler.Prelude
     )
 where
 
-import RIO as X hiding (exitSuccess)
+import RIO as X hiding
+    ( logDebug
+    , logError
+    , logInfo
+    , logOther
+    , logSticky
+    , logStickyDone
+    , logWarn
+    , readFileBinary
+    , readFileUtf8
+    , writeFileUtf8
+    )
 
 import Control.Error.Util as X (hush, note)
+import Control.Monad.Except as X (ExceptT(..), MonadError(..), runExceptT)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Data.Bitraversable as X (bimapM)
 import Data.Functor.Syntax as X ((<$$>))
@@ -33,11 +47,15 @@ import qualified RIO.Text as T
 -- Apparently they fixed a space leak in Data.List's version :shrug:
 import qualified Data.Text.Internal.Functions as List (intersperse)
 
--- | Like @'withReader'@ for @'RIO'@
-withRIO :: (env' -> env) -> RIO env a -> RIO env' a
-withRIO f m = do
-    env <- asks f
-    runRIO env m
+instance (MonadUnliftIO m, Exception e) => MonadUnliftIO (ExceptT e m) where
+    withRunInIO exceptToIO = ExceptT $ try $ do
+        withRunInIO $ \runInIO ->
+            exceptToIO (runInIO . (either throwIO pure <=< runExceptT))
+
+onError :: MonadError e m => m a -> (e -> m ()) -> m a
+onError f g = f `catchError` \ex -> do
+    g ex
+    throwError ex
 
 guardM :: (Monad m, Alternative m) => m Bool -> m ()
 guardM mb = do
@@ -55,16 +73,6 @@ decodeUtf8 = T.decodeUtf8With T.lenientDecode
 
 displayIntercalated :: Display a => Utf8Builder -> [a] -> Utf8Builder
 displayIntercalated sep = mconcat . List.intersperse sep . map display
-
-handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
-handles = flip catches
-
-handleTo
-    :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
-handleTo f = handle (throwIO . f)
-
-tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
-tryTo f = fmap (first f) . try
 
 intersects :: (Foldable t1, Foldable t2, Ord a) => t1 a -> t2 a -> Bool
 intersects a b = not $ Set.null $ Set.intersection a' b'

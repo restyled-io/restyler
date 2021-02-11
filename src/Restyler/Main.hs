@@ -5,11 +5,16 @@ where
 
 import Restyler.Prelude
 
-import Restyler.App.Class
 import Restyler.App.Error
+import Restyler.Capabilities.DownloadFile
+import Restyler.Capabilities.Git
+import Restyler.Capabilities.GitHub
+import Restyler.Capabilities.Hushed
+import Restyler.Capabilities.Logger
+import Restyler.Capabilities.Process
+import Restyler.Capabilities.System
 import Restyler.Comment
 import Restyler.Config
-import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
@@ -18,86 +23,167 @@ import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
 restylerMain
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadHushed m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadDownloadFile m
+       , MonadGitHub m
+       , MonadGit m
+       , MonadError AppError m
+       , MonadReader env m
        , HasOptions env
-       , HasConfig env
        , HasPullRequest env
-       , HasRestyledPullRequest env
-       , HasSystem env
-       , HasExit env
-       , HasProcess env
-       , HasGit env
-       , HasDownloadFile env
-       , HasGitHub env
+       , HasConfig env
        )
-    => RIO env a
+    => m ()
 restylerMain = do
-    results <- restyle
-    logDebug $ "Restyling results: " <> displayIntercalated ", " results
+    mRestyledPullRequest <- findRestyledPullRequest
 
-    jobUrl <- oJobUrl <$> view optionsL
+    result <- do
+        eitherM
+                (pure . NotRestyled)
+                (const $ do
+                    checkoutRestyleBranch mRestyledPullRequest
+                    restyle
+                )
+            $ runExceptT gateShouldNotRestyle
+
+    case result of
+        NotRestyled reason -> do
+            traverse_ cleanupRestyledPullRequest mRestyledPullRequest
+            logInfo $ display reason
+        RestyledNoDifferences{} -> do
+            traverse_ cleanupRestyledPullRequest mRestyledPullRequest
+            sendPullRequestStatus NoDifferencesStatus
+            logInfo "No style differences found"
+        Restyled results -> do
+            mUrl <- openOrUpdateRestyledPullRequest results mRestyledPullRequest
+            sendPullRequestStatus $ DifferencesStatus mUrl
+            logInfo "Restyling successful"
+
+data RestyleResult
+    = NotRestyled NotRestyledReason
+    | RestyledNoDifferences [RestylerResult]
+    | Restyled [RestylerResult]
+
+instance Display RestyleResult where
+    display = \case
+        NotRestyled reason -> "Not restyled: " <> display reason
+        RestyledNoDifferences{} -> "No differences"
+        Restyled results -> "Restyled: " <> displayIntercalated "," results
+
+data NotRestyledReason
+    = NotRestyledPullRequestClosed
+    | NotRestyledSkipped NotRestyledSkippedReason
+
+instance Display NotRestyledReason where
+    display = \case
+        NotRestyledPullRequestClosed -> "Pull Request closed"
+        NotRestyledSkipped reason -> "Skipped, " <> display reason
+
+data NotRestyledSkippedReason
+    = NotRestyledConfigDisabled
+    | NotRestyledSkippedIgnoreLabels
+
+instance Display NotRestyledSkippedReason where
+    display = \case
+        NotRestyledConfigDisabled -> "disabled in configuration"
+        NotRestyledSkippedIgnoreLabels -> "Labels matched ignores"
+
+gateShouldNotRestyle
+    :: ( MonadLogger m
+       , MonadGitHub m
+       , MonadError NotRestyledReason m
+       , MonadReader env m
+       , HasPullRequest env
+       , HasConfig env
+       )
+    => m ()
+gateShouldNotRestyle = do
     pullRequest <- view pullRequestL
-    mRestyledPullRequest <- view restyledPullRequestL
+    when (pullRequestIsClosed pullRequest)
+        $ throwError NotRestyledPullRequestClosed
 
-    unlessM wasRestyled $ do
-        clearRestyledComments pullRequest
-        traverse_ closeRestyledPullRequest mRestyledPullRequest
-        sendPullRequestStatus $ NoDifferencesStatus jobUrl
-        exitWithInfo "No style differences found"
+    whenConfig (not . cEnabled) $ throwError $ NotRestyledSkipped
+        NotRestyledConfigDisabled
 
-    whenM isAutoPush $ do
-        logInfo "Pushing Restyle commits to original PR"
-        gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
-        gitMerge $ unpack $ pullRequestRestyledHeadRef pullRequest
+    labels <- getPullRequestLabelNames pullRequest
+    whenConfig ((labels `intersects`) . cIgnoreLabels)
+        $ throwError
+        $ NotRestyledSkipped NotRestyledSkippedIgnoreLabels
 
-        -- This will fail if other changes came in while we were restyling, but
-        -- it also means that we should be working on a Job for those changes
-        -- already
-        handleAny warnIgnore $ gitPush $ unpack $ pullRequestHeadRef pullRequest
-        exitWithInfo "Pushed Restyle commits to original PR"
+checkoutRestyleBranch
+    :: (MonadLogger m, MonadGit m, MonadReader env m, HasPullRequest env)
+    => Maybe RestyledPullRequest
+    -> m ()
+checkoutRestyleBranch mRestyledPullRequest = do
+    ref <- maybeM
+        (pullRequestRestyledHeadRef <$> view pullRequestL)
+        (pure . restyledPullRequestHeadRef)
+        (pure mRestyledPullRequest)
 
-    -- NB there is the edge-case of switching this off mid-PR. A previously
-    -- opened Restyle PR would stop updating at that point.
-    whenConfig (not . cPullRequests) $ do
-        sendPullRequestStatus $ DifferencesStatus jobUrl
-        exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
-
-    url <- restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
-        Nothing -> createRestyledPullRequest pullRequest results
-        Just pr -> updateRestyledPullRequest pr results
-
-    sendPullRequestStatus $ DifferencesStatus $ Just url
-    exitWithInfo "Restyling successful"
+    logInfo $ "Checking out " <> display ref
+    gitCheckout $ unpack ref
 
 restyle
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadHushed m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadDownloadFile m
+       , MonadGit m
+       , MonadError AppError m
+       , MonadReader env m
        , HasOptions env
-       , HasConfig env
        , HasPullRequest env
-       , HasSystem env
-       , HasProcess env
-       , HasGit env
-       , HasDownloadFile env
+       , HasConfig env
        )
-    => RIO env [RestylerResult]
+    => m RestyleResult
 restyle = do
     config <- view configL
     pullRequest <- view pullRequestL
     pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
-    runRestylers config pullRequestPaths
+    results <- runRestylers config pullRequestPaths
+    let headRef = pullRequestLocalHeadRef pullRequest
+    differences <- not . null <$> changedPaths headRef
+    pure $ if differences
+        then Restyled results
+        else RestyledNoDifferences results
 
-wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
-wasRestyled = do
-    headRef <- pullRequestLocalHeadRef <$> view pullRequestL
-    not . null <$> changedPaths headRef
+openOrUpdateRestyledPullRequest
+    :: ( MonadLogger m
+       , MonadGitHub m
+       , MonadGit m
+       , MonadReader env m
+       , HasOptions env
+       , HasConfig env
+       , HasPullRequest env
+       )
+    => [RestylerResult]
+    -> Maybe RestyledPullRequest
+    -> m (Maybe URL)
+openOrUpdateRestyledPullRequest results mRestyledPullRequest = do
+    config <- view configL
 
-changedPaths :: HasGit env => Text -> RIO env [FilePath]
+    if cPullRequests config
+        then Just . pullRequestHtmlUrl <$> case mRestyledPullRequest of
+            Nothing -> do
+                pullRequest <- view pullRequestL
+                createRestyledPullRequest pullRequest results
+            Just pr -> updateRestyledPullRequest pr results
+        else oJobUrl <$> view optionsL
+
+cleanupRestyledPullRequest
+    :: (MonadGitHub m, MonadReader env m, HasPullRequest env)
+    => RestyledPullRequest
+    -> m ()
+cleanupRestyledPullRequest restyledPullRequest = do
+    pullRequest <- view pullRequestL
+    clearRestyledComments pullRequest
+    closeRestyledPullRequest restyledPullRequest
+
+changedPaths :: MonadGit m => Text -> m [FilePath]
 changedPaths branch = do
     ref <- maybe branch pack <$> gitMergeBase (unpack branch)
     gitDiffNameOnly $ Just $ unpack ref
-
-isAutoPush :: (HasConfig env, HasPullRequest env) => RIO env Bool
-isAutoPush = do
-    isAuto <- cAuto <$> view configL
-    pullRequest <- view pullRequestL
-    pure $ isAuto && not (pullRequestIsFork pullRequest)

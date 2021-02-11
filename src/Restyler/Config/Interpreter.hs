@@ -33,7 +33,6 @@ readInterpreter contents = do
     line <- headMaybe $ T.lines contents
     parseInterpreter . unpack $ T.strip line
 
--- | TODO: Megaparsec?
 parseInterpreter :: String -> Maybe Interpreter
 parseInterpreter ('#' : '!' : rest) =
     hush $ intepreterFromString =<< case words rest of

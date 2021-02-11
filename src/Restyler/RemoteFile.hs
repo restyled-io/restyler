@@ -8,7 +8,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import Restyler.App.Class
+import Restyler.Capabilities.DownloadFile
 import Restyler.Config.ExpectedKeys
 
 data RemoteFile = RemoteFile
@@ -24,8 +24,5 @@ instance ToJSON RemoteFile where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
-downloadRemoteFile
-    :: (HasLogFunc env, HasDownloadFile env) => RemoteFile -> RIO env ()
-downloadRemoteFile RemoteFile {..} = do
-    logInfo $ fromString $ "Fetching remote file: " <> rfPath
-    downloadFile (getUrl rfUrl) rfPath
+downloadRemoteFile :: MonadDownloadFile m => RemoteFile -> m ()
+downloadRemoteFile RemoteFile {..} = downloadFile (getUrl rfUrl) rfPath

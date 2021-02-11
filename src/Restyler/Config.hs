@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_HADDOCK prune, ignore-exports #-}
@@ -18,7 +19,6 @@
 --
 module Restyler.Config
     ( Config(..)
-    , ConfigError(..)
     , configPullRequestReviewer
     , loadConfig
     , HasConfig(..)
@@ -29,7 +29,7 @@ module Restyler.Config
     -- * Exported for use in tests
     , ConfigSource(..)
     , loadConfigFrom
-    , resolveRestylers
+    , decodeEither
     , defaultConfigContent
     , configPaths
     )
@@ -47,11 +47,13 @@ import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid (Alt(..))
 import qualified Data.Set as Set
-import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
 import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
-import Restyler.App.Class
+import Restyler.App.Error
+import Restyler.Capabilities.DownloadFile
+import Restyler.Capabilities.Logger
+import Restyler.Capabilities.System
 import Restyler.CommitTemplate
 import Restyler.Config.ChangedPaths
 import Restyler.Config.ExpectedKeys
@@ -140,10 +142,6 @@ data Config = Config
     , cLabels :: Set (Name IssueLabel)
     , cIgnoreLabels :: Set (Name IssueLabel)
     , cRestylers :: [Restyler]
-    -- ^ TODO: @'NonEmpty'@
-    --
-    -- It's true, but what's the benefit?
-    --
     }
     deriving stock (Eq, Show, Generic)
 
@@ -155,13 +153,7 @@ instance ToJSON Config where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
-data ConfigError
-    = ConfigErrorInvalidYaml ByteString Yaml.ParseException
-    | ConfigErrorInvalidRestylers [String]
-    | ConfigErrorInvalidRestylersYaml SomeException
-    deriving stock Show
-
-configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
+configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> AppError
 configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
     . Yaml.modifyYamlProblem modify
   where
@@ -175,41 +167,72 @@ configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
     isCannotStart = ("character that cannot start any token" `isInfixOf`)
     hasTabIndent = ("\n\t" `C8.isInfixOf`)
 
-instance Exception ConfigError
-
 -- | Load a fully-inflated @'Config'@
 --
 -- Read any @.restyled.yaml@, fill it out from defaults, grab the versioned set
 -- of restylers data, and apply the configured choices and overrides.
 --
 loadConfig
-    :: (HasLogFunc env, HasSystem env, HasDownloadFile env) => RIO env Config
-loadConfig =
-    loadConfigFrom (map ConfigPath configPaths)
-        $ handleTo ConfigErrorInvalidRestylersYaml
-        . getAllRestylersVersioned
+    :: ( MonadError AppError m
+       , MonadLogger m
+       , MonadSystem m
+       , MonadDownloadFile m
+       )
+    => m Config
+loadConfig = loadConfigFrom $ map ConfigPath configPaths
+
+loadConfigFrom
+    :: ( MonadError AppError m
+       , MonadLogger m
+       , MonadSystem m
+       , MonadDownloadFile m
+       )
+    => [ConfigSource]
+    -> m Config
+loadConfigFrom sources = do
+    config <- loadConfigF sources
+    restylers <- loadRestylers config
+    logDebug $ displayYaml "Restylers:\n" restylers
+    x <- resolveRestylers config restylers
+    x <$ logDebug (displayYaml "Configuration\n:" x)
+
+loadRestylers
+    :: (MonadError AppError m, MonadSystem m, MonadDownloadFile m)
+    => ConfigF Identity
+    -> m [Restyler]
+loadRestylers =
+    either (throwError . ConfigErrorInvalidRestylersYaml) pure
+        <=< getAllRestylersVersioned
         . runIdentity
         . cfRestylersVersion
 
-loadConfigFrom
-    :: HasSystem env
-    => [ConfigSource]
-    -> (ConfigF Identity -> RIO env [Restyler])
-    -> RIO env Config
-loadConfigFrom sources f = do
-    config <- loadConfigF sources
-    restylers <- f config
-    resolveRestylers config restylers
+getAllRestylersVersioned
+    :: (MonadSystem m, MonadDownloadFile m)
+    => String
+    -> m (Either Yaml.ParseException [Restyler])
+getAllRestylersVersioned version = do
+    downloadRemoteFile restylers
+    Yaml.decodeEither' <$> readFileBS (rfPath restylers)
+  where
+    restylers = RemoteFile
+        { rfUrl = URL $ pack $ restylersYamlUrl version
+        , rfPath = "/tmp/restylers-" <> version <> ".yaml"
+        }
+
+restylersYamlUrl :: String -> String
+restylersYamlUrl version =
+    "https://docs.restyled.io/data-files/restylers/manifests/"
+        <> version
+        <> "/restylers.yaml"
 
 data ConfigSource
     = ConfigPath FilePath
     | ConfigContent ByteString
 
-readConfigSources
-    :: HasSystem env => [ConfigSource] -> RIO env (Maybe ByteString)
+readConfigSources :: MonadSystem m => [ConfigSource] -> m (Maybe ByteString)
 readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
   where
-    go :: HasSystem env => ConfigSource -> RIO env (Maybe ByteString)
+    go :: MonadSystem m => ConfigSource -> m (Maybe ByteString)
     go = \case
         ConfigPath path -> do
             exists <- doesFileExist path
@@ -220,31 +243,35 @@ readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
 --
 -- Returns @'ConfigF' 'Identity'@ because defaulting has populated all fields.
 --
--- May throw any @'ConfigError'@. May through raw @'Yaml.ParseException'@s if
--- there is a programmer error in our static default configuration YAML.
---
-loadConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Identity)
-loadConfigF sources =
+loadConfigF
+    :: (MonadSystem m, MonadError AppError m)
+    => [ConfigSource]
+    -> m (ConfigF Identity)
+loadConfigF sources = do
     resolveConfig
         <$> loadUserConfigF sources
-        <*> decodeThrow defaultConfigContent
+        <*> decodeEither defaultConfigContent
 
-loadUserConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Maybe)
-loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
+loadUserConfigF
+    :: (MonadSystem m, MonadError AppError m)
+    => [ConfigSource]
+    -> m (ConfigF Maybe)
+loadUserConfigF = maybeM (pure emptyConfig) decodeEither . readConfigSources
 
--- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
-decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
-decodeThrow' content =
-    handleTo (configErrorInvalidYaml content) $ decodeThrow content
+decodeEither :: (MonadError AppError m, FromJSON a) => ByteString -> m a
+decodeEither content =
+    either (throwError . configErrorInvalidYaml content) pure
+        $ Yaml.decodeEither' content
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
 -- May throw @'ConfigErrorInvalidRestylers'@.
 --
-resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
+resolveRestylers
+    :: MonadError AppError m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
     restylers <-
-        either (throwIO . ConfigErrorInvalidRestylers) pure
+        either (throwError . ConfigErrorInvalidRestylers) pure
         $ overrideRestylers allRestylers
         $ unSketchy
         $ runIdentity cfRestylers
@@ -268,17 +295,24 @@ resolveRestylers ConfigF {..} allRestylers = do
 class HasConfig env where
     configL :: Lens' env Config
 
-whenConfig :: HasConfig env => (Config -> Bool) -> RIO env () -> RIO env ()
+whenConfig
+    :: (MonadReader env m, HasConfig env) => (Config -> Bool) -> m () -> m ()
 whenConfig check act =
     whenConfigJust (bool Nothing (Just ()) . check) (const act)
 
 whenConfigNonEmpty
-    :: HasConfig env => (Config -> [a]) -> ([a] -> RIO env ()) -> RIO env ()
+    :: (MonadReader env m, HasConfig env)
+    => (Config -> [a])
+    -> ([a] -> m ())
+    -> m ()
 whenConfigNonEmpty check act =
     whenConfigJust (NE.nonEmpty . check) (act . NE.toList)
 
 whenConfigJust
-    :: HasConfig env => (Config -> Maybe a) -> (a -> RIO env ()) -> RIO env ()
+    :: (MonadReader env m, HasConfig env)
+    => (Config -> Maybe a)
+    -> (a -> m ())
+    -> m ()
 whenConfigJust check act = traverse_ act . check =<< view configL
 
 defaultConfigContent :: ByteString
@@ -291,3 +325,6 @@ configPaths =
     , ".github/restyled.yaml"
     , ".github/restyled.yml"
     ]
+
+displayYaml :: ToJSON a => Utf8Builder -> a -> Utf8Builder
+displayYaml prefix = (prefix <>) . display . decodeUtf8 . Yaml.encode

@@ -6,8 +6,9 @@ where
 import SpecHelper
 
 import qualified Data.Text as T
-import Restyler.App.Class
+import Restyler.Capabilities.System
 import Restyler.Delimited
+import Restyler.TestApp
 
 spec :: Spec
 spec = do
@@ -87,7 +88,7 @@ spec = do
                 , "end"
                 ]
 
-markLinesRestyled :: HasSystem env => [FilePath] -> RIO env ()
+markLinesRestyled :: MonadSystem m => [FilePath] -> m ()
 markLinesRestyled = traverse_
     $ \path -> writeFile path . mark =<< readFile path
     where mark = T.unlines . map ("RESTYLED: " <>) . T.lines

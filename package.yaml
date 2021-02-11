@@ -54,6 +54,7 @@ library:
     - file-embed
     - filepath
     - github
+    - http-client
     - http-client-tls
     - http-conduit
     - megaparsec
@@ -66,6 +67,7 @@ library:
     - shakespeare
     - text
     - transformers
+    - unliftio
     - unordered-containers
     - validation
     - vector
@@ -92,12 +94,13 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - envparse
       - conduit
+      - envparse
       - http-conduit
-      - text
+      - mtl
       - restyler
       - rio
+      - text
       - unliftio
 
 tests:
@@ -113,8 +116,10 @@ tests:
       - github
       - hspec
       - hspec-expectations-lifted
+      - http-client
       - lens
       - lens-aeson
+      - mtl
       - restyler
       - rio
       - shakespeare

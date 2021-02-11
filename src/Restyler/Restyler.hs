@@ -2,7 +2,6 @@
 
 module Restyler.Restyler
     ( Restyler(..)
-    , getAllRestylersVersioned
 
     -- * Exported for testing
     , upgradeEnabled
@@ -14,12 +13,9 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import qualified Data.HashMap.Lazy as HM
-import Data.Yaml (decodeFileThrow)
-import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
-import Restyler.RemoteFile
 
 data Restyler = Restyler
     { rEnabled :: Bool
@@ -60,20 +56,3 @@ upgradeEnabled =
 instance ToJSON Restyler where
     toJSON = genericToJSON $ aesonPrefix snakeCase
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
-
-getAllRestylersVersioned
-    :: (HasLogFunc env, HasDownloadFile env) => String -> RIO env [Restyler]
-getAllRestylersVersioned version = do
-    downloadRemoteFile restylers
-    decodeFileThrow $ rfPath restylers
-  where
-    restylers = RemoteFile
-        { rfUrl = URL $ pack $ restylersYamlUrl version
-        , rfPath = "/tmp/restylers-" <> version <> ".yaml"
-        }
-
-restylersYamlUrl :: String -> String
-restylersYamlUrl version =
-    "https://docs.restyled.io/data-files/restylers/manifests/"
-        <> version
-        <> "/restylers.yaml"
