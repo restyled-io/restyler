@@ -8,10 +8,7 @@ where
 import SpecHelper
 
 import Data.List (isInfixOf)
-import qualified Data.Text as T
 import Restyler.App.Error
-import Restyler.Capabilities.DownloadFile
-import Restyler.Capabilities.Logger
 import Restyler.Capabilities.System
 import Restyler.Config
 import Restyler.Config.Include
@@ -24,7 +21,7 @@ spec = do
     it "supports a simple, name-based syntax" $ runTestApp $ do
         defaultConfig <- loadDefaultConfig
 
-        result <- loadTestConfig [st|
+        result <- loadConfigText [st|
             ---
             - stylish-haskell
             - prettier
@@ -40,7 +37,7 @@ spec = do
     it "has a setting for globally disabling" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result <- loadTestConfig [st|
+        result <- loadConfigText [st|
             ---
             enabled: false
             restylers:
@@ -52,19 +49,19 @@ spec = do
     it "allows re-configuring includes" $ runTestApp $ do
         defaultConfig <- loadDefaultConfig
 
-        result1 <- loadTestConfig [st|
+        result1 <- loadConfigText [st|
             ---
             - stylish-haskell:
                 include:
                 - "**/*.lhs"
         |]
-        result2 <- loadTestConfig [st|
+        result2 <- loadConfigText [st|
             ---
             - stylish-haskell:
                 include:
                 - "**/*.lhs"
         |]
-        result3 <- loadTestConfig [st|
+        result3 <- loadConfigText [st|
             ---
             restylers:
             - stylish-haskell:
@@ -86,17 +83,17 @@ spec = do
     it "has good errors for unknown name" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result1 <- tryError $ loadTestConfig [st|
+        result1 <- tryError $ loadConfigText [st|
             ---
             - uknown-name
         |]
-        result2 <- tryError $ loadTestConfig [st|
+        result2 <- tryError $ loadConfigText [st|
             ---
             - uknown-name:
                 arguments:
                 - --foo
         |]
-        result3 <- tryError $ loadTestConfig [st|
+        result3 <- tryError $ loadConfigText [st|
             ---
             restylers:
             - uknown-name:
@@ -114,7 +111,7 @@ spec = do
     it "reports multiple unknown names at once" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result <- tryError $ loadTestConfig [st|
+        result <- tryError $ loadConfigText [st|
             ---
             - unknown-name-1
             - unknown-name-2
@@ -128,17 +125,17 @@ spec = do
     it "provides suggestions for close matches" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result1 <- tryError $ loadTestConfig [st|
+        result1 <- tryError $ loadConfigText [st|
             ---
             - hindex
         |]
-        result2 <- tryError $ loadTestConfig [st|
+        result2 <- tryError $ loadConfigText [st|
             ---
             - hindex:
                 arguments:
                 - --foo
         |]
-        result3 <- tryError $ loadTestConfig [st|
+        result3 <- tryError $ loadConfigText [st|
             ---
             restylers:
             - hindex:
@@ -153,15 +150,14 @@ spec = do
     it "doesn't loop on empty overrides" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        loadTestConfig [st|
+        loadConfigText [st|
           - hindent: {}
         |]
-
 
     it "can specify a Restyler with name" $ runTestApp $ do
         defaultConfig <- loadDefaultConfig
 
-        result <- loadTestConfig [st|
+        result <- loadConfigText [st|
             restylers:
               - name: hindent
                 image: restyled/restyler-foo
@@ -188,7 +184,7 @@ spec = do
     it "supports * to indicate all other Restylers" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result <- loadTestConfig [st|
+        result <- loadConfigText [st|
             restylers:
             - jdt
             - "*"
@@ -221,7 +217,7 @@ spec = do
     it "can place * anywhere" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result <- loadTestConfig [st|
+        result <- loadConfigText [st|
             restylers:
             - jdt
             - "*"
@@ -255,7 +251,7 @@ spec = do
     it "errors for more than one *" $ runTestApp $ do
         stageManifest "stable" testRestylers
 
-        result <- tryError $ loadTestConfig [st|
+        result <- tryError $ loadConfigText [st|
             restylers:
             - "*"
             - jdt
@@ -265,7 +261,7 @@ spec = do
         result `shouldSatisfy` hasError "1 wildcard"
 
     it "handles invalid indentation nicely" $ runTestApp $ do
-        result <- tryError $ loadTestConfig [st|
+        result <- tryError $ loadConfigText [st|
             restylers:
               - prettier:
                 include:
@@ -277,7 +273,7 @@ spec = do
 
     it "handles tabs nicely" $ runTestApp $ do
         stageManifest "stable" testRestylers
-        result <- tryError $ loadTestConfig [st|
+        result <- tryError $ loadConfigText [st|
             statuses:
             	differences: false
         |]
@@ -323,21 +319,3 @@ spec = do
 hasError :: String -> Either AppError a -> Bool
 hasError msg (Left err) = msg `isInfixOf` prettyAppError err
 hasError _ _ = False
-
-loadTestConfig
-    :: ( MonadLogger m
-       , MonadSystem m
-       , MonadDownloadFile m
-       , MonadError AppError m
-       )
-    => Text
-    -> m Config
-loadTestConfig content = do
-    loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
-
-dedent :: Text -> Text
-dedent x = T.unlines $ map (T.drop indent) ls
-  where
-    ls = T.lines $ T.dropWhileEnd isSpace $ T.dropWhile (== '\n') x
-    indent = fromMaybe 0 $ minimumMaybe indents
-    indents = map (T.length . T.takeWhile (== ' ')) ls

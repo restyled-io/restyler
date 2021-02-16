@@ -23,6 +23,7 @@ import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
 import Control.Monad.State
+import qualified Data.Text as T
 import qualified Data.Yaml as Yaml
 import Restyler.App.Error
 import Restyler.Capabilities.DownloadFile
@@ -31,9 +32,6 @@ import Restyler.Capabilities.Logger
 import Restyler.Capabilities.System
 import Restyler.Config
 import Restyler.Restyler
-
-tryError :: MonadError e m => m a -> m (Either e a)
-tryError f = (Right <$> f) `catchError` (pure . Left)
 
 loadDefaultConfig
     :: ( MonadLogger m
@@ -46,7 +44,27 @@ loadDefaultConfig
     => m Config
 loadDefaultConfig = do
     stageManifest "stable" testRestylers
-    loadConfigFrom [ConfigContent defaultConfigContent]
+    loadConfigContent defaultConfigContent
+
+loadConfigText
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadDownloadFile m
+       , MonadError AppError m
+       )
+    => Text
+    -> m Config
+loadConfigText = loadConfigContent . encodeUtf8 . dedent
+
+loadConfigContent
+    :: ( MonadLogger m
+       , MonadSystem m
+       , MonadDownloadFile m
+       , MonadError AppError m
+       )
+    => ByteString
+    -> m Config
+loadConfigContent = loadConfigFrom . pure . ConfigContent
 
 stageManifest
     :: (MonadState env m, HasStagedDownloadFiles env)
@@ -101,3 +119,10 @@ someRestyler = Restyler
     , rSupportsArgSep = True
     , rSupportsMultiplePaths = True
     }
+
+dedent :: Text -> Text
+dedent x = T.unlines $ map (T.drop indent) ls
+  where
+    ls = T.lines $ T.dropWhileEnd isSpace $ T.dropWhile (== '\n') x
+    indent = fromMaybe 0 $ minimumMaybe indents
+    indents = map (T.length . T.takeWhile (== ' ')) ls

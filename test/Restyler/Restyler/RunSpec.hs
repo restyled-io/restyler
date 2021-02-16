@@ -62,7 +62,7 @@ spec = do
             it "has a default maximum" $ runTestApp $ do
                 config <- loadDefaultConfig
                 let paths = mkPaths 1001
-                traverse_ (`addNormalFile` "") paths
+                traverse_ (`writeFile` "") paths
 
                 result <- tryError $ runRestylers_ config paths
 
@@ -80,7 +80,7 @@ spec = do
                             { cpcMaximum = 10
                             }
                         }
-                traverse_ (`addNormalFile` "") paths
+                traverse_ (`writeFile` "") paths
 
                 result <- tryError $ runRestylers_ updatedConfig paths
 
@@ -98,7 +98,7 @@ spec = do
                             { cpcOutcome = MaximumChangedPathsOutcomeSkip
                             }
                         }
-                traverse_ (`addNormalFile` "") paths
+                traverse_ (`writeFile` "") paths
 
                 runRestylers_ updatedConfig paths `shouldReturn` ()
 
@@ -120,7 +120,7 @@ spec = do
         describe "findFiles" $ do
             it "expands and excludes" $ runTestApp $ do
                 traverse_
-                    (uncurry addNormalFile)
+                    (uncurry writeFile)
                     [ ("/foo/bar/baz/bat", "")
                     , ("/foo/bar/baz/quix", "")
                     , ("/foo/bat/baz", "")
@@ -137,7 +137,7 @@ spec = do
                                    ]
 
             it "excludes symlinks" $ runTestApp $ do
-                addNormalFile "/foo/bar" ""
+                writeFile "/foo/bar" ""
                 addSymlink "/foo/bar" "/foo/baz/bat"
 
                 findFiles ["foo"] `shouldReturn` ["foo/bar"]

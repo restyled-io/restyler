@@ -57,6 +57,9 @@ onError f g = f `catchError` \ex -> do
     g ex
     throwError ex
 
+tryError :: MonadError e m => m a -> m (Either e a)
+tryError f = (Right <$> f) `catchError` (pure . Left)
+
 guardM :: (Monad m, Alternative m) => m Bool -> m ()
 guardM mb = do
     b <- mb
