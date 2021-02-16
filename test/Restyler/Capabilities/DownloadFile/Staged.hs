@@ -16,6 +16,7 @@ import Restyler.Prelude
 import Control.Lens ((%=))
 import Control.Monad.State
 import Network.HTTP.Client (HttpException(..))
+import Prelude (userError)
 import Restyler.App.Error
 import Restyler.Capabilities.DownloadFile
 import Restyler.Capabilities.System.State
@@ -35,7 +36,10 @@ instance (MonadError AppError m, MonadState env m, HasFS env, HasStagedDownloadF
         case mRemoteFile of
             Nothing -> do
                 staged <- gets $ view (stagedDownloadFilesL . unL)
-                error
+                throwError
+                    $ OtherError
+                    $ toException
+                    $ userError
                     $ "The URL "
                     <> show url
                     <> " was requested via DownloadFile, but nothing's been staged."
