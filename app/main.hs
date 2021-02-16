@@ -21,4 +21,6 @@ main = restylerCLI parseOptions $ \options path -> do
     runAppT startupApp $ do
         setupApp <- Setup.loadApp startupApp
         app <- replaceAppT setupApp $ loadApp setupApp
-        replaceAppT app $ restylerMain `onError` errorPullRequest
+        replaceAppT app
+            $ appErrorBoundary restylerMain
+            `onError` errorPullRequest

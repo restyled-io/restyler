@@ -4,6 +4,7 @@ module Restyler.AppT
     ( AppT(..)
     , runAppT
     , replaceAppT
+    , appErrorBoundary
     )
 where
 
@@ -41,14 +42,13 @@ newtype AppT env a = AppT
     deriving MonadGitHub via (ActualGitHub (AppT env))
 
 runAppT :: MonadIO m => env -> AppT env a -> m (Either AppError a)
-runAppT app =
-    liftIO . runExceptT . flip runReaderT app . unAppT . handleAppError
-
-handleAppError :: AppT env a -> AppT env a
-handleAppError = handle $ throwError . OtherError
+runAppT app = liftIO . runExceptT . flip runReaderT app . unAppT
 
 replaceAppT :: env -> AppT env a -> AppT env' a
 replaceAppT app = withAppT (const app)
 
 withAppT :: (env' -> env) -> AppT env a -> AppT env' a
 withAppT f = AppT . withReaderT f . unAppT
+
+appErrorBoundary :: AppT env a -> AppT env a
+appErrorBoundary = handle $ throwError . OtherError
