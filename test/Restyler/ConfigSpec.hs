@@ -111,9 +111,10 @@ spec = do
         result3 `shouldSatisfy` hasError
             "Unexpected Restyler name \"uknown-name\""
 
-        {- TODO
-    it "reports multiple unknown names at once" $ example $ do
-        result <- loadTestConfig [st|
+    it "reports multiple unknown names at once" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+
+        result <- tryError $ loadTestConfig [st|
             ---
             - unknown-name-1
             - unknown-name-2
@@ -124,18 +125,20 @@ spec = do
         result `shouldSatisfy` hasError
             "Unexpected Restyler name \"unknown-name-2\""
 
-    it "provides suggestions for close matches" $ example $ do
-        result1 <- loadTestConfig [st|
+    it "provides suggestions for close matches" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+
+        result1 <- tryError $ loadTestConfig [st|
             ---
             - hindex
         |]
-        result2 <- loadTestConfig [st|
+        result2 <- tryError $ loadTestConfig [st|
             ---
             - hindex:
                 arguments:
                 - --foo
         |]
-        result3 <- loadTestConfig [st|
+        result3 <- tryError $ loadTestConfig [st|
             ---
             restylers:
             - hindex:
@@ -147,15 +150,16 @@ spec = do
         result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
         result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
-    it "doesn't loop on empty overrides" $ example $ do
-        result <- loadTestConfig [st|
+    it "doesn't loop on empty overrides" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+
+        loadTestConfig [st|
           - hindent: {}
         |]
 
-        result `shouldSatisfy` isRight
 
-    it "can specify a Restyler with name" $ example $ do
-        defaultConfig <- loadDefaultConfig'
+    it "can specify a Restyler with name" $ runTestApp $ do
+        defaultConfig <- loadDefaultConfig
 
         result <- loadTestConfig [st|
             restylers:
@@ -168,7 +172,7 @@ spec = do
                   - "**/*.jsx"
         |]
 
-        result `shouldBe` Right defaultConfig
+        result `shouldBe` defaultConfig
             { cRestylers =
                 [ someRestyler
                       { rEnabled = True
@@ -181,8 +185,10 @@ spec = do
                 ]
             }
 
-    it "supports * to indicate all other Restylers" $ example $ do
-        result <- assertTestConfig [st|
+    it "supports * to indicate all other Restylers" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+
+        result <- loadTestConfig [st|
             restylers:
             - jdt
             - "*"
@@ -212,8 +218,10 @@ spec = do
                        , ("yapf", True)
                        ]
 
-    it "can place * anywhere" $ example $ do
-        result <- assertTestConfig [st|
+    it "can place * anywhere" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+
+        result <- loadTestConfig [st|
             restylers:
             - jdt
             - "*"
@@ -244,8 +252,10 @@ spec = do
                        , ("autopep8", True)
                        ]
 
-    it "errors for more than one *" $ example $ do
-        result <- loadTestConfig [st|
+    it "errors for more than one *" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+
+        result <- tryError $ loadTestConfig [st|
             restylers:
             - "*"
             - jdt
@@ -254,8 +264,8 @@ spec = do
 
         result `shouldSatisfy` hasError "1 wildcard"
 
-    it "handles invalid indentation nicely" $ example $ do
-        result <- loadTestConfig [st|
+    it "handles invalid indentation nicely" $ runTestApp $ do
+        result <- tryError $ loadTestConfig [st|
             restylers:
               - prettier:
                 include:
@@ -265,74 +275,50 @@ spec = do
 
         result `shouldSatisfy` hasError "Do you have incorrect indentation"
 
-    it "handles tabs nicely" $ example $ do
-        result <- loadTestConfig [st|
+    it "handles tabs nicely" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+        result <- tryError $ loadTestConfig [st|
             statuses:
             	differences: false
         |]
 
         result `shouldSatisfy` hasError "containing tabs"
 
-    it "handles no configuration" $ example $ do
-        defaultConfig <- loadDefaultConfig'
-        app <- liftIO $ testApp "/" []
+    it "handles no configuration" $ runTestApp $ do
+        defaultConfig <- loadDefaultConfig
 
-        result <-
-            runRIO app
-            $ tryTo showConfigError
-            $ loadConfigFrom (map ConfigPath configPaths)
-            $ const
-            $ pure testRestylers
+        config <- loadConfigFrom $ map ConfigPath configPaths
 
-        result `shouldBe` Right defaultConfig
+        config `shouldBe` defaultConfig
 
-    it "tries alternative configurations" $ example $ do
-        app <- liftIO $ testApp
-            "/"
-            [("/a", "enabled: true\n"), ("/b", "enabled: false\n")]
+    it "tries alternative configurations" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+        writeFile "/a" "enabled: true\n"
+        writeFile "/b" "enabled: false\n"
 
-        aConfig <-
-            runRIO app
-            $ tryTo showConfigError
-            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-            $ const
-            $ pure testRestylers
+        aConfig <- loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+        bConfig <- loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
 
-        bConfig <-
-            runRIO app
-            $ tryTo showConfigError
-            $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
-            $ const
-            $ pure testRestylers
+        cEnabled aConfig `shouldBe` True
+        cEnabled bConfig `shouldBe` False
 
-        fmap cEnabled aConfig `shouldBe` Right True
-        fmap cEnabled bConfig `shouldBe` Right False
+    it "doesn't skip configurations if there are errors" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+        writeFile "/a" "{[^\n"
+        writeFile "/b" "enabled: false\n"
 
-    it "doesn't skip configurations if there are errors" $ example $ do
-        app <- liftIO
-            $ testApp "/" [("/a", "{[^\n"), ("/b", "enabled: false\n")]
+        result <- tryError $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
 
-        result <-
-            runRIO app
-            $ tryTo showConfigError
-            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-            $ const
-            $ pure testRestylers
+        result `shouldSatisfy` hasError "trouble with your configuration"
 
-        result `shouldSatisfy` isLeft
+    it "doesn't attempt to read unused configurations" $ runTestApp $ do
+        stageManifest "stable" testRestylers
+        writeFile "/a" "enabled: false\n"
+        writeFile "/b" "[{^"
 
-    it "doesn't attempt to read unused configurations" $ example $ do
-        app <- liftIO $ testApp "/" [("/a", "enabled: false\n"), ("/b", "[{^")]
+        config <- loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
 
-        result <-
-            runRIO app
-            $ tryTo showConfigError
-            $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-            $ const
-            $ pure testRestylers
-
-        fmap cEnabled result `shouldBe` Right False
--}
+        cEnabled config `shouldBe` False
 
 hasError :: String -> Either AppError a -> Bool
 hasError msg (Left err) = msg `isInfixOf` prettyAppError err
