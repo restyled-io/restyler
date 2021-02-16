@@ -18,7 +18,7 @@ main :: IO ()
 main = restylerCLI parseOptions $ \options path -> do
     let startupApp = Startup.loadApp options path
 
-    runAppT startupApp $ do
+    runAppT startupApp $ appErrorBoundary $ do
         setupApp <- Setup.loadApp startupApp
         app <- replaceAppT setupApp $ loadApp setupApp
         replaceAppT app
