@@ -17,10 +17,10 @@ import Restyler.Prelude
 import Control.Lens ((%=))
 import Control.Monad.State
 import qualified Data.Map.Strict as Map
-import Restyler.App.Error
-import Restyler.Capabilities.System
 import RIO.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
 import RIO.List (dropPrefix, isPrefixOf)
+import Restyler.App.Error
+import Restyler.Capabilities.System
 import qualified System.Directory as Directory
 
 newtype StateSystem m a = StateSystem

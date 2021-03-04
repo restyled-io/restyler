@@ -5,6 +5,7 @@ where
 
 import SpecHelper
 
+import qualified RIO
 import Restyler.App.Error
 import Restyler.Capabilities.Process.Mock
 import Restyler.Capabilities.System
@@ -15,7 +16,6 @@ import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import Restyler.TestApp
-import qualified RIO
 
 spec :: Spec
 spec = do

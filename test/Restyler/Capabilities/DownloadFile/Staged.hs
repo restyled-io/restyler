@@ -17,10 +17,10 @@ import Control.Lens ((%=))
 import Control.Monad.State
 import Network.HTTP.Client (HttpException(..))
 import Prelude (userError)
+import qualified RIO.HashMap as HashMap
 import Restyler.App.Error
 import Restyler.Capabilities.DownloadFile
 import Restyler.Capabilities.System.State
-import qualified RIO.HashMap as HashMap
 
 newtype StagedDownloadFile m a = StagedDownloadFile
     { unStagedDownloadFile :: m a
