@@ -9,8 +9,7 @@ module Restyler.Restyler.Run
     , runRestyler_
     , withFilteredPaths
     , findFiles
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

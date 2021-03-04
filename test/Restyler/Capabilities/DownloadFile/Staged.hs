@@ -8,8 +8,7 @@ module Restyler.Capabilities.DownloadFile.Staged
     , stageDownloadFile
     , stageDownloadFileError
     , stageDownloadFileInvalidURL
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

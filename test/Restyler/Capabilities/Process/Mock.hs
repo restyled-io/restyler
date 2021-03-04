@@ -7,8 +7,7 @@ module Restyler.Capabilities.Process.Mock
     , processMocks
     , HasProcessMocks(..)
     , prependProcessMock
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

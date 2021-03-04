@@ -1,7 +1,6 @@
 module Restyler.DelimitedSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 

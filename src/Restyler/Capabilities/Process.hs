@@ -1,8 +1,7 @@
 module Restyler.Capabilities.Process
     ( MonadProcess(..)
     , ActualProcess(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

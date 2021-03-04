@@ -1,8 +1,7 @@
 module Restyler.App
     ( App
     , loadApp
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

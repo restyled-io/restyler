@@ -1,8 +1,7 @@
 module Restyler.Config.Interpreter
     ( Interpreter(..)
     , readInterpreter
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

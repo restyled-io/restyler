@@ -2,8 +2,7 @@ module Restyler.Capabilities.Hushed
     ( MonadHushed(..)
     , hushed_
     , ActualHushed(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

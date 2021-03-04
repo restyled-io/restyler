@@ -8,8 +8,7 @@ module Restyler.Delimited
     , DelimitedMeta(..)
     , delimit
     , undelimit
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

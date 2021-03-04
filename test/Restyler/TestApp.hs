@@ -6,8 +6,7 @@ module Restyler.TestApp
     , TestAppState
     , runTestApp
     , runTestAppWith
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

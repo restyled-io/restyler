@@ -6,8 +6,7 @@ module Restyler.RestyledPullRequest
     , createRestyledPullRequest
     , updateRestyledPullRequest
     , closeRestyledPullRequest
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

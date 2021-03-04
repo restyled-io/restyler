@@ -3,8 +3,7 @@
 module Restyler.Capabilities.Logger
     ( MonadLogger(..)
     , ActualLogger(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

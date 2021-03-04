@@ -5,8 +5,7 @@ module Restyler.Capabilities.GitHub
     , runGitHub_
     , runGitHubFirst
     , ActualGitHub(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

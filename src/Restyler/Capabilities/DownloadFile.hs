@@ -3,8 +3,7 @@
 module Restyler.Capabilities.DownloadFile
     ( MonadDownloadFile(..)
     , ActualDownloadFile(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

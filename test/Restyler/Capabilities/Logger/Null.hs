@@ -1,7 +1,6 @@
 module Restyler.Capabilities.Logger.Null
     ( NullLogger(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

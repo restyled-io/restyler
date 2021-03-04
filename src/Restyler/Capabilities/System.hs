@@ -1,8 +1,7 @@
 module Restyler.Capabilities.System
     ( MonadSystem(..)
     , ActualSystem(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

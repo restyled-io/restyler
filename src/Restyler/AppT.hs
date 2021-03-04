@@ -5,8 +5,7 @@ module Restyler.AppT
     , runAppT
     , replaceAppT
     , appErrorBoundary
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

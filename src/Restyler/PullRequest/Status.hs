@@ -2,8 +2,7 @@ module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
     , errorPullRequest
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

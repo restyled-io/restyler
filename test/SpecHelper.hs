@@ -1,24 +1,24 @@
 module SpecHelper
     ( module X
     , module SpecHelper
-    )
-where
+    ) where
 
 import Restyler.Prelude as X
-import Test.Hspec as X hiding
-    ( expectationFailure
-    , shouldBe
-    , shouldContain
-    , shouldEndWith
-    , shouldMatchList
-    , shouldNotBe
-    , shouldNotContain
-    , shouldNotReturn
-    , shouldNotSatisfy
-    , shouldReturn
-    , shouldSatisfy
-    , shouldStartWith
-    )
+import Test.Hspec as X
+    hiding
+        ( expectationFailure
+        , shouldBe
+        , shouldContain
+        , shouldEndWith
+        , shouldMatchList
+        , shouldNotBe
+        , shouldNotContain
+        , shouldNotReturn
+        , shouldNotSatisfy
+        , shouldReturn
+        , shouldSatisfy
+        , shouldStartWith
+        )
 import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 

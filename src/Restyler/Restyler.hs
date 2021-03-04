@@ -5,8 +5,7 @@ module Restyler.Restyler
 
     -- * Exported for testing
     , upgradeEnabled
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

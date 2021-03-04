@@ -1,7 +1,6 @@
 module Restyler.WorkingDirectory
     ( HasWorkingDirectory(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

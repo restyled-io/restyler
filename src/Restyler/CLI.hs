@@ -1,7 +1,6 @@
 module Restyler.CLI
     ( restylerCLI
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

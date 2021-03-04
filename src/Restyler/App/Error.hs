@@ -3,8 +3,7 @@ module Restyler.App.Error
     , prettyAppError
     , ErrorDetails(..)
     , appErrorDetails
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

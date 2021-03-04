@@ -3,21 +3,21 @@
 module Restyler.Prelude
     ( module X
     , module Restyler.Prelude
-    )
-where
+    ) where
 
-import RIO as X hiding
-    ( logDebug
-    , logError
-    , logInfo
-    , logOther
-    , logSticky
-    , logStickyDone
-    , logWarn
-    , readFileBinary
-    , readFileUtf8
-    , writeFileUtf8
-    )
+import RIO as X
+    hiding
+        ( logDebug
+        , logError
+        , logInfo
+        , logOther
+        , logSticky
+        , logStickyDone
+        , logWarn
+        , readFileBinary
+        , readFileUtf8
+        , writeFileUtf8
+        )
 
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Except as X (ExceptT(..), MonadError(..), runExceptT)

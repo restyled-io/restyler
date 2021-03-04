@@ -9,15 +9,14 @@ module Restyler.Capabilities.System.State
     , addExecutableFile
     , addSymlink
     , addUnreadableFile
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
 import Control.Lens ((%=))
 import Control.Monad.State
 import qualified Data.Map.Strict as Map
-import RIO.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
+import RIO.FilePath ((</>), addTrailingPathSeparator, isAbsolute)
 import RIO.List (dropPrefix, isPrefixOf)
 import Restyler.App.Error
 import Restyler.Capabilities.System

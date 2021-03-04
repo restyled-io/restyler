@@ -2,8 +2,7 @@
 
 module Restyler.Capabilities.Hushed.Except
     ( ExceptHushed(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

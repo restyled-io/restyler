@@ -2,8 +2,7 @@
 
 module Restyler.ConfigSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 

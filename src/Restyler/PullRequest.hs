@@ -17,13 +17,12 @@ module Restyler.PullRequest
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
     , pullRequestRestyledHeadRef
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
-import GitHub.Data hiding
-    (pullRequestHtmlUrl, pullRequestNumber, pullRequestState)
+import GitHub.Data
+    hiding (pullRequestHtmlUrl, pullRequestNumber, pullRequestState)
 import qualified GitHub.Data as GH
 import Restyler.PullRequestSpec
 

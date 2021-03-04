@@ -1,8 +1,7 @@
 module Restyler.Comment
     ( leaveRestyledComment
     , clearRestyledComments
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

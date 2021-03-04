@@ -1,7 +1,6 @@
 module Restyler.Restyler.RunSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 

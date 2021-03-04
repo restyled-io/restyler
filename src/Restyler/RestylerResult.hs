@@ -5,8 +5,7 @@ module Restyler.RestylerResult
     , noPathsRestylerResult
     , getRestylerResult
     , restylerCommittedChanges
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

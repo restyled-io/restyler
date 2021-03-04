@@ -1,8 +1,7 @@
 module Restyler.Clone
     ( clonePullRequest
     , checkoutPullRequest
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

@@ -32,8 +32,7 @@ module Restyler.Config
     , decodeEither
     , defaultConfigContent
     , configPaths
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
