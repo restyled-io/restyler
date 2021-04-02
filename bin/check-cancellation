@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+docker build --tag restyled/restyler:test .
+
+export AWS_PROFILE=restyled
+
+echo "Launching Restyler"
+(restyled promote --image restyled/restyler:test stable |& ts >/tmp/run.log) &
+pid=$!
+echo "PID $pid"
+
+cid=
+
+echo "Waiting for Container"
+while [ -z "$cid" ]; do
+  sleep 1
+  cid=$(docker ps | awk '/restyled\/restyler:test/ { print $1 }')
+done
+echo "Container Id: $cid"
+echo "Letting run..."
+sleep 15
+
+echo "Sending SIGQUIT..."
+docker kill --signal SIGQUIT "$cid"
+# echo "Sending SIGSTOP..."
+# docker kill --signal SIGSTOP "$cid"
+# echo "Sending USR1..."
+# docker kill --signal USR1 "$cid"
+
+wait "$pid"
+echo "Restyler stopped."

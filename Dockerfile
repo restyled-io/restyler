@@ -61,5 +61,6 @@ ENV GIT_COMMITTER_EMAIL=commits@restyled.io
 VOLUME /code
 WORKDIR /code
 
-ENTRYPOINT ["/bin/restyler"]
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]
