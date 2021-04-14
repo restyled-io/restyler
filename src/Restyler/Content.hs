@@ -3,8 +3,7 @@
 module Restyler.Content
     ( commentBody
     , pullRequestDescription
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
