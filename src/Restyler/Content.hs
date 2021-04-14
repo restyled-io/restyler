@@ -101,8 +101,12 @@ recommend using the Squash or Rebase strategies.
     -- N.B. Assumes something committed changes, otherwise we'd not be opening
     -- this PR at all
     resultsList = unlines
-        $ map (("- " <>) . rName . rrRestyler)
+        $ map (("- " <>) . restylerListItem . rrRestyler)
         $ filter restylerCommittedChanges results
+
+    restylerListItem Restyler{..} = case rDocumentation of
+        (url:_) -> "[" <> rName <> "](" <> url <> ")"
+        _ -> rName
 
     footer = [st|
 **NOTE**: As work continues on the original Pull Request, this process will
