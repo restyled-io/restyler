@@ -44,6 +44,9 @@ pullRequestDescription mJobUrl pullRequest results
 A duplicate of ##{n} with additional commits that automatically address
 incorrect style, created by [Restyled][].
 
+:warning: Even though this PR is not a Fork, it contains outside contributions.
+Please review accordingly.
+
 Since the original Pull Request was opened as a fork in a contributor's
 repository, we are unable to create a Pull Request branching from it with only
 the style fixes.
