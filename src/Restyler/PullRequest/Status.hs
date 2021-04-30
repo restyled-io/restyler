@@ -13,7 +13,9 @@ import Restyler.Config.Statuses
 import Restyler.PullRequest
 
 data PullRequestStatus
-    = NoDifferencesStatus (Maybe URL)
+    = SkippedStatus Text (Maybe URL)
+    -- ^ We skipped this PR for some reason
+    | NoDifferencesStatus (Maybe URL)
     -- ^ We found no differences after restyling
     | DifferencesStatus (Maybe URL)
     -- ^ We found differences and opened a restyled @'PullRequest'@
@@ -44,16 +46,24 @@ createHeadShaStatus pullRequest status = do
     sha = mkName Proxy $ pullRequestHeadSha pullRequest
     shortSha = fromString $ take 7 $ unpack $ pullRequestHeadSha pullRequest
     shortStatus = case status of
+        SkippedStatus _ _ -> "skipped"
         NoDifferencesStatus _ -> "no differences"
         DifferencesStatus _ -> "differences"
         ErrorStatus _ -> "error"
 
 shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
+shouldSendStatus Statuses {..} (SkippedStatus _ _) = sSkipped
 shouldSendStatus Statuses {..} (NoDifferencesStatus _) = sNoDifferences
 shouldSendStatus Statuses {..} (DifferencesStatus _) = sDifferences
 shouldSendStatus Statuses {..} (ErrorStatus _) = sError
 
 statusToStatus :: PullRequestStatus -> NewStatus
+statusToStatus (SkippedStatus reason mUrl) = NewStatus
+    { newStatusState = StatusSuccess
+    , newStatusTargetUrl = mUrl
+    , newStatusDescription = Just $ "Skipped (" <> reason <> ")"
+    , newStatusContext = Just "restyled"
+    }
 statusToStatus (NoDifferencesStatus mUrl) = NewStatus
     { newStatusState = StatusSuccess
     , newStatusTargetUrl = mUrl
