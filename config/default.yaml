@@ -24,6 +24,7 @@ pull_requests: true
 comments: false
 
 statuses:
+  skipped: true
   differences: true
   no_differences: true
   error: true

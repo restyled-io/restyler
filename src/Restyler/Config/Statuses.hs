@@ -12,7 +12,8 @@ import qualified Data.Aeson.Types as Aeson
 import Restyler.Config.ExpectedKeys
 
 data Statuses = Statuses
-    { sDifferences :: Bool
+    { sSkipped :: Bool
+    , sDifferences :: Bool
     , sNoDifferences :: Bool
     , sError :: Bool
     }
@@ -22,13 +23,15 @@ data Statuses = Statuses
 
 instance FromJSON Statuses where
     parseJSON (Object o) = do
-        validateObjectKeys ["differences", "no_differences", "error"] o
+        validateObjectKeys ["skipped", "differences", "no_differences", "error"] o
         Statuses
-            <$> o .:? "differences" .!= True
+            <$> o .:? "skipped" .!= True
+            <*> o .:? "differences" .!= True
             <*> o .:? "no_differences" .!= True
             <*> o .:? "error" .!= True
     parseJSON (Aeson.Bool b) = pure Statuses
-        { sDifferences = b
+        { sSkipped = b
+        , sDifferences = b
         , sNoDifferences = b
         , sError = b
         }
