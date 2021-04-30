@@ -16,8 +16,6 @@ import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.RestyledPullRequest
--- import Restyler.PullRequest.Restyled
--- import Restyler.PullRequestSpec
 
 restylerSetup
     :: ( HasCallStack
