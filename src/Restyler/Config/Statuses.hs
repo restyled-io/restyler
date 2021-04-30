@@ -1,7 +1,6 @@
 module Restyler.Config.Statuses
     ( Statuses(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

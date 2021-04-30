@@ -2,8 +2,7 @@
 
 module Restyler.Setup
     ( restylerSetup
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
