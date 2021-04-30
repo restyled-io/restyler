@@ -1,6 +1,7 @@
 module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
+    , sendPullRequestStatus'
     )
 where
 
@@ -27,10 +28,21 @@ sendPullRequestStatus
     :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
     => PullRequestStatus
     -> RIO env ()
-sendPullRequestStatus status =
-    whenConfig ((`shouldSendStatus` status) . cStatuses) $ do
-        pullRequest <- view pullRequestL
-        createHeadShaStatus pullRequest status
+sendPullRequestStatus status = do
+    config <- view configL
+    pullRequest <- view pullRequestL
+    sendPullRequestStatus' config pullRequest status
+
+-- | Internals of @'sendPullRequestStatus'@ extracted for non-Reader usage
+sendPullRequestStatus'
+    :: (HasLogFunc env, HasGitHub env)
+    => Config
+    -> PullRequest
+    -> PullRequestStatus
+    -> RIO env ()
+sendPullRequestStatus' Config {..} pullRequest status =
+    when (cStatuses `shouldSendStatus` status)
+        $ createHeadShaStatus pullRequest status
 
 createHeadShaStatus
     :: (HasLogFunc env, HasGitHub env)
