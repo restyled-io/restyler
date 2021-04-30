@@ -15,6 +15,7 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
+import Restyler.PullRequest.Status
 import Restyler.RestyledPullRequest
 
 restylerSetup
@@ -52,8 +53,10 @@ restylerSetup = do
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
     labels <- getPullRequestLabelNames pullRequest
-    when (labels `intersects` cIgnoreLabels config)
-        $ exitWithInfo "Ignoring PR based on its labels"
+    when (labels `intersects` cIgnoreLabels config) $ do
+        let status = SkippedStatus "ignore labels" oJobUrl
+        sendPullRequestStatus' config pullRequest status
+        exitWithInfo "Ignoring PR based on its labels"
 
     case mRestyledPullRequest of
         Nothing -> do
