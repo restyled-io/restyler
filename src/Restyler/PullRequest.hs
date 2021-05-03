@@ -132,4 +132,4 @@ pullRequestHeadRepo = pullRequestCommitRepo . pullRequestHead
 
 pullRequestDefaultBranch :: PullRequest -> Text
 pullRequestDefaultBranch =
-    fromMaybe "master" . (repoDefaultBranch <=< pullRequestBaseRepo)
+    fromMaybe "main" . (repoDefaultBranch <=< pullRequestBaseRepo)
