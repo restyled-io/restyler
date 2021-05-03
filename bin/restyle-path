@@ -13,9 +13,8 @@ usage() {
   cat <<'EOM'
 Usage: restyle-path [-t] [-p] [-d] <path...>
 Options:
-  -t            Docker tag of restyled/restyler image to run. Default is
-                master-final, which is continiously built on CI of our master
-                branch.
+  -t            Docker tag of restyled/restyler image to run. Default is main,
+                which is continiously built on CI of our main branch.
 
   -p            Instruct restyle-path to explicitly pull this image, even if it
                 exists locally already.
@@ -30,7 +29,7 @@ Installation:
 EOM
 }
 
-tag=master-final
+tag=main
 pull=0
 
 while getopts ht:pd opt; do

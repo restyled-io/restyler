@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: master
+    branches: main
 
 jobs:
   build:
@@ -29,6 +29,12 @@ jobs:
           image=restyled/restyler:$(echo "${{ github.sha }}" | head -c7)
           echo "::set-output name=image::${image}"
 
+          if ${{ if github.ref == 'refs/heads/main' }}; then
+            echo "::set-output name=tags::${image},restyled/restyler:main"
+          else
+            echo "::set-output name=tags::${image}"
+          fi
+
       - id: buildx
         uses: docker/setup-buildx-action@v1
 
@@ -52,7 +58,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
           push: true
-          tags: ${{ steps.prep.outputs.image }}
+          tags: ${{ steps.prep.outputs.tags }}
 
       # Avoids ever-growing cache hitting limits
       - run: |
@@ -60,7 +66,7 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   deploy:
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
 
     needs: [build, image]
