@@ -29,7 +29,7 @@ jobs:
           image=restyled/restyler:$(echo "${{ github.sha }}" | head -c7)
           echo "::set-output name=image::${image}"
 
-          if ${{ if github.ref == 'refs/heads/main' }}; then
+          if ${{ github.ref == 'refs/heads/main' }}; then
             echo "::set-output name=tags::${image},restyled/restyler:main"
           else
             echo "::set-output name=tags::${image}"
