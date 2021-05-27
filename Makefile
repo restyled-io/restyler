@@ -42,18 +42,16 @@ image:
 
 AWS ?= aws --profile restyled-ci
 
-DOC_ENVIRONMENT ?= prod
-
 DOC_BUCKET = $(shell \
   $(AWS) cloudformation describe-stacks \
-    --stack-name $(DOC_ENVIRONMENT)-docs \
+    --stack-name sites-docs \
     --query 'Stacks[*].Outputs[?OutputKey==`BucketName`].OutputValue' \
     --output text \
 )
 
 DOC_DISTRIBUTION_ID = $(shell \
   $(AWS) cloudformation describe-stacks \
-    --stack-name $(DOC_ENVIRONMENT)-docs \
+    --stack-name sites-docs \
     --query 'Stacks[*].Outputs[?OutputKey==`DistributionId`].OutputValue' \
     --output text \
 )
