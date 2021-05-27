@@ -72,34 +72,15 @@ jobs:
     needs: [build, image]
 
     steps:
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: restyled-io/gitops-deploy-action@main
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - run: |
-          cat >/tmp/parameters.json <<'EOM'
-          [ { "ParameterKey": "AppsWebhooksDesiredCount"
-            , "UsePreviousValue": true
-            }
-          , { "ParameterKey": "Environment"
-            , "UsePreviousValue": true
-            }
-          , { "ParameterKey": "RestyledImage"
-            , "UsePreviousValue": true
-            }
-          , { "ParameterKey": "RestylerImage"
-            , "ParameterValue": "${{ needs.image.outputs.image }}"
-            }
-          ]
-          EOM
-
-      - uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: prod-services
-          template: https://s3.amazonaws.com/infra.restyled.io/templates/prod/services.yaml
-          parameter-overrides: file:///tmp/parameters.json
+          token: ${{ secrets.GITOPS_ACCESS_TOKEN }}
+          parameter-name: RestylerImage
+          parameter-value: ${{ needs.image.outputs.image }}
+          committer-name: Restyled Commits
+          committer-email: commits@restyled.io
+          repository: restyled-io/ops
+          stacks: cg-app/stacks/*/*/prod/services/*.yaml
 
       - uses: desiderati/github-action-pushover@v1
         if: ${{ always() }}
