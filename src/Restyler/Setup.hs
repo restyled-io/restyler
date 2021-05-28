@@ -52,10 +52,14 @@ restylerSetup = do
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
     mIgnoredReason <- getIgnoredReason config pullRequest
-    for_ mIgnoredReason $ \IgnoredReason {..} -> do
-        let status = SkippedStatus irStatusReason oJobUrl
+    for_ mIgnoredReason $ \reason -> do
+        let item = case reason of
+                IgnoredByAuthor -> "author"
+                IgnoredByBranch -> "branch"
+                IgnoredByLabels -> "labels"
+            status = SkippedStatus ("ignore " <> item) oJobUrl
         sendPullRequestStatus' config pullRequest status
-        exitWithInfo $ "Ignoring PR " <> display irExitMessageSuffix
+        exitWithInfo $ "Ignoring PR based on its " <> display item
 
     case mRestyledPullRequest of
         Nothing -> do
