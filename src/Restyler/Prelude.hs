@@ -25,9 +25,7 @@ import RIO.List as X
 import RIO.Text as X (pack, unpack)
 import Safe as X (fromJustNote)
 
-import qualified Data.Foldable as F
 import qualified Data.HashMap.Lazy as HM
-import qualified Data.Set as Set
 import qualified RIO.Text as T
 
 -- Apparently they fixed a space leak in Data.List's version :shrug:
@@ -65,12 +63,6 @@ handleTo f = handle (throwIO . f)
 
 tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
 tryTo f = fmap (first f) . try
-
-intersects :: (Foldable t1, Foldable t2, Ord a) => t1 a -> t2 a -> Bool
-intersects a b = not $ Set.null $ Set.intersection a' b'
-  where
-    a' = Set.fromList $ F.toList a
-    b' = Set.fromList $ F.toList b
 
 -- | Inverse of @'any'@
 none :: Foldable t => (a -> Bool) -> t a -> Bool
