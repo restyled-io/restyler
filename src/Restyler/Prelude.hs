@@ -1,8 +1,7 @@
 module Restyler.Prelude
     ( module X
     , module Restyler.Prelude
-    )
-where
+    ) where
 
 import RIO as X hiding (exitSuccess)
 

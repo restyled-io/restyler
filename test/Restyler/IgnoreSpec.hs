@@ -1,7 +1,6 @@
 module Restyler.IgnoreSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 

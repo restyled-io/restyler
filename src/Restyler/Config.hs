@@ -32,8 +32,7 @@ module Restyler.Config
     , resolveRestylers
     , defaultConfigContent
     , configPaths
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -237,7 +236,8 @@ loadUserConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Maybe)
 loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
-decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
+decodeThrow'
+    :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
 decodeThrow' content =
     handleTo (configErrorInvalidYaml content) $ decodeThrow content
 

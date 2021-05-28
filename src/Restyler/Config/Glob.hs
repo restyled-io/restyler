@@ -6,8 +6,7 @@ module Restyler.Config.Glob
     , GlobTarget(..)
     , match
     , matchAny
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
