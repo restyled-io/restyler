@@ -4,8 +4,7 @@ module Restyler.Ignore
 
     -- * Pure implementation for tests
     , getIgnoredReason'
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
