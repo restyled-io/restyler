@@ -80,7 +80,7 @@ import Restyler.Restyler
 --
 data ConfigF f = ConfigF
     { cfEnabled :: f Bool
-    , cfExclude :: f (SketchyList Glob)
+    , cfExclude :: f (SketchyList (Glob FilePath))
     , cfChangedPaths :: f ChangedPathsConfig
     , cfAuto :: f Bool
     , cfCommitTemplate :: f CommitTemplate
@@ -90,9 +90,9 @@ data ConfigF f = ConfigF
     , cfStatuses :: f Statuses
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
-    , cfIgnoreAuthors :: f (SketchyList Glob)
-    , cfIgnoreLabels :: f (SketchyList Glob)
-    , cfIgnoreBranches :: f (SketchyList Glob)
+    , cfIgnoreAuthors :: f (SketchyList (Glob (Name User)))
+    , cfIgnoreLabels :: f (SketchyList (Glob (Name IssueLabel)))
+    , cfIgnoreBranches :: f (SketchyList (Glob Text))
     , cfRestylersVersion :: f String
     , cfRestylers :: f (SketchyList RestylerOverride)
     }
@@ -130,7 +130,7 @@ resolveConfig = bzipWith f
 --
 data Config = Config
     { cEnabled :: Bool
-    , cExclude :: [Glob]
+    , cExclude :: [Glob FilePath]
     , cChangedPaths :: ChangedPathsConfig
     , cAuto :: Bool
     , cCommitTemplate :: CommitTemplate
@@ -140,9 +140,9 @@ data Config = Config
     , cStatuses :: Statuses
     , cRequestReview :: RequestReviewConfig
     , cLabels :: Set (Name IssueLabel)
-    , cIgnoreAuthors :: [Glob]
-    , cIgnoreLabels :: [Glob]
-    , cIgnoreBranches :: [Glob]
+    , cIgnoreAuthors :: [Glob (Name User)]
+    , cIgnoreLabels :: [Glob (Name IssueLabel)]
+    , cIgnoreBranches :: [Glob Text]
     , cRestylers :: [Restyler]
     -- ^ TODO: @'NonEmpty'@
     --

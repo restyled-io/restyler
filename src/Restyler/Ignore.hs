@@ -9,7 +9,7 @@ where
 
 import Restyler.Prelude
 
-import GitHub.Data (IsPathPart(..), IssueLabel, User)
+import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.Glob
@@ -33,19 +33,16 @@ getIgnoredReason config pullRequest = do
 
 ignoreByAuthor :: Config -> Name User -> Maybe IgnoredReason
 ignoreByAuthor Config {..} author = do
-    guard $ matchGlobs cIgnoreAuthors [toPathPart author]
+    guard $ matchAny cIgnoreAuthors [author]
     pure IgnoredReason
         { irStatusReason = "ignore author"
         , irExitMessageSuffix = "based on its author"
         }
 
 ignoreByLabels
-    :: (Functor t, Foldable t)
-    => Config
-    -> t (Name IssueLabel)
-    -> Maybe IgnoredReason
+    :: Foldable t => Config -> t (Name IssueLabel) -> Maybe IgnoredReason
 ignoreByLabels Config {..} labels = do
-    guard $ matchGlobs cIgnoreLabels $ toPathPart <$> labels
+    guard $ matchAny cIgnoreLabels labels
     pure IgnoredReason
         { irStatusReason = "ignore labels"
         , irExitMessageSuffix = "based on its labels"
@@ -53,11 +50,8 @@ ignoreByLabels Config {..} labels = do
 
 ignoreByBranch :: Config -> Text -> Maybe IgnoredReason
 ignoreByBranch Config {..} branch = do
-    guard $ matchGlobs cIgnoreBranches [branch]
+    guard $ matchAny cIgnoreBranches [branch]
     pure IgnoredReason
         { irStatusReason = "ignore branches"
         , irExitMessageSuffix = "based on its base branch"
         }
-
-matchGlobs :: Foldable t => [Glob] -> t Text -> Bool
-matchGlobs globs = any $ \x -> any (`matchText` x) globs

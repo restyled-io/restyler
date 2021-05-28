@@ -1,29 +1,43 @@
 -- | Small wrapper over @'System.FilePath.Glob.Pattern'@
 module Restyler.Config.Glob
     ( Glob(..)
+    , GlobTarget(..)
     , match
-    , matchText
+    , matchAny
     )
 where
 
 import Restyler.Prelude
 
 import Data.Aeson
+import GitHub.Data (toPathPart)
 import System.FilePath.Glob hiding (match)
 import qualified System.FilePath.Glob as Glob
 
-newtype Glob = Glob { unGlob :: Pattern }
+newtype Glob a = Glob { unGlob :: Pattern }
     deriving stock (Eq, Generic)
     deriving newtype Show
 
-instance FromJSON Glob where
+instance FromJSON (Glob a) where
     parseJSON = withText "Glob" $ pure . Glob . compile . unpack
 
-instance ToJSON Glob where
+instance ToJSON (Glob a) where
     toJSON = String . pack . decompile . unGlob
 
-match :: Glob -> FilePath -> Bool
-match (Glob p) = Glob.match p
+class GlobTarget a where
+    forMatch :: a -> String
 
-matchText :: Glob -> Text -> Bool
-matchText g = match g . unpack
+instance GlobTarget FilePath where
+    forMatch = id
+
+instance GlobTarget Text where
+    forMatch = unpack
+
+instance GlobTarget (Name a) where
+    forMatch = forMatch . toPathPart
+
+match :: GlobTarget a => Glob a -> a -> Bool
+match (Glob p) = Glob.match p . forMatch
+
+matchAny :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Bool
+matchAny globs = any $ \x -> any (`match` x) globs
