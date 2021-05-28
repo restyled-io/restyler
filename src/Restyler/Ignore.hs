@@ -27,8 +27,8 @@ getIgnoredReason config pullRequest = do
     labels <- getPullRequestLabelNames pullRequest
     pure $ asum
         [ ignoreByAuthor config $ pullRequestUserLogin pullRequest
-        , ignoreByLabels config labels
         , ignoreByBranch config $ pullRequestBaseRef pullRequest
+        , ignoreByLabels config labels
         ]
 
 ignoreByAuthor :: Config -> Name User -> Maybe IgnoredReason
@@ -39,6 +39,14 @@ ignoreByAuthor Config {..} author = do
         , irExitMessageSuffix = "based on its author"
         }
 
+ignoreByBranch :: Config -> Text -> Maybe IgnoredReason
+ignoreByBranch Config {..} branch = do
+    guard $ matchAny cIgnoreBranches [branch]
+    pure IgnoredReason
+        { irStatusReason = "ignore branches"
+        , irExitMessageSuffix = "based on its base branch"
+        }
+
 ignoreByLabels
     :: Foldable t => Config -> t (Name IssueLabel) -> Maybe IgnoredReason
 ignoreByLabels Config {..} labels = do
@@ -46,12 +54,4 @@ ignoreByLabels Config {..} labels = do
     pure IgnoredReason
         { irStatusReason = "ignore labels"
         , irExitMessageSuffix = "based on its labels"
-        }
-
-ignoreByBranch :: Config -> Text -> Maybe IgnoredReason
-ignoreByBranch Config {..} branch = do
-    guard $ matchAny cIgnoreBranches [branch]
-    pure IgnoredReason
-        { irStatusReason = "ignore branches"
-        , irExitMessageSuffix = "based on its base branch"
         }

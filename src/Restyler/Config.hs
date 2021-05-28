@@ -141,8 +141,8 @@ data Config = Config
     , cRequestReview :: RequestReviewConfig
     , cLabels :: Set (Name IssueLabel)
     , cIgnoreAuthors :: [Glob (Name User)]
-    , cIgnoreLabels :: [Glob (Name IssueLabel)]
     , cIgnoreBranches :: [Glob Text]
+    , cIgnoreLabels :: [Glob (Name IssueLabel)]
     , cRestylers :: [Restyler]
     -- ^ TODO: @'NonEmpty'@
     --
@@ -266,8 +266,8 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cRequestReview = runIdentity cfRequestReview
         , cLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
         , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
-        , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
         , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
+        , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
         , cRestylers = restylers
         }
 
