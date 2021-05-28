@@ -1,7 +1,8 @@
 -- | Small wrapper over @'System.FilePath.Glob.Pattern'@
 module Restyler.Config.Glob
-    ( Glob
+    ( Glob(..)
     , match
+    , matchText
     )
 where
 
@@ -23,3 +24,6 @@ instance ToJSON Glob where
 
 match :: Glob -> FilePath -> Bool
 match (Glob p) = Glob.match p
+
+matchText :: Glob -> Text -> Bool
+matchText g = match g . unpack

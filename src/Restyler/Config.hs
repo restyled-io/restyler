@@ -90,7 +90,9 @@ data ConfigF f = ConfigF
     , cfStatuses :: f Statuses
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
-    , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
+    , cfIgnoreAuthors :: f (SketchyList Glob)
+    , cfIgnoreLabels :: f (SketchyList Glob)
+    , cfIgnoreBranches :: f (SketchyList Glob)
     , cfRestylersVersion :: f String
     , cfRestylers :: f (SketchyList RestylerOverride)
     }
@@ -138,7 +140,9 @@ data Config = Config
     , cStatuses :: Statuses
     , cRequestReview :: RequestReviewConfig
     , cLabels :: Set (Name IssueLabel)
-    , cIgnoreLabels :: Set (Name IssueLabel)
+    , cIgnoreAuthors :: [Glob]
+    , cIgnoreLabels :: [Glob]
+    , cIgnoreBranches :: [Glob]
     , cRestylers :: [Restyler]
     -- ^ TODO: @'NonEmpty'@
     --
@@ -261,7 +265,9 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cStatuses = runIdentity cfStatuses
         , cRequestReview = runIdentity cfRequestReview
         , cLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
-        , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfIgnoreLabels
+        , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
+        , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
+        , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
         , cRestylers = restylers
         }
 
