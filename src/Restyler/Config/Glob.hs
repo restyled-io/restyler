@@ -28,16 +28,14 @@ instance ToJSON (Glob a) where
 
 class GlobTarget a where
     forMatch :: a -> String
-
     getCompOptions :: CompOptions
-    getCompOptions = compDefault
 
 instance GlobTarget FilePath where
     forMatch = id
+    getCompOptions = compDefault
 
 instance GlobTarget Text where
     forMatch = unpack
-
     getCompOptions = compDefault
         { characterClasses = False
         , characterRanges = False
@@ -46,7 +44,6 @@ instance GlobTarget Text where
 
 instance GlobTarget (Name a) where
     forMatch = forMatch . toPathPart
-
     getCompOptions = compDefault
         { characterClasses = False
         , characterRanges = False
