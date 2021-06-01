@@ -1,5 +1,3 @@
-
-
 module Restyler.Setup
     ( restylerSetup
     ) where
@@ -12,6 +10,7 @@ import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
 import Restyler.Git
+import Restyler.Ignore
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
@@ -51,11 +50,15 @@ restylerSetup = do
     config <- mapAppError ConfigurationError loadConfig
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
-    labels <- getPullRequestLabelNames pullRequest
-    when (labels `intersects` cIgnoreLabels config) $ do
-        let status = SkippedStatus "ignore labels" oJobUrl
+    mIgnoredReason <- getIgnoredReason config pullRequest
+    for_ mIgnoredReason $ \reason -> do
+        let item = case reason of
+                IgnoredByAuthor -> "author"
+                IgnoredByBranch -> "branch"
+                IgnoredByLabels -> "labels"
+            status = SkippedStatus ("ignore " <> item) oJobUrl
         sendPullRequestStatus' config pullRequest status
-        exitWithInfo "Ignoring PR based on its labels"
+        exitWithInfo $ "Ignoring PR based on its " <> display item
 
     case mRestyledPullRequest of
         Nothing -> do

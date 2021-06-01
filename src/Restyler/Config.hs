@@ -32,8 +32,7 @@ module Restyler.Config
     , resolveRestylers
     , defaultConfigContent
     , configPaths
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -80,7 +79,7 @@ import Restyler.Restyler
 --
 data ConfigF f = ConfigF
     { cfEnabled :: f Bool
-    , cfExclude :: f (SketchyList Glob)
+    , cfExclude :: f (SketchyList (Glob FilePath))
     , cfChangedPaths :: f ChangedPathsConfig
     , cfAuto :: f Bool
     , cfCommitTemplate :: f CommitTemplate
@@ -90,7 +89,9 @@ data ConfigF f = ConfigF
     , cfStatuses :: f Statuses
     , cfRequestReview :: f RequestReviewConfig
     , cfLabels :: f (SketchyList (Name IssueLabel))
-    , cfIgnoreLabels :: f (SketchyList (Name IssueLabel))
+    , cfIgnoreAuthors :: f (SketchyList (Glob (Name User)))
+    , cfIgnoreLabels :: f (SketchyList (Glob (Name IssueLabel)))
+    , cfIgnoreBranches :: f (SketchyList (Glob Text))
     , cfRestylersVersion :: f String
     , cfRestylers :: f (SketchyList RestylerOverride)
     }
@@ -128,7 +129,7 @@ resolveConfig = bzipWith f
 --
 data Config = Config
     { cEnabled :: Bool
-    , cExclude :: [Glob]
+    , cExclude :: [Glob FilePath]
     , cChangedPaths :: ChangedPathsConfig
     , cAuto :: Bool
     , cCommitTemplate :: CommitTemplate
@@ -138,7 +139,9 @@ data Config = Config
     , cStatuses :: Statuses
     , cRequestReview :: RequestReviewConfig
     , cLabels :: Set (Name IssueLabel)
-    , cIgnoreLabels :: Set (Name IssueLabel)
+    , cIgnoreAuthors :: [Glob (Name User)]
+    , cIgnoreBranches :: [Glob Text]
+    , cIgnoreLabels :: [Glob (Name IssueLabel)]
     , cRestylers :: [Restyler]
     -- ^ TODO: @'NonEmpty'@
     --
@@ -233,7 +236,8 @@ loadUserConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Maybe)
 loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
-decodeThrow' :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
+decodeThrow'
+    :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
 decodeThrow' content =
     handleTo (configErrorInvalidYaml content) $ decodeThrow content
 
@@ -261,7 +265,9 @@ resolveRestylers ConfigF {..} allRestylers = do
         , cStatuses = runIdentity cfStatuses
         , cRequestReview = runIdentity cfRequestReview
         , cLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
-        , cIgnoreLabels = Set.fromList $ unSketchy $ runIdentity cfIgnoreLabels
+        , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
+        , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
+        , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
         , cRestylers = restylers
         }
 
