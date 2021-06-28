@@ -9,11 +9,11 @@ import Conduit (runResourceT, sinkFile)
 import Data.Text (unpack)
 import qualified Env
 import Network.HTTP.Simple hiding (Request)
+import qualified RIO.Directory as Directory
 import Restyler.App.Class (HasDownloadFile(..), HasProcess(..), HasSystem(..))
 import Restyler.Config (loadConfig)
 import Restyler.Options
 import Restyler.Restyler.Run (runRestylers_)
-import qualified RIO.Directory as Directory
 import UnliftIO.Environment (getArgs)
 import qualified UnliftIO.Process as Process
 
