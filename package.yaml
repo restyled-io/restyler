@@ -47,6 +47,7 @@ library:
     - composition-extra
     - conduit
     - containers
+    - datadog
     - edit-distance
     - envparse
     - errors

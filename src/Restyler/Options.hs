@@ -22,6 +22,8 @@ data EnvOptions = EnvOptions
     { eoAccessToken :: Text
     , eoLogLevel :: LogLevel
     , eoUnrestricted :: Bool
+    , eoStatsdHost :: String
+    , eoStatsdPort :: Int
     }
 
 data CLIOptions = CLIOptions
@@ -42,6 +44,8 @@ data Options = Options
     , oJobUrl :: Maybe URL
     , oHostDirectory :: Maybe FilePath
     , oUnrestricted :: Bool
+    , oStatsdHost :: String
+    , oStatsdPort :: Int
     }
 
 class HasOptions env where
@@ -73,6 +77,8 @@ parseOptions = do
         , oJobUrl = coJobUrl
         , oHostDirectory = coHostDirectory
         , oUnrestricted = eoUnrestricted
+        , oStatsdHost = eoStatsdHost
+        , oStatsdPort = eoStatsdPort
         }
 
 -- brittany-disable-next-binding
@@ -82,6 +88,8 @@ envParser = EnvOptions
         (Env.help "GitHub access token with write access to the repository")
     <*> Env.flag LevelInfo LevelDebug "DEBUG" Env.keep
     <*> Env.switch "UNRESTRICTED" Env.keep
+    <*> Env.var Env.str "STATSD_HOST" (Env.def "127.0.0.1")
+    <*> Env.var Env.auto "STATSD_PORT" (Env.def 8125)
 
 -- brittany-disable-next-binding
 optionsParser :: Parser CLIOptions

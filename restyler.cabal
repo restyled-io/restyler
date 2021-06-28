@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e2a4f215e35bc25c31cf6d263e4346da546f80854dfe51011700f1e293037f12
+-- hash: 324358920073261672958fc7dbf415540d0f7046b13ed6bba78915f2adbbc115
 
 name:           restyler
 version:        0.2.0.0
@@ -50,6 +50,7 @@ library
       Restyler.Restyler.Run
       Restyler.RestylerResult
       Restyler.Setup
+      Restyler.Statsd
   other-modules:
       Paths_restyler
   hs-source-dirs:
@@ -91,6 +92,7 @@ library
     , composition-extra
     , conduit
     , containers
+    , datadog
     , edit-distance
     , envparse
     , errors
