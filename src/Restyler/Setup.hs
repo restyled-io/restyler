@@ -117,8 +117,8 @@ wrapClone
     -> m a
     -> m ()
 wrapClone pullRequest f = do
-    mTimedout <- Statsd.wrap "restyler.clone" [("repo", repo)] (30 * 60) f
-    for_ mTimedout $ \_ -> throwIO timedOutError
+    mResult <- Statsd.wrap "restyler.clone" [("repo", repo)] (30 * 60) f
+    when (isNothing mResult) $ throwIO timedOutError
   where
     repo = toPathPart (pullRequestOwnerName pullRequest) <> "/" <> toPathPart
         (pullRequestRepoName pullRequest)
