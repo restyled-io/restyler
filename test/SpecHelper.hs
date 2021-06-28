@@ -33,12 +33,12 @@ import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
 import Data.Yaml (decodeThrow)
+import RIO.Test.FS (FS, HasFS(..))
+import qualified RIO.Test.FS as FS
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Options
 import Restyler.Restyler
-import RIO.Test.FS (FS, HasFS(..))
-import qualified RIO.Test.FS as FS
 
 -- | A versatile app for use with @'runRIO'@
 --

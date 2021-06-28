@@ -13,6 +13,7 @@ import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
+import qualified RIO.Directory as Directory
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
@@ -23,7 +24,6 @@ import Restyler.PullRequest
 import Restyler.RestyledPullRequest
 import Restyler.Setup
 import Restyler.Statsd (HasStatsClient(..), StatsClient)
-import qualified RIO.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
