@@ -10,8 +10,7 @@ module SpecHelper
 
     -- * Re-exports
     , module X
-    )
-where
+    ) where
 
 import Restyler.Prelude as X
     hiding (readFileBinary, readFileUtf8, writeFileUtf8)
@@ -34,12 +33,12 @@ import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
 import Data.Yaml (decodeThrow)
+import RIO.Test.FS (FS, HasFS(..))
+import qualified RIO.Test.FS as FS
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Options
 import Restyler.Restyler
-import RIO.Test.FS (FS, HasFS(..))
-import qualified RIO.Test.FS as FS
 
 -- | A versatile app for use with @'runRIO'@
 --
@@ -94,6 +93,8 @@ testOptions = Options
     , oJobUrl = error "oJobUrl"
     , oHostDirectory = Nothing
     , oUnrestricted = False
+    , oStatsdHost = "127.0.0.1"
+    , oStatsdPort = 8125
     }
 
 instance HasLogFunc TestApp where

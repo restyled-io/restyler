@@ -1,7 +1,6 @@
 module Main
     ( main
-    )
-where
+    ) where
 
 import RIO
 
@@ -9,11 +8,11 @@ import Conduit (runResourceT, sinkFile)
 import Data.Text (unpack)
 import qualified Env
 import Network.HTTP.Simple hiding (Request)
+import qualified RIO.Directory as Directory
 import Restyler.App.Class (HasDownloadFile(..), HasProcess(..), HasSystem(..))
 import Restyler.Config (loadConfig)
 import Restyler.Options
 import Restyler.Restyler.Run (runRestylers_)
-import qualified RIO.Directory as Directory
 import UnliftIO.Environment (getArgs)
 import qualified UnliftIO.Process as Process
 
@@ -86,5 +85,7 @@ main = do
             , oJobUrl = error "unused"
             , oHostDirectory = eoHostDirectory
             , oUnrestricted = eoUnrestricted
+            , oStatsdHost = "127.0.0.1"
+            , oStatsdPort = 8125
             }
         }

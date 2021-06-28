@@ -2,8 +2,7 @@ module Restyler.App
     ( App(..)
     , StartupApp(..)
     , bootstrapApp
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -13,6 +12,7 @@ import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
+import qualified RIO.Directory as Directory
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
@@ -22,7 +22,7 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.RestyledPullRequest
 import Restyler.Setup
-import qualified RIO.Directory as Directory
+import Restyler.Statsd (HasStatsClient(..), StatsClient)
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
@@ -34,6 +34,8 @@ data StartupApp = StartupApp
     -- ^ Options passed on the command-line
     , appWorkingDirectory :: FilePath
     -- ^ Temporary working directory we've created
+    , appStatsClient :: StatsClient
+    -- ^ Statsd client
     }
 
 instance HasLogFunc StartupApp where
@@ -45,6 +47,9 @@ instance HasOptions StartupApp where
 instance HasWorkingDirectory StartupApp where
     workingDirectoryL =
         lens appWorkingDirectory $ \x y -> x { appWorkingDirectory = y }
+
+instance HasStatsClient StartupApp where
+    statsClientL = lens appStatsClient $ \x y -> x { appStatsClient = y }
 
 instance HasSystem StartupApp where
     getCurrentDirectory = do
@@ -217,13 +222,14 @@ appL = lens appApp $ \x y -> x { appApp = y }
 runApp :: RIO StartupApp a -> RIO App a
 runApp = withRIO appApp
 
-bootstrapApp :: MonadIO m => Options -> FilePath -> m App
-bootstrapApp options path = runRIO app $ toApp <$> restylerSetup
+bootstrapApp :: MonadIO m => Options -> FilePath -> StatsClient -> m App
+bootstrapApp options path statsClient = runRIO app $ toApp <$> restylerSetup
   where
     app = StartupApp
         { appLogFunc = restylerLogFunc options
         , appOptions = options
         , appWorkingDirectory = path
+        , appStatsClient = statsClient
         }
 
     toApp (pullRequest, mRestyledPullRequest, config) = App
