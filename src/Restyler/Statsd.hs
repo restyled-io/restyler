@@ -15,8 +15,7 @@ module Restyler.Statsd
     -- * Lower-level
     , increment
     , timed
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

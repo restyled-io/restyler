@@ -2,8 +2,7 @@ module Restyler.App
     ( App(..)
     , StartupApp(..)
     , bootstrapApp
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
