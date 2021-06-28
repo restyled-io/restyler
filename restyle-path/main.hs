@@ -1,7 +1,6 @@
 module Main
     ( main
-    )
-where
+    ) where
 
 import RIO
 

@@ -2,8 +2,7 @@ module Restyler.Options
     ( Options(..)
     , HasOptions(..)
     , parseOptions
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
