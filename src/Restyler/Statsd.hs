@@ -19,7 +19,6 @@ module Restyler.Statsd
 
 import Restyler.Prelude
 
-import Data.Fixed (Fixed(..))
 import Network.StatsD.Datadog
     ( DogStatsSettings(..)
     , Metric
@@ -31,7 +30,7 @@ import Network.StatsD.Datadog
     , withDogStatsD
     )
 import qualified Network.StatsD.Datadog as DD
-import RIO.Time (diffUTCTime, getCurrentTime, nominalDiffTimeToSeconds)
+import RIO.Time (diffUTCTime, getCurrentTime)
 
 withStatsClient
     :: MonadUnliftIO m => String -> Int -> (StatsClient -> m a) -> m a
@@ -103,6 +102,7 @@ increment
     -> m ()
 increment name = send $ metric @Int name Counter 1
 
+-- | Time an operation in seconds
 timed
     :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env)
     => Text
@@ -114,11 +114,8 @@ timed name tags f = do
     f `finally` capture t
   where
     capture t = do
-        (MkFixed seconds) <-
-            nominalDiffTimeToSeconds
-            . (`diffUTCTime` t)
-            <$> liftIO getCurrentTime
-        send (metric @Int name Timer $ fromIntegral $ seconds * 1000) tags
+        seconds <- (`diffUTCTime` t) <$> liftIO getCurrentTime
+        send (metric @Int name Histogram $ round @_ @Int seconds) tags
 
 metric :: ToMetricValue a => Text -> MetricType -> a -> Metric
 metric = DD.metric . MetricName
