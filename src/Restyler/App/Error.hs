@@ -5,7 +5,8 @@ module Restyler.App.Error
 
     -- * Error handling
     , errorPullRequest
-    , dieAppErrorHandlers
+    , tryAppError
+    , dieAppError
 
     -- * Lower-level helpers
     , warnIgnore
@@ -23,6 +24,8 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.Restyler (Restyler(..))
+import Restyler.Statsd (HasStatsClient)
+import qualified Restyler.Statsd as Statsd
 import System.IO (hPutStrLn)
 import Text.Wrap
 
@@ -171,37 +174,39 @@ errorPullRequestUrl url =
 warnIgnore :: (Display a, HasLogFunc env) => a -> RIO env ()
 warnIgnore ex = logWarn $ "Caught " <> display ex <> ", ignoring."
 
--- | Error handlers for overall execution
---
--- Usage:
---
--- > {- main routine -} `catches` dieAppErrorHandlers
---
--- Ensures __all__ exceptions (besides @'ExitCode'@s) go through:
---
--- @
--- 'dieAppError'
--- @
---
-dieAppErrorHandlers :: [Handler IO ()]
-dieAppErrorHandlers =
-    [Handler dieAppError, Handler $ exceptExit $ dieAppError . OtherError]
+tryAppError :: MonadUnliftIO m => m a -> m (Either AppError ())
+tryAppError f = handles appErrorHandlers $ do
+    void f
+    pure $ Right ()
 
-dieAppError :: AppError -> IO a
+appErrorHandlers :: Applicative f => [Handler f (Either AppError ())]
+appErrorHandlers =
+    [ Handler $ \(_ex :: ExitCode) -> pure $ Right ()
+    , Handler $ \(err :: AppError) -> pure $ Left err
+    , Handler $ \err -> pure $ Left $ OtherError err
+    ]
+
+dieAppError
+    :: (MonadIO m, MonadReader env m, HasStatsClient env) => AppError -> m a
 dieAppError e = do
-    hPutStrLn stderr $ prettyAppError e
-    exitWith $ ExitFailure $ case e of
-        ConfigurationError ConfigErrorInvalidYaml{} -> 10
-        ConfigurationError ConfigErrorInvalidRestylers{} -> 11
-        ConfigurationError ConfigErrorInvalidRestylersYaml{} -> 12
-        RestylerExitFailure{} -> 20
-        RestyleError{} -> 25
-        GitHubError{} -> 30
-        PullRequestFetchError{} -> 31
-        PullRequestCloneError{} -> 32
-        HttpError{} -> 40
-        SystemError{} -> 50
-        OtherError{} -> 99
+    liftIO $ hPutStrLn stderr $ prettyAppError e
+    Statsd.increment "restyler.error" [("error", tag)]
+    exitWith $ ExitFailure exitCode
+  where
+    (tag, exitCode) = case e of
+        ConfigurationError ConfigErrorInvalidYaml{} -> ("invalid-config", 10)
+        ConfigurationError ConfigErrorInvalidRestylers{} ->
+            ("invalid-config-restylers", 11)
+        ConfigurationError ConfigErrorInvalidRestylersYaml{} ->
+            ("invalid-restylers-yaml", 12)
+        RestylerExitFailure{} -> ("restyler", 20)
+        RestyleError{} -> ("restyle-error", 25)
+        GitHubError{} -> ("github", 30)
+        PullRequestFetchError{} -> ("fetch", 31)
+        PullRequestCloneError{} -> ("clone", 32)
+        HttpError{} -> ("http", 40)
+        SystemError{} -> ("system", 50)
+        OtherError{} -> ("unknown", 99)
 
 exceptExit :: Applicative f => (SomeException -> f ()) -> SomeException -> f ()
 exceptExit f ex = maybe (f ex) ignore $ fromException ex

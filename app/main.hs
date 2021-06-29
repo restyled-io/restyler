@@ -15,8 +15,9 @@ main = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
     options@Options {..} <- parseOptions
-    handles dieAppErrorHandlers
-        $ withSystemTempDirectory "restyler-"
-        $ \path -> withStatsClient oStatsdHost oStatsdPort $ \statsClient -> do
-              app <- bootstrapApp options path statsClient
-              runRIO app $ handleAny errorPullRequest restylerMain
+    withStatsClient oStatsdHost oStatsdPort $ \statsClient -> do
+        result <- tryAppError $ do
+            withSystemTempDirectory "restyler-" $ \path -> do
+                app <- bootstrapApp options path statsClient
+                runRIO app $ handleAny errorPullRequest restylerMain
+        runRIO statsClient $ either dieAppError pure result
