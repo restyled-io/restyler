@@ -83,6 +83,7 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - github
       - restyler
   restyle-path:
     main: main.hs

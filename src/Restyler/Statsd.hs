@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Restyler.Statsd
     (
     -- * Setup
@@ -24,7 +26,6 @@ import Network.StatsD.Datadog
     , Metric
     , MetricName(..)
     , MetricType(..)
-    , StatsClient
     , ToMetricValue
     , defaultSettings
     , withDogStatsD
@@ -32,10 +33,21 @@ import Network.StatsD.Datadog
 import qualified Network.StatsD.Datadog as DD
 import RIO.Time (diffUTCTime, getCurrentTime)
 
+data StatsClient = StatsClient
+    { statsClient :: DD.StatsClient
+    , globalTags :: [(Text, Text)]
+    }
+
 withStatsClient
-    :: MonadUnliftIO m => String -> Int -> (StatsClient -> m a) -> m a
-withStatsClient host port f = do
-    withDogStatsD settings f
+    :: MonadUnliftIO m
+    => String
+    -> Int
+    -> [(Text, Text)]
+    -> (StatsClient -> m a)
+    -> m a
+withStatsClient host port globalTags f = do
+    withDogStatsD settings
+        $ \statsClient -> f StatsClient { statsClient, globalTags }
   where
     settings = defaultSettings
         { dogStatsSettingsHost = host
@@ -126,6 +138,6 @@ send
     -> [(Text, Text)]
     -> m ()
 send metric' tags = do
-    client <- view statsClientL
-    DD.send client $ metric' & DD.tags .~ ddTags
-    where ddTags = map (uncurry DD.tag) tags
+    StatsClient { statsClient, globalTags } <- view statsClientL
+    let ddTags = map (uncurry DD.tag) $ globalTags <> tags
+    DD.send statsClient $ metric' & DD.tags .~ ddTags
