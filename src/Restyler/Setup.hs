@@ -49,7 +49,7 @@ restylerSetup = do
         exitWithInfo "Source Pull Request is closed"
 
     logInfo "Cloning repository"
-    wrapClone pullRequest $ setupClone pullRequest
+    wrapClone $ setupClone pullRequest
 
     config <- mapAppError ConfigurationError loadConfig
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
@@ -112,17 +112,11 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
     gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
 
 wrapClone
-    :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env)
-    => PullRequest
-    -> m a
-    -> m ()
-wrapClone pullRequest f = do
-    mResult <- Statsd.wrap "restyler.clone" [("repo", repo)] (30 * 60) f
+    :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env) => m a -> m ()
+wrapClone f = do
+    mResult <- Statsd.wrap "restyler.clone" [] (30 * 60) f
     when (isNothing mResult) $ throwIO timedOutError
-  where
-    repo = toPathPart (pullRequestOwnerName pullRequest) <> "/" <> toPathPart
-        (pullRequestRepoName pullRequest)
-    timedOutError = PullRequestCloneError $ userError "Timed out"
+    where timedOutError = PullRequestCloneError $ userError "Timed out"
 
 toPullRequestFetchError :: AppError -> AppError
 toPullRequestFetchError (GitHubError _ e) = PullRequestFetchError e

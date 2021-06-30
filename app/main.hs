@@ -4,6 +4,7 @@ module Main
 
 import Restyler.Prelude
 
+import GitHub.Data (toPathPart)
 import Restyler.App
 import Restyler.App.Error
 import Restyler.Main
@@ -15,7 +16,9 @@ main = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
     options@Options {..} <- parseOptions
-    withStatsClient oStatsdHost oStatsdPort $ \statsClient -> do
+    let tags = [("repo", toPathPart oOwner <> "/" <> toPathPart oRepo)]
+
+    withStatsClient oStatsdHost oStatsdPort tags $ \statsClient -> do
         result <- tryAppError $ do
             withSystemTempDirectory "restyler-" $ \path -> do
                 app <- bootstrapApp options path statsClient
