@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7dc5dd49a4b6bfb8e894cbb4a9401e192885a4205df4ee66b3810e7cf12374a0
+-- hash: 5a201247c498817d3ca3754ab2ee20eefe5f135579c100884c3ff517a4194223
 
 name:           restyler
 version:        0.2.0.0
@@ -80,7 +80,7 @@ library
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists
+  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Glob
     , aeson
@@ -108,7 +108,6 @@ library
     , process
     , rio
     , safe
-    , semigroups
     , shakespeare
     , text
     , transformers
@@ -150,7 +149,7 @@ executable restyle-path
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , conduit
@@ -193,7 +192,7 @@ executable restyler
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , github
@@ -246,7 +245,7 @@ test-suite test
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists
+  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       QuickCheck
     , aeson
@@ -257,7 +256,6 @@ test-suite test
     , github
     , hspec
     , hspec-expectations-lifted
-    , lens
     , lens-aeson
     , restyler
     , rio

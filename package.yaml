@@ -28,9 +28,12 @@ default-extensions:
   - TypeApplications
   - TypeFamilies
 
-ghc-options: -Weverything
-  -Wno-unsafe
+ghc-options: >-
+  -Weverything
   -Wno-missing-import-lists
+  -Wno-missing-safe-haskell-mode
+  -Wno-prepositive-qualified-module
+  -Wno-unsafe
 
 dependencies:
   - base
@@ -63,7 +66,6 @@ library:
     - process
     - rio
     - safe
-    - semigroups
     - shakespeare
     - text
     - transformers
@@ -116,7 +118,6 @@ tests:
       - github
       - hspec
       - hspec-expectations-lifted
-      - lens
       - lens-aeson
       - restyler
       - rio

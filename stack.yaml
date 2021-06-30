@@ -1,11 +1,10 @@
-resolver: lts-16.10
+resolver: lts-18.0
 extra-deps:
-  - barbies-2.0.2.0@sha256:fa6656b45c40f7d4ab1764d078c6878f37d37fab7f7135c061e9a5baa67943c0,4407
-  - envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30,2842
   - github-0.26@sha256:a9d4046325c3eb28cdc7bef2c3f5bb213328caeae0b7dce6f51de655f0bffaa1,7162
 
   # for github
-  - binary-instances-1.0.0.1@sha256:e234be994da675479a3661f050d4a1d53565c9ed7786d9a68b7a29ba8b54b5a7,2659
+  - base16-bytestring-0.1.1.7@sha256:0021256a9628971c08da95cb8f4d0d72192f3bb8a7b30b55c080562d17c43dd3,2231
+  - http-link-header-1.0.3.1@sha256:9917c26635a46eff5d36c5344a4ae42fad2b5de79c0e300363bddd5eec66facd,1937
 
 ghc-options:
   "$locals": -fwrite-ide-info
