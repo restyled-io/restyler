@@ -16,6 +16,8 @@ module Restyler.Statsd
 
     -- * Lower-level
     , increment
+    , histogram
+    , histogramSince
     , timed
     ) where
 
@@ -31,7 +33,7 @@ import Network.StatsD.Datadog
     , withDogStatsD
     )
 import qualified Network.StatsD.Datadog as DD
-import RIO.Time (diffUTCTime, getCurrentTime)
+import RIO.Time (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
 
 data StatsClient = StatsClient
     { statsClient :: DD.StatsClient
@@ -114,6 +116,25 @@ increment
     -> m ()
 increment name = send $ metric @Int name Counter 1
 
+histogram
+    :: (MonadIO m, MonadReader env m, HasStatsClient env)
+    => Text
+    -> [(Text, Text)]
+    -> NominalDiffTime
+    -> m ()
+histogram name tags diff =
+    send (metric name Histogram $ round @_ @Int diff) tags
+
+histogramSince
+    :: (MonadIO m, MonadReader env m, HasStatsClient env)
+    => Text
+    -> [(Text, Text)]
+    -> UTCTime
+    -> m ()
+histogramSince name tags t = do
+    diff <- (`diffUTCTime` t) <$> liftIO getCurrentTime
+    histogram name tags diff
+
 -- | Time an operation in seconds
 timed
     :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env)
@@ -123,11 +144,7 @@ timed
     -> m a
 timed name tags f = do
     t <- liftIO getCurrentTime
-    f `finally` capture t
-  where
-    capture t = do
-        seconds <- (`diffUTCTime` t) <$> liftIO getCurrentTime
-        send (metric @Int name Histogram $ round @_ @Int seconds) tags
+    f `finally` histogramSince name tags t
 
 metric :: ToMetricValue a => Text -> MetricType -> a -> Metric
 metric = DD.metric . MetricName
