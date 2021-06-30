@@ -5,13 +5,13 @@ module Main
 import Restyler.Prelude
 
 import GitHub.Data (toPathPart)
+import RIO.Time (getCurrentTime)
 import Restyler.App
 import Restyler.App.Error
 import Restyler.Main
 import Restyler.Options
 import Restyler.Statsd (withStatsClient)
 import qualified Restyler.Statsd as Statsd
-import RIO.Time (getCurrentTime)
 
 main :: IO ()
 main = do
