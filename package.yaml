@@ -85,6 +85,7 @@ executables:
     dependencies:
       - github
       - restyler
+      - rio
   restyle-path:
     main: main.hs
     source-dirs: restyle-path

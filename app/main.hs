@@ -11,9 +11,11 @@ import Restyler.Main
 import Restyler.Options
 import Restyler.Statsd (withStatsClient)
 import qualified Restyler.Statsd as Statsd
+import RIO.Time (getCurrentTime)
 
 main :: IO ()
 main = do
+    start <- getCurrentTime
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
     options@Options {..} <- parseOptions
@@ -27,6 +29,7 @@ main = do
 
         runRIO statsClient $ do
             Statsd.increment "restyler.finished" []
+            Statsd.histogramSince "restyler.duration" [] start
             either
                 dieAppError -- includes .error increment
                 (\() -> Statsd.increment "restyler.success" [])
