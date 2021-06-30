@@ -1,8 +1,7 @@
 module Data.Yaml.Ext
     ( modifyInvalidYaml
     , modifyYamlProblem
-    )
-where
+    ) where
 
 import Prelude
 
@@ -23,6 +22,7 @@ modifyInvalidYaml f = \case
     ex@NonStringKeyAlias{} -> ex
     ex@CyclicIncludes{} -> ex
     ex@LoadSettingsException{} -> ex
+    ex@MultipleDocuments{} -> ex
 
 modifyYamlProblem :: (String -> String) -> ParseException -> ParseException
 modifyYamlProblem f = modifyInvalidYaml $ \case
