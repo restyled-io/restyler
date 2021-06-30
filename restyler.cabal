@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 324358920073261672958fc7dbf415540d0f7046b13ed6bba78915f2adbbc115
+-- hash: 7dc5dd49a4b6bfb8e894cbb4a9401e192885a4205df4ee66b3810e7cf12374a0
 
 name:           restyler
 version:        0.2.0.0
@@ -196,7 +196,9 @@ executable restyler
   ghc-options: -Weverything -Wno-unsafe -Wno-missing-import-lists -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
+    , github
     , restyler
+    , rio
   default-language: Haskell2010
 
 test-suite test
