@@ -68,4 +68,4 @@ none :: Foldable t => (a -> Bool) -> t a -> Bool
 none p = not . any p
 
 insertIfMissing :: (Eq k, Hashable k) => k -> v -> HashMap k v -> HashMap k v
-insertIfMissing = HM.insertWith $ flip const
+insertIfMissing = HM.insertWith $ \_ x -> x
