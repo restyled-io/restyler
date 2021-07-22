@@ -66,7 +66,7 @@ restylerSetup = do
                 IgnoredByAuthor -> "author"
                 IgnoredByBranch -> "branch"
                 IgnoredByLabels -> "labels"
-            status = SkippedStatus ("ignore " <> item) oJobUrl
+            status = SkippedStatus ("Ignore " <> item) oJobUrl
         sendPullRequestStatus' config pullRequest status
         exitWithInfo $ "Ignoring PR based on its " <> display item
 
