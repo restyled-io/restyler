@@ -41,8 +41,13 @@ restylerSetup = do
             oOwner
             oRepo
             oPullRequest
+    logInfo $ "Restyling " <> display pullRequest
 
     mRestyledPullRequest <- findRestyledPullRequest pullRequest
+    logInfo $ maybe
+        "No existing Restyled PR"
+        (("Existing Restyled PR is " <>) . display)
+        mRestyledPullRequest
 
     when (pullRequestIsClosed pullRequest) $ do
         traverse_ closeRestyledPullRequest mRestyledPullRequest
@@ -52,6 +57,7 @@ restylerSetup = do
     wrapClone $ setupClone pullRequest
 
     config <- mapAppError ConfigurationError loadConfig
+    logDebug $ displayConfigYaml config
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
     mIgnoredReason <- getIgnoredReason config pullRequest
@@ -65,15 +71,10 @@ restylerSetup = do
         exitWithInfo $ "Ignoring PR based on its " <> display item
 
     case mRestyledPullRequest of
-        Nothing -> do
-            logInfo "No existing Restyled PR"
+        Nothing ->
             gitCheckout $ unpack $ pullRequestRestyledHeadRef pullRequest
-        Just pr -> do
-            logInfo $ "Existing Restyled PR is " <> display pr
-            gitCheckout $ unpack $ restyledPullRequestHeadRef pr
+        Just pr -> gitCheckout $ unpack $ restyledPullRequestHeadRef pr
 
-    logInfo $ "Restyling " <> display pullRequest
-    logDebug $ displayConfigYaml config
     pure (pullRequest, mRestyledPullRequest, config)
 
 displayConfigYaml :: Config -> Utf8Builder
