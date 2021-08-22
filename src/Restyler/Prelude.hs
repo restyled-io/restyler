@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Restyler.Prelude
     ( module X
     , module Restyler.Prelude
@@ -29,6 +31,9 @@ import qualified RIO.Text as T
 
 -- Apparently they fixed a space leak in Data.List's version :shrug:
 import qualified Data.Text.Internal.Functions as List (intersperse)
+
+instance Display (Name a) where
+    display = display . untagName
 
 -- | Like @'withReader'@ for @'RIO'@
 withRIO :: (env' -> env) -> RIO env a -> RIO env' a

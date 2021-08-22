@@ -6,6 +6,7 @@ module Restyler.Config.Glob
     , GlobTarget(..)
     , match
     , matchAny
+    , matchFirst
     ) where
 
 import Restyler.Prelude
@@ -54,3 +55,6 @@ match (Glob p) = Glob.match (compileWith (getCompOptions @a) p) . forMatch
 
 matchAny :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Bool
 matchAny globs = any $ \x -> any (`match` x) globs
+
+matchFirst :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Maybe a
+matchFirst globs = find $ \x -> any (`match` x) globs

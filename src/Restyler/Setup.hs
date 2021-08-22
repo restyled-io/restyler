@@ -63,12 +63,12 @@ restylerSetup = do
     mIgnoredReason <- getIgnoredReason config pullRequest
     for_ mIgnoredReason $ \reason -> do
         let item = case reason of
-                IgnoredByAuthor -> "author"
-                IgnoredByBranch -> "branch"
-                IgnoredByLabels -> "labels"
+                IgnoredByAuthor{} -> "author"
+                IgnoredByBranch{} -> "branch"
+                IgnoredByLabels{} -> "labels"
             status = SkippedStatus ("Ignore " <> item) oJobUrl
         sendPullRequestStatus' config pullRequest status
-        exitWithInfo $ "Ignoring PR based on its " <> display item
+        exitWithInfo $ "Ignoring PR based on " <> display reason
 
     case mRestyledPullRequest of
         Nothing ->

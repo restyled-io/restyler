@@ -31,19 +31,19 @@ spec = do
                 }
 
             getIgnoredReason' config "foo[bot]" "branch" []
-                `shouldBe` Just IgnoredByAuthor
+                `shouldBe` Just (IgnoredByAuthor "foo[bot]")
             getIgnoredReason' config "foo[bot]" "renovate/foo" []
-                `shouldBe` Just IgnoredByAuthor
+                `shouldBe` Just (IgnoredByAuthor "foo[bot]")
             getIgnoredReason' config "foo[bot]" "renovate/foo" ["wip"]
-                `shouldBe` Just IgnoredByAuthor
+                `shouldBe` Just (IgnoredByAuthor "foo[bot]")
             getIgnoredReason' config "author" "renovate/foo" []
-                `shouldBe` Just IgnoredByBranch
+                `shouldBe` Just (IgnoredByBranch "renovate/foo")
             getIgnoredReason' config "author" "renovate/foo" ["wip"]
-                `shouldBe` Just IgnoredByBranch
+                `shouldBe` Just (IgnoredByBranch "renovate/foo")
             getIgnoredReason' config "author" "branch" ["wip", "two"]
-                `shouldBe` Just IgnoredByLabels
-            getIgnoredReason' config "author" "branch" ["one", "debug"]
-                `shouldBe` Just IgnoredByLabels
+                `shouldBe` Just (IgnoredByLabels "wip")
+            getIgnoredReason' config "author" "branch" ["one", "debug", "wip"]
+                `shouldBe` Just (IgnoredByLabels "debug")
 
 loadModifiedConfig :: (Config -> Config) -> IO Config
 loadModifiedConfig f = f <$> runSimpleApp loadDefaultConfig
