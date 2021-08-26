@@ -42,19 +42,27 @@ data StatsClient = StatsClient
 
 withStatsClient
     :: MonadUnliftIO m
-    => String
-    -> Int
+    => Maybe String
+    -> Maybe Int
     -> [(Text, Text)]
     -> (StatsClient -> m a)
     -> m a
-withStatsClient host port globalTags f = do
-    withDogStatsD settings
-        $ \statsClient -> f StatsClient { statsClient, globalTags }
+withStatsClient mHost mPort globalTags f = do
+    case mSettings of
+        Nothing -> f StatsClient { statsClient = DD.Dummy, globalTags }
+        Just settings -> withDogStatsD settings
+            $ \statsClient -> f StatsClient { statsClient, globalTags }
   where
-    settings = defaultSettings
-        { dogStatsSettingsHost = host
-        , dogStatsSettingsPort = port
-        }
+    mSettings = case (mHost, mPort) of
+        (Nothing, Nothing) -> Nothing
+        (Just host, Nothing) ->
+            Just defaultSettings { dogStatsSettingsHost = host }
+        (Nothing, Just port) ->
+            Just defaultSettings { dogStatsSettingsPort = port }
+        (Just host, Just port) -> Just defaultSettings
+            { dogStatsSettingsHost = host
+            , dogStatsSettingsPort = port
+            }
 
 class HasStatsClient env where
     statsClientL :: Lens' env StatsClient
