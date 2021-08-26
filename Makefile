@@ -37,7 +37,7 @@ watch:
 image:
 	docker build \
 	  --build-arg "REVISION=testing" \
-	  --tag restyled/restyler \
+	  --tag restyled/restyler:main \
 	  .
 
 AWS ?= aws --profile restyled-ci
