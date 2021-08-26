@@ -93,8 +93,8 @@ testOptions = Options
     , oJobUrl = error "oJobUrl"
     , oHostDirectory = Nothing
     , oUnrestricted = False
-    , oStatsdHost = "127.0.0.1"
-    , oStatsdPort = 8125
+    , oStatsdHost = Nothing
+    , oStatsdPort = Nothing
     }
 
 instance HasLogFunc TestApp where
