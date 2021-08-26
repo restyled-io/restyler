@@ -85,7 +85,7 @@ main = do
             , oJobUrl = error "unused"
             , oHostDirectory = eoHostDirectory
             , oUnrestricted = eoUnrestricted
-            , oStatsdHost = "127.0.0.1"
-            , oStatsdPort = 8125
+            , oStatsdHost = Nothing
+            , oStatsdPort = Nothing
             }
         }
