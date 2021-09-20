@@ -92,7 +92,7 @@ jobs:
       - name: deploy
         run: |
           heroku config:set --app restyled-io \
-            RESTYLER_TAG=${{ needs.image.prep.outputs.tag }}
+            RESTYLER_TAG=${{ needs.image.outputs.tag }}
 
       - uses: desiderati/github-action-pushover@v1
         if: ${{ always() }}
