@@ -22,17 +22,20 @@ jobs:
 
     outputs:
       image: ${{ steps.prep.outputs.image }}
+      tag: ${{ steps.prep.outputs.tag }}
 
     steps:
       - id: prep
         run: |
-          image=restyled/restyler:$(echo "${{ github.sha }}" | head -c7)
-          echo "::set-output name=image::${image}"
+          base=restyled/restyler
+          tag=$(echo "${{ github.sha }}" | head -c7)
+          echo "::set-output name=image::${base}:${tag}"
+          echo "::set-output name=tag::${tag}"
 
           if ${{ github.ref == 'refs/heads/main' }}; then
-            echo "::set-output name=tags::${image},restyled/restyler:main"
+            echo "::set-output name=tags::${base}:${tag},restyled/restyler:main"
           else
-            echo "::set-output name=tags::${image}"
+            echo "::set-output name=tags::${base}:${tag}"
           fi
 
       - id: buildx
@@ -72,15 +75,24 @@ jobs:
     needs: [build, image]
 
     steps:
-      - uses: restyled-io/gitops-deploy-action@main
-        with:
-          token: ${{ secrets.GITOPS_ACCESS_TOKEN }}
-          parameter-name: RestylerImage
-          parameter-value: ${{ needs.image.outputs.image }}
-          committer-name: Restyled Commits
-          committer-email: commits@restyled.io
-          repository: restyled-io/ops
-          stacks: cg-app/stacks/*/*/prod/services/*.yaml
+      - name: setup
+        run: |
+          cat > ~/.netrc <<EOF
+          machine api.heroku.com
+              login $HEROKU_EMAIL
+              password $HEROKU_API_KEY
+          machine git.heroku.com
+              login $HEROKU_EMAIL
+              password $HEROKU_API_KEY
+          EOF
+        env:
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+      - name: deploy
+        run: |
+          heroku config:set --app restyled-io \
+            RESTYLER_TAG=${{ needs.image.prep.outputs.tag }}
 
       - uses: desiderati/github-action-pushover@v1
         if: ${{ always() }}
