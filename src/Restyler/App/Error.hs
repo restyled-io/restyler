@@ -10,8 +10,7 @@ module Restyler.App.Error
 
     -- * Lower-level helpers
     , warnIgnore
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -190,23 +189,25 @@ dieAppError
     :: (MonadIO m, MonadReader env m, HasStatsClient env) => AppError -> m a
 dieAppError e = do
     liftIO $ hPutStrLn stderr $ prettyAppError e
-    Statsd.increment "restyler.error" [("error", tag)]
+    let tags = [("severity", severityTag), ("error", errorTag)]
+    Statsd.increment "restyler.error" tags
     exitWith $ ExitFailure exitCode
   where
-    (tag, exitCode) = case e of
-        ConfigurationError ConfigErrorInvalidYaml{} -> ("invalid-config", 10)
+    (severityTag, errorTag, exitCode) = case e of
+        ConfigurationError ConfigErrorInvalidYaml{} ->
+            ("warning", "invalid-config", 10)
         ConfigurationError ConfigErrorInvalidRestylers{} ->
-            ("invalid-config-restylers", 11)
+            ("error", "invalid-config-restylers", 11)
         ConfigurationError ConfigErrorInvalidRestylersYaml{} ->
-            ("invalid-restylers-yaml", 12)
-        RestylerExitFailure{} -> ("restyler", 20)
-        RestyleError{} -> ("restyle-error", 25)
-        GitHubError{} -> ("github", 30)
-        PullRequestFetchError{} -> ("fetch", 31)
-        PullRequestCloneError{} -> ("clone", 32)
-        HttpError{} -> ("http", 40)
-        SystemError{} -> ("system", 50)
-        OtherError{} -> ("unknown", 99)
+            ("error", "invalid-restylers-yaml", 12)
+        RestylerExitFailure{} -> ("warning", "restyler", 20)
+        RestyleError{} -> ("warning", "restyle-error", 25)
+        GitHubError{} -> ("warning", "github", 30)
+        PullRequestFetchError{} -> ("warning", "fetch", 31)
+        PullRequestCloneError{} -> ("warning", "clone", 32)
+        HttpError{} -> ("error", "http", 40)
+        SystemError{} -> ("error", "system", 50)
+        OtherError{} -> ("critical", "unknown", 99)
 
 exceptExit :: Applicative f => (SomeException -> f ()) -> SomeException -> f ()
 exceptExit f ex = maybe (f ex) ignore $ fromException ex
