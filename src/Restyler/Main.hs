@@ -71,15 +71,13 @@ restyle
 restyle = do
     config <- view configL
     pullRequest <- view pullRequestL
-    pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
+    pullRequestPaths <- changedPaths $ pullRequestBaseSha pullRequest
     runRestylers config pullRequestPaths
 
 wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
 wasRestyled = do
-    headRef <- pullRequestLocalHeadRef <$> view pullRequestL
-    not . null <$> changedPaths headRef
+    headSha <- pullRequestHeadSha <$> view pullRequestL
+    not . null <$> changedPaths headSha
 
 changedPaths :: HasGit env => Text -> RIO env [FilePath]
-changedPaths branch = do
-    ref <- maybe branch pack <$> gitMergeBase (unpack branch)
-    gitDiffNameOnly $ Just $ unpack ref
+changedPaths = gitDiffNameOnly . Just . unpack
