@@ -197,7 +197,7 @@ instance HasProcess App where
 
 instance HasGit App where
     gitPushForce branch =
-        callProcess "git" ["push", "--force-with-lease", "origin", branch]
+        callProcess "git" ["push", "--force", "origin", branch]
     gitDiffNameOnly mRef = do
         let args = ["diff", "--name-only"] <> maybeToList mRef
         lines <$> readProcess "git" args ""

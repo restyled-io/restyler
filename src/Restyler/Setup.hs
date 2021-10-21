@@ -4,6 +4,8 @@ module Restyler.Setup
 
 import Restyler.Prelude
 
+import Data.Foldable.Extra (anyM)
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Yaml as Yaml
 import GitHub.Endpoints.PullRequests
 import Prelude (userError)
@@ -99,18 +101,26 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
     token <- oAccessToken <$> view optionsL
 
     let cloneUrl = unpack $ pullRequestCloneUrlToken token pullRequest
-    gitClone cloneUrl dir
+    gitShallowClone cloneUrl (unpack $ pullRequestRemoteHeadRef pullRequest) dir
     setCurrentDirectory dir
 
-    when (pullRequestIsNonDefaultBranch pullRequest) $ gitFetch
-        (unpack $ pullRequestBaseRef pullRequest)
-        (unpack $ pullRequestBaseRef pullRequest)
+    found <- anyM
+        (\depth -> do
+            gitFetchDepth
+                depth
+                (unpack $ pullRequestBaseRef pullRequest)
+                (unpack $ pullRequestBaseRef pullRequest)
+            gitCommitExists $ unpack $ pullRequestBaseSha pullRequest
+        )
+        fetchDepths
 
-    when (pullRequestIsFork pullRequest) $ gitFetch
-        (unpack $ pullRequestRemoteHeadRef pullRequest)
-        (unpack $ pullRequestLocalHeadRef pullRequest)
+    unless found $ throwIO $ PullRequestBaseError
+        (pullRequestBaseRef pullRequest)
+        (pullRequestBaseSha pullRequest)
+        (NE.last fetchDepths)
 
-    gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
+fetchDepths :: NonEmpty Int
+fetchDepths = NE.fromList [5, 10, 20, 50, 100, 500]
 
 wrapClone
     :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env) => m a -> m ()
