@@ -9,8 +9,7 @@ module Restyler.Git
     , gitFetch
     , gitCheckout
     , gitCheckoutExisting
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

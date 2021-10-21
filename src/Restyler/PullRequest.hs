@@ -22,8 +22,7 @@ module Restyler.PullRequest
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
     , pullRequestRestyledHeadRef
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
