@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5a201247c498817d3ca3754ab2ee20eefe5f135579c100884c3ff517a4194223
+-- hash: 48fc1c997c96fede9f1f12323aae1e94fb37194d779329e206ca1987f30388d7
 
 name:           restyler
 version:        0.2.0.0
@@ -21,7 +21,6 @@ library
       Restyler.App
       Restyler.App.Class
       Restyler.App.Error
-      Restyler.Comment
       Restyler.CommitTemplate
       Restyler.Config
       Restyler.Config.ChangedPaths

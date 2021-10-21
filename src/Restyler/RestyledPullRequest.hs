@@ -36,7 +36,6 @@ import GitHub.Endpoints.PullRequests.ReviewRequests
     (createReviewRequestR, requestOneReviewer)
 import Restyler.App.Class (HasGitHub, runGitHub, runGitHubFirst, runGitHub_)
 import Restyler.App.Error (warnIgnore)
-import Restyler.Comment (leaveRestyledComment)
 import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Git (HasGit, gitPushForce)
@@ -153,11 +152,6 @@ createRestyledPullRequest pullRequest results = do
             (restyledPullRequestRepoName restyledPullRequest)
             (restyledPullRequestNumber restyledPullRequest)
             (requestOneReviewer user)
-
-    whenConfig cComments $ do
-        logInfo "Leaving comment of Restyled PR"
-        leaveRestyledComment pullRequest
-            $ restyledPullRequestNumber restyledPullRequest
 
     restyledPullRequest
         <$ logInfo ("Opened Restyled PR " <> display restyledPullRequest)

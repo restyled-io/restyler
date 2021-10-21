@@ -5,7 +5,6 @@ module Restyler.Main
 import Restyler.Prelude
 
 import Restyler.App.Class
-import Restyler.Comment
 import Restyler.Config
 import Restyler.Git
 import Restyler.Options
@@ -38,7 +37,6 @@ restylerMain = do
     mRestyledPullRequest <- view restyledPullRequestL
 
     unlessM wasRestyled $ do
-        clearRestyledComments pullRequest
         traverse_ closeRestyledPullRequest mRestyledPullRequest
         sendPullRequestStatus $ NoDifferencesStatus jobUrl
         exitWithInfo "No style differences found"

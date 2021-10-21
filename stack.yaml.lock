@@ -26,6 +26,13 @@ packages:
   original:
     hackage: http-link-header-1.0.3.1@sha256:9917c26635a46eff5d36c5344a4ae42fad2b5de79c0e300363bddd5eec66facd,1937
 - completed:
+    hackage: data-tree-print-0.1.0.2@sha256:d845e99f322df70e0c06d6743bf80336f5918d5423498528beb0593a2afc1703,1620
+    pantry-tree:
+      size: 272
+      sha256: b8778eb1b16fddb91b2eed2b25f33a89d1e4f7a533160de4ccbf226f82456135
+  original:
+    hackage: data-tree-print-0.1.0.2@sha256:d845e99f322df70e0c06d6743bf80336f5918d5423498528beb0593a2afc1703,1620
+- completed:
     hackage: dhall-1.37.1@sha256:447031286e8fe270b0baacd9cc5a8af340d2ae94bb53b85807bee93381ca5287,35080
     pantry-tree:
       size: 305799
