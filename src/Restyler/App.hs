@@ -196,7 +196,6 @@ instance HasProcess App where
     readProcess cmd args = runApp . readProcess cmd args
 
 instance HasGit App where
-    gitPush branch = callProcess "git" ["push", "origin", branch]
     gitPushForce branch =
         callProcess "git" ["push", "--force-with-lease", "origin", branch]
     gitMergeBase branch = do
@@ -208,7 +207,6 @@ instance HasGit App where
     gitCommitAll msg = do
         callProcess "git" ["commit", "-a", "--message", msg]
         dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
-    gitMerge branch = callProcess "git" ["merge", "--ff-only", branch]
 
 instance HasDownloadFile App where
     downloadFile url = runApp . downloadFile url
