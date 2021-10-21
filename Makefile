@@ -29,6 +29,11 @@ lint:
 test:
 	stack build --test
 
+.PHONY: test.integration
+test.integration: image
+	AWS_PROFILE=restyled-ci \
+	  restyled promote --image restyled/restyler:main --debug stable
+
 .PHONY: watch
 watch:
 	stack build --fast --pedantic --test --file-watch
