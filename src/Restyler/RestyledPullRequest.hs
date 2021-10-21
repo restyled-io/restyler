@@ -13,6 +13,7 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import qualified Data.Set as Set
+import qualified Data.Text as T
 import GitHub.Endpoints.GitData.References (deleteReferenceR)
 import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
 import GitHub.Endpoints.PullRequests
@@ -24,8 +25,8 @@ import GitHub.Endpoints.PullRequests
     , Owner
     , Repo
     , SimplePullRequest(..)
+    , SimpleUser(..)
     , createPullRequestR
-    , optionsBase
     , optionsHead
     , pullRequestsForR
     , toPathPart
@@ -103,8 +104,16 @@ findRestyledPullRequest pullRequest =
     ref = pullRequestRestyledHeadRef pullRequest
     legacyRef = pullRequestLocalHeadRef pullRequest <> "-restyled"
 
-    findExisting r = existingRestyledPullRequest pullRequest r
-        <$> MaybeT (findSiblingPullRequest pullRequest r)
+    findExisting r = do
+        pr <- MaybeT $ findSiblingPullRequest pullRequest r
+        guard $ openedByUs pr
+        pure $ existingRestyledPullRequest pullRequest r pr
+
+    openedByUs =
+        ("restyled-io" `T.isPrefixOf`)
+            . untagName
+            . simpleUserLogin
+            . simplePullRequestUser
 
 createRestyledPullRequest
     :: ( HasLogFunc env
@@ -214,10 +223,7 @@ editRestyledPullRequestState state pr
 findSiblingPullRequest
     :: HasGitHub env => PullRequest -> Text -> RIO env (Maybe SimplePullRequest)
 findSiblingPullRequest pr ref =
-    runGitHubFirst
-        $ pullRequestsForR owner repo
-        $ optionsBase (pullRequestRestyledBaseRef pr)
-        <> optionsHead qualifiedRef
+    runGitHubFirst $ pullRequestsForR owner repo $ optionsHead qualifiedRef
   where
     owner = pullRequestOwnerName pr
     repo = pullRequestRepoName pr
