@@ -6,7 +6,6 @@ where
 import Restyler.Prelude
 
 import Restyler.App.Class
-import Restyler.App.Error
 import Restyler.Comment
 import Restyler.Config
 import Restyler.Git
@@ -44,17 +43,6 @@ restylerMain = do
         traverse_ closeRestyledPullRequest mRestyledPullRequest
         sendPullRequestStatus $ NoDifferencesStatus jobUrl
         exitWithInfo "No style differences found"
-
-    whenM isAutoPush $ do
-        logInfo "Pushing Restyle commits to original PR"
-        gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
-        gitMerge $ unpack $ pullRequestRestyledHeadRef pullRequest
-
-        -- This will fail if other changes came in while we were restyling, but
-        -- it also means that we should be working on a Job for those changes
-        -- already
-        handleAny warnIgnore $ gitPush $ unpack $ pullRequestHeadRef pullRequest
-        exitWithInfo "Pushed Restyle commits to original PR"
 
     -- NB there is the edge-case of switching this off mid-PR. A previously
     -- opened Restyle PR would stop updating at that point.
@@ -95,9 +83,3 @@ changedPaths :: HasGit env => Text -> RIO env [FilePath]
 changedPaths branch = do
     ref <- maybe branch pack <$> gitMergeBase (unpack branch)
     gitDiffNameOnly $ Just $ unpack ref
-
-isAutoPush :: (HasConfig env, HasPullRequest env) => RIO env Bool
-isAutoPush = do
-    isAuto <- cAuto <$> view configL
-    pullRequest <- view pullRequestL
-    pure $ isAuto && not (pullRequestIsFork pullRequest)
