@@ -5,10 +5,11 @@ module Restyler.Git
 
     -- * Functions needed to establish a Clone
     -- | Therefore, they only require @'HasProcess'@
-    , gitClone
-    , gitFetch
+    , gitShallowClone
+    , gitFetchDepth
     , gitCheckout
     , gitCheckoutExisting
+    , gitCommitExists
     ) where
 
 import Restyler.Prelude
@@ -20,12 +21,24 @@ class HasGit env where
     gitDiffNameOnly :: Maybe String -> RIO env [FilePath]
     gitCommitAll :: String -> RIO env String
 
-gitClone :: HasProcess env => String -> FilePath -> RIO env ()
-gitClone url dir = callProcess "git" ["clone", "--quiet", url, dir]
+gitShallowClone :: HasProcess env => String -> String -> FilePath -> RIO env ()
+gitShallowClone url branch dir = callProcess
+    "git"
+    [ "clone"
+    , "--quiet"
+    , "--branch"
+    , branch
+    , "--single-branch"
+    , "--depth"
+    , "1"
+    , url
+    , dir
+    ]
 
-gitFetch :: HasProcess env => String -> String -> RIO env ()
-gitFetch remoteRef localRef =
-    callProcess "git" ["fetch", "origin", remoteRef <> ":" <> localRef]
+gitFetchDepth :: HasProcess env => Int -> String -> String -> RIO env ()
+gitFetchDepth depth remoteRef localRef = callProcess
+    "git"
+    ["fetch", "origin", "--depth", show depth, remoteRef <> ":" <> localRef]
 
 gitCheckout :: HasProcess env => String -> RIO env ()
 gitCheckout branch =
@@ -34,3 +47,8 @@ gitCheckout branch =
 gitCheckoutExisting :: HasProcess env => String -> RIO env ()
 gitCheckoutExisting branch =
     callProcess "git" ["checkout", "--no-progress", branch]
+
+gitCommitExists :: HasProcess env => String -> RIO env Bool
+gitCommitExists sha = do
+    ec <- callProcessExitCode "git" ["cat-file", "-e", sha <> "^{commit}"]
+    pure $ ec == ExitSuccess
