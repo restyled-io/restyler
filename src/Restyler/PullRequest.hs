@@ -15,7 +15,6 @@ module Restyler.PullRequest
     , pullRequestIssueId
     , pullRequestIsClosed
     , pullRequestIsFork
-    , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
     , pullRequestBaseSha
     , pullRequestHeadRef
@@ -81,10 +80,6 @@ pullRequestIsClosed = (== StateClosed) . pullRequestState
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork = (/=) <$> pullRequestHeadRepo <*> pullRequestBaseRepo
 
-pullRequestIsNonDefaultBranch :: PullRequest -> Bool
-pullRequestIsNonDefaultBranch =
-    (/=) <$> pullRequestBaseRef <*> pullRequestDefaultBranch
-
 pullRequestBaseRef :: PullRequest -> Text
 pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
 
@@ -132,7 +127,3 @@ pullRequestBaseRepo = pullRequestCommitRepo . pullRequestBase
 
 pullRequestHeadRepo :: PullRequest -> Maybe Repo
 pullRequestHeadRepo = pullRequestCommitRepo . pullRequestHead
-
-pullRequestDefaultBranch :: PullRequest -> Text
-pullRequestDefaultBranch =
-    fromMaybe "main" . (repoDefaultBranch <=< pullRequestBaseRepo)

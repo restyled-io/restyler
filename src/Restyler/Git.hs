@@ -8,7 +8,6 @@ module Restyler.Git
     , gitShallowClone
     , gitFetchDepth
     , gitCheckout
-    , gitCheckoutExisting
     , gitCommitExists
     ) where
 
@@ -43,10 +42,6 @@ gitFetchDepth depth remoteRef localRef = callProcess
 gitCheckout :: HasProcess env => String -> RIO env ()
 gitCheckout branch =
     callProcess "git" ["checkout", "--no-progress", "-b", branch]
-
-gitCheckoutExisting :: HasProcess env => String -> RIO env ()
-gitCheckoutExisting branch =
-    callProcess "git" ["checkout", "--no-progress", branch]
 
 gitCommitExists :: HasProcess env => String -> RIO env Bool
 gitCommitExists sha = do
