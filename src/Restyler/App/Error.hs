@@ -33,6 +33,8 @@ data AppError
     -- ^ We couldn't fetch the @'PullRequest'@ to restyle
     | PullRequestCloneError IOException
     -- ^ We couldn't clone or checkout the PR's branch
+    | PullRequestBaseError Text Text Int
+    -- ^ We couldn't find the PR's base SHA
     | ConfigurationError ConfigError
     -- ^ We couldn't load a @.restyled.yaml@
     | RestylerExitFailure Restyler Int [FilePath]
@@ -64,15 +66,16 @@ prettyAppError =
 
 toErrorTitle :: AppError -> String
 toErrorTitle = trouble . \case
-    PullRequestFetchError _ -> "fetching your Pull Request from GitHub"
-    PullRequestCloneError _ -> "cloning your Pull Request branch"
-    ConfigurationError _ -> "with your configuration"
+    PullRequestFetchError{} -> "fetching your Pull Request from GitHub"
+    PullRequestCloneError{} -> "cloning your Pull Request branch"
+    PullRequestBaseError{} -> "finding your Pull Request' base SHA"
+    ConfigurationError{} -> "with your configuration"
     RestylerExitFailure r _ _ -> "with the " <> rName r <> " restyler"
-    RestyleError _ -> "restyling"
-    GitHubError _ _ -> "communicating with GitHub"
-    SystemError _ -> "running a system command"
-    HttpError _ -> "performing an HTTP request"
-    OtherError _ -> "with something unexpected"
+    RestyleError{} -> "restyling"
+    GitHubError{} -> "communicating with GitHub"
+    SystemError{} -> "running a system command"
+    HttpError{} -> "performing an HTTP request"
+    OtherError{} -> "with something unexpected"
   where
     trouble :: String -> String
     trouble = ("We had trouble " <>)
@@ -81,6 +84,17 @@ toErrorBody :: AppError -> String
 toErrorBody = reflow . \case
     PullRequestFetchError e -> showGitHubError e
     PullRequestCloneError e -> show e
+    PullRequestBaseError ref sha depth -> unlines
+        [ "Unable to find the merge-base ("
+        <> unpack sha
+        <> ") within "
+        <> show depth
+        <> " commits on "
+        <> unpack ref
+        <> "."
+        , ""
+        , "Please rebase this PR onto a newer commit and try again."
+        ]
     ConfigurationError (ConfigErrorInvalidYaml yaml e) -> unlines
         [ "Yaml parse exception:"
         , Yaml.prettyPrintParseException e
@@ -205,6 +219,7 @@ dieAppError e = do
         GitHubError{} -> ("warning", "github", 30)
         PullRequestFetchError{} -> ("warning", "fetch", 31)
         PullRequestCloneError{} -> ("warning", "clone", 32)
+        PullRequestBaseError{} -> ("warning", "base-sha", 33)
         HttpError{} -> ("error", "http", 40)
         SystemError{} -> ("error", "system", 50)
         OtherError{} -> ("critical", "unknown", 99)

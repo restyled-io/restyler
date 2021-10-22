@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+log() {
+  local now elapsed
+  now=$(date +'%s')
+  elapsed=$((now - begin))
+  echo "[${elapsed}s] $*"
+}
+
+# owner=project-chip
+# repo=connectedhomeip
+# pull=10534
+# clone_url=https://github.com/$owner/$repo
+
+owner=freckle
+repo=megarepo
+pull=19251
+clone_url=git@github.com:$owner/$repo
+
+# shellcheck disable=SC1091
+source ./.env
+
+pr_details=$(mktemp)
+trap 'rm -f "$pr_details"' EXIT
+
+begin=$(date +'%s')
+log "== Fetching PR details =="
+curl \
+  --silent --fail --show-error \
+  --header "Accept: application/json" \
+  --header "Authorization: token $GITHUB_ACCESS_TOKEN" \
+  "https://api.github.com/repos/$owner/$repo/pulls/$pull" >"$pr_details"
+
+base_repo=$(jq --raw-output '.base.repo.full_name' <"$pr_details")
+base_ref=$(jq --raw-output '.base.ref' <"$pr_details")
+base_sha=$(jq --raw-output '.base.sha' <"$pr_details")
+head_repo=$(jq --raw-output '.head.repo.full_name' <"$pr_details")
+local_head_ref=$(jq --raw-output '.head.ref' <"$pr_details")
+remote_head_ref=pull/$pull/head
+
+log "$base_repo:$base_ref <- $head_repo:$local_head_ref"
+log "Base SHA: $base_sha"
+
+begin=$(date +'%s')
+log "=== Running test ==="
+cd /tmp
+rm -rf "$repo-test"
+mkdir "$repo-test"
+cd "$repo-test"
+
+git init --quiet
+git remote add origin "$clone_url"
+git fetch --quiet origin --depth 1 "$remote_head_ref:$local_head_ref"
+git checkout "$local_head_ref"
+
+log "Going by given base $base_sha"
+
+depth=5
+while true; do
+  log "Fetching depth:$depth"
+  git fetch --quiet --depth "$depth" origin "$base_ref:$base_ref"
+
+  if git cat-file -e "$base_sha^{commit}"; then
+    log "Found"
+    break
+  fi
+
+  depth=$((depth + 5))
+done
+
+git diff --name-only "$base_sha"
+log "Done"
