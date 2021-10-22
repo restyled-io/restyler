@@ -197,7 +197,7 @@ dieAppError e = do
         ConfigurationError ConfigErrorInvalidYaml{} ->
             ("warning", "invalid-config", 10)
         ConfigurationError ConfigErrorInvalidRestylers{} ->
-            ("error", "invalid-config-restylers", 11)
+            ("warning", "invalid-config-restylers", 11)
         ConfigurationError ConfigErrorInvalidRestylersYaml{} ->
             ("error", "invalid-restylers-yaml", 12)
         RestylerExitFailure{} -> ("warning", "restyler", 20)
