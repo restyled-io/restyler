@@ -17,13 +17,13 @@ module Restyler.PullRequest
     , pullRequestIsFork
     , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
-    , pullRequestBaseSha
     , pullRequestHeadRef
     , pullRequestHeadSha
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
     , pullRequestRestyledHeadRef
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
@@ -87,9 +87,6 @@ pullRequestIsNonDefaultBranch =
 
 pullRequestBaseRef :: PullRequest -> Text
 pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
-
-pullRequestBaseSha :: PullRequest -> Text
-pullRequestBaseSha = pullRequestCommitSha . pullRequestBase
 
 pullRequestHeadRef :: PullRequest -> Text
 pullRequestHeadRef = pullRequestCommitRef . pullRequestHead

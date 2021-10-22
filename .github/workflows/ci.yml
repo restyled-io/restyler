@@ -15,11 +15,7 @@ jobs:
           curl --location --output .hlint.yaml \
             https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml
       - uses: freckle/stack-cache-action@v1
-      - uses: freckle/stack-action@main
-        with:
-          hlint-arguments: . --ignore-glob 'src/Restyler/Content.hs'
-          weeder-version: 2.2.0
-          weeder-arguments: --require-hs-files
+      - uses: freckle/stack-action@v1.1
 
   image:
     runs-on: ubuntu-latest

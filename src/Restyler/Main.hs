@@ -1,10 +1,12 @@
 module Restyler.Main
     ( restylerMain
-    ) where
+    )
+where
 
 import Restyler.Prelude
 
 import Restyler.App.Class
+import Restyler.Comment
 import Restyler.Config
 import Restyler.Git
 import Restyler.Options
@@ -37,6 +39,7 @@ restylerMain = do
     mRestyledPullRequest <- view restyledPullRequestL
 
     unlessM wasRestyled $ do
+        clearRestyledComments pullRequest
         traverse_ closeRestyledPullRequest mRestyledPullRequest
         sendPullRequestStatus $ NoDifferencesStatus jobUrl
         exitWithInfo "No style differences found"
@@ -68,13 +71,15 @@ restyle
 restyle = do
     config <- view configL
     pullRequest <- view pullRequestL
-    pullRequestPaths <- changedPaths $ pullRequestBaseSha pullRequest
+    pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
     runRestylers config pullRequestPaths
 
 wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
 wasRestyled = do
-    headSha <- pullRequestHeadSha <$> view pullRequestL
-    not . null <$> changedPaths headSha
+    headRef <- pullRequestLocalHeadRef <$> view pullRequestL
+    not . null <$> changedPaths headRef
 
 changedPaths :: HasGit env => Text -> RIO env [FilePath]
-changedPaths = gitDiffNameOnly . Just . unpack
+changedPaths branch = do
+    ref <- maybe branch pack <$> gitMergeBase (unpack branch)
+    gitDiffNameOnly $ Just $ unpack ref

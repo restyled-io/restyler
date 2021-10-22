@@ -13,7 +13,6 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import qualified Data.Set as Set
-import qualified Data.Text as T
 import GitHub.Endpoints.GitData.References (deleteReferenceR)
 import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
 import GitHub.Endpoints.PullRequests
@@ -25,8 +24,8 @@ import GitHub.Endpoints.PullRequests
     , Owner
     , Repo
     , SimplePullRequest(..)
-    , SimpleUser(..)
     , createPullRequestR
+    , optionsBase
     , optionsHead
     , pullRequestsForR
     , toPathPart
@@ -37,6 +36,7 @@ import GitHub.Endpoints.PullRequests.ReviewRequests
     (createReviewRequestR, requestOneReviewer)
 import Restyler.App.Class (HasGitHub, runGitHub, runGitHubFirst, runGitHub_)
 import Restyler.App.Error (warnIgnore)
+import Restyler.Comment (leaveRestyledComment)
 import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Git (HasGit, gitPushForce)
@@ -104,16 +104,8 @@ findRestyledPullRequest pullRequest =
     ref = pullRequestRestyledHeadRef pullRequest
     legacyRef = pullRequestLocalHeadRef pullRequest <> "-restyled"
 
-    findExisting r = do
-        pr <- MaybeT $ findSiblingPullRequest pullRequest r
-        guard $ openedByUs pr
-        pure $ existingRestyledPullRequest pullRequest r pr
-
-    openedByUs =
-        ("restyled-io" `T.isPrefixOf`)
-            . untagName
-            . simpleUserLogin
-            . simplePullRequestUser
+    findExisting r = existingRestyledPullRequest pullRequest r
+        <$> MaybeT (findSiblingPullRequest pullRequest r)
 
 createRestyledPullRequest
     :: ( HasLogFunc env
@@ -161,6 +153,11 @@ createRestyledPullRequest pullRequest results = do
             (restyledPullRequestRepoName restyledPullRequest)
             (restyledPullRequestNumber restyledPullRequest)
             (requestOneReviewer user)
+
+    whenConfig cComments $ do
+        logInfo "Leaving comment of Restyled PR"
+        leaveRestyledComment pullRequest
+            $ restyledPullRequestNumber restyledPullRequest
 
     restyledPullRequest
         <$ logInfo ("Opened Restyled PR " <> display restyledPullRequest)
@@ -223,7 +220,10 @@ editRestyledPullRequestState state pr
 findSiblingPullRequest
     :: HasGitHub env => PullRequest -> Text -> RIO env (Maybe SimplePullRequest)
 findSiblingPullRequest pr ref =
-    runGitHubFirst $ pullRequestsForR owner repo $ optionsHead qualifiedRef
+    runGitHubFirst
+        $ pullRequestsForR owner repo
+        $ optionsBase (pullRequestRestyledBaseRef pr)
+        <> optionsHead qualifiedRef
   where
     owner = pullRequestOwnerName pr
     repo = pullRequestRepoName pr
