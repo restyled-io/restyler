@@ -39,7 +39,7 @@ import Restyler.App.Class (HasGitHub, runGitHub, runGitHubFirst, runGitHub_)
 import Restyler.App.Error (warnIgnore)
 import Restyler.Config
 import qualified Restyler.Content as Content
-import Restyler.Git (HasGit, gitPushForce)
+import Restyler.Git (HasGit(..))
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
@@ -102,7 +102,7 @@ findRestyledPullRequest pullRequest =
     runMaybeT $ findExisting ref <|> findExisting legacyRef
   where
     ref = pullRequestRestyledHeadRef pullRequest
-    legacyRef = pullRequestLocalHeadRef pullRequest <> "-restyled"
+    legacyRef = pullRequestHeadRef pullRequest <> "-restyled"
 
     findExisting r = do
         pr <- MaybeT $ findSiblingPullRequest pullRequest r
@@ -126,6 +126,7 @@ createRestyledPullRequest
     -> [RestylerResult]
     -> RIO env RestyledPullRequest
 createRestyledPullRequest pullRequest results = do
+    gitCheckout $ unpack $ pullRequestRestyledHeadRef pullRequest
     gitPushForce $ unpack $ pullRequestRestyledHeadRef pullRequest
 
     mJobUrl <- oJobUrl <$> view optionsL
@@ -175,6 +176,7 @@ updateRestyledPullRequest
     -> [RestylerResult]
     -> RIO env RestyledPullRequest
 updateRestyledPullRequest restyledPullRequest _results = do
+    gitCheckout $ unpack $ restyledPullRequestHeadRef restyledPullRequest
     gitPushForce $ unpack $ restyledPullRequestHeadRef restyledPullRequest
     pure restyledPullRequest
 
@@ -228,8 +230,3 @@ findSiblingPullRequest pr ref =
     owner = pullRequestOwnerName pr
     repo = pullRequestRepoName pr
     qualifiedRef = toPathPart owner <> ":" <> ref
-
-pullRequestRestyledBaseRef :: PullRequest -> Text
-pullRequestRestyledBaseRef pullRequest
-    | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
-    | otherwise = pullRequestHeadRef pullRequest

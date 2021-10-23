@@ -2,13 +2,7 @@ module Restyler.Git
     (
     -- * Class of actions that require the Clone
       HasGit(..)
-
-    -- * Functions needed to establish a Clone
-    -- | Therefore, they only require @'HasProcess'@
-    , gitClone
-    , gitFetch
-    , gitCheckout
-    , gitCheckoutExisting
+    , gitCloneBranchByRef
     ) where
 
 import Restyler.Prelude
@@ -20,18 +14,26 @@ class HasGit env where
     gitMergeBase :: String -> RIO env (Maybe String)
     gitDiffNameOnly :: Maybe String -> RIO env [FilePath]
     gitCommitAll :: String -> RIO env String
+    gitCheckout :: String -> RIO env ()
 
-gitClone :: HasProcess env => String -> FilePath -> RIO env ()
-gitClone url dir = callProcess "git" ["clone", "--quiet", url, dir]
+-- | Shallow-clone a specific branch and check it out, by virtual ref
+--
+-- GitHub's @pulls/N/head@ ref isn't real enough to work with @clone --branch@,
+-- so we do the functionally-equivalent thing of @init@/@remote-add@/@fetch@.
+--
+gitCloneBranchByRef
+    :: (HasProcess env, HasSystem env)
+    => String -- ^ Remote ref
+    -> String -- ^ Local branch name
+    -> String -- ^ URL
+    -> FilePath -- ^ Directory
+    -> RIO env ()
+gitCloneBranchByRef ref branch url dir = do
+    callGit "init" ["--quiet", dir]
+    setCurrentDirectory dir
+    callGit "remote" ["add", "origin", url]
+    callGit "fetch" ["--quiet", "--depth", "1", "origin", ref <> ":" <> branch]
+    callGit "checkout" ["--no-progress", branch]
 
-gitFetch :: HasProcess env => String -> String -> RIO env ()
-gitFetch remoteRef localRef =
-    callProcess "git" ["fetch", "origin", remoteRef <> ":" <> localRef]
-
-gitCheckout :: HasProcess env => String -> RIO env ()
-gitCheckout branch =
-    callProcess "git" ["checkout", "--no-progress", "-b", branch]
-
-gitCheckoutExisting :: HasProcess env => String -> RIO env ()
-gitCheckoutExisting branch =
-    callProcess "git" ["checkout", "--no-progress", branch]
+callGit :: HasProcess env => String -> [String] -> RIO env ()
+callGit subcommand args = callProcess "git" $ subcommand : args

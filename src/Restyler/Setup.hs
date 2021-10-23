@@ -70,11 +70,6 @@ restylerSetup = do
         sendPullRequestStatus' config pullRequest status
         exitWithInfo $ "Ignoring PR based on " <> display reason
 
-    case mRestyledPullRequest of
-        Nothing ->
-            gitCheckout $ unpack $ pullRequestRestyledHeadRef pullRequest
-        Just pr -> gitCheckout $ unpack $ restyledPullRequestHeadRef pr
-
     pure (pullRequest, mRestyledPullRequest, config)
 
 displayConfigYaml :: Config -> Utf8Builder
@@ -97,20 +92,11 @@ setupClone
 setupClone pullRequest = mapAppError toPullRequestCloneError $ do
     dir <- view workingDirectoryL
     token <- oAccessToken <$> view optionsL
-
-    let cloneUrl = unpack $ pullRequestCloneUrlToken token pullRequest
-    gitClone cloneUrl dir
-    setCurrentDirectory dir
-
-    when (pullRequestIsNonDefaultBranch pullRequest) $ gitFetch
-        (unpack $ pullRequestBaseRef pullRequest)
-        (unpack $ pullRequestBaseRef pullRequest)
-
-    when (pullRequestIsFork pullRequest) $ gitFetch
+    gitCloneBranchByRef
         (unpack $ pullRequestRemoteHeadRef pullRequest)
         (unpack $ pullRequestLocalHeadRef pullRequest)
-
-    gitCheckoutExisting $ unpack $ pullRequestLocalHeadRef pullRequest
+        (unpack $ pullRequestCloneUrlToken token pullRequest)
+        dir
 
 wrapClone
     :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env) => m a -> m ()

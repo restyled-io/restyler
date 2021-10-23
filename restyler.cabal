@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 48fc1c997c96fede9f1f12323aae1e94fb37194d779329e206ca1987f30388d7
+-- hash: 46e843d61f7203718b513f89b072ca4846e6b721c54b468d62c694331ff73a92
 
 name:           restyler
 version:        0.2.0.0
@@ -79,7 +79,7 @@ library
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
+  ghc-options: -Weverything -Wno-all-missed-specialisations -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Glob
     , aeson
@@ -148,7 +148,7 @@ executable restyle-path
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Weverything -Wno-all-missed-specialisations -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , conduit
@@ -191,7 +191,7 @@ executable restyler
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Weverything -Wno-all-missed-specialisations -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , github
@@ -244,7 +244,7 @@ test-suite test
       StandaloneDeriving
       TypeApplications
       TypeFamilies
-  ghc-options: -Weverything -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
+  ghc-options: -Weverything -Wno-all-missed-specialisations -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       QuickCheck
     , aeson
