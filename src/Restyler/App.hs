@@ -197,7 +197,7 @@ instance HasProcess App where
 
 instance HasGit App where
     gitPushForce branch =
-        callProcess "git" ["push", "--force-with-lease", "origin", branch]
+        callProcess "git" ["push", "--force", "origin", branch]
     gitMergeBase branch = do
         output <- readProcess "git" ["merge-base", branch, "HEAD"] ""
         pure $ listToMaybe $ lines output
@@ -207,6 +207,8 @@ instance HasGit App where
     gitCommitAll msg = do
         callProcess "git" ["commit", "-a", "--message", msg]
         dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
+    gitCheckout branch = do
+        callProcess "git" ["checkout", "--no-progress", "-b", branch]
 
 instance HasDownloadFile App where
     downloadFile url = runApp . downloadFile url

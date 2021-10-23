@@ -15,12 +15,12 @@ module Restyler.PullRequest
     , pullRequestIssueId
     , pullRequestIsClosed
     , pullRequestIsFork
-    , pullRequestIsNonDefaultBranch
     , pullRequestBaseRef
     , pullRequestHeadRef
     , pullRequestHeadSha
     , pullRequestRemoteHeadRef
     , pullRequestLocalHeadRef
+    , pullRequestRestyledBaseRef
     , pullRequestRestyledHeadRef
     ) where
 
@@ -80,10 +80,6 @@ pullRequestIsClosed = (== StateClosed) . pullRequestState
 pullRequestIsFork :: PullRequest -> Bool
 pullRequestIsFork = (/=) <$> pullRequestHeadRepo <*> pullRequestBaseRepo
 
-pullRequestIsNonDefaultBranch :: PullRequest -> Bool
-pullRequestIsNonDefaultBranch =
-    (/=) <$> pullRequestBaseRef <*> pullRequestDefaultBranch
-
 pullRequestBaseRef :: PullRequest -> Text
 pullRequestBaseRef = pullRequestCommitRef . pullRequestBase
 
@@ -94,19 +90,20 @@ pullRequestHeadSha :: PullRequest -> Text
 pullRequestHeadSha = pullRequestCommitSha . pullRequestHead
 
 pullRequestRemoteHeadRef :: PullRequest -> Text
-pullRequestRemoteHeadRef pullRequest@PullRequest {..}
-    | pullRequestIsFork pullRequest
-    = "pull/" <> toPathPart pullRequestNumber <> "/head"
-    | otherwise
-    = pullRequestCommitRef pullRequestHead
+pullRequestRemoteHeadRef PullRequest {..} =
+    "pull/" <> toPathPart pullRequestNumber <> "/head"
 
 pullRequestLocalHeadRef :: PullRequest -> Text
-pullRequestLocalHeadRef pullRequest@PullRequest {..}
-    | pullRequestIsFork pullRequest = "pull-" <> toPathPart pullRequestNumber
-    | otherwise = pullRequestCommitRef pullRequestHead
+pullRequestLocalHeadRef PullRequest {..} =
+    "pull-" <> toPathPart pullRequestNumber
+
+pullRequestRestyledBaseRef :: PullRequest -> Text
+pullRequestRestyledBaseRef pullRequest
+    | pullRequestIsFork pullRequest = pullRequestBaseRef pullRequest
+    | otherwise = pullRequestHeadRef pullRequest
 
 pullRequestRestyledHeadRef :: PullRequest -> Text
-pullRequestRestyledHeadRef = ("restyled/" <>) . pullRequestLocalHeadRef
+pullRequestRestyledHeadRef = ("restyled/" <>) . pullRequestHeadRef
 
 --------------------------------------------------------------------------------
 -- Internal functions below this point
@@ -128,7 +125,3 @@ pullRequestBaseRepo = pullRequestCommitRepo . pullRequestBase
 
 pullRequestHeadRepo :: PullRequest -> Maybe Repo
 pullRequestHeadRepo = pullRequestCommitRepo . pullRequestHead
-
-pullRequestDefaultBranch :: PullRequest -> Text
-pullRequestDefaultBranch =
-    fromMaybe "main" . (repoDefaultBranch <=< pullRequestBaseRepo)

@@ -4,6 +4,9 @@ module Restyler.Main
 
 import Restyler.Prelude
 
+import qualified Data.Vector as V
+import GitHub.Data.GitData (File(..))
+import GitHub.Endpoints.PullRequests (FetchCount(..), pullRequestFilesR)
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
@@ -62,21 +65,27 @@ restyle
        , HasSystem env
        , HasProcess env
        , HasGit env
+       , HasGitHub env
        , HasDownloadFile env
        )
     => RIO env [RestylerResult]
 restyle = do
     config <- view configL
     pullRequest <- view pullRequestL
-    pullRequestPaths <- changedPaths $ pullRequestBaseRef pullRequest
+    pullRequestPaths <- getChangedPaths pullRequest
     runRestylers config pullRequestPaths
 
 wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
 wasRestyled = do
-    headRef <- pullRequestLocalHeadRef <$> view pullRequestL
-    not . null <$> changedPaths headRef
+    sha <- pullRequestHeadSha <$> view pullRequestL
+    not . null <$> gitDiffNameOnly (Just $ unpack sha)
 
-changedPaths :: HasGit env => Text -> RIO env [FilePath]
-changedPaths branch = do
-    ref <- maybe branch pack <$> gitMergeBase (unpack branch)
-    gitDiffNameOnly $ Just $ unpack ref
+getChangedPaths :: HasGitHub env => PullRequest -> RIO env [FilePath]
+getChangedPaths pullRequest = do
+    files <- runGitHub $ pullRequestFilesR
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        (pullRequestNumber pullRequest)
+        FetchAll
+
+    pure $ V.toList $ unpack . fileFilename <$> files

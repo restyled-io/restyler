@@ -30,6 +30,7 @@ default-extensions:
 
 ghc-options: >-
   -Weverything
+  -Wno-all-missed-specialisations
   -Wno-missing-import-lists
   -Wno-missing-safe-haskell-mode
   -Wno-prepositive-qualified-module
