@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Private
+time bin/clone-test freckle megarepo 19251
+
+# Fork
+time bin/clone-test project-chip connectedhomeip 10534
+
+# Fork, using branch name "master"
+time bin/clone-test restyled-io demo 49
