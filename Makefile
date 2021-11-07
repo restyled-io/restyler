@@ -41,7 +41,6 @@ watch:
 .PHONY: image
 image:
 	docker build \
-	  --build-arg "REVISION=testing" \
 	  --tag restyled/restyler:main \
 	  .
 

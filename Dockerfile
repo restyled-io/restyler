@@ -22,8 +22,6 @@ RUN stack install --dependencies-only
 COPY app /src/app
 COPY src /src/src
 COPY config /src/config
-ARG REVISION=unknown
-RUN echo $REVISION > /src/config/revision
 COPY restyle-path /src/restyle-path
 RUN stack install
 
