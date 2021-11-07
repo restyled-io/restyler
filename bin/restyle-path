@@ -48,12 +48,6 @@ while getopts ht:pd opt; do
       export DEBUG=1
       ;;
     \?)
-      echo "Invalid options $OPTARG" >&2
-      usage >&2
-      exit 64
-      ;;
-    :)
-      echo "$OPTARG requires an argument" >&2
       usage >&2
       exit 64
       ;;
