@@ -13,7 +13,7 @@ usage() {
   cat <<'EOM'
 Usage: restyle-path [-t] [-p] [-d] <path...>
 Options:
-  -t            Docker tag of restyled/restyler image to run. Default is main,
+  -t            Docker tag of restyled/restyler image to run. Default is edge,
                 which is continiously built on CI of our main branch.
 
   -p            Instruct restyle-path to explicitly pull this image, even if it
@@ -29,7 +29,7 @@ Installation:
 EOM
 }
 
-tag=main
+tag=edge
 pull=0
 
 while getopts ht:pd opt; do
