@@ -91,10 +91,7 @@ jobs:
           read -r tag <<'EOM'
           ${{ needs.image.outputs.tags }}
           EOM
-
-          # TODO
-          printf '>%s<\n' "$tag"
-          #heroku config:set --app restyled-io "RESTYLER_TAG=$tag"
+          heroku config:set --app restyled-io "RESTYLER_IMAGE=$tag"
 
       - uses: desiderati/github-action-pushover@v1
         if: ${{ always() }}
