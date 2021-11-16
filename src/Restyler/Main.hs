@@ -44,6 +44,18 @@ restylerMain = do
         sendPullRequestStatus $ NoDifferencesStatus jobUrl
         exitWithInfo "No style differences found"
 
+    whenConfig cAuto $ do
+        if pullRequestIsFork pullRequest
+            then logWarn "Ignoring auto:true because PR is a fork"
+            else do
+                logInfo "Pushing changes directly to PR branch"
+                gitPush
+                    $ unpack
+                    $ pullRequestLocalHeadRef pullRequest
+                    <> ":"
+                    <> pullRequestHeadRef pullRequest
+                exitWithInfo "Restyling successful"
+
     -- NB there is the edge-case of switching this off mid-PR. A previously
     -- opened Restyle PR would stop updating at that point.
     whenConfig (not . cPullRequests) $ do

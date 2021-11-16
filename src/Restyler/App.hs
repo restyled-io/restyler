@@ -196,6 +196,8 @@ instance HasProcess App where
     readProcess cmd args = runApp . readProcess cmd args
 
 instance HasGit App where
+    gitPush branch =
+        callProcess "git" ["push", "origin", branch]
     gitPushForce branch =
         callProcess "git" ["push", "--force", "origin", branch]
     gitMergeBase branch = do
