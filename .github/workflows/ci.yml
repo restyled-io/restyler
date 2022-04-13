@@ -11,15 +11,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: freckle/stack-cache-action@v2
+      - uses: freckle/stack-action@v3
+      - uses: freckle/weeder-action@v1
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
       - run: |
-          curl --location --output .hlint.yaml \
-            https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml
-      - uses: freckle/stack-cache-action@v1
-      - uses: freckle/stack-action@main
+          curl -L https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml > .hlint.yaml
+      - uses: rwe/actions-hlint-setup@v1
+      - uses: rwe/actions-hlint-run@v2
         with:
-          hlint-arguments: . --ignore-glob 'src/Restyler/Content.hs'
-          weeder-version: 2.2.0
-          weeder-arguments: --require-hs-files
+          fail-on: warning
 
   image:
     runs-on: ubuntu-latest
