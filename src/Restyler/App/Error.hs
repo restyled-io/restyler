@@ -143,8 +143,10 @@ reflow = indent . wrap
   where
     indent = unlines . map ("  " <>) . lines
     wrap = unpack . wrapText wrapSettings 80 . pack
-    wrapSettings =
-        WrapSettings { preserveIndentation = True, breakLongWords = False }
+    wrapSettings = defaultWrapSettings
+        { preserveIndentation = True
+        , breakLongWords = False
+        }
 
 -- | Error the original @'PullRequest'@ and re-throw the exception
 errorPullRequest

@@ -6,14 +6,13 @@ module Restyler.Restyler
 
     -- * Exported for testing
     , upgradeEnabled
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import qualified Data.HashMap.Lazy as HM
+import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Yaml (decodeFileThrow)
 import Restyler.App.Class
 import Restyler.Config.Include
@@ -45,15 +44,15 @@ instance FromJSON Restyler where
 -- here before such a key existed.
 --
 upgradeEnabled :: Value -> Value
-upgradeEnabled =
-    overObject $ override "enabled" $ Bool . maybe True enabled . HM.lookup
-        "name"
+upgradeEnabled = \case
+    Object km ->
+        let
+            mName = KeyMap.lookup "name" km
+            enabled = maybe True (`notElem` disabledRestylers) mName
+            updated = KeyMap.singleton "enabled" $ Bool enabled
+        in Object $ KeyMap.unionWith (\_ x -> x) updated km
+    v -> v
   where
-    overObject f = \case
-        Object o -> Object $ f o
-        v -> v
-    override k f o = insertIfMissing k (f o) o
-    enabled = (`notElem` disabledRestylers)
     disabledRestylers =
         ["brittany", "google-java-format", "hindent", "hlint", "jdt"]
 

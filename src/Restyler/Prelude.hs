@@ -26,7 +26,9 @@ import RIO.List as X
 import RIO.Text as X (pack, unpack)
 import Safe as X (fromJustNote)
 
-import qualified Data.HashMap.Lazy as HM
+import Data.Aeson (Key)
+import Data.Aeson.KeyMap (KeyMap)
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified RIO.Text as T
 
 -- Apparently they fixed a space leak in Data.List's version :shrug:
@@ -72,5 +74,5 @@ tryTo f = fmap (first f) . try
 none :: Foldable t => (a -> Bool) -> t a -> Bool
 none p = not . any p
 
-insertIfMissing :: (Eq k, Hashable k) => k -> v -> HashMap k v -> HashMap k v
-insertIfMissing = HM.insertWith $ \_ x -> x
+insertIfMissing :: Key -> v -> KeyMap v -> KeyMap v
+insertIfMissing k v m = KeyMap.unionWith const m $ KeyMap.singleton k v
