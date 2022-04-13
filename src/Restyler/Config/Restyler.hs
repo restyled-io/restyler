@@ -1,15 +1,17 @@
 module Restyler.Config.Restyler
     ( RestylerOverride
     , overrideRestylers
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
 import Data.Aeson hiding (Result(..))
 import Data.Aeson.Casing
+import qualified Data.Aeson.Key as Key
+import Data.Aeson.KeyMap (KeyMap)
+import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types (Parser, modifyFailure)
-import qualified Data.HashMap.Lazy as HM
+import qualified Data.HashMap.Strict as HashMap
 import Data.Validation
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Include
@@ -32,14 +34,18 @@ data RestylerOverride = RestylerOverride
 
 instance FromJSON RestylerOverride where
     parseJSON = \case
-        String name -> namedOverride name HM.empty
-        Object o | [(name, Object o')] <- HM.toList o -> namedOverride name o'
+        String name -> namedOverride (Key.fromText name) KeyMap.empty
+        Object o | [(name, Object o')] <- KeyMap.toList o ->
+            namedOverride name o'
         v -> suffixIncorrectIndentation
             $ genericParseJSONValidated (aesonPrefix snakeCase) v
 
-namedOverride :: Text -> HashMap Text Value -> Parser RestylerOverride
+namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
 namedOverride name =
-    parseJSON . Object . insertIfMissing "name" (String name) . HM.delete name
+    parseJSON
+        . Object
+        . insertIfMissing "name" (String $ Key.toText name)
+        . KeyMap.delete name
 
 suffixIncorrectIndentation :: Parser a -> Parser a
 suffixIncorrectIndentation = modifyFailure (<> msg)
@@ -62,7 +68,7 @@ overrideRestylers restylers overrides =
     getOverrides = traverse (overrideRestyler restylersMap) overrides
 
     restylersMap :: HashMap String Restyler
-    restylersMap = HM.fromList $ map (rName &&& id) restylers
+    restylersMap = HashMap.fromList $ map (rName &&& id) restylers
 
 data Override = Explicit Restyler | Wildcard
 
@@ -104,6 +110,6 @@ overrideRestyler restylers RestylerOverride {..}
 lookupExpectedKeyBy
     :: String -> HashMap String v -> String -> Validation [String] v
 lookupExpectedKeyBy label hm k =
-    case validateExpectedKeyBy label fst (HM.toList hm) k of
+    case validateExpectedKeyBy label fst (HashMap.toList hm) k of
         Left e -> Failure [e]
         Right (_k, v) -> Success v

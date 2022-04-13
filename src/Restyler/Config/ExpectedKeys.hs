@@ -2,14 +2,15 @@ module Restyler.Config.ExpectedKeys
     ( genericParseJSONValidated
     , validateObjectKeys
     , validateExpectedKeyBy
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
 import Data.Aeson
+import qualified Data.Aeson.Key as Key
+import Data.Aeson.KeyMap (KeyMap)
+import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types
-import qualified Data.HashMap.Strict as HM
 import GHC.Generics
 import GHC.Generics.Selectors
 import Text.EditDistance
@@ -32,12 +33,12 @@ genericParseJSONValidated opts = \case
 -- This is provided for convenience in the most common use-case. For a more
 -- flexible interface, see @'validateExpectedKeyBy'@.
 --
-validateObjectKeys :: [String] -> HashMap Text v -> Parser ()
+validateObjectKeys :: [String] -> KeyMap v -> Parser ()
 validateObjectKeys ks =
     toParser
         . lefts
-        . map (validateExpectedKeyBy "key" id ks . unpack)
-        . HM.keys
+        . map (validateExpectedKeyBy "key" id ks . Key.toString)
+        . KeyMap.keys
   where
     toParser :: MonadFail m => [String] -> m ()
     toParser [] = pure ()
