@@ -2,8 +2,7 @@
 
 module Restyler.ConfigSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 
@@ -110,6 +109,21 @@ spec = do
             - unknown-name-2
         |]
 
+        result `shouldSatisfy` hasError
+            "Unexpected Restyler name \"unknown-name-1\""
+        result `shouldSatisfy` hasError
+            "Unexpected Restyler name \"unknown-name-2\""
+
+    it "reports too many wildcards with other errors" $ example $ do
+        result <- loadTestConfig [st|
+            ---
+            - unknown-name-1
+            - "*"
+            - unknown-name-2
+            - "*"
+        |]
+
+        result `shouldSatisfy` hasError "one \"*\" element, saw 2"
         result `shouldSatisfy` hasError
             "Unexpected Restyler name \"unknown-name-1\""
         result `shouldSatisfy` hasError
@@ -243,7 +257,7 @@ spec = do
             - "*"
         |]
 
-        result `shouldSatisfy` hasError "1 wildcard"
+        result `shouldSatisfy` hasError "one \"*\" element, saw 2"
 
     it "handles invalid indentation nicely" $ example $ do
         result <- loadTestConfig [st|

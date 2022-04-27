@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 87b7288f0dcb29ed7240fd934a139d31724f8e79f75eb8205750fce5bb20872d
+-- hash: d04b2826d48a187eacdb355c9eca6670875b0b913d9b26415d3e0fd8ec0c359a
 
 name:           restyler
 version:        0.2.0.0
@@ -32,6 +32,7 @@ library
       Restyler.Config.Restyler
       Restyler.Config.SketchyList
       Restyler.Config.Statuses
+      Restyler.Config.WildCard
       Restyler.Content
       Restyler.Delimited
       Restyler.Git
@@ -109,7 +110,6 @@ library
     , shakespeare
     , text
     , transformers
-    , unordered-containers
     , validation
     , vector
     , word-wrap

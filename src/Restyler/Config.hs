@@ -59,6 +59,7 @@ import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
+import Restyler.Config.WildCard
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
@@ -93,7 +94,7 @@ data ConfigF f = ConfigF
     , cfIgnoreLabels :: f (SketchyList (Glob (Name IssueLabel)))
     , cfIgnoreBranches :: f (SketchyList (Glob Text))
     , cfRestylersVersion :: f String
-    , cfRestylers :: f (SketchyList RestylerOverride)
+    , cfRestylers :: f (SketchyList (WildCard RestylerOverride))
     }
     deriving stock Generic
     deriving anyclass (FunctorB, ApplicativeB, ConstraintsB)

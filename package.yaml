@@ -70,7 +70,6 @@ library:
     - shakespeare
     - text
     - transformers
-    - unordered-containers
     - validation
     - vector
     - word-wrap
