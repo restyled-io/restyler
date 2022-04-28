@@ -10,6 +10,7 @@ import Data.List (isInfixOf)
 import qualified Data.Text as T
 import Data.Yaml (prettyPrintParseException)
 import Restyler.Config
+import Restyler.Config.Glob
 import Restyler.Config.Include
 import Restyler.Restyler
 import Text.Shakespeare.Text (st)
@@ -338,6 +339,17 @@ spec = do
 
         fmap cEnabled result `shouldBe` Right False
 
+    it "supports wildcard in exclude" $ example $ do
+        result <- assertTestConfig [st|
+            exclude:
+            - "./*.tmp"
+            - "*"
+            - "./*.log"
+        |]
+
+        cExclude result `shouldBe` concat
+            [[Glob "./*.tmp"], defaultExcludes, [Glob "./*.log"]]
+
 hasError :: String -> Either String a -> Bool
 hasError msg (Left err) = msg `isInfixOf` err
 hasError _ _ = False
@@ -366,6 +378,7 @@ showConfigError :: ConfigError -> String
 showConfigError = \case
     ConfigErrorInvalidYaml yaml ex ->
         unlines [prettyPrintParseException ex, "---", show yaml]
+    ConfigErrorInvalidExcludes errs -> unlines errs
     ConfigErrorInvalidRestylers errs -> unlines errs
     ConfigErrorInvalidRestylersYaml ex -> show ex
 

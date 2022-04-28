@@ -1,5 +1,6 @@
 module Restyler.Config.WildCard
     ( WildCard
+    , insertWildCard
     , overrideWildCard
     ) where
 
@@ -36,6 +37,15 @@ instance ToJSON a => ToJSON (WildCard a) where
         Explicit a -> toEncoding a
         WildCard -> toEncoding wildCardSigil
 
+-- | Replace the WildCard with the elements given
+insertWildCard :: Eq a => [a] -> [WildCard a] -> Either [String] [a]
+insertWildCard as bs = toEither $ checkWildCards bs *> inserteds
+  where
+    inserteds = fmap concat $ for bs $ \case
+        Explicit b -> pure [b]
+        WildCard -> pure $ filter (`notElem` explicits bs) as
+
+-- | A form of WildCard handling that overrides the base values
 overrideWildCard
     :: String
     -> (a -> String)
@@ -50,17 +60,8 @@ overrideWildCard
     -- ^ The list of overrides or wildcard element
     -> Either [String] [a]
 overrideWildCard label aToKey bToKey abToA as bs =
-    toEither $ checkWildCards *> overrides
+    toEither $ checkWildCards bs *> overrides
   where
-    checkWildCards = when (nWildCards > 1) $ Failure
-        [ "WildCard lists can contain at most one "
-          <> show wildCardSigil
-          <> " element, saw "
-          <> show nWildCards
-        ]
-
-    nWildCards = length (filter isWildCard bs)
-
     overrides = fmap concat $ for bs $ \case
         -- Return this a overriding its b
         Explicit b ->
@@ -71,6 +72,15 @@ overrideWildCard label aToKey bToKey abToA as bs =
 
     asMap = HashMap.fromList $ map (aToKey &&& id) as
     bKeys = map bToKey $ explicits bs
+
+checkWildCards :: [WildCard a] -> Validation [String] ()
+checkWildCards bs = when (nWildCards > 1) $ Failure
+    [ "WildCard lists can contain at most one "
+      <> show wildCardSigil
+      <> " element, saw "
+      <> show nWildCards
+    ]
+    where nWildCards = length (filter isWildCard bs)
 
 wildCardSigil :: Text
 wildCardSigil = "*"

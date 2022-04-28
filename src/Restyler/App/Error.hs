@@ -88,6 +88,7 @@ toErrorBody = reflow . \case
         , "Original input:"
         , unpack $ decodeUtf8 yaml
         ]
+    ConfigurationError (ConfigErrorInvalidExcludes errs) -> unlines errs
     ConfigurationError (ConfigErrorInvalidRestylers errs) -> unlines errs
     ConfigurationError (ConfigErrorInvalidRestylersYaml e) -> unlines
         [ "Error loading restylers.yaml definition:"
@@ -198,6 +199,8 @@ dieAppError e = do
     (severityTag, errorTag, exitCode) = case e of
         ConfigurationError ConfigErrorInvalidYaml{} ->
             ("warning", "invalid-config", 10)
+        ConfigurationError ConfigErrorInvalidExcludes{} ->
+            ("warning", "invalid-config-excludes", 13)
         ConfigurationError ConfigErrorInvalidRestylers{} ->
             ("warning", "invalid-config-restylers", 11)
         ConfigurationError ConfigErrorInvalidRestylersYaml{} ->

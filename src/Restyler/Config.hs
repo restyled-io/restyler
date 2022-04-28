@@ -30,6 +30,7 @@ module Restyler.Config
     , ConfigSource(..)
     , loadConfigFrom
     , resolveRestylers
+    , defaultExcludes
     , defaultConfigContent
     , configPaths
     ) where
@@ -80,7 +81,7 @@ import Restyler.Restyler
 --
 data ConfigF f = ConfigF
     { cfEnabled :: f Bool
-    , cfExclude :: f (SketchyList (Glob FilePath))
+    , cfExclude :: f (SketchyList (WildCard (Glob FilePath)))
     , cfChangedPaths :: f ChangedPathsConfig
     , cfAuto :: f Bool
     , cfCommitTemplate :: f CommitTemplate
@@ -161,6 +162,7 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
+    | ConfigErrorInvalidExcludes [String]
     | ConfigErrorInvalidRestylers [String]
     | ConfigErrorInvalidRestylersYaml SomeException
     deriving stock Show
@@ -254,9 +256,15 @@ resolveRestylers ConfigF {..} allRestylers = do
         $ unSketchy
         $ runIdentity cfRestylers
 
+    exclude <-
+        either (throwIO . ConfigErrorInvalidExcludes) pure
+        $ insertWildCard defaultExcludes
+        $ unSketchy
+        $ runIdentity cfExclude
+
     pure Config
         { cEnabled = runIdentity cfEnabled
-        , cExclude = unSketchy $ runIdentity cfExclude
+        , cExclude = exclude
         , cChangedPaths = runIdentity cfChangedPaths
         , cAuto = runIdentity cfAuto
         , cCommitTemplate = runIdentity cfCommitTemplate
@@ -287,6 +295,15 @@ whenConfigNonEmpty check act =
 whenConfigJust
     :: HasConfig env => (Config -> Maybe a) -> (a -> RIO env ()) -> RIO env ()
 whenConfigJust check act = traverse_ act . check =<< view configL
+
+defaultExcludes :: [Glob FilePath]
+defaultExcludes =
+    [ Glob "**/*.patch"
+    , Glob "**/node_modules/**/*"
+    , Glob "**/vendor/**/*"
+    -- https://github.com/restyled-io/restyler/issues/73
+    , Glob ".github/workflows/**/*"
+    ]
 
 defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")

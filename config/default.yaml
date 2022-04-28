@@ -3,10 +3,7 @@
 enabled: true
 
 exclude:
-  - "**/*.patch"
-  - "**/node_modules/**/*"
-  - "**/vendor/**/*"
-  - ".github/workflows/**/*" # https://github.com/restyled-io/restyler/issues/73
+  - "*"
 
 changed_paths:
   maximum: 1000
