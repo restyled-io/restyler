@@ -6,6 +6,7 @@ module Restyler.PullRequest.Status
 
 import Restyler.Prelude
 
+import qualified Data.Text as T
 import GitHub.Endpoints.Repos.Statuses
 import Restyler.App.Class
 import Restyler.Config
@@ -24,9 +25,14 @@ data PullRequestStatus
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus
-    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
+    :: ( MonadLogger m
+       , MonadGitHub m
+       , MonadReader env m
+       , HasConfig env
+       , HasPullRequest env
+       )
     => PullRequestStatus
-    -> RIO env ()
+    -> m ()
 sendPullRequestStatus status = do
     config <- view configL
     pullRequest <- view pullRequestL
@@ -34,28 +40,34 @@ sendPullRequestStatus status = do
 
 -- | Internals of @'sendPullRequestStatus'@ extracted for non-Reader usage
 sendPullRequestStatus'
-    :: (HasLogFunc env, HasGitHub env)
+    :: (MonadLogger m, MonadGitHub m)
     => Config
     -> PullRequest
     -> PullRequestStatus
-    -> RIO env ()
+    -> m ()
 sendPullRequestStatus' Config {..} pullRequest status =
     when (cStatuses `shouldSendStatus` status)
         $ createHeadShaStatus pullRequest status
 
 createHeadShaStatus
-    :: (HasLogFunc env, HasGitHub env)
+    :: (MonadLogger m, MonadGitHub m)
     => PullRequest
     -> PullRequestStatus
-    -> RIO env ()
+    -> m ()
 createHeadShaStatus pullRequest status = do
-    logInfo $ "Setting status of " <> shortStatus <> " for " <> shortSha
+    logInfo
+        $ "Setting PR status"
+        :# ["status" .= shortStatus, "commit" .= shortSha]
     runGitHub_ $ createStatusR owner name sha $ statusToStatus status
   where
     owner = pullRequestOwnerName pullRequest
     name = pullRequestRepoName pullRequest
     sha = mkName Proxy $ pullRequestHeadSha pullRequest
-    shortSha = fromString $ take 7 $ unpack $ pullRequestHeadSha pullRequest
+
+    shortSha :: Text
+    shortSha = T.take 7 $ pullRequestHeadSha pullRequest
+
+    shortStatus :: Text
     shortStatus = case status of
         SkippedStatus{} -> "skipped"
         NoDifferencesStatus{} -> "no differences"

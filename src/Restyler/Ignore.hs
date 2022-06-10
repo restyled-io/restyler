@@ -20,14 +20,11 @@ data IgnoredReason
     | IgnoredByLabels (Name IssueLabel)
     deriving stock (Eq, Show)
 
-instance Display IgnoredReason where
-    display = \case
-        IgnoredByAuthor author -> "author (" <> display author <> ")"
-        IgnoredByBranch branch -> "author (" <> display branch <> ")"
-        IgnoredByLabels label -> "author (" <> display label <> ")"
-
 getIgnoredReason
-    :: HasGitHub env => Config -> PullRequest -> RIO env (Maybe IgnoredReason)
+    :: (MonadUnliftIO m, MonadGitHub m)
+    => Config
+    -> PullRequest
+    -> m (Maybe IgnoredReason)
 getIgnoredReason config pullRequest = do
     getIgnoredReason'
             config

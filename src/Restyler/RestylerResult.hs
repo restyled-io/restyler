@@ -3,8 +3,7 @@ module Restyler.RestylerResult
     , noPathsRestylerResult
     , getRestylerResult
     , restylerCommittedChanges
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -47,7 +46,9 @@ noPathsRestylerResult r = RestylerResult r NoPaths
 -- N.B. This will create commits if appropriate.
 --
 getRestylerResult
-    :: (HasConfig env, HasGit env) => Restyler -> RIO env RestylerResult
+    :: (MonadGit m, MonadReader env m, HasConfig env)
+    => Restyler
+    -> m RestylerResult
 getRestylerResult r = RestylerResult r <$> getRestyleOutcome r
 
 -- | Does this @'RestylerResult'@ indicate changes were comitted?
@@ -58,7 +59,9 @@ restylerCommittedChanges = committedChanges . rrOutcome
     committedChanges _ = False
 
 getRestyleOutcome
-    :: (HasConfig env, HasGit env) => Restyler -> RIO env RestyleOutcome
+    :: (MonadGit m, MonadReader env m, HasConfig env)
+    => Restyler
+    -> m RestyleOutcome
 getRestyleOutcome restyler = do
     changedPaths <- gitDiffNameOnly Nothing
 

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 87b7288f0dcb29ed7240fd934a139d31724f8e79f75eb8205750fce5bb20872d
+-- hash: 0bf430934f95d513e2ab046427a0e37fc75a87f5901af3f0844ac2e5784c7aa1
 
 name:           restyler
 version:        0.2.0.0
@@ -36,7 +36,6 @@ library
       Restyler.Delimited
       Restyler.Git
       Restyler.Ignore
-      Restyler.Logger
       Restyler.Main
       Restyler.Options
       Restyler.Prelude
@@ -81,7 +80,8 @@ library
       TypeFamilies
   ghc-options: -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
-      Glob
+      Blammo
+    , Glob
     , aeson
     , aeson-casing
     , ansi-terminal
@@ -149,13 +149,10 @@ executable restyle-path
       TypeFamilies
   ghc-options: -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base
-    , conduit
+      Blammo
+    , base
     , envparse
-    , http-conduit
     , restyler
-    , rio
-    , text
     , unliftio
   default-language: Haskell2010
 
@@ -207,11 +204,8 @@ test-suite test
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
-      Restyler.ConfigSpec
-      Restyler.DelimitedSpec
       Restyler.IgnoreSpec
       Restyler.PullRequestSpecSpec
-      Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
       RIO.Test.FS
       SpecHelper
@@ -256,7 +250,6 @@ test-suite test
     , lens-aeson
     , restyler
     , rio
-    , shakespeare
     , text
     , yaml
   default-language: Haskell2010

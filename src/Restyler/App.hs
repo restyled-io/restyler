@@ -1,11 +1,14 @@
 module Restyler.App
-    ( App(..)
+    ( AppT
+    , runAppT
+    , App(..)
     , StartupApp(..)
     , bootstrapApp
     ) where
 
 import Restyler.Prelude
 
+import Blammo.Logging.Simple (newLoggerEnv)
 import Conduit (runResourceT, sinkFile)
 import GitHub.Auth
 import GitHub.Request
@@ -17,7 +20,6 @@ import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
 import Restyler.Git
-import Restyler.Logger
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.RestyledPullRequest
@@ -26,20 +28,139 @@ import Restyler.Statsd (HasStatsClient(..), StatsClient)
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
--- | Environment used for @'RIO'@ actions to load the real @'App'@
+newtype AppT app m a = AppT
+    { unAppT :: ReaderT app (LoggingT m) a
+    }
+    deriving newtype
+        ( Functor
+        , Applicative
+        , Monad
+        , MonadThrow
+        , MonadIO
+        , MonadUnliftIO
+        , MonadLogger
+        , MonadReader app
+        )
+
+instance MonadUnliftIO m => MonadSystem (AppT app m) where
+    getCurrentDirectory = do
+        logDebug "getCurrentDirectory"
+        appIO SystemError Directory.getCurrentDirectory
+
+    setCurrentDirectory path = do
+        logDebug $ "setCurrentDirectory" :# ["path" .= path]
+        appIO SystemError $ Directory.setCurrentDirectory path
+
+    doesFileExist path = do
+        logDebug $ "doesFileExist" :# ["path" .= path]
+        appIO SystemError $ Directory.doesFileExist path
+
+    doesDirectoryExist path = do
+        logDebug $ "doesDirectoryExist" :# ["path" .= path]
+        appIO SystemError $ Directory.doesDirectoryExist path
+
+    isFileExecutable path = do
+        logDebug $ "isFileExecutable" :# ["path" .= path]
+        appIO SystemError
+            $ Directory.executable
+            <$> Directory.getPermissions path
+
+    isFileSymbolicLink path = do
+        logDebug $ "isFileSymbolicLink" :# ["path" .= path]
+        appIO SystemError $ Directory.pathIsSymbolicLink path
+
+    listDirectory path = do
+        logDebug $ "listDirectory" :# ["path" .= path]
+        appIO SystemError $ Directory.listDirectory path
+
+    readFile path = do
+        logDebug $ "readFile: " :# ["path" .= path]
+        appIO SystemError $ readFileUtf8 path
+
+    readFileBS path = do
+        logDebug $ "readFileBS" :# ["path" .= path]
+        appIO SystemError $ readFileBinary path
+
+    writeFile path content = do
+        logDebug $ "writeFile" :# ["path" .= path]
+        appIO SystemError $ writeFileUtf8 path content
+
+instance MonadUnliftIO m => MonadProcess (AppT app m) where
+    callProcess cmd args = do
+        -- N.B. this includes access tokens in log messages when used for
+        -- git-clone. That's acceptable because:
+        --
+        -- - These tokens are ephemeral (5 minutes)
+        -- - We generally accept secrets in DEBUG messages
+        --
+        logDebug $ "callProcess" :# ["command" .= cmd, "arguments" .= args]
+        appIO SystemError $ Process.callProcess cmd args
+
+    callProcessExitCode cmd args = do
+        logDebug
+            $ "callProcessExitCode"
+            :# ["command" .= cmd, "arguments" .= args]
+        ec <- appIO SystemError $ Process.withCreateProcess proc $ \_ _ _ p ->
+            Process.waitForProcess p
+        logDebug
+            $ "callProcessExitCode"
+            :# [ "command" .= cmd
+               , "arguments" .= args
+               , "exitCode" .= exitCodeInt ec
+               ]
+        pure ec
+        where proc = (Process.proc cmd args) { Process.delegate_ctlc = True }
+
+    readProcess cmd args stdin' = do
+        logDebug
+            $ "readProcess"
+            :# ["command" .= cmd, "arguments" .= args, "stdin" .= stdin']
+        output <- appIO SystemError $ Process.readProcess cmd args stdin'
+        logDebug
+            $ "readProcess"
+            :# [ "command" .= cmd
+               , "arguments" .= args
+               , "stdin" .= stdin'
+               , "output" .= output
+               ]
+        pure output
+
+instance MonadUnliftIO m => MonadExit (AppT app m) where
+    exitSuccess = do
+        logDebug "exitSuccess"
+        appIO SystemError Exit.exitSuccess
+
+instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
+    downloadFile url path = do
+        appIO HttpError $ do
+            request <- parseRequestThrow $ unpack url
+            runResourceT $ httpSink request $ \_ -> sinkFile path
+
+instance (MonadUnliftIO m, HasOptions app) => MonadGitHub (AppT app m) where
+    runGitHub req = do
+        -- TODO
+        -- logDebug $ "GitHub request" <> display (displayGitHubRequest req)
+        auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
+        result <- liftIO $ do
+            mgr <- getGlobalManager
+            executeRequestWithMgr mgr auth req
+        either (throwIO . GitHubError (displayGitHubRequest req)) pure result
+
+runAppT :: MonadIO m => HasLogger app => app -> AppT app m a -> m a
+runAppT app f = runLoggerLoggingT app $ runReaderT (unAppT f) app
+
+appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
+appIO f = mapAppError f . liftIO
+
 data StartupApp = StartupApp
-    { appLogFunc :: LogFunc
-    -- ^ Log function built based on @--debug@ and @--color@
+    { appLogger :: Logger
     , appOptions :: Options
-    -- ^ Options passed on the command-line
     , appWorkingDirectory :: FilePath
-    -- ^ Temporary working directory we've created
     , appStatsClient :: StatsClient
-    -- ^ Statsd client
     }
 
-instance HasLogFunc StartupApp where
-    logFuncL = lens appLogFunc $ \x y -> x { appLogFunc = y }
+instance HasLogger StartupApp where
+    loggerL = lens appLogger $ \x y -> x { appLogger = y }
 
 instance HasOptions StartupApp where
     optionsL = lens appOptions $ \x y -> x { appOptions = y }
@@ -51,113 +172,18 @@ instance HasWorkingDirectory StartupApp where
 instance HasStatsClient StartupApp where
     statsClientL = lens appStatsClient $ \x y -> x { appStatsClient = y }
 
-instance HasSystem StartupApp where
-    getCurrentDirectory = do
-        logDebug "getCurrentDirectory"
-        appIO SystemError Directory.getCurrentDirectory
-
-    setCurrentDirectory path = do
-        logDebug $ "setCurrentDirectory: " <> displayShow path
-        appIO SystemError $ Directory.setCurrentDirectory path
-
-    doesFileExist path = do
-        logDebug $ "doesFileExist: " <> displayShow path
-        appIO SystemError $ Directory.doesFileExist path
-
-    doesDirectoryExist path = do
-        logDebug $ "doesDirectoryExist: " <> displayShow path
-        appIO SystemError $ Directory.doesDirectoryExist path
-
-    isFileExecutable path = do
-        logDebug $ "isFileExecutable: " <> displayShow path
-        appIO SystemError
-            $ Directory.executable
-            <$> Directory.getPermissions path
-
-    isFileSymbolicLink path = do
-        logDebug $ "isFileSymbolicLink: " <> displayShow path
-        appIO SystemError $ Directory.pathIsSymbolicLink path
-
-    listDirectory path = do
-        logDebug $ "listDirectory: " <> displayShow path
-        appIO SystemError $ Directory.listDirectory path
-
-    readFile path = do
-        logDebug $ "readFile: " <> displayShow path
-        appIO SystemError $ readFileUtf8 path
-
-    readFileBS path = do
-        logDebug $ "readFileBS: " <> displayShow path
-        appIO SystemError $ readFileBinary path
-
-    writeFile path content = do
-        logDebug $ "writeFile: " <> displayShow path
-        appIO SystemError $ writeFileUtf8 path content
-
--- brittany-disable-next-binding
-
-instance HasProcess StartupApp where
-    callProcess cmd args = do
-        -- N.B. this includes access tokens in log messages when used for
-        -- git-clone. That's acceptable because:
-        --
-        -- - These tokens are ephemeral (5 minutes)
-        -- - We generally accept secrets in DEBUG messages
-        --
-        logDebug $ "call: " <> fromString cmd <> " " <> displayShow args
-        appIO SystemError $ Process.callProcess cmd args
-
-    callProcessExitCode cmd args = do
-        logDebug $ "call: " <> fromString cmd <> " " <> displayShow args
-        ec <- appIO SystemError
-            $ Process.withCreateProcess proc
-            $ \_ _ _ p -> Process.waitForProcess p
-        ec <$ logDebug ("exit code: " <> displayShow ec)
-      where
-        proc = (Process.proc cmd args) { Process.delegate_ctlc = True }
-
-    readProcess cmd args stdin' = do
-        logDebug $ "read: " <> fromString cmd <> " " <> displayShow args
-        output <- appIO SystemError $ Process.readProcess cmd args stdin'
-        output <$ logDebug ("output: " <> fromString output)
-
-instance HasExit StartupApp where
-    exitSuccess = do
-        logDebug "exitSuccess"
-        appIO SystemError Exit.exitSuccess
-
-instance HasDownloadFile StartupApp where
-    downloadFile url path = do
-        logDebug $ "HTTP GET: " <> display url <> " => " <> displayShow path
-        appIO HttpError $ do
-            request <- parseRequestThrow $ unpack url
-            runResourceT $ httpSink request $ \_ -> sinkFile path
-
-instance HasGitHub StartupApp where
-    runGitHub req = do
-        logDebug $ "GitHub request: " <> display (displayGitHubRequest req)
-        auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
-        result <- liftIO $ do
-            mgr <- getGlobalManager
-            executeRequestWithMgr mgr auth req
-        either (throwIO . GitHubError (displayGitHubRequest req)) pure result
-
-appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
-appIO f = mapAppError f . liftIO
-
--- | Fully booted application environment
 data App = App
     { appApp :: StartupApp
     , appConfig :: Config
-    -- ^ Configuration loaded from @.restyled.yaml@
     , appPullRequest :: PullRequest
-    -- ^ Original Pull Request being restyled
     , appRestyledPullRequest :: Maybe RestyledPullRequest
-    -- ^ Possible pre-existing Restyle Pull Request
     }
 
-instance HasLogFunc App where
-    logFuncL = appL . logFuncL
+appL :: Lens' App StartupApp
+appL = lens appApp $ \x y -> x { appApp = y }
+
+instance HasLogger App where
+    loggerL = appL . loggerL
 
 instance HasOptions App where
     optionsL = appL . optionsL
@@ -175,27 +201,7 @@ instance HasRestyledPullRequest App where
     restyledPullRequestL =
         lens appRestyledPullRequest $ \x y -> x { appRestyledPullRequest = y }
 
-instance HasSystem App where
-    getCurrentDirectory = runApp getCurrentDirectory
-    setCurrentDirectory = runApp . setCurrentDirectory
-    doesFileExist = runApp . doesFileExist
-    doesDirectoryExist = runApp . doesDirectoryExist
-    isFileExecutable = runApp . isFileExecutable
-    isFileSymbolicLink = runApp . isFileSymbolicLink
-    listDirectory = runApp . listDirectory
-    readFile = runApp . readFile
-    readFileBS = runApp . readFileBS
-    writeFile x = runApp . writeFile x
-
-instance HasExit App where
-    exitSuccess = runApp exitSuccess
-
-instance HasProcess App where
-    callProcess cmd = runApp . callProcess cmd
-    callProcessExitCode cmd = runApp . callProcessExitCode cmd
-    readProcess cmd args = runApp . readProcess cmd args
-
-instance HasGit App where
+instance MonadUnliftIO m => MonadGit (AppT App m) where
     gitPush branch = callProcess "git" ["push", "origin", branch]
     gitPushForce branch =
         callProcess "git" ["push", "--force", "origin", branch]
@@ -208,31 +214,26 @@ instance HasGit App where
     gitCheckout branch = do
         callProcess "git" ["checkout", "--no-progress", "-b", branch]
 
-instance HasDownloadFile App where
-    downloadFile url = runApp . downloadFile url
+bootstrapApp
+    :: (MonadThrow m, MonadUnliftIO m)
+    => Options
+    -> FilePath
+    -> StatsClient
+    -> m App
+bootstrapApp options path statsClient = do
+    logger <- newLoggerEnv
 
-instance HasGitHub App where
-    runGitHub = runApp . runGitHub
+    let app = StartupApp
+            { appLogger = logger
+            , appOptions = options
+            , appWorkingDirectory = path
+            , appStatsClient = statsClient
+            }
+        toApp (pullRequest, mRestyledPullRequest, config) = App
+            { appApp = app
+            , appPullRequest = pullRequest
+            , appRestyledPullRequest = mRestyledPullRequest
+            , appConfig = config
+            }
 
-appL :: Lens' App StartupApp
-appL = lens appApp $ \x y -> x { appApp = y }
-
-runApp :: RIO StartupApp a -> RIO App a
-runApp = withRIO appApp
-
-bootstrapApp :: MonadIO m => Options -> FilePath -> StatsClient -> m App
-bootstrapApp options path statsClient = runRIO app $ toApp <$> restylerSetup
-  where
-    app = StartupApp
-        { appLogFunc = restylerLogFunc options
-        , appOptions = options
-        , appWorkingDirectory = path
-        , appStatsClient = statsClient
-        }
-
-    toApp (pullRequest, mRestyledPullRequest, config) = App
-        { appApp = app
-        , appPullRequest = pullRequest
-        , appRestyledPullRequest = mRestyledPullRequest
-        , appConfig = config
-        }
+    runAppT app $ toApp <$> restylerSetup

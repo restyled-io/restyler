@@ -4,7 +4,6 @@ module Restyler.Setup
 
 import Restyler.Prelude
 
-import qualified Data.Yaml as Yaml
 import GitHub.Endpoints.PullRequests
 import Prelude (userError)
 import Restyler.App.Class
@@ -21,17 +20,20 @@ import qualified Restyler.Statsd as Statsd
 
 restylerSetup
     :: ( HasCallStack
-       , HasLogFunc env
+       , MonadThrow m
+       , MonadUnliftIO m
+       , MonadLogger m
+       , MonadSystem m
+       , MonadExit m
+       , MonadProcess m
+       , MonadGitHub m
+       , MonadDownloadFile m
+       , MonadReader env m
        , HasOptions env
        , HasWorkingDirectory env
-       , HasSystem env
-       , HasExit env
-       , HasProcess env
-       , HasDownloadFile env
-       , HasGitHub env
        , HasStatsClient env
        )
-    => RIO env (PullRequest, Maybe RestyledPullRequest, Config)
+    => m (PullRequest, Maybe RestyledPullRequest, Config)
 restylerSetup = do
     Options {..} <- view optionsL
 
@@ -41,12 +43,16 @@ restylerSetup = do
             oOwner
             oRepo
             oPullRequest
-    logInfo $ "Restyling " <> display pullRequest
+
+    logInfo $ "Restyling PR" :# ["number" .= pullRequestNumber pullRequest]
 
     mRestyledPullRequest <- findRestyledPullRequest pullRequest
+
     logInfo $ maybe
-        "No existing Restyled PR"
-        (("Existing Restyled PR is " <>) . display)
+        ("No existing Restyled PR" :# [])
+        (\pr ->
+            "Existing Restyled PR" :# ["number" .= restyledPullRequestNumber pr]
+        )
         mRestyledPullRequest
 
     when (pullRequestIsClosed pullRequest) $ do
@@ -57,7 +63,7 @@ restylerSetup = do
     wrapClone $ setupClone pullRequest
 
     config <- mapAppError ConfigurationError loadConfig
-    logDebug $ displayConfigYaml config
+    logDebug $ "Resolved configuration" :# ["config" .= config]
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
     mIgnoredReason <- getIgnoredReason config pullRequest
@@ -68,27 +74,21 @@ restylerSetup = do
                 IgnoredByLabels{} -> "labels"
             status = SkippedStatus ("Ignore " <> item) oJobUrl
         sendPullRequestStatus' config pullRequest status
-        exitWithInfo $ "Ignoring PR based on " <> display reason
+        exitWithInfo $ "Ignoring PR" :# ["reason" .= show reason]
 
     pure (pullRequest, mRestyledPullRequest, config)
 
-displayConfigYaml :: Config -> Utf8Builder
-displayConfigYaml =
-    fromString
-        . unpack
-        . ("Resolved configuration\n" <>)
-        . decodeUtf8
-        . Yaml.encode
-
 setupClone
     :: ( HasCallStack
+       , MonadUnliftIO m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadReader env m
        , HasOptions env
        , HasWorkingDirectory env
-       , HasSystem env
-       , HasProcess env
        )
     => PullRequest
-    -> RIO env ()
+    -> m ()
 setupClone pullRequest = mapAppError toPullRequestCloneError $ do
     dir <- view workingDirectoryL
     token <- oAccessToken <$> view optionsL

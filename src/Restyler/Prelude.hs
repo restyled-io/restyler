@@ -5,8 +5,18 @@ module Restyler.Prelude
     , module Restyler.Prelude
     ) where
 
-import RIO as X hiding (exitSuccess)
+import RIO as X hiding
+    ( LogLevel(..)
+    , LogSource
+    , exitSuccess
+    , logDebug
+    , logError
+    , logInfo
+    , logOther
+    , logWarn
+    )
 
+import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Data.Bitraversable as X (bimapM)
@@ -76,3 +86,8 @@ none p = not . any p
 
 insertIfMissing :: Key -> v -> KeyMap v -> KeyMap v
 insertIfMissing k v m = KeyMap.unionWith const m $ KeyMap.singleton k v
+
+exitCodeInt :: ExitCode -> Int
+exitCodeInt = \case
+    ExitSuccess -> 0
+    ExitFailure x -> x

@@ -186,7 +186,13 @@ instance Exception ConfigError
 -- of restylers data, and apply the configured choices and overrides.
 --
 loadConfig
-    :: (HasLogFunc env, HasSystem env, HasDownloadFile env) => RIO env Config
+    :: ( MonadThrow m
+       , MonadUnliftIO m
+       , MonadLogger m
+       , MonadSystem m
+       , MonadDownloadFile m
+       )
+    => m Config
 loadConfig =
     loadConfigFrom (map ConfigPath configPaths)
         $ handleTo ConfigErrorInvalidRestylersYaml
@@ -195,10 +201,10 @@ loadConfig =
         . cfRestylersVersion
 
 loadConfigFrom
-    :: HasSystem env
+    :: (MonadThrow m, MonadUnliftIO m, MonadSystem m)
     => [ConfigSource]
-    -> (ConfigF Identity -> RIO env [Restyler])
-    -> RIO env Config
+    -> (ConfigF Identity -> m [Restyler])
+    -> m Config
 loadConfigFrom sources f = do
     config <- loadConfigF sources
     restylers <- f config
@@ -208,11 +214,10 @@ data ConfigSource
     = ConfigPath FilePath
     | ConfigContent ByteString
 
-readConfigSources
-    :: HasSystem env => [ConfigSource] -> RIO env (Maybe ByteString)
+readConfigSources :: MonadSystem m => [ConfigSource] -> m (Maybe ByteString)
 readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
   where
-    go :: HasSystem env => ConfigSource -> RIO env (Maybe ByteString)
+    go :: MonadSystem m => ConfigSource -> m (Maybe ByteString)
     go = \case
         ConfigPath path -> do
             exists <- doesFileExist path
@@ -226,13 +231,19 @@ readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
 -- May throw any @'ConfigError'@. May through raw @'Yaml.ParseException'@s if
 -- there is a programmer error in our static default configuration YAML.
 --
-loadConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Identity)
+loadConfigF
+    :: (MonadThrow m, MonadUnliftIO m, MonadSystem m)
+    => [ConfigSource]
+    -> m (ConfigF Identity)
 loadConfigF sources =
     resolveConfig
         <$> loadUserConfigF sources
         <*> decodeThrow defaultConfigContent
 
-loadUserConfigF :: HasSystem env => [ConfigSource] -> RIO env (ConfigF Maybe)
+loadUserConfigF
+    :: (MonadThrow m, MonadUnliftIO m, MonadSystem m)
+    => [ConfigSource]
+    -> m (ConfigF Maybe)
 loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
@@ -245,7 +256,7 @@ decodeThrow' content =
 --
 -- May throw @'ConfigErrorInvalidRestylers'@.
 --
-resolveRestylers :: ConfigF Identity -> [Restyler] -> RIO env Config
+resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
     restylers <-
         either (throwIO . ConfigErrorInvalidRestylers) pure
@@ -274,17 +285,24 @@ resolveRestylers ConfigF {..} allRestylers = do
 class HasConfig env where
     configL :: Lens' env Config
 
-whenConfig :: HasConfig env => (Config -> Bool) -> RIO env () -> RIO env ()
+whenConfig
+    :: (MonadReader env m, HasConfig env) => (Config -> Bool) -> m () -> m ()
 whenConfig check act =
     whenConfigJust (bool Nothing (Just ()) . check) (const act)
 
 whenConfigNonEmpty
-    :: HasConfig env => (Config -> [a]) -> ([a] -> RIO env ()) -> RIO env ()
+    :: (MonadReader env m, HasConfig env)
+    => (Config -> [a])
+    -> ([a] -> m ())
+    -> m ()
 whenConfigNonEmpty check act =
     whenConfigJust (NE.nonEmpty . check) (act . NE.toList)
 
 whenConfigJust
-    :: HasConfig env => (Config -> Maybe a) -> (a -> RIO env ()) -> RIO env ()
+    :: (MonadReader env m, HasConfig env)
+    => (Config -> Maybe a)
+    -> (a -> m ())
+    -> m ()
 whenConfigJust check act = traverse_ act . check =<< view configL
 
 defaultConfigContent :: ByteString

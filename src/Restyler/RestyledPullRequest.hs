@@ -1,5 +1,6 @@
 module Restyler.RestyledPullRequest
     ( RestyledPullRequest
+    , restyledPullRequestNumber
     , restyledPullRequestHeadRef
     , restyledPullRequestHtmlUrl
     , HasRestyledPullRequest(..)
@@ -35,11 +36,11 @@ import GitHub.Endpoints.PullRequests
     )
 import GitHub.Endpoints.PullRequests.ReviewRequests
     (createReviewRequestR, requestOneReviewer)
-import Restyler.App.Class (HasGitHub, runGitHub, runGitHubFirst, runGitHub_)
+import Restyler.App.Class (MonadGitHub, runGitHub, runGitHubFirst, runGitHub_)
 import Restyler.App.Error (warnIgnore)
 import Restyler.Config
 import qualified Restyler.Content as Content
-import Restyler.Git (HasGit(..))
+import Restyler.Git (MonadGit(..))
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequestSpec
@@ -97,7 +98,7 @@ class HasRestyledPullRequest env where
     restyledPullRequestL :: Lens' env (Maybe RestyledPullRequest)
 
 findRestyledPullRequest
-    :: HasGitHub env => PullRequest -> RIO env (Maybe RestyledPullRequest)
+    :: MonadGitHub m => PullRequest -> m (Maybe RestyledPullRequest)
 findRestyledPullRequest pullRequest =
     runMaybeT $ findExisting ref <|> findExisting legacyRef
   where
@@ -116,15 +117,16 @@ findRestyledPullRequest pullRequest =
             . simplePullRequestUser
 
 createRestyledPullRequest
-    :: ( HasLogFunc env
+    :: ( MonadLogger m
+       , MonadGit m
+       , MonadGitHub m
+       , MonadReader env m
        , HasOptions env
        , HasConfig env
-       , HasGit env
-       , HasGitHub env
        )
     => PullRequest
     -> [RestylerResult]
-    -> RIO env RestyledPullRequest
+    -> m RestyledPullRequest
 createRestyledPullRequest pullRequest results = do
     gitCheckout $ unpack $ pullRequestRestyledHeadRef pullRequest
     gitPushForce $ unpack $ pullRequestRestyledHeadRef pullRequest
@@ -148,7 +150,7 @@ createRestyledPullRequest pullRequest results = do
                 }
 
     whenConfigNonEmpty (Set.toList . cLabels) $ \labels -> do
-        logInfo $ "Adding labels to Restyled PR (" <> displayShow labels <> ")"
+        logInfo $ "Adding labels to Restyled PR" :# ["labels" .= labels]
         runGitHub_ $ addLabelsToIssueR
             (restyledPullRequestOwnerName restyledPullRequest)
             (restyledPullRequestRepoName restyledPullRequest)
@@ -156,32 +158,36 @@ createRestyledPullRequest pullRequest results = do
             labels
 
     whenConfigJust (configPullRequestReviewer pullRequest) $ \user -> do
-        logInfo $ "Requesting review of Restyled PR from " <> displayShow user
+        logInfo $ "Requesting review of Restyled PR" :# ["reviewer" .= user]
         runGitHub_ $ createReviewRequestR
             (restyledPullRequestOwnerName restyledPullRequest)
             (restyledPullRequestRepoName restyledPullRequest)
             (restyledPullRequestNumber restyledPullRequest)
             (requestOneReviewer user)
 
-    restyledPullRequest
-        <$ logInfo ("Opened Restyled PR " <> display restyledPullRequest)
+    logInfo
+        $ "Opened Restyled PR"
+        :# ["number" .= restyledPullRequestNumber restyledPullRequest]
+    pure restyledPullRequest
 
 -- |
 --
 -- TODO: consider using results to update PR description.
 --
 updateRestyledPullRequest
-    :: HasGit env
+    :: MonadGit m
     => RestyledPullRequest
     -> [RestylerResult]
-    -> RIO env RestyledPullRequest
+    -> m RestyledPullRequest
 updateRestyledPullRequest restyledPullRequest _results = do
     gitCheckout $ unpack $ restyledPullRequestHeadRef restyledPullRequest
     gitPushForce $ unpack $ restyledPullRequestHeadRef restyledPullRequest
     pure restyledPullRequest
 
 closeRestyledPullRequest
-    :: (HasLogFunc env, HasGitHub env) => RestyledPullRequest -> RIO env ()
+    :: (MonadUnliftIO m, MonadLogger m, MonadGitHub m)
+    => RestyledPullRequest
+    -> m ()
 closeRestyledPullRequest pr = do
     editRestyledPullRequestState StateClosed pr
 
@@ -191,24 +197,20 @@ closeRestyledPullRequest pr = do
         (mkName Proxy $ "heads/" <> restyledPullRequestHeadRef pr)
 
 editRestyledPullRequestState
-    :: (HasLogFunc env, HasGitHub env)
+    :: (MonadLogger m, MonadGitHub m)
     => IssueState
     -> RestyledPullRequest
-    -> RIO env ()
+    -> m ()
 editRestyledPullRequestState state pr
     | restyledPullRequestState pr == state
     = logWarn
-        $ "Redundant update of Restyled PR "
-        <> display pr
-        <> " to "
-        <> displayShow state
+        $ "Redundant update of Restyled PR"
+        :# ["number" .= restyledPullRequestNumber pr, "state" .= state]
     | otherwise
     = do
         logInfo
-            $ "Updating Restyled PR "
-            <> display pr
-            <> " to "
-            <> displayShow state
+            $ "Updating Restyled PR"
+            :# ["number" .= restyledPullRequestNumber pr, "state" .= state]
 
         runGitHub_ $ updatePullRequestR
             (restyledPullRequestOwnerName pr)
@@ -223,7 +225,7 @@ editRestyledPullRequestState state pr
                 }
 
 findSiblingPullRequest
-    :: HasGitHub env => PullRequest -> Text -> RIO env (Maybe SimplePullRequest)
+    :: MonadGitHub m => PullRequest -> Text -> m (Maybe SimplePullRequest)
 findSiblingPullRequest pr ref =
     runGitHubFirst $ pullRequestsForR owner repo $ optionsHead qualifiedRef
   where
