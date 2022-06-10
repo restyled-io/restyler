@@ -43,6 +43,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+    - Blammo
     - Glob
     - aeson
     - aeson-casing
@@ -98,12 +99,9 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - Blammo
       - envparse
-      - conduit
-      - http-conduit
-      - text
       - restyler
-      - rio
       - unliftio
 
 tests:
@@ -121,6 +119,5 @@ tests:
       - lens-aeson
       - restyler
       - rio
-      - shakespeare
       - text
       - yaml

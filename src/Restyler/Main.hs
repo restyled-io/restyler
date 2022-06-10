@@ -18,22 +18,24 @@ import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
 restylerMain
-    :: ( HasLogFunc env
+    :: ( MonadUnliftIO m
+       , MonadLogger m
+       , MonadReader env m
+       , MonadSystem m
+       , MonadExit m
+       , MonadProcess m
+       , MonadGit m
+       , MonadGitHub m
+       , MonadDownloadFile m
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
        , HasRestyledPullRequest env
-       , HasSystem env
-       , HasExit env
-       , HasProcess env
-       , HasGit env
-       , HasDownloadFile env
-       , HasGitHub env
        )
-    => RIO env a
+    => m a
 restylerMain = do
     results <- restyle
-    logDebug $ "Restyling results: " <> displayIntercalated ", " results
+    -- logDebug $ "Restyled" :# ["results" .= results]
 
     jobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
@@ -70,29 +72,31 @@ restylerMain = do
     exitWithInfo "Restyling successful"
 
 restyle
-    :: ( HasLogFunc env
+    :: ( MonadUnliftIO m
+       , MonadLogger m
+       , MonadSystem m
+       , MonadProcess m
+       , MonadGit m
+       , MonadGitHub m
+       , MonadDownloadFile m
+       , MonadReader env m
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
-       , HasSystem env
-       , HasProcess env
-       , HasGit env
-       , HasGitHub env
-       , HasDownloadFile env
        )
-    => RIO env [RestylerResult]
+    => m [RestylerResult]
 restyle = do
     config <- view configL
     pullRequest <- view pullRequestL
     pullRequestPaths <- getChangedPaths pullRequest
     runRestylers config pullRequestPaths
 
-wasRestyled :: (HasPullRequest env, HasGit env) => RIO env Bool
+wasRestyled :: (MonadGit m, MonadReader env m, HasPullRequest env) => m Bool
 wasRestyled = do
     sha <- pullRequestHeadSha <$> view pullRequestL
     not . null <$> gitDiffNameOnly (Just $ unpack sha)
 
-getChangedPaths :: HasGitHub env => PullRequest -> RIO env [FilePath]
+getChangedPaths :: MonadGitHub m => PullRequest -> m [FilePath]
 getChangedPaths pullRequest = do
     files <- runGitHub $ pullRequestFilesR
         (pullRequestOwnerName pullRequest)

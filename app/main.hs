@@ -25,9 +25,9 @@ main = do
         result <- tryAppError $ do
             withSystemTempDirectory "restyler-" $ \path -> do
                 app <- bootstrapApp options path statsClient
-                runRIO app $ handleAny errorPullRequest restylerMain
+                runAppT app $ handleAny errorPullRequest restylerMain
 
-        runRIO statsClient $ do
+        flip runReaderT statsClient $ do
             Statsd.increment "restyler.finished" []
             Statsd.histogramSince "restyler.duration" [] start
             either

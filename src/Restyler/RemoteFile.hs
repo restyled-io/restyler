@@ -1,8 +1,7 @@
 module Restyler.RemoteFile
     ( RemoteFile(..)
     , downloadRemoteFile
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -25,7 +24,7 @@ instance ToJSON RemoteFile where
     toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 downloadRemoteFile
-    :: (HasLogFunc env, HasDownloadFile env) => RemoteFile -> RIO env ()
+    :: (MonadLogger m, MonadDownloadFile m) => RemoteFile -> m ()
 downloadRemoteFile RemoteFile {..} = do
-    logInfo $ fromString $ "Fetching remote file: " <> rfPath
+    logInfo $ "Fetching remote file" :# ["path" .= rfPath]
     downloadFile (getUrl rfUrl) rfPath

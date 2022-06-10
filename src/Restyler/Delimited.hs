@@ -8,8 +8,7 @@ module Restyler.Delimited
     , DelimitedMeta(..)
     , delimit
     , undelimit
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -54,11 +53,11 @@ data DelimitedMeta = DelimitedMeta
 
 -- | Restyle delimited content within paths using the given function
 restyleDelimited
-    :: HasSystem env
+    :: MonadSystem m
     => Delimiters
-    -> ([FilePath] -> RIO env result) -- ^ Restyle files inplace
+    -> ([FilePath] -> m result) -- ^ Restyle files inplace
     -> [FilePath]
-    -> RIO env result
+    -> m result
 restyleDelimited delimiters restyle paths = do
     delimited <- traverse (delimit delimiters) paths
     result <- restyle $ concatMap delimitedInPaths delimited
@@ -80,7 +79,7 @@ delimitedInPaths = map dppPath . filter dppIn . dpParts
 -- delimiters (repeatedly). The returned value tracks which paths hold content
 -- that was delimited /in/ or /out/.
 --
-delimit :: HasSystem env => Delimiters -> FilePath -> RIO env DelimitedPath
+delimit :: MonadSystem m => Delimiters -> FilePath -> m DelimitedPath
 delimit Delimiters {..} path = do
     content <- readFile path
     parts <- traverse (uncurry $ writePart path) $ zip [0 ..] $ splitBetween
@@ -90,11 +89,11 @@ delimit Delimiters {..} path = do
     pure DelimitedPath { dpSource = path, dpParts = parts }
 
 writePart
-    :: HasSystem env
+    :: MonadSystem m
     => FilePath
     -> Int
     -> Either Text Text
-    -> RIO env DelimitedPathPart
+    -> m DelimitedPathPart
 writePart path n part = do
     let path' = path <> "." <> show @Int n
 
@@ -142,12 +141,12 @@ cleanDelimitedPart x =
         in (minIndent, T.unlines $ map (T.drop minIndent . snd) lns')
 
 -- | Re-construct a file from its delimited parts
-undelimit :: HasSystem env => Delimiters -> DelimitedPath -> RIO env ()
+undelimit :: MonadSystem m => Delimiters -> DelimitedPath -> m ()
 undelimit delimiters DelimitedPath {..} = do
     contents <- traverse (readPart delimiters) dpParts
     writeFile dpSource $ mconcat contents
 
-readPart :: HasSystem env => Delimiters -> DelimitedPathPart -> RIO env Text
+readPart :: MonadSystem m => Delimiters -> DelimitedPathPart -> m Text
 readPart Delimiters {..} DelimitedPathPart {..}
     | not dppIn = readFile dppPath
     | otherwise = do

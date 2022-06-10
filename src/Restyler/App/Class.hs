@@ -1,20 +1,19 @@
 module Restyler.App.Class
     ( HasWorkingDirectory(..)
-    , HasSystem(..)
-    , HasExit(..)
+    , MonadSystem(..)
+    , MonadExit(..)
     , exitWithInfo
-    , HasProcess(..)
-    , HasDownloadFile(..)
+    , MonadProcess(..)
+    , MonadDownloadFile(..)
 
     -- * GitHub
-    , HasGitHub(..)
+    , MonadGitHub(..)
     , runGitHubFirst
     , runGitHub_
 
     -- ** Higher-level actions
     , getPullRequestLabelNames
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -22,68 +21,58 @@ import GitHub.Data (IssueLabel(..))
 import GitHub.Data.Request
 import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)
 import GitHub.Request
-import Restyler.PullRequest
 import qualified RIO.Vector as V
+import Restyler.PullRequest
 
 class HasWorkingDirectory env where
     workingDirectoryL :: Lens' env FilePath
 
-class HasSystem env where
-    getCurrentDirectory :: RIO env FilePath
+class Monad m => MonadSystem m where
+    getCurrentDirectory :: m FilePath
+    setCurrentDirectory :: FilePath -> m ()
+    doesFileExist :: FilePath -> m Bool
+    doesDirectoryExist :: FilePath -> m Bool
+    isFileExecutable :: FilePath -> m Bool
+    isFileSymbolicLink :: FilePath -> m Bool
+    listDirectory :: FilePath -> m [FilePath]
+    readFile :: FilePath -> m Text
+    readFileBS :: FilePath -> m ByteString
+    writeFile :: FilePath -> Text -> m ()
 
-    setCurrentDirectory :: FilePath -> RIO env ()
+class Monad m => MonadExit m where
+    exitSuccess :: m a
 
-    doesFileExist :: FilePath -> RIO env Bool
-
-    doesDirectoryExist :: FilePath -> RIO env Bool
-
-    isFileExecutable :: FilePath -> RIO env Bool
-
-    isFileSymbolicLink :: FilePath -> RIO env Bool
-
-    listDirectory :: FilePath -> RIO env [FilePath]
-
-    readFile :: FilePath -> RIO env Text
-
-    readFileBS :: FilePath -> RIO env ByteString
-
-    writeFile :: FilePath -> Text -> RIO env ()
-
-class HasExit env where
-    exitSuccess :: RIO env a
-
-exitWithInfo :: (HasLogFunc env, HasExit env) => Utf8Builder -> RIO env a
+exitWithInfo :: (MonadLogger m, MonadExit m) => Message -> m a
 exitWithInfo msg = do
     logInfo msg
     exitSuccess
 
-class HasProcess env where
-    callProcess :: String -> [String] -> RIO env ()
+class Monad m => MonadProcess m where
+    callProcess :: String -> [String] -> m ()
+    callProcessExitCode :: String -> [String] -> m ExitCode
+    readProcess :: String -> [String] -> String -> m String
 
-    callProcessExitCode :: String -> [String] -> RIO env ExitCode
+class Monad m => MonadDownloadFile m where
+    downloadFile :: Text -> FilePath -> m ()
 
-    readProcess :: String -> [String] -> String -> RIO env String
-
-class HasDownloadFile env where
-    downloadFile :: Text -> FilePath -> RIO env ()
-
-class HasGitHub env where
-    runGitHub :: ParseResponse m a => GenRequest m k a -> RIO env a
+class Monad n => MonadGitHub n where
+    runGitHub :: ParseResponse m a => GenRequest m k a -> n a
 
 -- | Fetch the first page using @'runGitHub'@, return the first item
 runGitHubFirst
-    :: (HasGitHub env, ParseResponse m (Vector a))
+    :: (MonadGitHub n, ParseResponse m (Vector a))
     => (FetchCount -> GenRequest m k (Vector a))
-    -> RIO env (Maybe a)
+    -> n (Maybe a)
 runGitHubFirst f = (V.!? 0) <$> runGitHub (f 1)
 
 -- | @'void' . 'runGitHub'@
-runGitHub_
-    :: (HasGitHub env, ParseResponse m a) => GenRequest m k a -> RIO env ()
+runGitHub_ :: (MonadGitHub n, ParseResponse m a) => GenRequest m k a -> n ()
 runGitHub_ = void . runGitHub
 
 getPullRequestLabelNames
-    :: HasGitHub env => PullRequest -> RIO env (Vector (Name IssueLabel))
+    :: (MonadUnliftIO m, MonadGitHub m)
+    => PullRequest
+    -> m (Vector (Name IssueLabel))
 getPullRequestLabelNames pullRequest = do
     labels <- handleAny (const $ pure mempty) $ runGitHub $ labelsOnIssueR
         (pullRequestOwnerName pullRequest)

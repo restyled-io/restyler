@@ -150,14 +150,16 @@ reflow = indent . wrap
 
 -- | Error the original @'PullRequest'@ and re-throw the exception
 errorPullRequest
-    :: ( HasLogFunc env
+    :: ( MonadUnliftIO m
+       , MonadLogger m
+       , MonadGitHub m
+       , MonadReader env m
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
-       , HasGitHub env
        )
     => SomeException
-    -> RIO env ()
+    -> m ()
 errorPullRequest = exceptExit $ \ex -> do
     mJobUrl <- oJobUrl <$> view optionsL
     traverse_ errorPullRequestUrl mJobUrl
@@ -165,15 +167,24 @@ errorPullRequest = exceptExit $ \ex -> do
 
 -- | Actually error the @'PullRequest'@, given the job-url to link to
 errorPullRequestUrl
-    :: (HasLogFunc env, HasConfig env, HasPullRequest env, HasGitHub env)
+    :: ( MonadUnliftIO m
+       , MonadLogger m
+       , MonadGitHub m
+       , MonadReader env m
+       , HasConfig env
+       , HasPullRequest env
+       )
     => URL
-    -> RIO env ()
+    -> m ()
 errorPullRequestUrl url =
     handleAny warnIgnore $ sendPullRequestStatus $ ErrorStatus url
 
 -- | Ignore an exception, warning about it.
-warnIgnore :: (Display a, HasLogFunc env) => a -> RIO env ()
-warnIgnore ex = logWarn $ "Caught " <> display ex <> ", ignoring."
+warnIgnore :: (MonadLogger m, Exception e) => e -> m ()
+warnIgnore ex =
+    logWarn
+        $ "Ignoring caught exception"
+        :# ["exception" .= displayException ex]
 
 tryAppError :: MonadUnliftIO m => m a -> m (Either AppError ())
 tryAppError f = handles appErrorHandlers $ do

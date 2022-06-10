@@ -1,4 +1,10 @@
 resolver: lts-19.10
 extra-deps:
+  - Blammo-1.0.1.1
+
+  # Transitive dependencies for Blammo
+  - monad-logger-aeson-0.2.0.1
+  - context-0.2.0.0
+
   # for weeder-2.3.0
   - algebraic-graphs-0.5
