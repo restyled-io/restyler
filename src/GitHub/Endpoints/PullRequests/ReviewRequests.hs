@@ -8,8 +8,7 @@ module GitHub.Endpoints.PullRequests.ReviewRequests
     , ReviewRequest(..)
     , createReviewRequest
     , createReviewRequestR
-    )
-where
+    ) where
 
 import Prelude
 

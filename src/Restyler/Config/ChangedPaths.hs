@@ -1,8 +1,7 @@
 module Restyler.Config.ChangedPaths
     ( ChangedPathsConfig(..)
     , MaximumChangedPathsOutcome(..)
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

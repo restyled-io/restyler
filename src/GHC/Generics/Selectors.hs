@@ -8,8 +8,7 @@
 --
 module GHC.Generics.Selectors
     ( Selectors(..)
-    )
-where
+    ) where
 
 import Prelude
 

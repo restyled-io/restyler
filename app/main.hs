@@ -4,8 +4,8 @@ module Main
 
 import Restyler.Prelude
 
+import Data.Time (getCurrentTime)
 import GitHub.Data (toPathPart)
-import RIO.Time (getCurrentTime)
 import Restyler.App
 import Restyler.App.Error
 import Restyler.Main

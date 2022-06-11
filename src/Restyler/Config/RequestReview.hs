@@ -1,8 +1,7 @@
 module Restyler.Config.RequestReview
     ( RequestReviewConfig
     , determineReviewer
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

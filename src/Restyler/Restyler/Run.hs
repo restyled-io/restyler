@@ -15,7 +15,6 @@ import Restyler.Prelude
 
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List (nub)
-import RIO.FilePath ((</>))
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
@@ -29,6 +28,7 @@ import Restyler.Options
 import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restyler
 import Restyler.RestylerResult
+import System.FilePath ((</>))
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers

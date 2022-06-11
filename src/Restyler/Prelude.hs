@@ -1,20 +1,19 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Restyler.Prelude
     ( module X
     , module Restyler.Prelude
     ) where
 
-import RIO as X hiding
-    ( LogLevel(..)
-    , LogSource
-    , exitSuccess
-    , logDebug
-    , logError
-    , logInfo
-    , logOther
-    , logWarn
-    )
+import RIO as X
+    hiding
+        ( LogLevel(..)
+        , LogSource
+        , exitSuccess
+        , logDebug
+        , logError
+        , logInfo
+        , logOther
+        , logWarn
+        )
 
 import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
@@ -41,18 +40,6 @@ import Data.Aeson.KeyMap (KeyMap)
 import qualified Data.Aeson.KeyMap as KeyMap
 import qualified RIO.Text as T
 
--- Apparently they fixed a space leak in Data.List's version :shrug:
-import qualified Data.Text.Internal.Functions as List (intersperse)
-
-instance Display (Name a) where
-    display = display . untagName
-
--- | Like @'withReader'@ for @'RIO'@
-withRIO :: (env' -> env) -> RIO env a -> RIO env' a
-withRIO f m = do
-    env <- asks f
-    runRIO env m
-
 guardM :: (Monad m, Alternative m) => m Bool -> m ()
 guardM mb = do
     b <- mb
@@ -66,9 +53,6 @@ guardM mb = do
 --
 decodeUtf8 :: ByteString -> Text
 decodeUtf8 = T.decodeUtf8With T.lenientDecode
-
-displayIntercalated :: Display a => Utf8Builder -> [a] -> Utf8Builder
-displayIntercalated sep = mconcat . List.intersperse sep . map display
 
 handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
 handles = flip catches

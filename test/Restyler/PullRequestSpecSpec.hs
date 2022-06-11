@@ -1,7 +1,6 @@
 module Restyler.PullRequestSpecSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 
@@ -34,7 +33,7 @@ spec = describe "parseSpec" $ do
 
     it "round-trips" $ property $ \(Named owner, Named name, Positive num) ->
         let prSpec = pullRequestSpec owner name num
-        in parseSpec (unpack $ textDisplay prSpec) == Right prSpec
+        in parseSpec (unpack $ pullRequestSpecToText prSpec) == Right prSpec
 
 pullRequestSpec :: Text -> Text -> Int -> PullRequestSpec
 pullRequestSpec owner name num = PullRequestSpec

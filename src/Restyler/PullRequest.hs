@@ -27,14 +27,6 @@ module Restyler.PullRequest
 import Restyler.Prelude
 
 import GitHub.Data
-import Restyler.PullRequestSpec
-
-instance Display PullRequest where
-    textDisplay pullRequest = textDisplay PullRequestSpec
-        { prsOwner = pullRequestOwnerName pullRequest
-        , prsRepo = pullRequestRepoName pullRequest
-        , prsPullRequest = pullRequestNumber pullRequest
-        }
 
 class HasPullRequest env where
     pullRequestL :: Lens' env PullRequest

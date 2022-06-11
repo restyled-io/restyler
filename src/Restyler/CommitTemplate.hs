@@ -3,8 +3,7 @@ module Restyler.CommitTemplate
     , commitTemplate
     , CommitTemplateInputs(..)
     , renderCommitTemplate
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

@@ -1,8 +1,7 @@
 module GitHub.Request.Display
     ( DisplayGitHubRequest
     , displayGitHubRequest
-    )
-where
+    ) where
 
 import Prelude
 
@@ -10,12 +9,11 @@ import Data.Text (Text, pack)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import GitHub.Request
-import RIO (Display)
 
 newtype DisplayGitHubRequest = DisplayGitHubRequest
     { _unDisplayGitHubRequest :: Text
     }
-    deriving newtype (Eq, Show, Display)
+    deriving newtype (Eq, Show)
 
 displayGitHubRequest :: GenRequest m k a -> DisplayGitHubRequest
 displayGitHubRequest = DisplayGitHubRequest . \case
