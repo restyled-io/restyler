@@ -47,7 +47,7 @@ someRestyler = Restyler
     , rSupportsMultiplePaths = True
     }
 
-loadDefaultConfig :: RIO env Config
+loadDefaultConfig :: (MonadThrow m, MonadIO m) => m Config
 loadDefaultConfig = do
     config <- decodeThrow defaultConfigContent
     resolveRestylers config testRestylers

@@ -1,8 +1,5 @@
 -- | Naive implementation of an in-memory filesystem
 --
--- This aims to be generic to the @"RIO"@ FS-related functions, but is of course
--- only written to implement our own @'HasSystem'@ class so far.
---
 -- Limitations:
 --
 -- - We try to store absolute paths and normalize function arguments as relative
@@ -14,7 +11,7 @@
 --   by creating a file ending in @/@. Therefore, reading and writing to a
 --   \"directory\" could behave in surprising ways.
 --
-module RIO.Test.FS
+module Restyler.Test.FS
     ( HasFS(..)
     , FS
     , build
@@ -32,25 +29,25 @@ module RIO.Test.FS
     , isFileExecutable
     , isFileSymbolicLink
     , listDirectory
-    )
-where
+    ) where
 
-import RIO hiding (readFileBinary, readFileUtf8, writeFileUtf8)
+import Restyler.Prelude hiding (readFileBinary, readFileUtf8, writeFileUtf8)
 
+import Data.List (isPrefixOf)
+import Data.List.Extra (dropPrefix)
 import qualified Data.Map.Strict as Map
-import RIO.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
-import RIO.List (dropPrefix, isPrefixOf)
 import qualified System.Directory as Directory
+import System.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
 
 class HasFS env where
     fsL :: Lens' env FS
 
 newtype FS = FS { unFS :: IORef FS' }
 
-readFS' :: HasFS env => RIO env FS'
+readFS' :: (MonadIO m, MonadReader env m, HasFS env) => m FS'
 readFS' = readIORef . unFS =<< view fsL
 
-modifyFS' :: HasFS env => (FS' -> FS') -> RIO env ()
+modifyFS' :: (MonadIO m, MonadReader env m, HasFS env) => (FS' -> FS') -> m ()
 modifyFS' f = do
     FS ref <- view fsL
     liftIO $ atomicModifyIORef' ref $ \fs -> (f fs, ())
@@ -93,10 +90,13 @@ build cwd files = FS <$> newIORef FS'
     , fsFiles = Map.fromList $ map (second normalFile) files
     }
 
-readFileUtf8 :: HasFS env => FilePath -> RIO env Text
+readFileUtf8 :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Text
 readFileUtf8 = fmap fst . readFile
 
-readFile :: HasFS env => FilePath -> RIO env (Text, Directory.Permissions)
+readFile
+    :: (MonadIO m, MonadReader env m, HasFS env)
+    => FilePath
+    -> m (Text, Directory.Permissions)
 readFile path' = do
     path <- getAbsolutePath path'
     mContent <- Map.lookup path . fsFiles <$> readFS'
@@ -110,53 +110,71 @@ readFile path' = do
         Just (Symlink target) -> readFile target
         Just (UnreadableFile ex) -> throwIO ex
 
-readFileBinary :: HasFS env => FilePath -> RIO env ByteString
+readFileBinary
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m ByteString
 readFileBinary = fmap encodeUtf8 . readFileUtf8
 
-writeFileUtf8 :: HasFS env => FilePath -> Text -> RIO env ()
+writeFileUtf8
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> Text -> m ()
 writeFileUtf8 path = writeFile path . normalFile
 
-writeFileExecutable :: HasFS env => FilePath -> Text -> RIO env ()
+writeFileExecutable
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> Text -> m ()
 writeFileExecutable path = writeFile path . executableFile
 
-writeFileUnreadable :: HasFS env => FilePath -> IOException -> RIO env ()
+writeFileUnreadable
+    :: (MonadIO m, MonadReader env m, HasFS env)
+    => FilePath
+    -> IOException
+    -> m ()
 writeFileUnreadable path = writeFile path . UnreadableFile
 
-createFileLink :: HasFS env => FilePath -> FilePath -> RIO env ()
+createFileLink
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> FilePath -> m ()
 createFileLink target name = writeFile name $ Symlink target
 
-writeFile :: HasFS env => FilePath -> ReadableFile -> RIO env ()
+writeFile
+    :: (MonadIO m, MonadReader env m, HasFS env)
+    => FilePath
+    -> ReadableFile
+    -> m ()
 writeFile path' content = do
     path <- getAbsolutePath path'
     modifyFS' $ \fs -> fs { fsFiles = Map.insert path content $ fsFiles fs }
 
-getCurrentDirectory :: HasFS env => RIO env FilePath
+getCurrentDirectory :: (MonadIO m, MonadReader env m, HasFS env) => m FilePath
 getCurrentDirectory = fsCwd <$> readFS'
 
-setCurrentDirectory :: HasFS env => FilePath -> RIO env ()
+setCurrentDirectory
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m ()
 setCurrentDirectory cwd = modifyFS' $ \fs -> fs { fsCwd = cwd }
 
-doesPathExist :: HasFS env => FilePath -> RIO env Bool
+doesPathExist
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 doesPathExist path' = do
     path <- getAbsolutePath path'
     Map.member path . fsFiles <$> readFS'
 
-doesFileExist :: HasFS env => FilePath -> RIO env Bool
+doesFileExist
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 doesFileExist path' =
     (\isPath isDirectory -> isPath && not isDirectory)
         <$> doesPathExist path'
         <*> doesDirectoryExist path'
 
-doesDirectoryExist :: HasFS env => FilePath -> RIO env Bool
+doesDirectoryExist
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 doesDirectoryExist path' = do
     path <- getAbsolutePath path'
     let prefix = addTrailingPathSeparator path
     not . null <$> getPrefixed prefix
 
-isFileExecutable :: HasFS env => FilePath -> RIO env Bool
+isFileExecutable
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 isFileExecutable = fmap (Directory.executable . snd) . readFile
 
-isFileSymbolicLink :: HasFS env => FilePath -> RIO env Bool
+isFileSymbolicLink
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 isFileSymbolicLink path' = do
     path <- getAbsolutePath path'
     maybe False check . Map.lookup path . fsFiles <$> readFS'
@@ -165,20 +183,23 @@ isFileSymbolicLink path' = do
         Symlink _ -> True
         _ -> False
 
-listDirectory :: HasFS env => FilePath -> RIO env [FilePath]
+listDirectory
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m [FilePath]
 listDirectory path' = do
     path <- getAbsolutePath path'
     let prefix = addTrailingPathSeparator path
     filter (not . null) . map (dropPrefix prefix) <$> getPrefixed prefix
 
-getAbsolutePath :: HasFS env => FilePath -> RIO env FilePath
+getAbsolutePath
+    :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m FilePath
 getAbsolutePath path
     | isAbsolute path = pure path
     | otherwise = do
         FS' {..} <- readFS'
         pure $ fsCwd </> path
 
-getPrefixed :: HasFS env => String -> RIO env [FilePath]
+getPrefixed
+    :: (MonadIO m, MonadReader env m, HasFS env) => String -> m [FilePath]
 getPrefixed prefix = do
     paths <- Map.keys . fsFiles <$> readFS'
     pure $ filter (prefix `isPrefixOf`) paths

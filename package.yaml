@@ -54,6 +54,7 @@ library:
     - conduit
     - containers
     - datadog
+    - directory
     - edit-distance
     - envparse
     - errors
@@ -70,6 +71,7 @@ library:
     - safe
     - shakespeare
     - text
+    - time
     - transformers
     - unordered-containers
     - validation
@@ -89,7 +91,7 @@ executables:
     dependencies:
       - github
       - restyler
-      - rio
+      - time
   restyle-path:
     main: main.hs
     source-dirs: restyle-path
@@ -113,11 +115,12 @@ tests:
       - aeson
       - containers
       - directory
+      - extra
+      - filepath
       - github
       - hspec
       - hspec-expectations-lifted
       - lens-aeson
       - restyler
-      - rio
       - text
       - yaml

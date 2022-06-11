@@ -43,7 +43,6 @@ import qualified Restyler.Content as Content
 import Restyler.Git (MonadGit(..))
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.PullRequestSpec
 import Restyler.RestylerResult
 
 data RestyledPullRequest = RestyledPullRequest
@@ -86,13 +85,6 @@ createdRestyledPullRequest restyledPullRequest = RestyledPullRequest
     , restyledPullRequestHeadRef = pullRequestHeadRef restyledPullRequest
     , restyledPullRequestHtmlUrl = pullRequestHtmlUrl restyledPullRequest
     }
-
-instance Display RestyledPullRequest where
-    textDisplay restyledPullRequest = textDisplay PullRequestSpec
-        { prsOwner = restyledPullRequestOwnerName restyledPullRequest
-        , prsRepo = restyledPullRequestRepoName restyledPullRequest
-        , prsPullRequest = restyledPullRequestNumber restyledPullRequest
-        }
 
 class HasRestyledPullRequest env where
     restyledPullRequestL :: Lens' env (Maybe RestyledPullRequest)

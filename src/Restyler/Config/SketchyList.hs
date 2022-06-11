@@ -1,8 +1,7 @@
 module Restyler.Config.SketchyList
     ( SketchyList
     , unSketchy
-    )
-where
+    ) where
 
 import Prelude
 

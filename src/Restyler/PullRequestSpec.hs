@@ -5,9 +5,9 @@
 --
 module Restyler.PullRequestSpec
     ( PullRequestSpec(..)
+    , pullRequestSpecToText
     , parseSpec
-    )
-where
+    ) where
 
 import Restyler.Prelude
 
@@ -23,12 +23,12 @@ data PullRequestSpec = PullRequestSpec
     }
     deriving stock (Eq, Show)
 
-instance Display PullRequestSpec where
-    textDisplay PullRequestSpec {..} = mconcat
-        [ untagName prsOwner <> "/"
-        , untagName prsRepo <> "#"
-        , toPathPart prsPullRequest
-        ]
+pullRequestSpecToText :: PullRequestSpec -> Text
+pullRequestSpecToText PullRequestSpec {..} = mconcat
+    [ untagName prsOwner <> "/"
+    , untagName prsRepo <> "#"
+    , toPathPart prsPullRequest
+    ]
 
 -- | Parse @\<owner>\/\<name>#\<number>@ into a @'PullRequestSpec'@
 parseSpec :: String -> Either String PullRequestSpec

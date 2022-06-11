@@ -23,6 +23,7 @@ module Restyler.Statsd
 
 import Restyler.Prelude
 
+import Data.Time (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
 import Network.StatsD.Datadog
     ( DogStatsSettings(..)
     , Metric
@@ -33,7 +34,6 @@ import Network.StatsD.Datadog
     , withDogStatsD
     )
 import qualified Network.StatsD.Datadog as DD
-import RIO.Time (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
 
 data StatsClient = StatsClient
     { statsClient :: DD.StatsClient

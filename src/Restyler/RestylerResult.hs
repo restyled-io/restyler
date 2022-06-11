@@ -17,25 +17,10 @@ data RestyleOutcome
     | NoChanges
     | ChangesCommitted [FilePath] Text
 
-instance Display RestyleOutcome where
-    display = \case
-        NoPaths -> "no paths to restyle"
-        NoChanges -> "nothing restyled"
-        ChangesCommitted paths sha ->
-            "updated "
-                <> displayShow (length paths)
-                <> " file(s),"
-                <> " commited in "
-                <> display sha
-
 data RestylerResult = RestylerResult
     { rrRestyler :: Restyler
     , rrOutcome :: RestyleOutcome
     }
-
-instance Display RestylerResult where
-    display RestylerResult {..} =
-        fromString (rName rrRestyler) <> ": " <> display rrOutcome
 
 -- | A @'RestylerResult'@ indicating there were no paths to restyle
 noPathsRestylerResult :: Restyler -> RestylerResult

@@ -8,14 +8,14 @@ module Restyler.App
 
 import Restyler.Prelude
 
-import Blammo.Logging.Simple (newLoggerEnv)
+import qualified Blammo.Logging.LogSettings.Env as LoggingEnv
+import Blammo.Logging.LogSettings.LogLevels
 import Conduit (runResourceT, sinkFile)
 import GitHub.Auth
 import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
-import qualified RIO.Directory as Directory
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
@@ -25,6 +25,7 @@ import Restyler.PullRequest
 import Restyler.RestyledPullRequest
 import Restyler.Setup
 import Restyler.Statsd (HasStatsClient(..), StatsClient)
+import qualified System.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.Process as Process
 
@@ -138,8 +139,7 @@ instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
 
 instance (MonadUnliftIO m, HasOptions app) => MonadGitHub (AppT app m) where
     runGitHub req = do
-        -- TODO
-        -- logDebug $ "GitHub request" <> display (displayGitHubRequest req)
+        logDebug $ "runGitHub" :# ["request" .= show (displayGitHubRequest req)]
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
         result <- liftIO $ do
             mgr <- getGlobalManager
@@ -221,7 +221,12 @@ bootstrapApp
     -> StatsClient
     -> m App
 bootstrapApp options path statsClient = do
-    logger <- newLoggerEnv
+    logger <-
+        liftIO
+        $ newLogger
+        . adjustLogLevel (oLogLevel options)
+        . adjustLogColor (oLogColor options)
+        =<< LoggingEnv.parse
 
     let app = StartupApp
             { appLogger = logger
@@ -237,3 +242,11 @@ bootstrapApp options path statsClient = do
             }
 
     runAppT app $ toApp <$> restylerSetup
+
+adjustLogLevel :: LogLevel -> LogSettings -> LogSettings
+adjustLogLevel = setLogSettingsLevels . flip newLogLevels []
+
+adjustLogColor :: Bool -> LogSettings -> LogSettings
+adjustLogColor = \case
+    True -> setLogSettingsColor LogColorAlways
+    False -> setLogSettingsColor LogColorNever

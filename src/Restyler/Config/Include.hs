@@ -2,8 +2,7 @@ module Restyler.Config.Include
     ( Include(..)
     , explicit
     , includePath
-    )
-where
+    ) where
 
 import Restyler.Prelude
 

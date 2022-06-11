@@ -17,11 +17,11 @@ module Restyler.App.Class
 
 import Restyler.Prelude
 
+import qualified Data.Vector as V
 import GitHub.Data (IssueLabel(..))
 import GitHub.Data.Request
 import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)
 import GitHub.Request
-import qualified RIO.Vector as V
 import Restyler.PullRequest
 
 class HasWorkingDirectory env where
