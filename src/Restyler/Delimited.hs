@@ -95,7 +95,7 @@ writePart
     -> Either Text Text
     -> m DelimitedPathPart
 writePart path n part = do
-    let path' = path <> "." <> show @Int n
+    let path' = path <> "." <> show @String @Int n
 
     case part of
         Left content -> do

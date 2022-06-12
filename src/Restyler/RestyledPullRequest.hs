@@ -12,7 +12,6 @@ module Restyler.RestyledPullRequest
 
 import Restyler.Prelude
 
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import GitHub.Endpoints.GitData.References (deleteReferenceR)
@@ -193,16 +192,16 @@ editRestyledPullRequestState
     => IssueState
     -> RestyledPullRequest
     -> m ()
-editRestyledPullRequestState state pr
-    | restyledPullRequestState pr == state
+editRestyledPullRequestState issueState pr
+    | restyledPullRequestState pr == issueState
     = logWarn
         $ "Redundant update of Restyled PR"
-        :# ["number" .= restyledPullRequestNumber pr, "state" .= state]
+        :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
     | otherwise
     = do
         logInfo
             $ "Updating Restyled PR"
-            :# ["number" .= restyledPullRequestNumber pr, "state" .= state]
+            :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
 
         runGitHub_ $ updatePullRequestR
             (restyledPullRequestOwnerName pr)
@@ -211,7 +210,7 @@ editRestyledPullRequestState state pr
             EditPullRequest
                 { editPullRequestTitle = Nothing
                 , editPullRequestBody = Nothing
-                , editPullRequestState = Just state
+                , editPullRequestState = Just issueState
                 , editPullRequestBase = Nothing
                 , editPullRequestMaintainerCanModify = Nothing
                 }

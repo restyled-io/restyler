@@ -36,7 +36,6 @@ module Restyler.Config
 
 import Restyler.Prelude
 
-import Control.Monad.Trans.Maybe (MaybeT(..))
 import Data.Aeson
 import Data.Aeson.Casing
 import qualified Data.ByteString.Char8 as C8
@@ -44,7 +43,6 @@ import Data.FileEmbed (embedFile)
 import Data.Functor.Barbie
 import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
-import Data.Monoid (Alt(..))
 import qualified Data.Set as Set
 import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
@@ -160,15 +158,15 @@ instance ToJSON Config where
 
 data ConfigError
     = ConfigErrorInvalidYaml ByteString Yaml.ParseException
-    | ConfigErrorInvalidRestylers [String]
+    | ConfigErrorInvalidRestylers [Text]
     | ConfigErrorInvalidRestylersYaml SomeException
     deriving stock Show
 
 configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
 configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
-    . Yaml.modifyYamlProblem modify
+    . Yaml.modifyYamlProblem modifyMessage
   where
-    modify msg
+    modifyMessage msg
         | isCannotStart msg && hasTabIndent yaml
         = msg
             <> "\n\nThis may be caused by your source file containing tabs."

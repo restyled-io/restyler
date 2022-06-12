@@ -57,6 +57,7 @@ library:
     - edit-distance
     - envparse
     - errors
+    - exceptions
     - extra
     - file-embed
     - filepath
@@ -64,14 +65,17 @@ library:
     - http-client-tls
     - http-conduit
     - megaparsec
+    - microlens
+    - microlens-mtl
     - optparse-applicative
     - process
-    - rio
+    - relude
     - safe
     - shakespeare
     - text
     - time
-    - transformers
+    - unliftio
+    - unliftio-core
     - unordered-containers
     - validation
     - vector
@@ -103,7 +107,6 @@ executables:
       - Blammo
       - envparse
       - restyler
-      - unliftio
 
 tests:
   test:

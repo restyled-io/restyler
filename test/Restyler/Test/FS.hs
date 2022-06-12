@@ -31,9 +31,8 @@ module Restyler.Test.FS
     , listDirectory
     ) where
 
-import Restyler.Prelude hiding (readFileBinary, readFileUtf8, writeFileUtf8)
+import Restyler.Prelude
 
-import Data.List (isPrefixOf)
 import Data.List.Extra (dropPrefix)
 import qualified Data.Map.Strict as Map
 import qualified System.Directory as Directory
@@ -105,7 +104,7 @@ readFile path' = do
         -- We could throw the same error you get from a real read of a missing
         -- file. However, you should be intentional about testing such a
         -- scenario and use writeFileUnreadable to set it up explicitly.
-        Nothing -> error $ "File does not exist: " <> path
+        Nothing -> error $ pack $ "File does not exist: " <> path
         Just (ReadableFile x) -> pure x
         Just (Symlink target) -> readFile target
         Just (UnreadableFile ex) -> throwIO ex

@@ -1,16 +1,15 @@
 module Restyler.App.ErrorSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 
 import Restyler.App.Error
 
 data BigError = BigError
-    { beMessage :: String
-    , beDocumentation :: String
-    , beContext :: [String]
+    { beMessage :: Text
+    , beDocumentation :: Text
+    , beContext :: [Text]
     }
     deriving stock Show
     deriving anyclass Exception
@@ -27,7 +26,7 @@ spec = do
                     , beContext = ["Oof", "Something", "Is", "Really bad"]
                     }
 
-            pretty `shouldBe` concat
+            pretty `shouldBe` mconcat
                 [ "We had trouble with something unexpected:"
                 , "\n"
                 , "\n  BigError {beMessage = \"Something has gone terrible, terribly wrong\","

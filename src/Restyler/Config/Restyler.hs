@@ -54,7 +54,7 @@ suffixIncorrectIndentation = modifyFailure (<> msg)
     msg = "\n\nDo you have incorrect indentation for a named override?"
 
 overrideRestylers
-    :: [Restyler] -> [RestylerOverride] -> Either [String] [Restyler]
+    :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]
 overrideRestylers restylers overrides =
     toEither $ case length $ filter ((== "*") . roName) overrides of
         0 -> explicits <$> getOverrides
@@ -67,8 +67,8 @@ overrideRestylers restylers overrides =
   where
     getOverrides = traverse (overrideRestyler restylersMap) overrides
 
-    restylersMap :: HashMap String Restyler
-    restylersMap = HashMap.fromList $ map (rName &&& id) restylers
+    restylersMap :: HashMap Text Restyler
+    restylersMap = HashMap.fromList $ map (pack . rName &&& id) restylers
 
 data Override = Explicit Restyler | Wildcard
 
@@ -89,14 +89,12 @@ replaceWildcards restylers = concatMap $ \case
     Wildcard -> restylers
 
 overrideRestyler
-    :: HashMap String Restyler
-    -> RestylerOverride
-    -> Validation [String] Override
+    :: HashMap Text Restyler -> RestylerOverride -> Validation [Text] Override
 overrideRestyler restylers RestylerOverride {..}
     | roName == "*" = pure Wildcard
     | otherwise = Explicit . override <$> defaults
   where
-    defaults = lookupExpectedKeyBy "Restyler name" restylers roName
+    defaults = lookupExpectedKeyBy "Restyler name" restylers $ pack roName
     override restyler@Restyler {..} = restyler
         { rEnabled = fromMaybe True roEnabled
         , rImage = fromMaybe rImage roImage
@@ -107,8 +105,7 @@ overrideRestyler restylers RestylerOverride {..}
         , rDelimiters = roDelimiters <|> rDelimiters
         }
 
-lookupExpectedKeyBy
-    :: String -> HashMap String v -> String -> Validation [String] v
+lookupExpectedKeyBy :: Text -> HashMap Text v -> Text -> Validation [Text] v
 lookupExpectedKeyBy label hm k =
     case validateExpectedKeyBy label fst (HashMap.toList hm) k of
         Left e -> Failure [e]
