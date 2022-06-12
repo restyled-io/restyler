@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-missing-local-signatures #-}
-
 module Restyler.Restyler
     ( Restyler(..)
     , getAllRestylersVersioned
@@ -53,6 +51,7 @@ upgradeEnabled = \case
         in Object $ KeyMap.unionWith (\_ x -> x) updated km
     v -> v
   where
+    disabledRestylers :: [Value]
     disabledRestylers =
         ["brittany", "google-java-format", "hindent", "hlint", "jdt"]
 

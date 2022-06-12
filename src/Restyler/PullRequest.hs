@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Restyler.PullRequest
     ( PullRequest
     , pullRequestHtmlUrl
