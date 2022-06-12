@@ -111,6 +111,7 @@ tests:
     main: Spec.hs
     source-dirs: test
     dependencies:
+      - Blammo
       - QuickCheck
       - aeson
       - containers
@@ -119,8 +120,11 @@ tests:
       - filepath
       - github
       - hspec
+      - hspec-core
       - hspec-expectations-lifted
       - lens-aeson
+      - relude
       - restyler
+      - shakespeare
       - text
       - yaml

@@ -2,12 +2,10 @@
 
 module Restyler.ConfigSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 
-import Data.List (isInfixOf)
 import qualified Data.Text as T
 import Data.Yaml (prettyPrintParseException)
 import Restyler.Config
@@ -16,9 +14,9 @@ import Restyler.Restyler
 import Text.Shakespeare.Text (st)
 
 spec :: Spec
-spec = do
-    it "supports a simple, name-based syntax" $ example $ do
-        defaultConfig <- loadDefaultConfig'
+spec = withTestApp $ do
+    it "supports a simple, name-based syntax" $ testAppExample $ do
+        defaultConfig <- loadDefaultConfig
 
         result <- loadTestConfig [st|
             ---
@@ -33,7 +31,7 @@ spec = do
                 ]
             }
 
-    it "has a setting for globally disabling" $ example $ do
+    it "has a setting for globally disabling" $ testAppExample $ do
         result <- loadTestConfig [st|
             ---
             enabled: false
@@ -43,8 +41,8 @@ spec = do
 
         fmap cEnabled result `shouldBe` Right False
 
-    it "allows re-configuring includes" $ example $ do
-        defaultConfig <- loadDefaultConfig'
+    it "allows re-configuring includes" $ testAppExample $ do
+        defaultConfig <- loadDefaultConfig
 
         result1 <- loadTestConfig [st|
             ---
@@ -77,7 +75,7 @@ spec = do
                 ]
             }
 
-    it "has good errors for unknown name" $ example $ do
+    it "has good errors for unknown name" $ testAppExample $ do
         result1 <- loadTestConfig [st|
             ---
             - uknown-name
@@ -103,7 +101,7 @@ spec = do
         result3 `shouldSatisfy` hasError
             "Unexpected Restyler name \"uknown-name\""
 
-    it "reports multiple unknown names at once" $ example $ do
+    it "reports multiple unknown names at once" $ testAppExample $ do
         result <- loadTestConfig [st|
             ---
             - unknown-name-1
@@ -115,7 +113,7 @@ spec = do
         result `shouldSatisfy` hasError
             "Unexpected Restyler name \"unknown-name-2\""
 
-    it "provides suggestions for close matches" $ example $ do
+    it "provides suggestions for close matches" $ testAppExample $ do
         result1 <- loadTestConfig [st|
             ---
             - hindex
@@ -138,15 +136,15 @@ spec = do
         result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
         result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
 
-    it "doesn't loop on empty overrides" $ example $ do
+    it "doesn't loop on empty overrides" $ testAppExample $ do
         result <- loadTestConfig [st|
           - hindent: {}
         |]
 
         result `shouldSatisfy` isRight
 
-    it "can specify a Restyler with name" $ example $ do
-        defaultConfig <- loadDefaultConfig'
+    it "can specify a Restyler with name" $ testAppExample $ do
+        defaultConfig <- loadDefaultConfig
 
         result <- loadTestConfig [st|
             restylers:
@@ -172,7 +170,7 @@ spec = do
                 ]
             }
 
-    it "supports * to indicate all other Restylers" $ example $ do
+    it "supports * to indicate all other Restylers" $ testAppExample $ do
         result <- assertTestConfig [st|
             restylers:
             - jdt
@@ -203,7 +201,7 @@ spec = do
                        , ("yapf", True)
                        ]
 
-    it "can place * anywhere" $ example $ do
+    it "can place * anywhere" $ testAppExample $ do
         result <- assertTestConfig [st|
             restylers:
             - jdt
@@ -235,7 +233,7 @@ spec = do
                        , ("autopep8", True)
                        ]
 
-    it "errors for more than one *" $ example $ do
+    it "errors for more than one *" $ testAppExample $ do
         result <- loadTestConfig [st|
             restylers:
             - "*"
@@ -245,7 +243,7 @@ spec = do
 
         result `shouldSatisfy` hasError "1 wildcard"
 
-    it "handles invalid indentation nicely" $ example $ do
+    it "handles invalid indentation nicely" $ testAppExample $ do
         result <- loadTestConfig [st|
             restylers:
               - prettier:
@@ -256,7 +254,7 @@ spec = do
 
         result `shouldSatisfy` hasError "Do you have incorrect indentation"
 
-    it "handles tabs nicely" $ example $ do
+    it "handles tabs nicely" $ testAppExample $ do
         result <- loadTestConfig [st|
             statuses:
             	differences: false
@@ -264,34 +262,29 @@ spec = do
 
         result `shouldSatisfy` hasError "containing tabs"
 
-    it "handles no configuration" $ example $ do
-        defaultConfig <- loadDefaultConfig'
-        app <- liftIO $ testApp "/" []
+    it "handles no configuration" $ testAppExample $ do
+        defaultConfig <- loadDefaultConfig
 
         result <-
-            runRIO app
-            $ tryTo showConfigError
+            tryTo showConfigError
             $ loadConfigFrom (map ConfigPath configPaths)
             $ const
             $ pure testRestylers
 
         result `shouldBe` Right defaultConfig
 
-    it "tries alternative configurations" $ example $ do
-        app <- liftIO $ testApp
-            "/"
-            [("/a", "enabled: true\n"), ("/b", "enabled: false\n")]
+    it "tries alternative configurations" $ testAppExample $ do
+        writeFile "/a" "enabled: true\n"
+        writeFile "/b" "enabled: false\n"
 
         aConfig <-
-            runRIO app
-            $ tryTo showConfigError
+            tryTo showConfigError
             $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
             $ const
             $ pure testRestylers
 
         bConfig <-
-            runRIO app
-            $ tryTo showConfigError
+            tryTo showConfigError
             $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
             $ const
             $ pure testRestylers
@@ -299,59 +292,51 @@ spec = do
         fmap cEnabled aConfig `shouldBe` Right True
         fmap cEnabled bConfig `shouldBe` Right False
 
-    it "doesn't skip configurations if there are errors" $ example $ do
-        app <- liftIO
-            $ testApp "/" [("/a", "{[^\n"), ("/b", "enabled: false\n")]
+    it "doesn't skip configurations if there are errors" $ testAppExample $ do
+        writeFile "/a" "{[^\n"
+        writeFile "/b" "enabled: false\n"
 
         result <-
-            runRIO app
-            $ tryTo showConfigError
+            tryTo showConfigError
             $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
             $ const
             $ pure testRestylers
 
         result `shouldSatisfy` isLeft
 
-    it "doesn't attempt to read unused configurations" $ example $ do
-        app <- liftIO $ testApp "/" [("/a", "enabled: false\n"), ("/b", "[{^")]
+    it "doesn't attempt to read unused configurations" $ testAppExample $ do
+        writeFile "/a" "enabled: false\n"
+        writeFile "/b" "[{^"
 
         result <-
-            runRIO app
-            $ tryTo showConfigError
+            tryTo showConfigError
             $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
             $ const
             $ pure testRestylers
 
         fmap cEnabled result `shouldBe` Right False
 
-hasError :: String -> Either String a -> Bool
-hasError msg (Left err) = msg `isInfixOf` err
+hasError :: Text -> Either Text a -> Bool
+hasError msg (Left err) = msg `T.isInfixOf` err
 hasError _ _ = False
 
--- | Load just the default config, for comparisons against examples
-loadDefaultConfig' :: MonadIO m => m Config
-loadDefaultConfig' = do
-    app <- liftIO $ testApp "/" []
-    runRIO app loadDefaultConfig
-
 -- | Load a @'Text'@ as configuration
-loadTestConfig :: MonadIO m => Text -> m (Either String Config)
+loadTestConfig
+    :: (MonadUnliftIO m, MonadSystem m) => Text -> m (Either Text Config)
 loadTestConfig content = do
-    app <- liftIO $ testApp "/" []
-    runRIO app
-        $ tryTo showConfigError
+    tryTo showConfigError
         $ loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
         $ const
         $ pure testRestylers
 
 -- | Load a @'Text'@ as configuration, fail on errors
-assertTestConfig :: MonadIO m => Text -> m Config
-assertTestConfig = either throwString pure <=< loadTestConfig
+assertTestConfig :: (MonadUnliftIO m, MonadSystem m) => Text -> m Config
+assertTestConfig = either (throwString . unpack) pure <=< loadTestConfig
 
-showConfigError :: ConfigError -> String
+showConfigError :: ConfigError -> Text
 showConfigError = \case
     ConfigErrorInvalidYaml yaml ex ->
-        unlines [prettyPrintParseException ex, "---", show yaml]
+        unlines [pack $ prettyPrintParseException ex, "---", show yaml]
     ConfigErrorInvalidRestylers errs -> unlines errs
     ConfigErrorInvalidRestylersYaml ex -> show ex
 
