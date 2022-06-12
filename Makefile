@@ -32,7 +32,7 @@ test:
 .PHONY: test.integration
 test.integration: image
 	AWS_PROFILE=restyled-ci \
-	  restyled promote --image restyled/restyler:main --debug stable
+	  restyled promote --image restyled/restyler:edge --debug stable
 
 .PHONY: watch
 watch:
@@ -41,7 +41,7 @@ watch:
 .PHONY: image
 image:
 	docker build \
-	  --tag restyled/restyler:main \
+	  --tag restyled/restyler:edge \
 	  .
 
 AWS ?= aws --profile restyled-ci
