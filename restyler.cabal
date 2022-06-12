@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0df388e81c8a1d928069a52ec7388eb04ec9a8ad6365a4530b5d4c8a54eec1f8
+-- hash: 4687dea3d282d17f118ec2de2fdd2e570ec7ff2924310d07cb9d598a090f4888
 
 name:           restyler
 version:        0.2.0.0
@@ -84,7 +84,6 @@ library
     , Glob
     , aeson
     , aeson-casing
-    , ansi-terminal
     , barbies
     , base
     , bytestring

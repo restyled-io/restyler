@@ -8,8 +8,6 @@ module Restyler.App
 
 import Restyler.Prelude
 
-import qualified Blammo.Logging.LogSettings.Env as LoggingEnv
-import Blammo.Logging.LogSettings.LogLevels
 import Conduit (runResourceT, sinkFile)
 import GitHub.Auth
 import GitHub.Request
@@ -221,12 +219,7 @@ bootstrapApp
     -> StatsClient
     -> m App
 bootstrapApp options path statsClient = do
-    logger <-
-        liftIO
-        $ newLogger
-        . adjustLogLevel (oLogLevel options)
-        . adjustLogColor (oLogColor options)
-        =<< LoggingEnv.parse
+    logger <- newLogger $ oLogSettings options
 
     let app = StartupApp
             { appLogger = logger
@@ -242,11 +235,3 @@ bootstrapApp options path statsClient = do
             }
 
     runAppT app $ toApp <$> restylerSetup
-
-adjustLogLevel :: LogLevel -> LogSettings -> LogSettings
-adjustLogLevel = setLogSettingsLevels . flip newLogLevels []
-
-adjustLogColor :: Bool -> LogSettings -> LogSettings
-adjustLogColor = \case
-    True -> setLogSettingsColor LogColorAlways
-    False -> setLogSettingsColor LogColorNever

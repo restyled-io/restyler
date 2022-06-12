@@ -46,6 +46,7 @@ while getopts ht:pd opt; do
       ;;
     d)
       export DEBUG=1
+      export LOG_LEVEL=debug
       ;;
     \?)
       usage >&2
@@ -63,6 +64,10 @@ fi
 
 docker_run --interactive --rm \
   --env DEBUG \
+  --env LOG_LEVEL \
+  --env LOG_DESTINATION \
+  --env LOG_FORMAT \
+  --env LOG_COLOR \
   --env HOST_DIRECTORY="$PWD" \
   --env UNRESTRICTED=1 \
   --volume "$PWD":/code \

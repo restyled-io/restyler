@@ -24,8 +24,8 @@ instance HasOptions App where
     optionsL = lens appOptions $ \x y -> x { appOptions = y }
 
 data EnvOptions = EnvOptions
-    { eoHostDirectory :: Maybe FilePath
-    , eoLogSettings :: LogSettings
+    { eoLogSettings :: LogSettings
+    , eoHostDirectory :: Maybe FilePath
     , eoUnrestricted :: Bool
     }
 
@@ -33,8 +33,8 @@ data EnvOptions = EnvOptions
 
 envParser :: Env.Parser Env.Error EnvOptions
 envParser = EnvOptions
-    <$> optional (Env.var Env.str "HOST_DIRECTORY" Env.keep)
-    <*> LoggingEnv.parser
+    <$> LoggingEnv.parser
+    <*> optional (Env.var Env.str "HOST_DIRECTORY" Env.keep)
     <*> Env.switch "UNRESTRICTED" Env.keep
 
 main :: IO ()
@@ -47,8 +47,7 @@ main = do
             { appLogger = logger
             , appOptions = Options
                 { oAccessToken = error "unused"
-                , oLogLevel = error "unused"
-                , oLogColor = error "unused"
+                , oLogSettings = eoLogSettings
                 , oOwner = error "unused"
                 , oRepo = error "unused"
                 , oPullRequest = error "unused"
