@@ -123,6 +123,7 @@ tests:
       - hspec-core
       - hspec-expectations-lifted
       - lens-aeson
+      - load-env
       - relude
       - restyler
       - shakespeare

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a1b5302526bb17a22c06be8f93085a2c46d7a83fe6cc9f8cf73821bc36cfadc2
+-- hash: b3f4cb616152ecd405e3e256f65c37649b56443da8ba6ef4a9b27592d3965828
 
 name:           restyler
 version:        0.2.0.0
@@ -257,6 +257,7 @@ test-suite test
     , hspec-core
     , hspec-expectations-lifted
     , lens-aeson
+    , load-env
     , relude
     , restyler
     , shakespeare

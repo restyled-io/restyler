@@ -40,6 +40,7 @@ import Test.QuickCheck as X
 
 import Blammo.Logging.Simple
 import Data.Yaml (decodeThrow)
+import LoadEnv (loadEnvFrom)
 import Restyler.Config
 import Restyler.Options
 import Restyler.Restyler
@@ -52,6 +53,7 @@ data TestApp = TestApp
     { taLogger :: Logger
     , taOptions :: Options
     , taFS :: FS
+    , taProcessExitCodes :: ExitCode
     }
 
 instance HasLogger TestApp where
@@ -90,7 +92,7 @@ instance MonadSystem TestAppT where
 
 instance MonadProcess TestAppT where
     callProcess _cmd _args = pure ()
-    callProcessExitCode _cmd _args = pure ExitSuccess
+    callProcessExitCode _cmd _args = asks taProcessExitCodes
     readProcess _cmd _args _stdin = pure ""
 
 instance MonadDownloadFile TestAppT where
@@ -108,10 +110,27 @@ withTestApp :: SpecWith TestApp -> Spec
 withTestApp = before loadTestApp
 
 loadTestApp :: IO TestApp
-loadTestApp = TestApp <$> newLoggerEnv <*> pure testOptions <*> FS.build "/" []
+loadTestApp = do
+    loadEnvFrom ".env.test"
+    TestApp
+        <$> newLoggerEnv
+        <*> pure testOptions
+        <*> FS.build "/" []
+        <*> pure ExitSuccess
 
 testOptions :: Options
-testOptions = error "options"
+testOptions = Options
+    { oAccessToken = error "oAccessToken"
+    , oLogSettings = error "oLogSettings"
+    , oOwner = error "oOwner"
+    , oRepo = error "oRepo"
+    , oPullRequest = error "oPullRequest"
+    , oJobUrl = error "oJobUrl"
+    , oHostDirectory = Nothing
+    , oUnrestricted = False
+    , oStatsdHost = Nothing
+    , oStatsdPort = Nothing
+    }
 
 testAppExample :: TestAppT a -> TestAppT a
 testAppExample = id
@@ -161,9 +180,10 @@ testRestylers =
     , someRestyler { rName = "yapf" }
     ]
 
-pendingWith :: MonadIO m => String -> m ()
+pendingWith :: (HasCallStack, MonadIO m) => String -> m ()
 pendingWith = liftIO . Hspec.pendingWith
 
-shouldThrow :: (MonadUnliftIO m, Exception e) => m a -> Selector e -> m ()
+shouldThrow
+    :: (HasCallStack, MonadUnliftIO m, Exception e) => m a -> Selector e -> m ()
 shouldThrow f matcher = withRunInIO $ \runInIO -> do
     runInIO f `Hspec.shouldThrow` matcher
