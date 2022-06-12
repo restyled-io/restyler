@@ -47,7 +47,7 @@ pullRequestUserLogin = simpleUserLogin . pullRequestUser
 --
 pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
 pullRequestCloneUrl =
-    fromJustNote "Pull Request without clone URL"
+    fromMaybe (error "Pull Request without clone URL")
         . repoCloneUrl
         . pullRequestRepo
 
@@ -110,7 +110,7 @@ pullRequestOwner = repoOwner . pullRequestRepo
 --
 pullRequestRepo :: HasCallStack => PullRequest -> Repo
 pullRequestRepo =
-    fromJustNote "Pull Request without Repository" . pullRequestBaseRepo
+    fromMaybe (error "Pull Request without Repository") . pullRequestBaseRepo
 
 pullRequestBaseRepo :: PullRequest -> Maybe Repo
 pullRequestBaseRepo = pullRequestCommitRepo . pullRequestBase

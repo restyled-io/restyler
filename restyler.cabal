@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 41bf4f78b5651a99d7bf52ca31d2c2a530a848ba5f800e30d1d2ffa2756b48fe
+-- hash: 06b0b1fab7f2d1ec44dd815f6fa800da894b29d032ec69d0712dd87d1b64497b
 
 name:           restyler
 version:        0.2.0.0
@@ -107,7 +107,6 @@ library
     , optparse-applicative
     , process
     , relude
-    , safe
     , shakespeare
     , text
     , time

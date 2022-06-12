@@ -69,7 +69,6 @@ library:
     - optparse-applicative
     - process
     - relude
-    - safe
     - shakespeare
     - text
     - time
