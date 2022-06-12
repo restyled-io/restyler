@@ -47,7 +47,6 @@ library:
     - Glob
     - aeson
     - aeson-casing
-    - ansi-terminal
     - barbies
     - bytestring
     - composition-extra
