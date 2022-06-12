@@ -77,12 +77,11 @@ spec = withTestApp $ do
         it "treats non-zero exit codes as RestylerExitFailure"
             $ testAppExample
             $ do
-                  pendingWith "Need callProcessExitCode to spoof a 99"
-
-                  runRestyler_ someRestyler ["foo"] `shouldThrow` \case
-                      RestylerExitFailure re s _ ->
-                          re == someRestyler && s == 99
-                      _ -> False
+                  local (\x -> x { taProcessExitCodes = ExitFailure 99 }) $ do
+                      runRestyler_ someRestyler ["foo"] `shouldThrow` \case
+                          RestylerExitFailure re s _ ->
+                              re == someRestyler && s == 99
+                          _ -> False
 
     describe "findFiles" $ do
         it "expands and excludes" $ testAppExample $ do
