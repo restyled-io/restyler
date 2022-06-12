@@ -36,7 +36,6 @@ newtype AppT app m a = AppT
         ( Functor
         , Applicative
         , Monad
-        , MonadThrow
         , MonadIO
         , MonadUnliftIO
         , MonadLogger
@@ -220,11 +219,7 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
         callProcess "git" ["checkout", "--no-progress", "-b", branch]
 
 bootstrapApp
-    :: (MonadThrow m, MonadUnliftIO m)
-    => Options
-    -> FilePath
-    -> StatsClient
-    -> m App
+    :: (MonadUnliftIO m) => Options -> FilePath -> StatsClient -> m App
 bootstrapApp options path statsClient = do
     logger <- newLogger $ oLogSettings options
 

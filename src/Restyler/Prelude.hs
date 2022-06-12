@@ -7,7 +7,6 @@ import Relude as X hiding (exitSuccess, readFile, readFileBS, writeFile)
 
 import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
-import Control.Monad.Catch as X (MonadThrow)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Control.Monad.IO.Unlift as X (MonadUnliftIO(..))
 import Data.Bitraversable as X (bimapM)

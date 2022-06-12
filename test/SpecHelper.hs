@@ -46,9 +46,9 @@ someRestyler = Restyler
     , rSupportsMultiplePaths = True
     }
 
-loadDefaultConfig :: (MonadThrow m, MonadIO m) => m Config
+loadDefaultConfig :: MonadIO m => m Config
 loadDefaultConfig = do
-    config <- decodeThrow defaultConfigContent
+    config <- either throwIO pure $ decodeThrow defaultConfigContent
     resolveRestylers config testRestylers
 
 testRestylers :: [Restyler]

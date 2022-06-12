@@ -20,7 +20,6 @@ import qualified Restyler.Statsd as Statsd
 
 restylerSetup
     :: ( HasCallStack
-       , MonadThrow m
        , MonadUnliftIO m
        , MonadLogger m
        , MonadSystem m

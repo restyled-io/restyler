@@ -44,7 +44,6 @@ import Data.Functor.Barbie
 import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
-import Data.Yaml (decodeThrow)
 import qualified Data.Yaml as Yaml
 import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
@@ -184,12 +183,7 @@ instance Exception ConfigError
 -- of restylers data, and apply the configured choices and overrides.
 --
 loadConfig
-    :: ( MonadThrow m
-       , MonadUnliftIO m
-       , MonadLogger m
-       , MonadSystem m
-       , MonadDownloadFile m
-       )
+    :: (MonadUnliftIO m, MonadLogger m, MonadSystem m, MonadDownloadFile m)
     => m Config
 loadConfig =
     loadConfigFrom (map ConfigPath configPaths)
@@ -199,7 +193,7 @@ loadConfig =
         . cfRestylersVersion
 
 loadConfigFrom
-    :: (MonadThrow m, MonadUnliftIO m, MonadSystem m)
+    :: (MonadUnliftIO m, MonadSystem m)
     => [ConfigSource]
     -> (ConfigF Identity -> m [Restyler])
     -> m Config
@@ -230,7 +224,7 @@ readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
 -- there is a programmer error in our static default configuration YAML.
 --
 loadConfigF
-    :: (MonadThrow m, MonadUnliftIO m, MonadSystem m)
+    :: (MonadUnliftIO m, MonadSystem m)
     => [ConfigSource]
     -> m (ConfigF Identity)
 loadConfigF sources =
@@ -239,16 +233,16 @@ loadConfigF sources =
         <*> decodeThrow defaultConfigContent
 
 loadUserConfigF
-    :: (MonadThrow m, MonadUnliftIO m, MonadSystem m)
-    => [ConfigSource]
-    -> m (ConfigF Maybe)
+    :: (MonadUnliftIO m, MonadSystem m) => [ConfigSource] -> m (ConfigF Maybe)
 loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
-decodeThrow'
-    :: (MonadUnliftIO m, MonadThrow m, FromJSON a) => ByteString -> m a
+decodeThrow' :: (MonadUnliftIO m, FromJSON a) => ByteString -> m a
 decodeThrow' content =
     handleTo (configErrorInvalidYaml content) $ decodeThrow content
+
+decodeThrow :: (MonadIO m, FromJSON a) => ByteString -> m a
+decodeThrow = either throwIO pure . Yaml.decodeThrow
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
