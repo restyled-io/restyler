@@ -29,6 +29,7 @@ import UnliftIO.Exception as X
     , handleAny
     , onException
     , throwIO
+    , throwString
     , try
     )
 import UnliftIO.Temporary as X (withSystemTempDirectory)

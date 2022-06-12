@@ -1,18 +1,16 @@
 module Restyler.DelimitedSpec
     ( spec
-    )
-where
+    ) where
 
 import SpecHelper
 
 import qualified Data.Text as T
-import Restyler.App.Class
 import Restyler.Delimited
 
 spec :: Spec
-spec = do
+spec = withTestApp $ do
     describe "restyleDelimited" $ do
-        it "restyles delimited content" $ runTestApp $ do
+        it "restyles delimited content" $ testAppExample $ do
             writeFile "foo.rb" $ T.unlines
                 [ "def some_ruby"
                 , "  <<-EOSQL"
@@ -37,7 +35,7 @@ spec = do
                 ]
 
     describe "delimit" $ do
-        it "splits a file, respecting indentation" $ runTestApp $ do
+        it "splits a file, respecting indentation" $ testAppExample $ do
             writeFile "foo.rb" $ T.unlines
                 [ "def some_ruby"
                 , "  <<-EOSQL"
@@ -62,7 +60,7 @@ spec = do
             readFile "foo.rb.2" `shouldReturn` "\nend\n"
 
     describe "undelimit" $ do
-        it "can reconstruct a delimited path" $ runTestApp $ do
+        it "can reconstruct a delimited path" $ testAppExample $ do
             writeFile "foo.rb.0" "def some_ruby\n  "
             writeFile "foo.rb.1" "SELECT\nFROM\n"
             writeFile "foo.rb.2" "\nend\n"
@@ -87,7 +85,7 @@ spec = do
                 , "end"
                 ]
 
-markLinesRestyled :: HasSystem env => [FilePath] -> RIO env ()
+markLinesRestyled :: MonadSystem m => [FilePath] -> m ()
 markLinesRestyled = traverse_
     $ \path -> writeFile path . mark =<< readFile path
     where mark = T.unlines . map ("RESTYLED: " <>) . T.lines
