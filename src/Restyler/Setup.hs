@@ -74,7 +74,7 @@ restylerSetup = do
                 IgnoredByLabels{} -> "labels"
             status = SkippedStatus ("Ignore " <> item) oJobUrl
         sendPullRequestStatus' config pullRequest status
-        exitWithInfo $ "Ignoring PR" :# ["reason" .= show reason]
+        exitWithInfo $ "Ignoring PR" :# ["reason" .= show @Text reason]
 
     pure (pullRequest, mRestyledPullRequest, config)
 

@@ -13,7 +13,6 @@ module Restyler.Restyler.Run
 
 import Restyler.Prelude
 
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List (nub)
 import Restyler.App.Class
 import Restyler.App.Error

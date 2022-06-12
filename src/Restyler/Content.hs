@@ -84,7 +84,7 @@ recommend using the Squash or Rebase strategies.
         $ map (("- " <>) . restylerListItem . rrRestyler)
         $ filter restylerCommittedChanges results
 
-    restylerListItem Restyler{..} = case rDocumentation of
+    restylerListItem Restyler{..} = pack $ case rDocumentation of
         (url:_) -> "[" <> rName <> "](" <> url <> ")"
         _ -> rName
 

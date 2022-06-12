@@ -6,6 +6,7 @@ module Restyler.Config.Interpreter
 import Restyler.Prelude
 
 import Data.Aeson
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import System.FilePath (takeFileName)
 
@@ -17,38 +18,34 @@ data Interpreter
     deriving stock (Eq, Show)
 
 instance FromJSON Interpreter where
-    parseJSON =
-        withText "Interpreter"
-            $ either fail pure
-            . intepreterFromString
-            . unpack
+    parseJSON = withText "Interpreter" $ either fail pure . intepreterFromText
 
 instance ToJSON Interpreter where
     -- N.B. this may not always work, but it works for now
-    toJSON = toJSON . T.toLower . tshow
+    toJSON = toJSON . T.toLower . show
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
-    line <- headMaybe $ T.lines contents
+    line <- head <$> NE.nonEmpty (lines contents)
     parseInterpreter . unpack $ T.strip line
 
 -- | TODO: Megaparsec?
 parseInterpreter :: String -> Maybe Interpreter
 parseInterpreter ('#' : '!' : rest) =
-    hush $ intepreterFromString =<< case words rest of
-        [exec] -> pure $ takeFileName exec
+    hush $ intepreterFromText =<< case words (pack rest) of
+        [exec] -> pure $ pack $ takeFileName $ unpack exec
         ["/usr/bin/env", arg] -> pure arg
         _ -> Left "Unexpected shebang length"
 
 parseInterpreter _ = Nothing
 
-intepreterFromString :: String -> Either String Interpreter
-intepreterFromString "sh" = Right Sh
-intepreterFromString "bash" = Right Bash
-intepreterFromString "python" = Right Python
-intepreterFromString "python2" = Right Python
-intepreterFromString "python2.7" = Right Python
-intepreterFromString "python3" = Right Python
-intepreterFromString "python3.6" = Right Python
-intepreterFromString "ruby" = Right Ruby
-intepreterFromString x = Left $ "Unknown executable: " <> x
+intepreterFromText :: Text -> Either String Interpreter
+intepreterFromText "sh" = Right Sh
+intepreterFromText "bash" = Right Bash
+intepreterFromText "python" = Right Python
+intepreterFromText "python2" = Right Python
+intepreterFromText "python2.7" = Right Python
+intepreterFromText "python3" = Right Python
+intepreterFromText "python3.6" = Right Python
+intepreterFromText "ruby" = Right Ruby
+intepreterFromText x = Left $ "Unknown executable: " <> show x

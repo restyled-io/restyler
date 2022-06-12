@@ -10,7 +10,6 @@ import Restyler.App (runAppT)
 import Restyler.Config (loadConfig)
 import Restyler.Options
 import Restyler.Restyler.Run (runRestylers_)
-import UnliftIO.Environment (getArgs)
 
 data App = App
     { appLogger :: Logger

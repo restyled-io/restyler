@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4687dea3d282d17f118ec2de2fdd2e570ec7ff2924310d07cb9d598a090f4888
+-- hash: 2e089797fbcae5845645e0c66b99a4282945ed72c1de87d24b250f33ccb59677
 
 name:           restyler
 version:        0.2.0.0
@@ -95,6 +95,7 @@ library
     , edit-distance
     , envparse
     , errors
+    , exceptions
     , extra
     , file-embed
     , filepath
@@ -102,14 +103,17 @@ library
     , http-client-tls
     , http-conduit
     , megaparsec
+    , microlens
+    , microlens-mtl
     , optparse-applicative
     , process
-    , rio
+    , relude
     , safe
     , shakespeare
     , text
     , time
-    , transformers
+    , unliftio
+    , unliftio-core
     , unordered-containers
     , validation
     , vector
@@ -154,7 +158,6 @@ executable restyle-path
     , base
     , envparse
     , restyler
-    , unliftio
   default-language: Haskell2010
 
 executable restyler

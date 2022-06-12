@@ -9,11 +9,13 @@ module Restyler.App
 import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
+import qualified Data.Text as T
 import GitHub.Auth
 import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
+import qualified Relude as Prelude
 import Restyler.App.Class
 import Restyler.App.Error
 import Restyler.Config
@@ -74,15 +76,15 @@ instance MonadUnliftIO m => MonadSystem (AppT app m) where
 
     readFile path = do
         logDebug $ "readFile: " :# ["path" .= path]
-        appIO SystemError $ readFileUtf8 path
+        appIO SystemError $ pack <$> Prelude.readFile path
 
     readFileBS path = do
         logDebug $ "readFileBS" :# ["path" .= path]
-        appIO SystemError $ readFileBinary path
+        appIO SystemError $ Prelude.readFileBS path
 
     writeFile path content = do
         logDebug $ "writeFile" :# ["path" .= path]
-        appIO SystemError $ writeFileUtf8 path content
+        appIO SystemError $ Prelude.writeFile path $ unpack content
 
 instance MonadUnliftIO m => MonadProcess (AppT app m) where
     callProcess cmd args = do
@@ -137,7 +139,9 @@ instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
 
 instance (MonadUnliftIO m, HasOptions app) => MonadGitHub (AppT app m) where
     runGitHub req = do
-        logDebug $ "runGitHub" :# ["request" .= show (displayGitHubRequest req)]
+        logDebug
+            $ "runGitHub"
+            :# ["request" .= show @Text (displayGitHubRequest req)]
         auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
         result <- liftIO $ do
             mgr <- getGlobalManager
@@ -205,10 +209,13 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
         callProcess "git" ["push", "--force", "origin", branch]
     gitDiffNameOnly mRef = do
         let args = ["diff", "--name-only"] <> maybeToList mRef
-        lines <$> readProcess "git" args ""
+        map unpack . lines . pack <$> readProcess "git" args ""
     gitCommitAll msg = do
         callProcess "git" ["commit", "-a", "--message", msg]
-        dropWhileEnd isSpace <$> readProcess "git" ["rev-parse", "HEAD"] ""
+        unpack . T.dropWhileEnd isSpace . pack <$> readProcess
+            "git"
+            ["rev-parse", "HEAD"]
+            ""
     gitCheckout branch = do
         callProcess "git" ["checkout", "--no-progress", "-b", branch]
 

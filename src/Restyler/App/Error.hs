@@ -14,6 +14,7 @@ module Restyler.App.Error
 
 import Restyler.Prelude
 
+import qualified Data.Text.IO as T
 import qualified Data.Yaml as Yaml
 import GitHub.Data (Error(..))
 import GitHub.Request.Display
@@ -25,7 +26,6 @@ import Restyler.PullRequest.Status
 import Restyler.Restyler (Restyler(..))
 import Restyler.Statsd (HasStatsClient)
 import qualified Restyler.Statsd as Statsd
-import System.IO (hPutStrLn)
 import Text.Wrap
 
 data AppError
@@ -55,38 +55,38 @@ instance Exception AppError
 mapAppError :: (MonadUnliftIO m, Exception e) => (e -> AppError) -> m a -> m a
 mapAppError f = handle $ throwIO . f
 
-prettyAppError :: AppError -> String
+prettyAppError :: AppError -> Text
 prettyAppError =
     format <$> toErrorTitle <*> toErrorBody <*> toErrorDocumentation
   where
-    format :: String -> String -> String -> String
+    format :: Text -> Text -> Text -> Text
     format title body docs = title <> ":\n\n" <> body <> docs
 
-toErrorTitle :: AppError -> String
+toErrorTitle :: AppError -> Text
 toErrorTitle = trouble . \case
     PullRequestFetchError _ -> "fetching your Pull Request from GitHub"
     PullRequestCloneError _ -> "cloning your Pull Request branch"
     ConfigurationError _ -> "with your configuration"
-    RestylerExitFailure r _ _ -> "with the " <> rName r <> " restyler"
+    RestylerExitFailure r _ _ -> "with the " <> pack (rName r) <> " restyler"
     RestyleError _ -> "restyling"
     GitHubError _ _ -> "communicating with GitHub"
     SystemError _ -> "running a system command"
     HttpError _ -> "performing an HTTP request"
     OtherError _ -> "with something unexpected"
   where
-    trouble :: String -> String
+    trouble :: Text -> Text
     trouble = ("We had trouble " <>)
 
-toErrorBody :: AppError -> String
+toErrorBody :: AppError -> Text
 toErrorBody = reflow . \case
     PullRequestFetchError e -> showGitHubError e
     PullRequestCloneError e -> show e
     ConfigurationError (ConfigErrorInvalidYaml yaml e) -> unlines
         [ "Yaml parse exception:"
-        , Yaml.prettyPrintParseException e
+        , pack $ Yaml.prettyPrintParseException e
         , ""
         , "Original input:"
-        , unpack $ decodeUtf8 yaml
+        , decodeUtf8 yaml
         ]
     ConfigurationError (ConfigErrorInvalidRestylers errs) -> unlines errs
     ConfigurationError (ConfigErrorInvalidRestylersYaml e) -> unlines
@@ -108,20 +108,20 @@ toErrorBody = reflow . \case
             <> show paths
             <> "."
             <> "\nError information may be present in the stderr output above."
-    RestyleError msg -> unpack msg
+    RestyleError msg -> msg
     GitHubError req e -> "Request: " <> show req <> "\n" <> showGitHubError e
     SystemError e -> show e
     HttpError e -> show e
     OtherError e -> show e
 
-toErrorDocumentation :: AppError -> String
+toErrorDocumentation :: AppError -> Text
 toErrorDocumentation = formatDocs . \case
     ConfigurationError ConfigErrorInvalidRestylersYaml{} ->
         ["https://github.com/restyled-io/restyled.io/wiki/Restyler-Versions"]
     ConfigurationError _ ->
         [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
         ]
-    RestylerExitFailure r _ _ -> rDocumentation r
+    RestylerExitFailure r _ _ -> map pack $ rDocumentation r
     RestyleError _ ->
         [ "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error"
         ]
@@ -131,18 +131,18 @@ toErrorDocumentation = formatDocs . \case
     formatDocs [url] = "\nPlease see " <> url <> "\n"
     formatDocs urls = unlines $ "\nPlease see" : map ("  - " <>) urls
 
-showGitHubError :: Error -> String
+showGitHubError :: Error -> Text
 showGitHubError = \case
     HTTPError e -> "HTTP exception: " <> show e
-    ParseError e -> "Unable to parse response: " <> unpack e
-    JsonError e -> "Malformed response: " <> unpack e
-    UserError e -> "User error: " <> unpack e
+    ParseError e -> "Unable to parse response: " <> e
+    JsonError e -> "Malformed response: " <> e
+    UserError e -> "User error: " <> e
 
-reflow :: String -> String
+reflow :: Text -> Text
 reflow = indent . wrap
   where
     indent = unlines . map ("  " <>) . lines
-    wrap = unpack . wrapText wrapSettings 80 . pack
+    wrap = wrapText wrapSettings 80
     wrapSettings = defaultWrapSettings
         { preserveIndentation = True
         , breakLongWords = False
@@ -201,7 +201,7 @@ appErrorHandlers =
 dieAppError
     :: (MonadIO m, MonadReader env m, HasStatsClient env) => AppError -> m a
 dieAppError e = do
-    liftIO $ hPutStrLn stderr $ prettyAppError e
+    liftIO $ T.hPutStrLn stderr $ prettyAppError e
     let tags = [("severity", severityTag), ("error", errorTag)]
     Statsd.increment "restyler.error" tags
     exitWith $ ExitFailure exitCode
