@@ -57,7 +57,6 @@ library:
     - edit-distance
     - envparse
     - errors
-    - exceptions
     - extra
     - file-embed
     - filepath

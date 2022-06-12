@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2e089797fbcae5845645e0c66b99a4282945ed72c1de87d24b250f33ccb59677
+-- hash: 41bf4f78b5651a99d7bf52ca31d2c2a530a848ba5f800e30d1d2ffa2756b48fe
 
 name:           restyler
 version:        0.2.0.0
@@ -95,7 +95,6 @@ library
     , edit-distance
     , envparse
     , errors
-    , exceptions
     , extra
     , file-embed
     , filepath
