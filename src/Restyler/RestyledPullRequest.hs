@@ -161,18 +161,22 @@ createRestyledPullRequest pullRequest results = do
         :# ["number" .= restyledPullRequestNumber restyledPullRequest]
     pure restyledPullRequest
 
--- |
---
--- TODO: consider using results to update PR description.
---
 updateRestyledPullRequest
-    :: MonadGit m
-    => RestyledPullRequest
+    :: (MonadGit m, MonadGitHub m, MonadReader env m, HasOptions env)
+    => PullRequest
+    -> RestyledPullRequest
     -> [RestylerResult]
     -> m RestyledPullRequest
-updateRestyledPullRequest restyledPullRequest _results = do
+updateRestyledPullRequest pullRequest restyledPullRequest results = do
     gitCheckout $ unpack $ restyledPullRequestHeadRef restyledPullRequest
     gitPushForce $ unpack $ restyledPullRequestHeadRef restyledPullRequest
+
+    mJobUrl <- oJobUrl <$> view optionsL
+    editRestyledPullRequest restyledPullRequest $ \edit -> edit
+        { editPullRequestBody = Just
+            $ Content.pullRequestDescription mJobUrl pullRequest results
+        }
+
     pure restyledPullRequest
 
 closeRestyledPullRequest
@@ -203,17 +207,28 @@ editRestyledPullRequestState issueState pr
             $ "Updating Restyled PR"
             :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
 
-        runGitHub_ $ updatePullRequestR
-            (restyledPullRequestOwnerName pr)
-            (restyledPullRequestRepoName pr)
-            (restyledPullRequestNumber pr)
-            EditPullRequest
-                { editPullRequestTitle = Nothing
-                , editPullRequestBody = Nothing
-                , editPullRequestState = Just issueState
-                , editPullRequestBase = Nothing
-                , editPullRequestMaintainerCanModify = Nothing
-                }
+        editRestyledPullRequest pr
+            $ \edit -> edit { editPullRequestState = Just issueState }
+
+editRestyledPullRequest
+    :: MonadGitHub m
+    => RestyledPullRequest
+    -> (EditPullRequest -> EditPullRequest)
+    -> m ()
+editRestyledPullRequest pr modEdit =
+    runGitHub_
+        $ updatePullRequestR
+              (restyledPullRequestOwnerName pr)
+              (restyledPullRequestRepoName pr)
+              (restyledPullRequestNumber pr)
+        $ modEdit
+        $ EditPullRequest
+              { editPullRequestTitle = Nothing
+              , editPullRequestBody = Nothing
+              , editPullRequestState = Nothing
+              , editPullRequestBase = Nothing
+              , editPullRequestMaintainerCanModify = Nothing
+              }
 
 findSiblingPullRequest
     :: MonadGitHub m => PullRequest -> Text -> m (Maybe SimplePullRequest)

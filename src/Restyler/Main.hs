@@ -66,7 +66,7 @@ restylerMain = do
 
     url <- restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
         Nothing -> createRestyledPullRequest pullRequest results
-        Just pr -> updateRestyledPullRequest pr results
+        Just pr -> updateRestyledPullRequest pullRequest pr results
 
     sendPullRequestStatus $ DifferencesStatus $ Just url
     exitWithInfo "Restyling successful"
