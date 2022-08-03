@@ -7,6 +7,7 @@ module Restyler.PullRequest
     , HasPullRequest(..)
     , pullRequestOwnerName
     , pullRequestRepoName
+    , pullRequestRepoPublic
     , pullRequestUserLogin
     , pullRequestCloneUrl
     , pullRequestCloneUrlToken
@@ -34,6 +35,9 @@ pullRequestOwnerName = simpleOwnerLogin . pullRequestOwner
 
 pullRequestRepoName :: HasCallStack => PullRequest -> Name Repo
 pullRequestRepoName = repoName . pullRequestRepo
+
+pullRequestRepoPublic :: HasCallStack => PullRequest -> Bool
+pullRequestRepoPublic = not . repoPrivate . pullRequestRepo
 
 pullRequestUserLogin :: PullRequest -> Name User
 pullRequestUserLogin = simpleUserLogin . pullRequestUser

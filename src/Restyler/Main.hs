@@ -39,6 +39,19 @@ restylerMain = do
 
     jobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
+
+    let isDangerous =
+            pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
+
+        wiki :: Text
+        wiki
+            = "https://github.com/restyled-io/restyled.io/wiki/2022.08.03-Attack-on-Forked-PRs"
+
+    when isDangerous $ do
+        sendPullRequestStatus $ ErrorStatus $ URL wiki
+        logInfo "Refusing to run on a Fork PR in OSS repository"
+        exitWithInfo $ "Please see " <> wiki :# []
+
     mRestyledPullRequest <- view restyledPullRequestL
 
     unlessM wasRestyled $ do
