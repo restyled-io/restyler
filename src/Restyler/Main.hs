@@ -40,18 +40,6 @@ restylerMain = do
     jobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
 
-    let isDangerous =
-            pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
-
-        wiki :: Text
-        wiki
-            = "https://github.com/restyled-io/restyled.io/wiki/2022.08.03-Attack-on-Forked-PRs"
-
-    when isDangerous $ do
-        sendPullRequestStatus $ ErrorStatus $ URL wiki
-        logInfo "Refusing to run on a Fork PR in OSS repository"
-        exitWithInfo $ "Please see " <> wiki :# []
-
     mRestyledPullRequest <- view restyledPullRequestL
 
     unlessM wasRestyled $ do
@@ -76,6 +64,18 @@ restylerMain = do
     whenConfig (not . cPullRequests) $ do
         sendPullRequestStatus $ DifferencesStatus jobUrl
         exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
+
+    let isDangerous =
+            pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
+
+        wiki :: Text
+        wiki
+            = "https://github.com/restyled-io/restyled.io/wiki/2022.08.03-Attack-on-Forked-PRs"
+
+    when isDangerous $ do
+        sendPullRequestStatus $ DifferencesStatus jobUrl
+        logInfo "Not creating Restyle PR, it could contain unsafe contributions"
+        exitWithInfo $ "Please see " <> wiki :# []
 
     url <- restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
         Nothing -> createRestyledPullRequest pullRequest results
