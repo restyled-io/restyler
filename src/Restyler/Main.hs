@@ -35,16 +35,14 @@ restylerMain
     => m a
 restylerMain = do
     results <- restyle
-    -- logDebug $ "Restyled" :# ["results" .= results]
 
-    jobUrl <- oJobUrl <$> view optionsL
+    mJobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
-
     mRestyledPullRequest <- view restyledPullRequestL
 
     unlessM wasRestyled $ do
         traverse_ closeRestyledPullRequest mRestyledPullRequest
-        sendPullRequestStatus $ NoDifferencesStatus jobUrl
+        sendPullRequestStatus $ NoDifferencesStatus mJobUrl
         exitWithInfo "No style differences found"
 
     whenConfig cAuto $ do
@@ -62,7 +60,7 @@ restylerMain = do
     -- NB there is the edge-case of switching this off mid-PR. A previously
     -- opened Restyle PR would stop updating at that point.
     whenConfig (not . cPullRequests) $ do
-        sendPullRequestStatus $ DifferencesStatus jobUrl
+        sendPullRequestStatus $ DifferencesStatus mJobUrl
         exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
 
     let isDangerous =
@@ -73,7 +71,7 @@ restylerMain = do
             = "https://github.com/restyled-io/restyled.io/wiki/2022.08.03-Attack-on-Forked-PRs"
 
     when isDangerous $ do
-        sendPullRequestStatus $ DifferencesStatus jobUrl
+        sendPullRequestStatus $ DifferencesStatus mJobUrl
         logInfo "Not creating Restyle PR, it could contain unsafe contributions"
         exitWithInfo $ "Please see " <> wiki :# []
 
