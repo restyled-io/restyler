@@ -162,7 +162,12 @@ createRestyledPullRequest pullRequest results = do
     pure restyledPullRequest
 
 updateRestyledPullRequest
-    :: (MonadGit m, MonadGitHub m, MonadReader env m, HasOptions env)
+    :: ( MonadLogger m
+       , MonadGit m
+       , MonadGitHub m
+       , MonadReader env m
+       , HasOptions env
+       )
     => PullRequest
     -> RestyledPullRequest
     -> [RestylerResult]
@@ -177,6 +182,9 @@ updateRestyledPullRequest pullRequest restyledPullRequest results = do
             $ Content.pullRequestDescription mJobUrl pullRequest results
         }
 
+    logInfo
+        $ "Updated existing Restyled PR"
+        :# ["number" .= restyledPullRequestNumber restyledPullRequest]
     pure restyledPullRequest
 
 closeRestyledPullRequest
@@ -184,6 +192,9 @@ closeRestyledPullRequest
     => RestyledPullRequest
     -> m ()
 closeRestyledPullRequest pr = do
+    logInfo
+        $ "Closing existing Restyled PR"
+        :# ["number" .= restyledPullRequestNumber pr]
     editRestyledPullRequestState StateClosed pr
 
     handleAny warnIgnore $ runGitHub_ $ deleteReferenceR
@@ -202,13 +213,8 @@ editRestyledPullRequestState issueState pr
         $ "Redundant update of Restyled PR"
         :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
     | otherwise
-    = do
-        logInfo
-            $ "Updating Restyled PR"
-            :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
-
-        editRestyledPullRequest pr
-            $ \edit -> edit { editPullRequestState = Just issueState }
+    = editRestyledPullRequest pr
+        $ \edit -> edit { editPullRequestState = Just issueState }
 
 editRestyledPullRequest
     :: MonadGitHub m
