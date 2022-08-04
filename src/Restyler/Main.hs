@@ -4,6 +4,7 @@ module Restyler.Main
 
 import Restyler.Prelude
 
+import qualified Data.Text as T
 import qualified Data.Vector as V
 import GitHub.Data.GitData (File(..))
 import GitHub.Endpoints.PullRequests (FetchCount(..), pullRequestFilesR)
@@ -18,7 +19,8 @@ import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
 restylerMain
-    :: ( MonadUnliftIO m
+    :: ( MonadMask m
+       , MonadUnliftIO m
        , MonadLogger m
        , MonadReader env m
        , MonadSystem m
@@ -47,6 +49,21 @@ restylerMain = do
 
     logInfo "Restyling produced differences"
 
+    patch <- getRestyledPatch
+    withThreadContext ["patch" .= True]
+        $ traverse_ (logInfo . (:# []))
+        $ T.lines patch
+
+    -- This message only makes sense in the context of a Job
+    for_ mJobUrl $ \jobUrl -> do
+        logInfo ""
+        logInfo "NOTE: you can manually apply these fixes by running:"
+        logInfo ""
+        logInfo "    git checkout <your branch>"
+        logInfo $ "    curl " <> getUrl jobUrl <> "/patch | git am" :# []
+        logInfo "    git push"
+        logInfo ""
+
     whenConfig cAuto $ do
         if pullRequestIsFork pullRequest
             then logWarn "Ignoring auto:true because PR is a fork"
@@ -63,19 +80,22 @@ restylerMain = do
     -- opened Restyle PR would stop updating at that point.
     whenConfig (not . cPullRequests) $ do
         sendPullRequestStatus $ DifferencesStatus mJobUrl
-        exitWithInfo "Not creating (or updating) Restyle PR, disabled by config"
+        logInfo
+            $ "Not creating Restyle PR"
+            :# ["reason" .= ("disabled by config" :: Text)]
+        exitWithInfo "Please correct style using the process described above"
 
     let isDangerous =
             pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
 
-        wiki :: Text
-        wiki
-            = "https://github.com/restyled-io/restyled.io/wiki/2022.08.03-Attack-on-Forked-PRs"
+        dangerDetails :: Text
+        dangerDetails =
+            "Forks in open source projects could contain unsafe contributions"
 
     when isDangerous $ do
         sendPullRequestStatus $ DifferencesStatus mJobUrl
-        logInfo "Not creating Restyle PR, it could contain unsafe contributions"
-        exitWithInfo $ "Please see " <> wiki :# []
+        logInfo $ "Not creating Restyle PR" :# ["reason" .= dangerDetails]
+        exitWithInfo "Please correct style using the process described above"
 
     url <- restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
         Nothing -> createRestyledPullRequest pullRequest results
@@ -108,6 +128,12 @@ wasRestyled :: (MonadGit m, MonadReader env m, HasPullRequest env) => m Bool
 wasRestyled = do
     sha <- pullRequestHeadSha <$> view pullRequestL
     not . null <$> gitDiffNameOnly (Just $ unpack sha)
+
+getRestyledPatch
+    :: (MonadGit m, MonadReader env m, HasPullRequest env) => m Text
+getRestyledPatch = do
+    sha <- pullRequestHeadSha <$> view pullRequestL
+    gitFormatPatch $ Just $ unpack sha
 
 getChangedPaths :: MonadGitHub m => PullRequest -> m [FilePath]
 getChangedPaths pullRequest = do

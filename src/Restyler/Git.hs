@@ -12,6 +12,7 @@ class Monad m => MonadGit m where
     gitPush :: String -> m ()
     gitPushForce :: String -> m ()
     gitDiffNameOnly :: Maybe String -> m [FilePath]
+    gitFormatPatch :: Maybe String -> m Text
     gitCommitAll :: String -> m String
     gitCheckout :: String -> m ()
 

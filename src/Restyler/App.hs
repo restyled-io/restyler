@@ -9,6 +9,7 @@ module Restyler.App
 import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
+import Control.Monad.Catch (MonadCatch, MonadThrow)
 import qualified Data.Text as T
 import GitHub.Auth
 import GitHub.Request
@@ -36,6 +37,9 @@ newtype AppT app m a = AppT
         ( Functor
         , Applicative
         , Monad
+        , MonadThrow
+        , MonadCatch
+        , MonadMask
         , MonadIO
         , MonadUnliftIO
         , MonadLogger
@@ -209,6 +213,9 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
     gitDiffNameOnly mRef = do
         let args = ["diff", "--name-only"] <> maybeToList mRef
         map unpack . lines . pack <$> readProcess "git" args ""
+    gitFormatPatch mRef = do
+        let args = ["format-patch", "--stdout"] <> maybeToList mRef
+        pack <$> readProcess "git" args ""
     gitCommitAll msg = do
         callProcess "git" ["commit", "-a", "--message", msg]
         unpack . T.dropWhileEnd isSpace . pack <$> readProcess
