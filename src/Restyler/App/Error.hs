@@ -14,7 +14,6 @@ module Restyler.App.Error
 
 import Restyler.Prelude
 
-import qualified Data.Text.IO as T
 import qualified Data.Yaml as Yaml
 import GitHub.Data (Error(..))
 import GitHub.Request.Display
@@ -199,9 +198,12 @@ appErrorHandlers =
     ]
 
 dieAppError
-    :: (MonadIO m, MonadReader env m, HasStatsClient env) => AppError -> m a
-dieAppError e = do
-    liftIO $ T.hPutStrLn stderr $ prettyAppError e
+    :: (MonadIO m, MonadReader env m, HasStatsClient env)
+    => Logger
+    -> AppError
+    -> m a
+dieAppError logger e = do
+    runLoggerLoggingT logger $ logError $ prettyAppError e :# []
     let tags = [("severity", severityTag), ("error", errorTag)]
     Statsd.increment "restyler.error" tags
     exitWith $ ExitFailure exitCode

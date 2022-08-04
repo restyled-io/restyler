@@ -32,6 +32,6 @@ main = do
             Statsd.increment "restyler.finished" []
             Statsd.histogramSince "restyler.duration" [] start
             either
-                dieAppError -- includes .error increment
+                (dieAppError logger) -- includes .error increment
                 (\() -> Statsd.increment "restyler.success" [])
                 result
