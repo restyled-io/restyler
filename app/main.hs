@@ -19,12 +19,13 @@ main = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
     options@Options {..} <- parseOptions
+    logger <- newLogger oLogSettings
     let tags = [("repo", toPathPart oOwner <> "/" <> toPathPart oRepo)]
 
     withStatsClient oStatsdHost oStatsdPort tags $ \statsClient -> do
         result <- tryAppError $ do
             withSystemTempDirectory "restyler-" $ \path -> do
-                app <- bootstrapApp options path statsClient
+                app <- bootstrapApp options logger path statsClient
                 runAppT app $ handleAny errorPullRequest restylerMain
 
         flip runReaderT statsClient $ do

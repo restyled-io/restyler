@@ -226,21 +226,24 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
         callProcess "git" ["checkout", "--no-progress", "-b", branch]
 
 bootstrapApp
-    :: (MonadUnliftIO m) => Options -> FilePath -> StatsClient -> m App
-bootstrapApp options path statsClient = do
-    logger <- newLogger $ oLogSettings options
-
-    let app = StartupApp
-            { appLogger = logger
-            , appOptions = options
-            , appWorkingDirectory = path
-            , appStatsClient = statsClient
-            }
-        toApp (pullRequest, mRestyledPullRequest, config) = App
-            { appApp = app
-            , appPullRequest = pullRequest
-            , appRestyledPullRequest = mRestyledPullRequest
-            , appConfig = config
-            }
-
+    :: (MonadUnliftIO m)
+    => Options
+    -> Logger
+    -> FilePath
+    -> StatsClient
+    -> m App
+bootstrapApp options logger path statsClient =
     runAppT app $ toApp <$> restylerSetup
+  where
+    app = StartupApp
+        { appLogger = logger
+        , appOptions = options
+        , appWorkingDirectory = path
+        , appStatsClient = statsClient
+        }
+    toApp (pullRequest, mRestyledPullRequest, config) = App
+        { appApp = app
+        , appPullRequest = pullRequest
+        , appRestyledPullRequest = mRestyledPullRequest
+        , appConfig = config
+        }
