@@ -45,6 +45,8 @@ restylerMain = do
         sendPullRequestStatus $ NoDifferencesStatus mJobUrl
         exitWithInfo "No style differences found"
 
+    logInfo "Restyling produced differences"
+
     whenConfig cAuto $ do
         if pullRequestIsFork pullRequest
             then logWarn "Ignoring auto:true because PR is a fork"
