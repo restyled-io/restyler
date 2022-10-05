@@ -4,10 +4,14 @@ ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    autotools-dev \
     ca-certificates \
     curl \
     gcc \
     locales \
+    pkg-config \
     netbase && \
   locale-gen en_US.UTF-8 && \
   rm -rf /var/lib/apt/lists/*
@@ -32,6 +36,20 @@ RUN \
   curl -fsSLO "$DOCKER_SRC_URL" && \
   tar --strip-components=1 -xvzf "$DOCKER_ARCHIVE" -C /usr/local/bin
 
+# Install newer jo than apt has
+ENV JO_VERSION 1.6
+ENV JO_ARCHIVE jo-$JO_VERSION.tar.gz
+ENV JO_SRC_URL https://github.com/jpmens/jo/releases/download/$JO_VERSION/$JO_ARCHIVE
+RUN \
+  cd /tmp && \
+  curl -fsSLO "$JO_SRC_URL" && \
+  tar xvzf "$JO_ARCHIVE" && \
+  cd /tmp/jo-"$JO_VERSION" && \
+  autoreconf -i && \
+  ./configure && \
+  make check && \
+  make install
+
 FROM ubuntu:18.04
 LABEL maintainer="Pat Brisbin <pbrisbin@gmail.com>"
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
@@ -50,6 +68,7 @@ RUN \
 COPY --from=builder /root/.local/bin/restyler /bin/restyler
 COPY --from=builder /root/.local/bin/restyle-path /bin/restyle-path
 COPY --from=builder /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=builder /usr/local/bin/jo /usr/local/bin/jo
 
 ENV GIT_AUTHOR_NAME=Restyled.io
 ENV GIT_AUTHOR_EMAIL=commits@restyled.io
