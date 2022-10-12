@@ -1,4 +1,10 @@
 #!/bin/sh
+: "${RESTYLER_CANCEL_SIGNAL:=""}"
+
+if [ -z "$RESTYLER_CANCEL_SIGNAL" ]; then
+  exec /bin/restyler "$@"
+fi
+
 : "${RESTYLER_CANCEL_SIGNAL:=QUIT}"
 
 for signal in $(kill -l); do
