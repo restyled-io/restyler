@@ -40,7 +40,7 @@ watch:
 
 .PHONY: image
 image:
-	docker build \
+	docker buildx build \
 	  --tag restyled/restyler:edge \
 	  .
 
