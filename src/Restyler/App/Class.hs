@@ -71,11 +71,11 @@ runGitHub_ :: (MonadGitHub n, ParseResponse m a) => GenRequest m k a -> n ()
 runGitHub_ = void . runGitHub
 
 getPullRequestLabelNames
-    :: (MonadUnliftIO m, MonadGitHub m)
+    :: (MonadUnliftIO m, MonadLogger m, MonadGitHub m)
     => PullRequest
     -> m (Vector (Name IssueLabel))
 getPullRequestLabelNames pullRequest = do
-    labels <- handleAny (const $ pure mempty) $ runGitHub $ labelsOnIssueR
+    labels <- warnIgnoreWith mempty $ runGitHub $ labelsOnIssueR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)

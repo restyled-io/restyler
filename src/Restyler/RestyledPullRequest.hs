@@ -36,7 +36,6 @@ import GitHub.Endpoints.PullRequests
 import GitHub.Endpoints.PullRequests.ReviewRequests
     (createReviewRequestR, requestOneReviewer)
 import Restyler.App.Class (MonadGitHub, runGitHub, runGitHubFirst, runGitHub_)
-import Restyler.App.Error (warnIgnore)
 import Restyler.Config
 import qualified Restyler.Content as Content
 import Restyler.Git (MonadGit(..))
@@ -197,7 +196,7 @@ closeRestyledPullRequest pr = do
         :# ["number" .= restyledPullRequestNumber pr]
     editRestyledPullRequestState StateClosed pr
 
-    handleAny warnIgnore $ runGitHub_ $ deleteReferenceR
+    warnIgnore $ runGitHub_ $ deleteReferenceR
         (restyledPullRequestOwnerName pr)
         (restyledPullRequestRepoName pr)
         (mkName Proxy $ "heads/" <> restyledPullRequestHeadRef pr)

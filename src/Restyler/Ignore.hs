@@ -21,7 +21,7 @@ data IgnoredReason
     deriving stock (Eq, Show)
 
 getIgnoredReason
-    :: (MonadUnliftIO m, MonadGitHub m)
+    :: (MonadUnliftIO m, MonadLogger m, MonadGitHub m)
     => Config
     -> PullRequest
     -> m (Maybe IgnoredReason)

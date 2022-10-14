@@ -79,7 +79,6 @@ library:
     - unordered-containers
     - validation
     - vector
-    - word-wrap
     - yaml
 
 executables:
@@ -94,7 +93,6 @@ executables:
     dependencies:
       - github
       - restyler
-      - time
   restyle-path:
     main: main.hs
     source-dirs: restyle-path
@@ -130,4 +128,5 @@ tests:
       - restyler
       - shakespeare
       - text
+      - unliftio
       - yaml

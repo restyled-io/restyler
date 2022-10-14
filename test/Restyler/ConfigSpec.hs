@@ -12,6 +12,7 @@ import Restyler.Config
 import Restyler.Config.Include
 import Restyler.Restyler
 import Text.Shakespeare.Text (st)
+import UnliftIO.Exception (try)
 
 spec :: Spec
 spec = withTestApp $ do
@@ -315,6 +316,9 @@ spec = withTestApp $ do
             $ pure testRestylers
 
         fmap cEnabled result `shouldBe` Right False
+
+tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
+tryTo f = fmap (first f) . try
 
 hasError :: Text -> Either Text a -> Bool
 hasError msg (Left err) = msg `T.isInfixOf` err

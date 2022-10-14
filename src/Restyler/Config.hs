@@ -44,6 +44,7 @@ import Data.Functor.Barbie
 import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
+import qualified Data.Text as T
 import qualified Data.Yaml as Yaml
 import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
@@ -59,6 +60,7 @@ import Restyler.Config.Statuses
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
+import UnliftIO.Exception (handle)
 
 -- | A polymorphic representation of @'Config'@
 --
@@ -175,7 +177,38 @@ configErrorInvalidYaml yaml = ConfigErrorInvalidYaml yaml
     isCannotStart = ("character that cannot start any token" `isInfixOf`)
     hasTabIndent = ("\n\t" `C8.isInfixOf`)
 
-instance Exception ConfigError
+instance Exception ConfigError where
+    displayException = unpack . T.unlines . \case
+        ConfigErrorInvalidYaml yaml e ->
+            [ "Yaml parse exception:"
+            , pack $ Yaml.prettyPrintParseException e
+            , ""
+            , "Original input:"
+            , decodeUtf8 yaml
+            , ""
+            , generalHelp
+            ]
+
+        ConfigErrorInvalidRestylers errs -> errs <> ["", generalHelp]
+        ConfigErrorInvalidRestylersYaml ex ->
+            [ "Error loading restylers.yaml definition:"
+            , show @Text ex
+            , ""
+            , "==="
+            , ""
+            , "This could be caused by an invalid or too-old restylers_version in"
+            , "your configuration. Consider removing or updating it."
+            , ""
+            , "If that's not the case, this is a bug in our system that we are"
+            , "hopefully already working to fix."
+            , ""
+            , "- https://github.com/restyled-io/restyled.io/wiki/Restyler-Versions"
+            , "- " <> generalHelp
+            ]
+      where
+        generalHelp :: Text
+        generalHelp
+            = "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
 
 -- | Load a fully-inflated @'Config'@
 --
@@ -307,3 +340,7 @@ configPaths =
     , ".github/restyled.yaml"
     , ".github/restyled.yml"
     ]
+
+handleTo
+    :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
+handleTo f = handle (throwIO . f)

@@ -5,7 +5,6 @@ module Restyler.Restyler.RunSpec
 import SpecHelper
 
 import qualified Relude as Prelude
-import Restyler.App.Error
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
@@ -14,6 +13,7 @@ import Restyler.Restyler
 import Restyler.Restyler.Run
 import Restyler.Test.FS
     (createFileLink, writeFileExecutable, writeFileUnreadable)
+import UnliftIO.Exception (handle)
 
 spec :: Spec
 spec = withTestApp $ do

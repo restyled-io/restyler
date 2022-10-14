@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 94f0094e6b086c4eaf7d5147d8685bfed43a7c350b73eddf68e21073d274f142
+-- hash: 443eb4772b2089c7edd536ab78be8ec8da93137972750344ab95b96463bba6a7
 
 name:           restyler
 version:        0.2.0.0
@@ -20,7 +20,6 @@ library
       GitHub.Request.Display
       Restyler.App
       Restyler.App.Class
-      Restyler.App.Error
       Restyler.CommitTemplate
       Restyler.Config
       Restyler.Config.ChangedPaths
@@ -34,6 +33,7 @@ library
       Restyler.Config.Statuses
       Restyler.Content
       Restyler.Delimited
+      Restyler.Exit
       Restyler.Git
       Restyler.Ignore
       Restyler.Main
@@ -116,7 +116,6 @@ library
     , unordered-containers
     , validation
     , vector
-    , word-wrap
     , yaml
   default-language: Haskell2010
 
@@ -195,14 +194,12 @@ executable restyler
       base
     , github
     , restyler
-    , time
   default-language: Haskell2010
 
 test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Restyler.App.ErrorSpec
       Restyler.CommitTemplateSpec
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
@@ -263,5 +260,6 @@ test-suite test
     , restyler
     , shakespeare
     , text
+    , unliftio
     , yaml
   default-language: Haskell2010
