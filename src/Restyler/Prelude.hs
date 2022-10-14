@@ -46,8 +46,8 @@ minimumByMaybe f = \case
     xs -> Just $ minimumBy f xs
 
 -- | Ignore an exception, warning about it
-warnIgnore :: (MonadUnliftIO m, MonadLogger m) => m () -> m ()
-warnIgnore = warnIgnoreWith ()
+warnIgnore :: Monoid a => (MonadUnliftIO m, MonadLogger m) => m a -> m a
+warnIgnore = warnIgnoreWith mempty
 
 -- | Ignore an exception, warning about it and returning the given result
 warnIgnoreWith :: (MonadUnliftIO m, MonadLogger m) => a -> m a -> m a
