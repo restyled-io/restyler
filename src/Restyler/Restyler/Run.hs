@@ -1,7 +1,8 @@
 {-# LANGUAGE TupleSections #-}
 
 module Restyler.Restyler.Run
-    ( runRestylers
+    ( RestylerError(..)
+    , runRestylers
     , runRestylers_
 
     -- * Exported for testing only
@@ -15,7 +16,6 @@ import Restyler.Prelude
 
 import Data.List (nub)
 import Restyler.App.Class
-import Restyler.App.Error
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Glob (match)
@@ -28,6 +28,28 @@ import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restyler
 import Restyler.RestylerResult
 import System.FilePath ((</>))
+
+data RestylerError
+    = RestyleError Text
+    | RestylerExitFailure Restyler Int [FilePath]
+    deriving stock Show
+
+instance Exception RestylerError where
+    displayException = \case
+        RestyleError msg ->
+            unpack msg
+                <> "\n  https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error"
+        RestylerExitFailure Restyler {..} ec paths ->
+            "We had trouble with the "
+                <> rName
+                <> " restyler"
+                <> "\n  Exited non-zero ("
+                <> show @String ec
+                <> ") for the following paths, "
+                <> show @String paths
+                <> "."
+                <> "\n  Error information may be present in the stderr output above."
+                <> concatMap ("\n  " <>) rDocumentation
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
@@ -139,10 +161,10 @@ withFilteredPaths restylers paths run = do
         run r filtered
 
 addExecutableInterpreter
-    :: (MonadUnliftIO m, MonadSystem m)
+    :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
     => FilePath
     -> m (FilePath, Maybe Interpreter)
-addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
+addExecutableInterpreter path = warnIgnoreWith (path, Nothing) $ do
     isExec <- isFileExecutable path
 
     (path, ) <$> if isExec

@@ -48,6 +48,9 @@ data Options = Options
 class HasOptions env where
     optionsL :: Lens' env Options
 
+instance HasOptions Options where
+    optionsL = id
+
 -- | Parse required environment variables and command-line options
 --
 -- See @restyler --help@

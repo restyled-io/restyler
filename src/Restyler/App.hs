@@ -4,6 +4,10 @@ module Restyler.App
     , App(..)
     , StartupApp(..)
     , bootstrapApp
+
+    -- * App's implementation, exposed for use outside of AppT
+    , GitHubError(..)
+    , runGitHubInternal
     ) where
 
 import Restyler.Prelude
@@ -12,13 +16,13 @@ import Conduit (runResourceT, sinkFile)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import qualified Data.Text as T
 import GitHub.Auth
+import qualified GitHub.Data.Definitions as GitHub
 import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import qualified Relude as Prelude
 import Restyler.App.Class
-import Restyler.App.Error
 import Restyler.Config
 import Restyler.Git
 import Restyler.Options
@@ -49,45 +53,43 @@ newtype AppT app m a = AppT
 instance MonadUnliftIO m => MonadSystem (AppT app m) where
     getCurrentDirectory = do
         logDebug "getCurrentDirectory"
-        appIO SystemError Directory.getCurrentDirectory
+        liftIO Directory.getCurrentDirectory
 
     setCurrentDirectory path = do
         logDebug $ "setCurrentDirectory" :# ["path" .= path]
-        appIO SystemError $ Directory.setCurrentDirectory path
+        liftIO $ Directory.setCurrentDirectory path
 
     doesFileExist path = do
         logDebug $ "doesFileExist" :# ["path" .= path]
-        appIO SystemError $ Directory.doesFileExist path
+        liftIO $ Directory.doesFileExist path
 
     doesDirectoryExist path = do
         logDebug $ "doesDirectoryExist" :# ["path" .= path]
-        appIO SystemError $ Directory.doesDirectoryExist path
+        liftIO $ Directory.doesDirectoryExist path
 
     isFileExecutable path = do
         logDebug $ "isFileExecutable" :# ["path" .= path]
-        appIO SystemError
-            $ Directory.executable
-            <$> Directory.getPermissions path
+        liftIO $ Directory.executable <$> Directory.getPermissions path
 
     isFileSymbolicLink path = do
         logDebug $ "isFileSymbolicLink" :# ["path" .= path]
-        appIO SystemError $ Directory.pathIsSymbolicLink path
+        liftIO $ Directory.pathIsSymbolicLink path
 
     listDirectory path = do
         logDebug $ "listDirectory" :# ["path" .= path]
-        appIO SystemError $ Directory.listDirectory path
+        liftIO $ Directory.listDirectory path
 
     readFile path = do
         logDebug $ "readFile: " :# ["path" .= path]
-        appIO SystemError $ pack <$> Prelude.readFile path
+        liftIO $ pack <$> Prelude.readFile path
 
     readFileBS path = do
         logDebug $ "readFileBS" :# ["path" .= path]
-        appIO SystemError $ Prelude.readFileBS path
+        liftIO $ Prelude.readFileBS path
 
     writeFile path content = do
         logDebug $ "writeFile" :# ["path" .= path]
-        appIO SystemError $ Prelude.writeFile path $ unpack content
+        liftIO $ Prelude.writeFile path $ unpack content
 
 instance MonadUnliftIO m => MonadProcess (AppT app m) where
     callProcess cmd args = do
@@ -98,13 +100,13 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
         -- - We generally accept secrets in DEBUG messages
         --
         logDebug $ "callProcess" :# ["command" .= cmd, "arguments" .= args]
-        appIO SystemError $ Process.callProcess cmd args
+        liftIO $ Process.callProcess cmd args
 
     callProcessExitCode cmd args = do
         logDebug
             $ "callProcessExitCode"
             :# ["command" .= cmd, "arguments" .= args]
-        ec <- appIO SystemError $ Process.withCreateProcess proc $ \_ _ _ p ->
+        ec <- liftIO $ Process.withCreateProcess proc $ \_ _ _ p ->
             Process.waitForProcess p
         logDebug
             $ "callProcessExitCode"
@@ -119,7 +121,7 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
         logDebug
             $ "readProcess"
             :# ["command" .= cmd, "arguments" .= args, "stdin" .= stdin']
-        output <- appIO SystemError $ Process.readProcess cmd args stdin'
+        output <- liftIO $ Process.readProcess cmd args stdin'
         logDebug
             $ "readProcess"
             :# [ "command" .= cmd
@@ -132,30 +134,46 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
 instance MonadUnliftIO m => MonadExit (AppT app m) where
     exitSuccess = do
         logDebug "exitSuccess"
-        appIO SystemError Exit.exitSuccess
+        liftIO Exit.exitSuccess
 
 instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
     downloadFile url path = do
-        appIO HttpError $ do
+        liftIO $ do
             request <- parseRequestThrow $ unpack url
             runResourceT $ httpSink request $ \_ -> sinkFile path
 
+data GitHubError = GitHubError
+    { gheRequest :: DisplayGitHubRequest
+    , gheError :: GitHub.Error
+    }
+    deriving stock Show
+
+instance Exception GitHubError where
+    displayException GitHubError {..} =
+        "Error communication with GitHub:"
+            <> "\n  Request:"
+            <> show @String gheRequest
+            <> "\n  Exception:"
+            <> show @String gheError
+
 instance (MonadUnliftIO m, HasOptions app) => MonadGitHub (AppT app m) where
-    runGitHub req = do
-        logDebug
-            $ "runGitHub"
-            :# ["request" .= show @Text (displayGitHubRequest req)]
-        auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
-        result <- liftIO $ do
-            mgr <- getGlobalManager
-            executeRequestWithMgr mgr auth req
-        either (throwIO . GitHubError (displayGitHubRequest req)) pure result
+    runGitHub = runGitHubInternal
+
+runGitHubInternal
+    :: (MonadIO n, MonadLogger n, MonadReader env n, HasOptions env)
+    => ParseResponse m a => GenRequest m k a -> n a
+runGitHubInternal req = do
+    logDebug
+        $ "runGitHub"
+        :# ["request" .= show @Text (displayGitHubRequest req)]
+    auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
+    result <- liftIO $ do
+        mgr <- getGlobalManager
+        executeRequestWithMgr mgr auth req
+    either (throwIO . GitHubError (displayGitHubRequest req)) pure result
 
 runAppT :: MonadIO m => HasLogger app => app -> AppT app m a -> m a
 runAppT app f = runLoggerLoggingT app $ runReaderT (unAppT f) app
-
-appIO :: MonadUnliftIO m => (IOException -> AppError) -> IO a -> m a
-appIO f = mapAppError f . liftIO
 
 data StartupApp = StartupApp
     { appLogger :: Logger

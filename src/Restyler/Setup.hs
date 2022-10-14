@@ -5,9 +5,7 @@ module Restyler.Setup
 import Restyler.Prelude
 
 import GitHub.Endpoints.PullRequests
-import Prelude (userError)
 import Restyler.App.Class
-import Restyler.App.Error
 import Restyler.Config
 import Restyler.Git
 import Restyler.Ignore
@@ -37,11 +35,7 @@ restylerSetup = do
     Options {..} <- view optionsL
 
     logInfo "Restyler starting"
-    pullRequest <-
-        mapAppError toPullRequestFetchError $ runGitHub $ pullRequestR
-            oOwner
-            oRepo
-            oPullRequest
+    pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
 
     logInfo $ "Restyling PR" :# ["number" .= pullRequestNumber pullRequest]
 
@@ -61,7 +55,7 @@ restylerSetup = do
     logInfo "Cloning repository"
     wrapClone $ setupClone pullRequest
 
-    config <- mapAppError ConfigurationError loadConfig
+    config <- loadConfig
     logDebug $ "Resolved configuration" :# ["config" .= config]
     unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
 
@@ -88,7 +82,7 @@ setupClone
        )
     => PullRequest
     -> m ()
-setupClone pullRequest = mapAppError toPullRequestCloneError $ do
+setupClone pullRequest = do
     dir <- view workingDirectoryL
     token <- oAccessToken <$> view optionsL
     gitCloneBranchByRef
@@ -97,17 +91,20 @@ setupClone pullRequest = mapAppError toPullRequestCloneError $ do
         (unpack $ pullRequestCloneUrlToken token pullRequest)
         dir
 
+newtype CloneTimeoutError = CloneTimeoutError
+    { cloneTimeoutDurationMinutes :: Int
+    }
+    deriving stock Show
+
+instance Exception CloneTimeoutError where
+    displayException ex =
+        "Clone timed out after "
+            <> show @String (cloneTimeoutDurationMinutes ex)
+            <> " minutes"
+
 wrapClone
     :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env) => m a -> m ()
 wrapClone f = do
     mResult <- Statsd.wrap "restyler.clone" [] (30 * 60) f
     when (isNothing mResult) $ throwIO timedOutError
-    where timedOutError = PullRequestCloneError $ userError "Timed out"
-
-toPullRequestFetchError :: AppError -> AppError
-toPullRequestFetchError (GitHubError _ e) = PullRequestFetchError e
-toPullRequestFetchError e = e
-
-toPullRequestCloneError :: AppError -> AppError
-toPullRequestCloneError (SystemError e) = PullRequestCloneError e
-toPullRequestCloneError e = e
+    where timedOutError = CloneTimeoutError 30

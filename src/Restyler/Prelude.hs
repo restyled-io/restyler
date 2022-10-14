@@ -15,29 +15,20 @@ import Data.Functor.Syntax as X ((<$$>))
 import Data.Text as X (pack, unpack)
 import Data.Traversable as X (for)
 import GitHub.Data as X (Id, Name, URL(..), getUrl, mkId, mkName, untagName)
-import Lens.Micro as X ((.~), Lens', (^.), (^?), lens)
+import Lens.Micro as X (Lens', lens, (.~), (^.), (^?))
 import Lens.Micro.Mtl as X (view)
 import System.Exit as X (ExitCode(..))
 import UnliftIO.Async as X (race)
 import UnliftIO.Concurrent as X (threadDelay)
 import UnliftIO.Exception as X
-    ( Handler(..)
-    , IOException
-    , catches
-    , finally
-    , handle
-    , handleAny
-    , onException
-    , throwIO
-    , throwString
-    , try
-    )
+    (Handler(..), IOException, finally, onException, throwIO, throwString)
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
 import Data.Aeson (Key)
 import Data.Aeson.KeyMap (KeyMap)
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.List (maximumBy, minimum, minimumBy)
+import UnliftIO.Exception (handleAny)
 
 maximumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
 maximumByMaybe f = \case
@@ -54,15 +45,17 @@ minimumByMaybe f = \case
     [] -> Nothing
     xs -> Just $ minimumBy f xs
 
-handles :: MonadUnliftIO m => [Handler m a] -> m a -> m a
-handles = flip catches
+-- | Ignore an exception, warning about it
+warnIgnore :: (MonadUnliftIO m, MonadLogger m) => m () -> m ()
+warnIgnore = warnIgnoreWith ()
 
-handleTo
-    :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
-handleTo f = handle (throwIO . f)
-
-tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
-tryTo f = fmap (first f) . try
+-- | Ignore an exception, warning about it and returning the given result
+warnIgnoreWith :: (MonadUnliftIO m, MonadLogger m) => a -> m a -> m a
+warnIgnoreWith a = handleAny (\ex -> a <$ logWarn (msg ex))
+  where
+    msg :: Exception e => e -> Message
+    msg ex =
+        "Ignoring caught exception" :# ["exception" .= displayException ex]
 
 -- | Inverse of @'any'@
 none :: Foldable t => (a -> Bool) -> t a -> Bool
