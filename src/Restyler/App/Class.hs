@@ -75,7 +75,7 @@ getPullRequestLabelNames
     => PullRequest
     -> m (Vector (Name IssueLabel))
 getPullRequestLabelNames pullRequest = do
-    labels <- warnIgnoreWith mempty $ runGitHub $ labelsOnIssueR
+    labels <- warnIgnore $ runGitHub $ labelsOnIssueR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestIssueId pullRequest)
