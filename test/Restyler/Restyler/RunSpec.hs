@@ -37,9 +37,10 @@ spec = withTestApp $ do
         it "ignores unreadable (invalid utf-8 byte) files" $ testAppExample $ do
             -- Capture the UTF-8 exception we see on such files
             ex <- liftIO $ handle (pure @IO @IOException) $ do
-                void $ Prelude.readFile
+                x <- Prelude.readFile
                     "test/files/AsanaMathJax_Alphabets-Regular.eot"
-                pure $ error "UTF-8 exception expected"
+                print x -- needed to force exception here
+                pure $ error "readFile didn't throw expected UTF-8 exception."
 
             writeFileUnreadable "invalid.eot" ex
 
