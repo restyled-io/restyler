@@ -63,7 +63,8 @@ handleResult
     => Either SomeException ()
     -> m ExitCode
 handleResult = \case
-    Left ex | isExitSuccess ex -> pure ExitSuccess
+    Left ex | isExitSuccess ex ->
+        ExitSuccess <$ Statsd.increment "restyler.success" []
     Left ex -> do
         let (severity, errorTag, exitCode) = errorMetadata ex
 
