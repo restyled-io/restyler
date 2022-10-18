@@ -3,7 +3,6 @@ module Restyler.RestyledPullRequest
     , restyledPullRequestNumber
     , restyledPullRequestHeadRef
     , restyledPullRequestHtmlUrl
-    , HasRestyledPullRequest(..)
     , findRestyledPullRequest
     , createRestyledPullRequest
     , updateRestyledPullRequest
@@ -83,9 +82,6 @@ createdRestyledPullRequest restyledPullRequest = RestyledPullRequest
     , restyledPullRequestHeadRef = pullRequestHeadRef restyledPullRequest
     , restyledPullRequestHtmlUrl = pullRequestHtmlUrl restyledPullRequest
     }
-
-class HasRestyledPullRequest env where
-    restyledPullRequestL :: Lens' env (Maybe RestyledPullRequest)
 
 findRestyledPullRequest
     :: MonadGitHub m => PullRequest -> m (Maybe RestyledPullRequest)

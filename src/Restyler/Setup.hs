@@ -30,7 +30,7 @@ restylerSetup
        , HasWorkingDirectory env
        , HasStatsClient env
        )
-    => m (PullRequest, Maybe RestyledPullRequest, Config)
+    => m (PullRequest, Config)
 restylerSetup = do
     Options {..} <- view optionsL
 
@@ -39,16 +39,8 @@ restylerSetup = do
 
     logInfo $ "Restyling PR" :# ["number" .= pullRequestNumber pullRequest]
 
-    mRestyledPullRequest <- findRestyledPullRequest pullRequest
-
-    logInfo $ maybe
-        ("No existing Restyled PR" :# [])
-        (\pr ->
-            "Existing Restyled PR" :# ["number" .= restyledPullRequestNumber pr]
-        )
-        mRestyledPullRequest
-
     when (pullRequestIsClosed pullRequest) $ do
+        mRestyledPullRequest <- findRestyledPullRequest pullRequest
         traverse_ closeRestyledPullRequest mRestyledPullRequest
         exitWithInfo "Source Pull Request is closed"
 
@@ -69,7 +61,7 @@ restylerSetup = do
         sendPullRequestStatus' config pullRequest status
         exitWithInfo $ "Ignoring PR" :# ["reason" .= show @Text reason]
 
-    pure (pullRequest, mRestyledPullRequest, config)
+    pure (pullRequest, config)
 
 setupClone
     :: ( HasCallStack

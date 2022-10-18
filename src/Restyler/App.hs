@@ -27,7 +27,6 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.RestyledPullRequest
 import Restyler.Setup
 import Restyler.Statsd (HasStatsClient(..), StatsClient)
 import qualified System.Directory as Directory
@@ -199,7 +198,6 @@ data App = App
     { appApp :: StartupApp
     , appConfig :: Config
     , appPullRequest :: PullRequest
-    , appRestyledPullRequest :: Maybe RestyledPullRequest
     }
 
 appL :: Lens' App StartupApp
@@ -219,10 +217,6 @@ instance HasConfig App where
 
 instance HasPullRequest App where
     pullRequestL = lens appPullRequest $ \x y -> x { appPullRequest = y }
-
-instance HasRestyledPullRequest App where
-    restyledPullRequestL =
-        lens appRestyledPullRequest $ \x y -> x { appRestyledPullRequest = y }
 
 instance MonadUnliftIO m => MonadGit (AppT App m) where
     gitPush branch = callProcess "git" ["push", "origin", branch]
@@ -259,9 +253,5 @@ bootstrapApp options logger path statsClient =
         , appWorkingDirectory = path
         , appStatsClient = statsClient
         }
-    toApp (pullRequest, mRestyledPullRequest, config) = App
-        { appApp = app
-        , appPullRequest = pullRequest
-        , appRestyledPullRequest = mRestyledPullRequest
-        , appConfig = config
-        }
+    toApp (pullRequest, config) =
+        App { appApp = app, appPullRequest = pullRequest, appConfig = config }

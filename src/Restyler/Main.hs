@@ -32,7 +32,6 @@ restylerMain
        , HasOptions env
        , HasConfig env
        , HasPullRequest env
-       , HasRestyledPullRequest env
        )
     => m a
 restylerMain = do
@@ -40,9 +39,9 @@ restylerMain = do
 
     mJobUrl <- oJobUrl <$> view optionsL
     pullRequest <- view pullRequestL
-    mRestyledPullRequest <- view restyledPullRequestL
 
     unlessM wasRestyled $ do
+        mRestyledPullRequest <- findRestyledPullRequest pullRequest
         traverse_ closeRestyledPullRequest mRestyledPullRequest
         sendPullRequestStatus $ NoDifferencesStatus mJobUrl
         exitWithInfo "No style differences found"
@@ -97,6 +96,7 @@ restylerMain = do
         logInfo $ "Not creating Restyle PR" :# ["reason" .= dangerDetails]
         exitWithInfo "Please correct style using the process described above"
 
+    mRestyledPullRequest <- findRestyledPullRequest pullRequest
     url <- restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
         Nothing -> createRestyledPullRequest pullRequest results
         Just pr -> updateRestyledPullRequest pullRequest pr results
