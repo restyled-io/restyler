@@ -48,7 +48,7 @@ instance Exception RestylerError where
                 <> ") for the following paths, "
                 <> show @String paths
                 <> "."
-                <> "\n  Error information may be present in the stderr output above."
+                <> "\n  Error information may be present in debug messages."
                 <> concatMap ("\n  " <>) rDocumentation
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
