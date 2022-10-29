@@ -184,7 +184,7 @@ instance Exception ConfigError where
             , pack $ Yaml.prettyPrintParseException e
             , ""
             , "Original input:"
-            , decodeUtf8 yaml
+            , Yaml.locateErrorInContent e $ decodeUtf8 yaml
             , ""
             , generalHelp
             ]
