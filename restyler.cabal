@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 443eb4772b2089c7edd536ab78be8ec8da93137972750344ab95b96463bba6a7
+-- hash: 5008444158185b73a66b309c6c7e003c09d1ec1b1ff66a848858530a3b3bd2d2
 
 name:           restyler
 version:        0.2.0.0
@@ -200,6 +200,7 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Data.Yaml.ExtSpec
       Restyler.CommitTemplateSpec
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
