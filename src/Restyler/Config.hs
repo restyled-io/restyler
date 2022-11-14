@@ -79,6 +79,7 @@ import UnliftIO.Exception (handle)
 data ConfigF f = ConfigF
     { cfEnabled :: f Bool
     , cfExclude :: f (SketchyList (Glob FilePath))
+    , cfAlsoExclude :: f (SketchyList (Glob FilePath))
     , cfChangedPaths :: f ChangedPathsConfig
     , cfAuto :: f Bool
     , cfCommitTemplate :: f CommitTemplate
@@ -128,7 +129,7 @@ resolveConfig = bzipWith f
 --
 data Config = Config
     { cEnabled :: Bool
-    , cExclude :: [Glob FilePath]
+    , cExclude :: Set (Glob FilePath)
     , cChangedPaths :: ChangedPathsConfig
     , cAuto :: Bool
     , cCommitTemplate :: CommitTemplate
@@ -291,7 +292,8 @@ resolveRestylers ConfigF {..} allRestylers = do
 
     pure Config
         { cEnabled = runIdentity cfEnabled
-        , cExclude = unSketchy $ runIdentity cfExclude
+        , cExclude =
+            Set.fromList $ unSketchy $ runIdentity $ cfExclude <> cfAlsoExclude
         , cChangedPaths = runIdentity cfChangedPaths
         , cAuto = runIdentity cfAuto
         , cCommitTemplate = runIdentity cfCommitTemplate

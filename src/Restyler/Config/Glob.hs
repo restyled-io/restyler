@@ -17,7 +17,7 @@ import System.FilePath.Glob hiding (match)
 import qualified System.FilePath.Glob as Glob
 
 newtype Glob a = Glob { unGlob :: String }
-    deriving stock (Eq, Generic)
+    deriving stock (Eq, Ord, Generic)
     deriving newtype Show
 
 instance FromJSON (Glob a) where

@@ -11,6 +11,9 @@ import Data.Aeson.Types (typeMismatch)
 data SketchyList a = One a | Many [a]
     deriving stock (Eq, Show)
 
+instance Semigroup (SketchyList a) where
+    a <> b = Many $ unSketchy a <> unSketchy b
+
 unSketchy :: SketchyList a -> [a]
 unSketchy (One i) = [i]
 unSketchy (Many is) = is
