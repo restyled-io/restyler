@@ -73,7 +73,8 @@ handleResult = \case
             $ ("Exception:\n" <> pack (displayException ex))
             :# ["error" .= md]
 
-        errorMetadataExitCode md <$ errorPullRequest
+        errorMetadataExitCode md
+            <$ errorPullRequest (errorMetadataDescription md)
 
     Right () -> ExitSuccess <$ Statsd.increment "restyler.success" []
 
@@ -83,8 +84,9 @@ isExitSuccess = maybe False (== ExitSuccess) . fromException
 
 errorPullRequest
     :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasOptions env)
-    => m ()
-errorPullRequest = warnIgnore $ do
+    => Text
+    -> m ()
+errorPullRequest description = warnIgnore $ do
     Options {..} <- view optionsL
     pr <- runGitHubInternal $ pullRequestR oOwner oRepo oPullRequest
 
@@ -92,7 +94,7 @@ errorPullRequest = warnIgnore $ do
         status = NewStatus
             { newStatusState = StatusError
             , newStatusTargetUrl = oJobUrl
-            , newStatusDescription = Just "Error restyling Pull Request"
+            , newStatusDescription = Just $ "Error (" <> description <> ")"
             , newStatusContext = Just "restyled"
             }
 
