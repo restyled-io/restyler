@@ -29,7 +29,6 @@ statuses:
   skipped: true
   differences: true
   no_differences: true
-  error: true
 
 request_review: none
 
