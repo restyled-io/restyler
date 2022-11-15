@@ -8,11 +8,10 @@ import Data.Time (UTCTime, getCurrentTime)
 import GitHub.Endpoints.PullRequests
 import GitHub.Endpoints.Repos.Statuses
 import Lens.Micro (_1, _2, _3)
-import Restyler.App (GitHubError(..), runGitHubInternal)
-import Restyler.Config (ConfigError(..))
+import Restyler.App (runGitHubInternal)
+import Restyler.ErrorMetadata
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.Restyler.Run (RestylerError(..))
 import Restyler.Statsd (HasStatsClient(..), StatsClient)
 import qualified Restyler.Statsd as Statsd
 import UnliftIO.Exception (tryAny)
@@ -66,49 +65,24 @@ handleResult = \case
     Left ex | isExitSuccess ex ->
         ExitSuccess <$ Statsd.increment "restyler.success" []
     Left ex -> do
-        let (severity, errorTag, exitCode) = errorMetadata ex
+        let md = errorMetadata ex
 
-        Statsd.increment
-            "restyler.error"
-            [("severity", severity), ("error", errorTag)]
+        Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
 
         logError
             $ ("Exception:\n" <> pack (displayException ex))
-            :# ["severity" .= severity, "error" .= errorTag]
+            :# ["error" .= md]
 
         -- We _should_ check config.statuses here, but we may not have been able
         -- to even clone, let alone read Config. And doing it in cases we can
         -- requires going back to multi-layered error-handling. Ugh.
-        ExitFailure exitCode <$ errorPullRequest
+        errorMetadataExitCode md <$ errorPullRequest
 
     Right () -> ExitSuccess <$ Statsd.increment "restyler.success" []
 
 -- TODO: stop using exitSuccess for flow-control
 isExitSuccess :: SomeException -> Bool
 isExitSuccess = maybe False (== ExitSuccess) . fromException
-
-type ErrorMetadata = (Text, Text, Int)
-
-errorMetadata :: SomeException -> ErrorMetadata
-errorMetadata = fromMaybe unknown . getFirst . fold . handlers
-
-handlers :: SomeException -> [First ErrorMetadata]
-handlers e =
-    [ fromException e & First <&> \case
-        ConfigErrorInvalidYaml{} -> ("warning", "invalid-config", 10)
-        ConfigErrorInvalidRestylers{} ->
-            ("warning", "invalid-config-restylers", 11)
-        ConfigErrorInvalidRestylersYaml{} ->
-            ("error", "invalid-restylers-yaml", 12)
-    , fromException e & First <&> \case
-        RestyleError{} -> ("warning", "restyle-error", 25)
-        RestylerExitFailure{} -> ("warning", "restyler", 20)
-    , fromException e & First <&> \case
-        GitHubError{} -> ("warning", "github", 30)
-    ]
-
-unknown :: ErrorMetadata
-unknown = ("critical", "unknown", 99)
 
 errorPullRequest
     :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasOptions env)
