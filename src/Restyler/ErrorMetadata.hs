@@ -13,7 +13,8 @@ import Restyler.Prelude
 import Data.Aeson (ToJSON)
 import Restyler.App (GitHubError(..))
 import Restyler.Config (ConfigError(..))
-import Restyler.Restyler.Run (RestylerError(..))
+import Restyler.Restyler.Run (RestylerExitFailure(..), TooManyChangedPaths(..))
+import Restyler.Setup (CloneTimeoutError(..))
 
 data ErrorMetadata = ErrorMetadata
     { severity :: Text
@@ -42,6 +43,13 @@ errorMetadataExitCode ErrorMetadata { exitCode } = case exitCode of
 handlers :: SomeException -> [First ErrorMetadata]
 handlers e =
     [ fromException e & First <&> \case
+        CloneTimeoutError{} -> ErrorMetadata
+            { severity = "error"
+            , tag = "clone-timeout"
+            , description = "clone timed out"
+            , exitCode = 5
+            }
+    , fromException e & First <&> \case
         ConfigErrorInvalidYaml{} -> ErrorMetadata
             { severity = "warning"
             , tag = "invalid-config"
@@ -61,17 +69,18 @@ handlers e =
             , exitCode = 12
             }
     , fromException e & First <&> \case
-        RestyleError{} -> ErrorMetadata
-            { severity = "warning"
-            , tag = "restyle-error"
-            , description = "Restyle failed"
-            , exitCode = 25
-            }
         RestylerExitFailure{} -> ErrorMetadata
             { severity = "warning"
             , tag = "restyler"
             , description = "a Restyler errored"
             , exitCode = 20
+            }
+    , fromException e & First <&> \case
+        TooManyChangedPaths{} -> ErrorMetadata
+            { severity = "warning"
+            , tag = "too-many-changed-paths"
+            , description = "PR is too large"
+            , exitCode = 25
             }
     , fromException e & First <&> \case
         GitHubError{} -> ErrorMetadata
