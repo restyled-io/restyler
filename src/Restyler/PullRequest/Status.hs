@@ -20,8 +20,6 @@ data PullRequestStatus
     -- ^ We found no differences after restyling
     | DifferencesStatus (Maybe URL)
     -- ^ We found differences and opened a restyled @'PullRequest'@
-    | ErrorStatus URL
-    -- ^ We encountered an error and can link to a Job
 
 -- | Send a @'PullRequestStatus'@ for the original Pull Request
 sendPullRequestStatus
@@ -72,14 +70,12 @@ createHeadShaStatus pullRequest status = do
         SkippedStatus{} -> "skipped"
         NoDifferencesStatus{} -> "no differences"
         DifferencesStatus{} -> "differences"
-        ErrorStatus{} -> "error"
 
 shouldSendStatus :: Statuses -> PullRequestStatus -> Bool
 shouldSendStatus Statuses {..} = \case
     SkippedStatus{} -> sSkipped
     NoDifferencesStatus{} -> sNoDifferences
     DifferencesStatus{} -> sDifferences
-    ErrorStatus{} -> sError
 
 statusToStatus :: PullRequestStatus -> NewStatus
 statusToStatus = \case
@@ -99,11 +95,5 @@ statusToStatus = \case
         { newStatusState = StatusFailure
         , newStatusTargetUrl = mUrl
         , newStatusDescription = Just "Restyling found differences"
-        , newStatusContext = Just "restyled"
-        }
-    ErrorStatus url -> NewStatus
-        { newStatusState = StatusError
-        , newStatusTargetUrl = Just url
-        , newStatusDescription = Just "Error restyling"
         , newStatusContext = Just "restyled"
         }
