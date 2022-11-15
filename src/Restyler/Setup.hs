@@ -1,5 +1,8 @@
 module Restyler.Setup
     ( restylerSetup
+
+    -- * Errors
+    , CloneTimeoutError(..)
     ) where
 
 import Restyler.Prelude

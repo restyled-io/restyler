@@ -58,18 +58,12 @@ spec = withTestApp $ do
     describe "runRestylers_" $ do
         context "maximum changed paths" $ do
             it "has a default maximum" $ testAppExample $ do
-                runChangedPaths (mkPaths 1001) id `shouldThrow` \case
-                    RestyleError message ->
-                        message
-                            == "Number of changed paths (1001) is greater than configured maximum (1000)"
-                    _ -> False
+                runChangedPaths (mkPaths 1001) id
+                    `shouldThrow` (== TooManyChangedPaths 1001 1000)
 
             it "can be configured" $ testAppExample $ do
-                runChangedPaths (mkPaths 11) (setMaximum 10) `shouldThrow` \case
-                    RestyleError message ->
-                        message
-                            == "Number of changed paths (11) is greater than configured maximum (10)"
-                    _ -> False
+                runChangedPaths (mkPaths 11) (setMaximum 10)
+                    `shouldThrow` (== TooManyChangedPaths 11 10)
 
             it "can be configured to skip" $ testAppExample $ do
                 runChangedPaths (mkPaths 1001) setOutcomeSkip `shouldReturn` ()
@@ -79,10 +73,12 @@ spec = withTestApp $ do
             $ testAppExample
             $ do
                   local (\x -> x { taProcessExitCodes = ExitFailure 99 }) $ do
-                      runRestyler_ someRestyler ["foo"] `shouldThrow` \case
-                          RestylerExitFailure re s _ ->
-                              re == someRestyler && s == 99
-                          _ -> False
+                      runRestyler_ someRestyler ["foo"]
+                          `shouldThrow` (== RestylerExitFailure
+                                            someRestyler
+                                            99
+                                            ["foo"]
+                                        )
 
     describe "findFiles" $ do
         it "expands and excludes" $ testAppExample $ do

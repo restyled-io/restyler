@@ -1,9 +1,12 @@
 {-# LANGUAGE TupleSections #-}
 
 module Restyler.Restyler.Run
-    ( RestylerError(..)
-    , runRestylers
+    ( runRestylers
     , runRestylers_
+
+    -- * Errors
+    , RestylerExitFailure(..)
+    , TooManyChangedPaths(..)
 
     -- * Exported for testing only
     , runRestyler
@@ -29,27 +32,33 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 import System.FilePath ((</>))
 
-data RestylerError
-    = RestyleError Text
-    | RestylerExitFailure Restyler Int [FilePath]
-    deriving stock Show
+data RestylerExitFailure = RestylerExitFailure Restyler Int [FilePath]
+    deriving stock (Show, Eq)
 
-instance Exception RestylerError where
-    displayException = \case
-        RestyleError msg ->
-            unpack msg
-                <> "\n  https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error"
-        RestylerExitFailure Restyler {..} ec paths ->
-            "We had trouble with the "
-                <> rName
-                <> " restyler"
-                <> "\n  Exited non-zero ("
-                <> show @String ec
-                <> ") for the following paths, "
-                <> show @String paths
-                <> "."
-                <> "\n  Error information may be present in debug messages."
-                <> concatMap ("\n  " <>) rDocumentation
+instance Exception RestylerExitFailure where
+    displayException (RestylerExitFailure Restyler {..} ec paths) =
+        "We had trouble with the "
+            <> rName
+            <> " restyler"
+            <> "\n  Exited non-zero ("
+            <> show @String ec
+            <> ") for the following paths, "
+            <> show @String paths
+            <> "."
+            <> "\n  Error information may be present in debug messages."
+            <> concatMap ("\n  " <>) rDocumentation
+
+data TooManyChangedPaths = TooManyChangedPaths Natural Natural
+    deriving stock (Show, Eq)
+
+instance Exception TooManyChangedPaths where
+    displayException (TooManyChangedPaths lenPaths maxPaths) =
+        "Number of changed paths ("
+            <> show lenPaths
+            <> ") is greater than configured maximum ("
+            <> show maxPaths
+            <> ")"
+            <> "\n  https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error#too-many-changed-paths"
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
@@ -106,13 +115,7 @@ runRestylersWith run Config {..} allPaths = do
                     :# ["paths" .= lenPaths, "maximum" .= maxPaths]
                 pure []
             MaximumChangedPathsOutcomeError ->
-                throwIO
-                    $ RestyleError
-                    $ "Number of changed paths ("
-                    <> pack (show lenPaths)
-                    <> ") is greater than configured maximum ("
-                    <> pack (show maxPaths)
-                    <> ")"
+                throwIO $ TooManyChangedPaths lenPaths maxPaths
         else do
             traverse_ downloadRemoteFile cRemoteFiles
             withFilteredPaths restylers paths run
