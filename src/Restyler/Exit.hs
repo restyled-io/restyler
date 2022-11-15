@@ -73,9 +73,6 @@ handleResult = \case
             $ ("Exception:\n" <> pack (displayException ex))
             :# ["error" .= md]
 
-        -- We _should_ check config.statuses here, but we may not have been able
-        -- to even clone, let alone read Config. And doing it in cases we can
-        -- requires going back to multi-layered error-handling. Ugh.
         errorMetadataExitCode md <$ errorPullRequest
 
     Right () -> ExitSuccess <$ Statsd.increment "restyler.success" []

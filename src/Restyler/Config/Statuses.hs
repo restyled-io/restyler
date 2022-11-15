@@ -14,7 +14,6 @@ data Statuses = Statuses
     { sSkipped :: Bool
     , sDifferences :: Bool
     , sNoDifferences :: Bool
-    , sError :: Bool
     }
     deriving stock (Eq, Show, Generic)
 
@@ -27,12 +26,10 @@ instance FromJSON Statuses where
             <$> o .:? "skipped" .!= True
             <*> o .:? "differences" .!= True
             <*> o .:? "no_differences" .!= True
-            <*> o .:? "error" .!= True
     parseJSON (Aeson.Bool b) = pure Statuses
         { sSkipped = b
         , sDifferences = b
         , sNoDifferences = b
-        , sError = b
         }
     parseJSON x = typeMismatch "Boolean or Statuses Configuration" x
 
