@@ -19,7 +19,6 @@ module Restyler.Test.FS
     , readFileBinary
     , writeFileUtf8
     , writeFileExecutable
-    , writeFileUnreadable
     , createFileLink
     , getCurrentDirectory
     , setCurrentDirectory
@@ -36,7 +35,7 @@ import Restyler.Prelude
 import Data.List.Extra (dropPrefix)
 import qualified Data.Map.Strict as Map
 import qualified System.Directory as Directory
-import System.FilePath ((</>), addTrailingPathSeparator, isAbsolute)
+import System.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
 
 class HasFS env where
     fsL :: Lens' env FS
@@ -59,7 +58,6 @@ data FS' = FS'
 data ReadableFile
     = ReadableFile (Text, Directory.Permissions)
     | Symlink FilePath
-    | UnreadableFile IOException
 
 normalFile :: Text -> ReadableFile
 normalFile x = ReadableFile
@@ -102,12 +100,10 @@ readFile path' = do
 
     case mContent of
         -- We could throw the same error you get from a real read of a missing
-        -- file. However, you should be intentional about testing such a
-        -- scenario and use writeFileUnreadable to set it up explicitly.
+        -- file.
         Nothing -> error $ pack $ "File does not exist: " <> path
         Just (ReadableFile x) -> pure x
         Just (Symlink target) -> readFile target
-        Just (UnreadableFile ex) -> throwIO ex
 
 readFileBinary
     :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m ByteString
@@ -120,13 +116,6 @@ writeFileUtf8 path = writeFile path . normalFile
 writeFileExecutable
     :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> Text -> m ()
 writeFileExecutable path = writeFile path . executableFile
-
-writeFileUnreadable
-    :: (MonadIO m, MonadReader env m, HasFS env)
-    => FilePath
-    -> IOException
-    -> m ()
-writeFileUnreadable path = writeFile path . UnreadableFile
 
 createFileLink
     :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> FilePath -> m ()

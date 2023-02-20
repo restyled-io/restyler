@@ -31,7 +31,7 @@ test:
 
 .PHONY: test.integration
 test.integration: image
-	AWS_PROFILE=restyled-ci \
+	AWS_PROFILE=restyled \
 	  restyled promote --image restyled/restyler:edge --debug stable
 
 .PHONY: watch
