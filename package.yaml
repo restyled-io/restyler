@@ -29,9 +29,11 @@ default-extensions:
   - TypeFamilies
 
 ghc-options:
+  - -fignore-optim-changes
   - -fwrite-ide-info
   - -Weverything
   - -Wno-all-missed-specialisations
+  - -Wno-missing-kind-signatures
   - -Wno-missing-import-lists
   - -Wno-missing-safe-haskell-mode
   - -Wno-prepositive-qualified-module

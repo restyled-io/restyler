@@ -12,8 +12,8 @@ import Restyler.App (runGitHubInternal)
 import Restyler.ErrorMetadata
 import Restyler.Options
 import Restyler.PullRequest
-import Restyler.Statsd (HasStatsClient(..), StatsClient)
 import qualified Restyler.Statsd as Statsd
+import Restyler.Statsd (HasStatsClient(..), StatsClient)
 import UnliftIO.Exception (tryAny)
 
 newtype ExitHandler = ExitHandler
@@ -33,7 +33,7 @@ instance HasOptions ExitHandler where
     optionsL = unL . _3 . optionsL
 
 runExitHandler
-    :: MonadIO m
+    :: MonadUnliftIO m
     => Logger
     -> StatsClient
     -> Options

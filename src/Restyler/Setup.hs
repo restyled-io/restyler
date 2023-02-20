@@ -16,8 +16,8 @@ import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.RestyledPullRequest
-import Restyler.Statsd (HasStatsClient)
 import qualified Restyler.Statsd as Statsd
+import Restyler.Statsd (HasStatsClient)
 
 restylerSetup
     :: ( HasCallStack
@@ -68,7 +68,6 @@ restylerSetup = do
 
 setupClone
     :: ( HasCallStack
-       , MonadUnliftIO m
        , MonadSystem m
        , MonadProcess m
        , MonadReader env m
