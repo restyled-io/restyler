@@ -19,23 +19,22 @@ module SpecHelper
 
 import Restyler.App.Class as X
 import Restyler.Prelude as X
-import Test.Hspec as X
-    hiding
-        ( expectationFailure
-        , pendingWith
-        , shouldBe
-        , shouldContain
-        , shouldEndWith
-        , shouldMatchList
-        , shouldNotBe
-        , shouldNotContain
-        , shouldNotReturn
-        , shouldNotSatisfy
-        , shouldReturn
-        , shouldSatisfy
-        , shouldStartWith
-        , shouldThrow
-        )
+import Test.Hspec as X hiding
+    ( expectationFailure
+    , pendingWith
+    , shouldBe
+    , shouldContain
+    , shouldEndWith
+    , shouldMatchList
+    , shouldNotBe
+    , shouldNotContain
+    , shouldNotReturn
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
+    , shouldStartWith
+    , shouldThrow
+    )
 import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
@@ -45,8 +44,8 @@ import LoadEnv (loadEnvFrom)
 import Restyler.Config
 import Restyler.Options
 import Restyler.Restyler
-import Restyler.Test.FS (FS, HasFS(..))
 import qualified Restyler.Test.FS as FS
+import Restyler.Test.FS (FS, HasFS(..))
 import qualified Test.Hspec as Hspec
 import Test.Hspec.Core.Spec (Example(..))
 
@@ -87,7 +86,6 @@ instance MonadSystem TestAppT where
     isFileExecutable = FS.isFileExecutable
     isFileSymbolicLink = FS.isFileSymbolicLink
     listDirectory = FS.listDirectory
-    readFile = FS.readFileUtf8
     readFileBS = FS.readFileBinary
     writeFile = FS.writeFileUtf8
 
