@@ -33,8 +33,8 @@ data EnvOptions = EnvOptions
 envParser :: Env.Parser Env.Error EnvOptions
 envParser = EnvOptions
     <$> LoggingEnv.parser
-    <*> optional (Env.var Env.str "HOST_DIRECTORY" Env.keep)
-    <*> Env.switch "UNRESTRICTED" Env.keep
+    <*> optional (Env.var Env.str "HOST_DIRECTORY" mempty)
+    <*> Env.switch "UNRESTRICTED" mempty
 
 main :: IO ()
 main = do

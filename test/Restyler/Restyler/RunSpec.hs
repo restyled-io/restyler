@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-deprecations #-}
+
 module Restyler.Restyler.RunSpec
     ( spec
     ) where

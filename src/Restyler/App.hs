@@ -171,7 +171,7 @@ runGitHubInternal req = do
         executeRequestWithMgr mgr auth req
     either (throwIO . GitHubError (displayGitHubRequest req)) pure result
 
-runAppT :: MonadIO m => HasLogger app => app -> AppT app m a -> m a
+runAppT :: MonadUnliftIO m => HasLogger app => app -> AppT app m a -> m a
 runAppT app f = runLoggerLoggingT app $ runReaderT (unAppT f) app
 
 data StartupApp = StartupApp

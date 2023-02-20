@@ -90,9 +90,9 @@ envParser :: Env.Parser Env.Error EnvOptions
 envParser = EnvOptions
     <$> Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
         (Env.help "GitHub access token with write access to the repository")
-    <*> optional (Env.flag LevelInfo LevelDebug "DEBUG" Env.keep)
+    <*> optional (Env.flag LevelInfo LevelDebug "DEBUG" mempty)
     <*> LoggingEnv.parser
-    <*> Env.switch "UNRESTRICTED" Env.keep
+    <*> Env.switch "UNRESTRICTED" mempty
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
     <*> optional (Env.var Env.auto "STATSD_PORT" mempty)
 
