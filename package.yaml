@@ -126,7 +126,6 @@ tests:
       - hspec-expectations-lifted
       - lens-aeson
       - load-env
-      - relude
       - restyler
       - shakespeare
       - text

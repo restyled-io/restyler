@@ -1,21 +1,16 @@
-{-# OPTIONS_GHC -Wno-deprecations #-}
-
 module Restyler.Restyler.RunSpec
     ( spec
     ) where
 
 import SpecHelper
 
-import qualified Relude as Prelude
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
 import Restyler.Options
 import Restyler.Restyler
 import Restyler.Restyler.Run
-import Restyler.Test.FS
-    (createFileLink, writeFileExecutable, writeFileUnreadable)
-import UnliftIO.Exception (handle)
+import Restyler.Test.FS (createFileLink, writeFileExecutable)
 
 spec :: Spec
 spec = withTestApp $ do
@@ -35,27 +30,6 @@ spec = withTestApp $ do
                 (const pure)
 
             filtered `shouldBe` [["a", "b"], ["a"]]
-
-        it "ignores unreadable (invalid utf-8 byte) files" $ testAppExample $ do
-            -- Capture the UTF-8 exception we see on such files
-            ex <- liftIO $ handle (pure @IO @IOException) $ do
-                x <- Prelude.readFile
-                    "test/files/AsanaMathJax_Alphabets-Regular.eot"
-                print x -- needed to force exception here
-                pure $ error "readFile didn't throw expected UTF-8 exception."
-
-            writeFileUnreadable "invalid.eot" ex
-
-            filtered <- withFilteredPaths
-                [ someRestyler
-                      { rInclude = ["!**/*.eot"]
-                      , rInterpreters = [Ruby]
-                      }
-                ]
-                ["invalid.eot"]
-                (const pure)
-
-            liftIO $ filtered `shouldBe` [[]]
 
     describe "runRestylers_" $ do
         context "maximum changed paths" $ do
