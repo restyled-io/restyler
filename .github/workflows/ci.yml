@@ -8,23 +8,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - uses: freckle/stack-cache-action@v2
-      - uses: freckle/stack-action@v3
-      - uses: freckle/weeder-action@v1
+      - id: stack
+        uses: freckle/stack-action@v3
+      - uses: freckle/weeder-action@v2
         with:
-          weeder-version: 2.3.0
+          ghc-version: ${{ steps.stack.outputs.compiler-version }}
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          curl -L https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml > .hlint.yaml
-      - uses: rwe/actions-hlint-setup@v1
-      - uses: rwe/actions-hlint-run@v2
+      - uses: actions/checkout@v3
+      - run: curl -L https://raw.githubusercontent.com/pbrisbin/dotfiles/master/hlint.yaml > .hlint.yaml
+      - uses: haskell/actions/hlint-setup@v2
+      - uses: haskell/actions/hlint-run@v2
         with:
           fail-on: warning
 
@@ -43,7 +42,7 @@ jobs:
       - id: buildx
         uses: docker/setup-buildx-action@v1
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-image-${{ github.sha }}
