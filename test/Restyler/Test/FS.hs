@@ -35,7 +35,7 @@ import Restyler.Prelude
 import Data.List.Extra (dropPrefix)
 import qualified Data.Map.Strict as Map
 import qualified System.Directory as Directory
-import System.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
+import System.FilePath ((</>), addTrailingPathSeparator, isAbsolute)
 
 class HasFS env where
     fsL :: Lens' env FS
