@@ -5,6 +5,7 @@ module Restyler.App.Class
     , exitWithInfo
     , MonadProcess(..)
     , MonadDownloadFile(..)
+    , readFile
 
     -- * GitHub
     , MonadGitHub(..)
@@ -36,9 +37,11 @@ class Monad m => MonadSystem m where
     isFileExecutable :: FilePath -> m Bool
     isFileSymbolicLink :: FilePath -> m Bool
     listDirectory :: FilePath -> m [FilePath]
-    readFile :: FilePath -> m Text
     readFileBS :: FilePath -> m ByteString
     writeFile :: FilePath -> Text -> m ()
+
+readFile :: MonadSystem m => FilePath -> m Text
+readFile = fmap (decodeUtf8With lenientDecode) . readFileBS
 
 class Monad m => MonadExit m where
     exitSuccess :: m a

@@ -78,10 +78,6 @@ instance MonadUnliftIO m => MonadSystem (AppT app m) where
         logDebug $ "listDirectory" :# ["path" .= path]
         liftIO $ Directory.listDirectory path
 
-    readFile path = do
-        logDebug $ "readFile: " :# ["path" .= path]
-        liftIO $ pack <$> Prelude.readFile path
-
     readFileBS path = do
         logDebug $ "readFileBS" :# ["path" .= path]
         liftIO $ Prelude.readFileBS path
