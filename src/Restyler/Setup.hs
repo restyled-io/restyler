@@ -37,10 +37,11 @@ restylerSetup
 restylerSetup = do
     Options {..} <- view optionsL
 
-    logInfo "Restyler starting"
-    pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
+    logInfo
+        $ "Restyler started"
+        :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
 
-    logInfo $ "Restyling PR" :# ["number" .= pullRequestNumber pullRequest]
+    pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
 
     when (pullRequestIsClosed pullRequest) $ do
         mRestyledPullRequest <- findRestyledPullRequest pullRequest
