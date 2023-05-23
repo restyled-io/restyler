@@ -6,6 +6,7 @@ module Restyler.Restyler.Run
 
     -- * Errors
     , RestylerExitFailure(..)
+    , RestylerOutOfMemory(..)
     , TooManyChangedPaths(..)
 
     -- * Exported for testing only
@@ -47,6 +48,19 @@ instance Exception RestylerExitFailure where
             <> "."
             <> "\n  Error information may be present in debug messages."
             <> concatMap ("\n  " <>) rDocumentation
+
+data RestylerOutOfMemory = RestylerOutOfMemory Restyler [FilePath]
+    deriving stock (Show, Eq)
+
+instance Exception RestylerOutOfMemory where
+    displayException (RestylerOutOfMemory Restyler {..} paths) =
+        "Restyler "
+            <> rName
+            <> " used too much memory (exit code 137)"
+            <> " "
+            <> " restyling the following paths: "
+            <> show @String paths
+            <> ".\n  https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error-137"
 
 data TooManyChangedPaths = TooManyChangedPaths Natural Natural
     deriving stock (Show, Eq)
@@ -253,6 +267,7 @@ dockerRunRestyler r@Restyler {..} paths = do
 
     case ec of
         ExitSuccess -> pure ()
+        ExitFailure 137 -> throwIO $ RestylerOutOfMemory r paths
         ExitFailure s -> throwIO $ RestylerExitFailure r s paths
 
 restrictions :: [String]
