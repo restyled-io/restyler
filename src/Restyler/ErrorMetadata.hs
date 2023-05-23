@@ -13,7 +13,8 @@ import Restyler.Prelude
 import Data.Aeson (ToJSON)
 import Restyler.App (GitHubError(..))
 import Restyler.Config (ConfigError(..))
-import Restyler.Restyler.Run (RestylerExitFailure(..), TooManyChangedPaths(..))
+import Restyler.Restyler.Run
+    (RestylerExitFailure(..), RestylerOutOfMemory(..), TooManyChangedPaths(..))
 import Restyler.Setup (CloneTimeoutError(..))
 
 data ErrorMetadata = ErrorMetadata
@@ -74,6 +75,13 @@ handlers e =
             , tag = "restyler"
             , description = "a Restyler errored"
             , exitCode = 20
+            }
+    , fromException e & First <&> \case
+        RestylerOutOfMemory{} -> ErrorMetadata
+            { severity = "error"
+            , tag = "restyler-oom"
+            , description = "a Restyler has used too much memory"
+            , exitCode = 21
             }
     , fromException e & First <&> \case
         TooManyChangedPaths{} -> ErrorMetadata
