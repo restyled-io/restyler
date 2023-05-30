@@ -34,34 +34,31 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 import System.FilePath ((</>))
 
-data RestylerExitFailure = RestylerExitFailure Restyler Int [FilePath]
+data RestylerExitFailure = RestylerExitFailure Restyler [String] Int
     deriving stock (Show, Eq)
 
 instance Exception RestylerExitFailure where
-    displayException (RestylerExitFailure Restyler {..} ec paths) =
-        "We had trouble with the "
-            <> rName
-            <> " restyler"
-            <> "\n  Exited non-zero ("
-            <> show @String ec
-            <> ") for the following paths, "
-            <> show @String paths
-            <> "."
-            <> "\n  Error information may be present in debug messages."
-            <> concatMap ("\n  " <>) rDocumentation
+    displayException (RestylerExitFailure Restyler {..} args ec) = mconcat
+        [ "Restyler " <> rName <> " exited non-zero (" <> show @String ec <> ")"
+        , "\n  Error information may be present in debug messages printed above"
+        , "\n"
+        , "\n  Original command: " <> show @String ("docker" : args)
+        , "\n"
+        , "\n  Help:"
+        , concatMap ("\n    " <>) rDocumentation
+        ]
 
-data RestylerOutOfMemory = RestylerOutOfMemory Restyler [FilePath]
+data RestylerOutOfMemory = RestylerOutOfMemory Restyler [String]
     deriving stock (Show, Eq)
 
 instance Exception RestylerOutOfMemory where
-    displayException (RestylerOutOfMemory Restyler {..} paths) =
-        "Restyler "
-            <> rName
-            <> " used too much memory (exit code 137)"
-            <> " "
-            <> " restyling the following paths: "
-            <> show @String paths
-            <> ".\n  https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error-137"
+    displayException (RestylerOutOfMemory Restyler {..} args) = mconcat
+        [ "Restyler " <> rName <> " used too much memory (exit code 137)"
+        , "\n"
+        , "\n  Original command: " <> show @String ("docker" : args)
+        , "\n"
+        , "\n  See https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error-137"
+        ]
 
 data TooManyChangedPaths = TooManyChangedPaths Natural Natural
     deriving stock (Show, Eq)
@@ -257,19 +254,22 @@ dockerRunRestyler
 dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getHostDirectory
     restrictions <- oRestrictions <$> view optionsL
-    ec <-
-        callProcessExitCode "docker"
-        $ ["run", "--rm"]
-        <> restrictionOptions restrictions
-        <> ["--volume", cwd <> ":/code", rImage]
-        <> nub (rCommand <> rArguments)
-        <> [ "--" | rSupportsArgSep ]
-        <> map ("./" <>) paths
+
+    let
+        args =
+            ["run", "--rm"]
+                <> restrictionOptions restrictions
+                <> ["--volume", cwd <> ":/code", rImage]
+                <> nub (rCommand <> rArguments)
+                <> [ "--" | rSupportsArgSep ]
+                <> map ("./" <>) paths
+
+    ec <- callProcessExitCode "docker" args
 
     case ec of
         ExitSuccess -> pure ()
-        ExitFailure 137 -> throwIO $ RestylerOutOfMemory r paths
-        ExitFailure s -> throwIO $ RestylerExitFailure r s paths
+        ExitFailure 137 -> throwIO $ RestylerOutOfMemory r args
+        ExitFailure i -> throwIO $ RestylerExitFailure r args i
 
 getHostDirectory
     :: (MonadSystem m, MonadReader env m, HasOptions env) => m FilePath

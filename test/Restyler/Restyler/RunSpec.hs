@@ -48,12 +48,24 @@ spec = withTestApp $ do
         it "treats non-zero exit codes as RestylerExitFailure"
             $ testAppExample
             $ do
+                  let expectedArgs :: [String]
+                      expectedArgs = concat
+                          [ ["run", "--rm"]
+                          , ["--net", "none"]
+                          , ["--cap-drop", "all"]
+                          , ["--cpu-shares", "128"]
+                          , ["--memory", "512m"]
+                          , ["--volume", "/:/code"]
+                          , ["restyled/restyler-test-restyler"]
+                          , ["restyle", "--", "./foo"]
+                          ]
+
                   local (\x -> x { taProcessExitCodes = ExitFailure 99 }) $ do
                       runRestyler_ someRestyler ["foo"]
                           `shouldThrow` (== RestylerExitFailure
                                             someRestyler
+                                            expectedArgs
                                             99
-                                            ["foo"]
                                         )
 
     describe "findFiles" $ do
