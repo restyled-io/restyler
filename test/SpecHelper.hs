@@ -19,23 +19,22 @@ module SpecHelper
 
 import Restyler.App.Class as X
 import Restyler.Prelude as X
-import Test.Hspec as X
-    hiding
-        ( expectationFailure
-        , pendingWith
-        , shouldBe
-        , shouldContain
-        , shouldEndWith
-        , shouldMatchList
-        , shouldNotBe
-        , shouldNotContain
-        , shouldNotReturn
-        , shouldNotSatisfy
-        , shouldReturn
-        , shouldSatisfy
-        , shouldStartWith
-        , shouldThrow
-        )
+import Test.Hspec as X hiding
+    ( expectationFailure
+    , pendingWith
+    , shouldBe
+    , shouldContain
+    , shouldEndWith
+    , shouldMatchList
+    , shouldNotBe
+    , shouldNotContain
+    , shouldNotReturn
+    , shouldNotSatisfy
+    , shouldReturn
+    , shouldSatisfy
+    , shouldStartWith
+    , shouldThrow
+    )
 import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
@@ -44,6 +43,7 @@ import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.Config
 import Restyler.Options
+import Restyler.Restrictions
 import Restyler.Restyler
 import qualified Restyler.Test.FS as FS
 import Restyler.Test.FS (FS, HasFS(..))
@@ -127,7 +127,7 @@ testOptions = Options
     , oPullRequest = error "oPullRequest"
     , oJobUrl = error "oJobUrl"
     , oHostDirectory = Nothing
-    , oUnrestricted = False
+    , oRestrictions = fullRestrictions
     , oStatsdHost = Nothing
     , oStatsdPort = Nothing
     }

@@ -9,6 +9,7 @@ import qualified Env
 import Restyler.App (runAppT)
 import Restyler.Config (loadConfig)
 import Restyler.Options
+import Restyler.Restrictions
 import Restyler.Restyler.Run (runRestylers_)
 
 data App = App
@@ -25,7 +26,7 @@ instance HasOptions App where
 data EnvOptions = EnvOptions
     { eoLogSettings :: LogSettings
     , eoHostDirectory :: Maybe FilePath
-    , eoUnrestricted :: Bool
+    , eoRestrictions :: Restrictions
     }
 
 -- brittany-disable-next-binding
@@ -34,7 +35,7 @@ envParser :: Env.Parser Env.Error EnvOptions
 envParser = EnvOptions
     <$> LoggingEnv.parser
     <*> optional (Env.var Env.str "HOST_DIRECTORY" mempty)
-    <*> Env.switch "UNRESTRICTED" mempty
+    <*> envRestrictions
 
 main :: IO ()
 main = do
@@ -52,7 +53,7 @@ main = do
                 , oPullRequest = error "unused"
                 , oJobUrl = error "unused"
                 , oHostDirectory = eoHostDirectory
-                , oUnrestricted = eoUnrestricted
+                , oRestrictions = eoRestrictions
                 , oStatsdHost = Nothing
                 , oStatsdPort = Nothing
                 }

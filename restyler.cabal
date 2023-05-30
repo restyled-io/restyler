@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5d701e0b4c14e3e28138554c74bef20f6e5be9e44e426b376c3141a5bde0afa3
+-- hash: abb0649ce44411839c401aacf610f99a15cabb8f170d7dc10480dc79c15c7f7d
 
 name:           restyler
 version:        0.2.0.0
@@ -44,6 +44,7 @@ library
       Restyler.PullRequest.Status
       Restyler.PullRequestSpec
       Restyler.RemoteFile
+      Restyler.Restrictions
       Restyler.RestyledPullRequest
       Restyler.Restyler
       Restyler.Restyler.Run
@@ -109,6 +110,7 @@ library
     , optparse-applicative
     , process
     , relude
+    , semigroups
     , shakespeare
     , text
     , time
@@ -210,6 +212,7 @@ test-suite test
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
       Restyler.PullRequestSpecSpec
+      Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
       Restyler.Test.FS
@@ -250,6 +253,7 @@ test-suite test
     , base
     , containers
     , directory
+    , envparse
     , extra
     , filepath
     , github

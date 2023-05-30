@@ -29,6 +29,7 @@ import Restyler.Delimited
 import Restyler.Git
 import Restyler.Options
 import Restyler.RemoteFile (downloadRemoteFile)
+import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
 import System.FilePath ((</>))
@@ -255,11 +256,11 @@ dockerRunRestyler
     -> m ()
 dockerRunRestyler r@Restyler {..} paths = do
     cwd <- getHostDirectory
-    unrestricted <- oUnrestricted <$> view optionsL
+    restrictions <- oRestrictions <$> view optionsL
     ec <-
         callProcessExitCode "docker"
-        $ ["run", "--rm", "--net", "none"]
-        <> bool restrictions [] unrestricted
+        $ ["run", "--rm"]
+        <> restrictionOptions restrictions
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
         <> [ "--" | rSupportsArgSep ]
@@ -269,9 +270,6 @@ dockerRunRestyler r@Restyler {..} paths = do
         ExitSuccess -> pure ()
         ExitFailure 137 -> throwIO $ RestylerOutOfMemory r paths
         ExitFailure s -> throwIO $ RestylerExitFailure r s paths
-
-restrictions :: [String]
-restrictions = ["--cap-drop", "all", "--cpu-shares", "128", "--memory", "512m"]
 
 getHostDirectory
     :: (MonadSystem m, MonadReader env m, HasOptions env) => m FilePath

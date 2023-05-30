@@ -73,6 +73,7 @@ library:
     - optparse-applicative
     - process
     - relude
+    - semigroups
     - shakespeare
     - text
     - time
@@ -118,6 +119,7 @@ tests:
       - aeson
       - containers
       - directory
+      - envparse
       - extra
       - filepath
       - github

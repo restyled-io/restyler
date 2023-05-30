@@ -13,13 +13,14 @@ import qualified Env
 import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
 import Restyler.PullRequestSpec
+import Restyler.Restrictions
 
 data EnvOptions = EnvOptions
     { eoAccessToken :: Text
     , eoLogLevel :: Maybe LogLevel
     -- ^ Deprecated
     , eoLogSettings :: LogSettings
-    , eoUnrestricted :: Bool
+    , eoRestrictions :: Restrictions
     , eoStatsdHost :: Maybe String
     , eoStatsdPort :: Maybe Int
     }
@@ -40,7 +41,7 @@ data Options = Options
     , oPullRequest :: IssueNumber
     , oJobUrl :: Maybe URL
     , oHostDirectory :: Maybe FilePath
-    , oUnrestricted :: Bool
+    , oRestrictions :: Restrictions
     , oStatsdHost :: Maybe String
     , oStatsdPort :: Maybe Int
     }
@@ -76,7 +77,7 @@ parseOptions = do
         , oPullRequest = prsPullRequest coPullRequestSpec
         , oJobUrl = coJobUrl
         , oHostDirectory = coHostDirectory
-        , oUnrestricted = eoUnrestricted
+        , oRestrictions = eoRestrictions
         , oStatsdHost = eoStatsdHost
         , oStatsdPort = eoStatsdPort
         }
@@ -92,7 +93,7 @@ envParser = EnvOptions
         (Env.help "GitHub access token with write access to the repository")
     <*> optional (Env.flag LevelInfo LevelDebug "DEBUG" mempty)
     <*> LoggingEnv.parser
-    <*> Env.switch "UNRESTRICTED" mempty
+    <*> envRestrictions
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
     <*> optional (Env.var Env.auto "STATSD_PORT" mempty)
 
