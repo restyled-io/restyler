@@ -2,3 +2,4 @@
 !.env.test
 .stack-work*
 *.hie
+**/.hiedb
