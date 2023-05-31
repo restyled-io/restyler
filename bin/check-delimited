@@ -36,6 +36,6 @@ git init
 git add .restyled.yaml example.hs
 git commit -m "Add example file"
 
-DEBUG=1 UNRESTRICTED=1 stack exec restyle-path -- example.hs
+LOG_LEVEL=debug UNRESTRICTED=1 stack exec restyle-path -- example.hs
 
 git diff
