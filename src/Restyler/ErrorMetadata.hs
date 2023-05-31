@@ -15,7 +15,7 @@ import Restyler.App (GitHubError(..))
 import Restyler.Config (ConfigError(..))
 import Restyler.Restyler.Run
     (RestylerExitFailure(..), RestylerOutOfMemory(..), TooManyChangedPaths(..))
-import Restyler.Setup (CloneTimeoutError(..))
+import Restyler.Setup (CloneTimeoutError(..), PlanUpgradeRequired(..))
 
 data ErrorMetadata = ErrorMetadata
     { severity :: Text
@@ -44,6 +44,13 @@ errorMetadataExitCode ErrorMetadata { exitCode } = case exitCode of
 handlers :: SomeException -> [First ErrorMetadata]
 handlers e =
     [ fromException e & First <&> \case
+        PlanUpgradeRequired{} -> ErrorMetadata
+            { severity = "warning"
+            , tag = "plan-upgrade-required"
+            , description = "plan upgrade required"
+            , exitCode = 3
+            }
+    , fromException e & First <&> \case
         CloneTimeoutError{} -> ErrorMetadata
             { severity = "error"
             , tag = "clone-timeout"

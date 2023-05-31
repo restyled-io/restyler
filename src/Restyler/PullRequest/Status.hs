@@ -2,6 +2,7 @@ module Restyler.PullRequest.Status
     ( PullRequestStatus(..)
     , sendPullRequestStatus
     , sendPullRequestStatus'
+    , createHeadShaStatus
     ) where
 
 import Restyler.Prelude

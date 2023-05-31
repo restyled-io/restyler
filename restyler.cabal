@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c121e8c9b893dec5b5fa2d7b0ad22b09e92f572df0d5a878fea3f7960c34b7f3
+-- hash: 2b25eff8db477363a7a8cfcf728465dd9a8e4327a10877399d9557377979a61f
 
 name:           restyler
 version:        0.2.0.0
@@ -217,6 +217,7 @@ test-suite test
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
       Restyler.Test.FS
+      Restyler.WikiSpec
       SpecHelper
       Paths_restyler
   hs-source-dirs:

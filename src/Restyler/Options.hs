@@ -16,6 +16,9 @@ import Restyler.Restrictions
 data EnvOptions = EnvOptions
     { eoAccessToken :: Text
     , eoLogSettings :: LogSettings
+    , eoRepoDisabled :: Bool
+    , eoPlanRestriction :: Maybe Text
+    , eoPlanUpgradeUrl :: Maybe URL
     , eoRestrictions :: Restrictions
     , eoStatsdHost :: Maybe String
     , eoStatsdPort :: Maybe Int
@@ -36,6 +39,9 @@ data Options = Options
     , oPullRequest :: IssueNumber
     , oJobUrl :: Maybe URL
     , oHostDirectory :: Maybe FilePath
+    , oRepoDisabled :: Bool
+    , oPlanRestriction :: Maybe Text
+    , oPlanUpgradeUrl :: Maybe URL
     , oRestrictions :: Restrictions
     , oStatsdHost :: Maybe String
     , oStatsdPort :: Maybe Int
@@ -66,6 +72,9 @@ parseOptions = do
         , oPullRequest = prsPullRequest coPullRequestSpec
         , oJobUrl = coJobUrl
         , oHostDirectory = coHostDirectory
+        , oRepoDisabled = eoRepoDisabled
+        , oPlanRestriction = eoPlanRestriction
+        , oPlanUpgradeUrl = eoPlanUpgradeUrl
         , oRestrictions = eoRestrictions
         , oStatsdHost = eoStatsdHost
         , oStatsdPort = eoStatsdPort
@@ -78,6 +87,9 @@ envParser = EnvOptions
     <$> Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
         (Env.help "GitHub access token with write access to the repository")
     <*> LoggingEnv.parser
+    <*> Env.switch "REPO_DISABLED" mempty
+    <*> optional (Env.var (Env.str <=< Env.nonempty) "PLAN_RESTRICTION" mempty)
+    <*> optional (URL <$> Env.var (Env.str <=< Env.nonempty) "PLAN_UPGRADE_URL" mempty)
     <*> envRestrictions
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
     <*> optional (Env.var Env.auto "STATSD_PORT" mempty)

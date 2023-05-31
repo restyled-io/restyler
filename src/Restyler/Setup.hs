@@ -2,6 +2,7 @@ module Restyler.Setup
     ( restylerSetup
 
     -- * Errors
+    , PlanUpgradeRequired(..)
     , CloneTimeoutError(..)
     ) where
 
@@ -18,6 +19,21 @@ import Restyler.PullRequest.Status
 import Restyler.RestyledPullRequest
 import qualified Restyler.Statsd as Statsd
 import Restyler.Statsd (HasStatsClient)
+import qualified Restyler.Wiki as Wiki
+
+data PlanUpgradeRequired = PlanUpgradeRequired Text (Maybe URL)
+    deriving stock (Eq, Show)
+
+instance Exception PlanUpgradeRequired where
+    displayException (PlanUpgradeRequired message mUpgradeUrl) =
+        unpack
+            $ message
+            <> "\nFor additional help, please see: "
+            <> Wiki.commonError "Plan Upgrade Required"
+            <> maybe
+                   ""
+                   (("\nYou can upgrade your plan at " <>) . getUrl)
+                   mUpgradeUrl
 
 restylerSetup
     :: ( HasCallStack
@@ -41,12 +57,34 @@ restylerSetup = do
         $ "Restyler started"
         :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
 
+    when oRepoDisabled
+        $ exitWithInfo
+        $ fromString
+        $ "This repository has been disabled for possible abuse."
+        <> " If you believe this is an error, please reach out to"
+        <> " support@restyled.io"
+
     pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
+
+    let author = pullRequestUserLogin pullRequest
+
+    when (author == "pull[bot]") $ do
+        let status = SkippedStatus "Ignore pull[bot]" oJobUrl
+        createHeadShaStatus pullRequest status
+        exitWithInfo "Ignoring pull[bot] Pull Request"
+
+    when (author == "restyled-io[bot]") $ do
+        let status = SkippedStatus "Ignore restyled-io[bot]" oJobUrl
+        createHeadShaStatus pullRequest status
+        exitWithInfo "Ignoring Restyled Pull Request"
 
     when (pullRequestIsClosed pullRequest) $ do
         mRestyledPullRequest <- findRestyledPullRequest pullRequest
         traverse_ closeRestyledPullRequest mRestyledPullRequest
         exitWithInfo "Source Pull Request is closed"
+
+    for_ oPlanRestriction $ \planRestriction -> do
+        throwIO $ PlanUpgradeRequired planRestriction oPlanUpgradeUrl
 
     logInfo "Cloning repository"
     wrapClone $ setupClone pullRequest
