@@ -6,7 +6,6 @@ module Restyler.Options
 
 import Restyler.Prelude
 
-import Blammo.Logging.LogSettings
 import qualified Blammo.Logging.LogSettings.Env as LoggingEnv
 import qualified Env
 import GitHub.Data (IssueNumber, Owner, Repo)
@@ -23,8 +22,7 @@ data EnvOptions = EnvOptions
     }
 
 data CLIOptions = CLIOptions
-    { coColor :: Maybe LogColor
-    , coJobUrl :: Maybe URL
+    { coJobUrl :: Maybe URL
     , coHostDirectory :: Maybe FilePath
     , coPullRequestSpec :: PullRequestSpec
     }
@@ -60,11 +58,9 @@ parseOptions = do
         execParser $ info (optionsParser <**> helper) $ fullDesc <> progDesc
             "Restyle a GitHub Pull Request"
 
-    let logSettings = maybe id setLogSettingsColor coColor eoLogSettings
-
     pure Options
         { oAccessToken = eoAccessToken
-        , oLogSettings = logSettings
+        , oLogSettings = eoLogSettings
         , oOwner = prsOwner coPullRequestSpec
         , oRepo = prsRepo coPullRequestSpec
         , oPullRequest = prsPullRequest coPullRequestSpec
@@ -90,13 +86,7 @@ envParser = EnvOptions
 
 optionsParser :: Parser CLIOptions
 optionsParser = CLIOptions
-    <$> optional (option (eitherReader readLogColor)
-        (  long "color"
-        <> metavar "always|never|auto"
-        <> help "Colorize log messages"
-        <> value LogColorAuto
-        ))
-    <*> optional (URL <$> strOption
+    <$> optional (URL <$> strOption
         (  long "job-url"
         <> metavar "URL"
         <> help "Link to Job on restyled.io"
