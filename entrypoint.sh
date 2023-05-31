@@ -16,6 +16,10 @@ done
 
 trap 'echo "Build canceled."; exit 0' "$RESTYLER_CANCEL_SIGNAL"
 
+if [ -n "$DEBUG" ] && [ -z "$LOG_LEVEL" ]; then
+  export LOG_LEVEL=debug
+fi
+
 /bin/restyler "$@" &
 restyler_pid=$!
 wait "$restyler_pid"
