@@ -60,6 +60,7 @@ import Restyler.Config.Statuses
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
+import qualified Restyler.Wiki as Wiki
 import UnliftIO.Exception (handle)
 
 -- | A polymorphic representation of @'Config'@
@@ -203,13 +204,12 @@ instance Exception ConfigError where
             , "If that's not the case, this is a bug in our system that we are"
             , "hopefully already working to fix."
             , ""
-            , "- https://github.com/restyled-io/restyled.io/wiki/Restyler-Versions"
+            , "- " <> Wiki.page "Restyler Versions"
             , "- " <> generalHelp
             ]
       where
         generalHelp :: Text
-        generalHelp
-            = "https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-.restyled.yaml"
+        generalHelp = Wiki.commonError ".restyled.yaml"
 
 -- | Load a fully-inflated @'Config'@
 --

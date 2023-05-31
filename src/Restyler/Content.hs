@@ -10,6 +10,7 @@ import GitHub.Data (unIssueNumber)
 import Restyler.PullRequest
 import Restyler.Restyler
 import Restyler.RestylerResult
+import qualified Restyler.Wiki as Wiki
 import Text.Shakespeare.Text (st)
 
 -- brittany-disable-next-binding
@@ -97,5 +98,5 @@ no fixes to make), this Pull Request will be closed automatically.
 Sorry if this was unexpected. To disable it, see our [documentation][].
 
 [restyled]: https://restyled.io
-[documentation]: https://github.com/restyled-io/restyled.io/wiki/Disabling-Restyled
+[documentation]: #{Wiki.page "Disabling Restyled"}
 |]

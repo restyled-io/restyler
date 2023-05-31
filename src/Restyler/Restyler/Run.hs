@@ -32,6 +32,7 @@ import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
+import qualified Restyler.Wiki as Wiki
 import System.FilePath ((</>))
 
 data RestylerExitFailure = RestylerExitFailure Restyler [String] Int
@@ -57,7 +58,7 @@ instance Exception RestylerOutOfMemory where
         , "\n"
         , "\n  Original command: " <> show @String ("docker" : args)
         , "\n"
-        , "\n  See https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error-137"
+        , "\n  " <> unpack (Wiki.commonError "Restyle Error 137")
         ]
 
 data TooManyChangedPaths = TooManyChangedPaths Natural Natural
@@ -70,7 +71,8 @@ instance Exception TooManyChangedPaths where
             <> ") is greater than configured maximum ("
             <> show maxPaths
             <> ")"
-            <> "\n  https://github.com/restyled-io/restyled.io/wiki/Common-Errors:-Restyle-Error#too-many-changed-paths"
+            <> "\n  "
+            <> unpack (Wiki.commonError "Restyle Error#too-many-changed-paths")
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
