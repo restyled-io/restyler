@@ -8,7 +8,6 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings
 import qualified Blammo.Logging.LogSettings.Env as LoggingEnv
-import Blammo.Logging.LogSettings.LogLevels
 import qualified Env
 import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
@@ -17,8 +16,6 @@ import Restyler.Restrictions
 
 data EnvOptions = EnvOptions
     { eoAccessToken :: Text
-    , eoLogLevel :: Maybe LogLevel
-    -- ^ Deprecated
     , eoLogSettings :: LogSettings
     , eoRestrictions :: Restrictions
     , eoStatsdHost :: Maybe String
@@ -63,11 +60,7 @@ parseOptions = do
         execParser $ info (optionsParser <**> helper) $ fullDesc <> progDesc
             "Restyle a GitHub Pull Request"
 
-    let
-        logSettings =
-            maybe id adjustLogLevel eoLogLevel
-                . maybe id setLogSettingsColor coColor
-                $ eoLogSettings
+    let logSettings = maybe id setLogSettingsColor coColor eoLogSettings
 
     pure Options
         { oAccessToken = eoAccessToken
@@ -82,16 +75,12 @@ parseOptions = do
         , oStatsdPort = eoStatsdPort
         }
 
-adjustLogLevel :: LogLevel -> LogSettings -> LogSettings
-adjustLogLevel = setLogSettingsLevels . flip newLogLevels []
-
 -- brittany-disable-next-binding
 
 envParser :: Env.Parser Env.Error EnvOptions
 envParser = EnvOptions
     <$> Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
         (Env.help "GitHub access token with write access to the repository")
-    <*> optional (Env.flag LevelInfo LevelDebug "DEBUG" mempty)
     <*> LoggingEnv.parser
     <*> envRestrictions
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
