@@ -1,7 +1,7 @@
-module Restyler.Config.Interpreter
-    ( Interpreter(..)
-    , readInterpreter
-    ) where
+module Restyler.Config.Interpreter (
+    Interpreter (..),
+    readInterpreter,
+) where
 
 import Restyler.Prelude
 
@@ -15,10 +15,11 @@ data Interpreter
     | Bash
     | Python
     | Ruby
+    | Other Text
     deriving stock (Eq, Show)
 
 instance FromJSON Interpreter where
-    parseJSON = withText "Interpreter" $ either fail pure . intepreterFromText
+    parseJSON = withText "Interpreter" $ pure . intepreterFromText
 
 instance ToJSON Interpreter where
     -- N.B. this may not always work, but it works for now
@@ -32,20 +33,19 @@ readInterpreter contents = do
 -- | TODO: Megaparsec?
 parseInterpreter :: String -> Maybe Interpreter
 parseInterpreter ('#' : '!' : rest) =
-    hush $ intepreterFromText =<< case words (pack rest) of
+    intepreterFromText <$> case words (pack rest) of
         [exec] -> pure $ pack $ takeFileName $ unpack exec
         ["/usr/bin/env", arg] -> pure arg
-        _ -> Left "Unexpected shebang length"
-
+        _ -> Nothing
 parseInterpreter _ = Nothing
 
-intepreterFromText :: Text -> Either String Interpreter
-intepreterFromText "sh" = Right Sh
-intepreterFromText "bash" = Right Bash
-intepreterFromText "python" = Right Python
-intepreterFromText "python2" = Right Python
-intepreterFromText "python2.7" = Right Python
-intepreterFromText "python3" = Right Python
-intepreterFromText "python3.6" = Right Python
-intepreterFromText "ruby" = Right Ruby
-intepreterFromText x = Left $ "Unknown executable: " <> show x
+intepreterFromText :: Text -> Interpreter
+intepreterFromText "sh" = Sh
+intepreterFromText "bash" = Bash
+intepreterFromText "python" = Python
+intepreterFromText "python2" = Python
+intepreterFromText "python2.7" = Python
+intepreterFromText "python3" = Python
+intepreterFromText "python3.6" = Python
+intepreterFromText "ruby" = Ruby
+intepreterFromText x = Other x
