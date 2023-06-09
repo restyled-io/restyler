@@ -55,6 +55,7 @@ class Monad m => MonadProcess m where
   callProcess :: String -> [String] -> m ()
   callProcessExitCode :: String -> [String] -> m ExitCode
   readProcess :: String -> [String] -> String -> m String
+  readProcessExitCode :: String -> [String] -> String -> m (ExitCode, String)
 
 class Monad m => MonadDownloadFile m where
   downloadFile :: Text -> FilePath -> m ()

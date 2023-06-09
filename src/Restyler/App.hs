@@ -127,6 +127,21 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
            ]
     pure output
 
+  readProcessExitCode cmd args stdin' = do
+    logDebug $
+      "readProcess"
+        :# ["command" .= cmd, "arguments" .= args, "stdin" .= stdin']
+    (ec, output, err) <- liftIO $ Process.readProcessWithExitCode cmd args stdin'
+    logDebug $
+      "readProcessExitCode"
+        :# [ "command" .= cmd
+           , "arguments" .= args
+           , "stdin" .= stdin'
+           , "output" .= output
+           , "errorOutput" .= err
+           ]
+    pure (ec, output)
+
 instance MonadUnliftIO m => MonadExit (AppT app m) where
   exitSuccess = do
     logDebug "exitSuccess"

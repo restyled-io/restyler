@@ -60,7 +60,7 @@ spec = withTestApp $ do
                 , ["--memory", "512m"]
                 , ["--volume", "/:/code"]
                 , ["restyled/restyler-test-restyler"]
-                , ["restyle", "--", "./foo"]
+                , ["restyle"]
                 ]
 
           local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do

@@ -30,6 +30,8 @@ data Restyler = Restyler
   , rDelimiters :: Maybe Delimiters
   , rSupportsArgSep :: Bool
   , rSupportsMultiplePaths :: Bool
+  , rRunAsFilter :: Maybe Bool
+  -- ^ Added later, not present in old manifests
   , rDocumentation :: [String]
   }
   deriving stock (Eq, Show, Generic)

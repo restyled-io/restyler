@@ -94,6 +94,7 @@ instance MonadProcess TestAppT where
   callProcess _cmd _args = pure ()
   callProcessExitCode _cmd _args = asks taProcessExitCodes
   readProcess _cmd _args _stdin = pure ""
+  readProcessExitCode _cmd _args _stdin = pure (ExitSuccess, "")
 
 instance MonadDownloadFile TestAppT where
   downloadFile _url _path = pure ()
@@ -155,6 +156,7 @@ someRestyler =
     , rDelimiters = Nothing
     , rSupportsArgSep = True
     , rSupportsMultiplePaths = True
+    , rRunAsFilter = Nothing
     }
 
 loadDefaultConfig :: MonadIO m => m Config

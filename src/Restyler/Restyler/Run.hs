@@ -18,7 +18,9 @@ module Restyler.Restyler.Run
 
 import Restyler.Prelude
 
+import Data.Aeson
 import Data.List (nub)
+import qualified Data.Text as T
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.ChangedPaths
@@ -240,26 +242,48 @@ runRestyler'
   => Restyler
   -> [FilePath]
   -> m ()
-runRestyler' r@Restyler {..} paths =
-  if rSupportsMultiplePaths
-    then do
-      logInfo $ "Restyling" :# ["paths" .= paths, "restyler" .= rName]
-      dockerRunRestyler r paths
-    else for_ paths $ \path -> do
-      logInfo $ "Restyling" :# ["paths" .= [path], "restyler" .= rName]
-      dockerRunRestyler r [path]
+runRestyler' r@Restyler {..} paths
+  | fromMaybe False rRunAsFilter =
+      traverse_ (dockerRunRestyler r . DockerRunFilter) paths
+  | rSupportsMultiplePaths =
+      dockerRunRestyler r $ DockerRunMany rSupportsArgSep paths
+  | otherwise =
+      traverse_ (dockerRunRestyler r . DockerRunSingle rSupportsArgSep) paths
+
+data DockerRunStyle
+  = DockerRunFilter FilePath
+  | DockerRunMany Bool [FilePath]
+  | DockerRunSingle Bool FilePath
+  deriving stock (Show)
+
+dockerRunStyleToText :: DockerRunStyle -> Text
+dockerRunStyleToText = \case
+  DockerRunFilter {} -> "as filter"
+  DockerRunMany sep _paths ->
+    if sep
+      then "many files, with separator"
+      else "many files, without separator"
+  DockerRunSingle sep _path ->
+    if sep
+      then "single file, with separator"
+      else "single file, without separator"
+
+instance ToJSON DockerRunStyle where
+  toJSON = toJSON . dockerRunStyleToText
+  toEncoding = toEncoding . dockerRunStyleToText
 
 dockerRunRestyler
   :: ( MonadIO m
+     , MonadLogger m
      , MonadSystem m
      , MonadProcess m
      , MonadReader env m
      , HasOptions env
      )
   => Restyler
-  -> [FilePath]
+  -> DockerRunStyle
   -> m ()
-dockerRunRestyler r@Restyler {..} paths = do
+dockerRunRestyler r@Restyler {..} style = do
   cwd <- getHostDirectory
   restrictions <- oRestrictions <$> view optionsL
 
@@ -268,10 +292,21 @@ dockerRunRestyler r@Restyler {..} paths = do
           <> restrictionOptions restrictions
           <> ["--volume", cwd <> ":/code", rImage]
           <> nub (rCommand <> rArguments)
-          <> ["--" | rSupportsArgSep]
-          <> map prefix paths
 
-  ec <- callProcessExitCode "docker" args
+  logInfo $
+    "Restyling"
+      :# [ "restyler" .= rName
+         , "style" .= style
+         ]
+
+  ec <- case style of
+    DockerRunFilter path -> do
+      (ec, out) <- readProcessExitCode "docker" (args <> [prefix path]) ""
+      ec <$ writeFile path (fixNewline $ pack out)
+    DockerRunMany sep paths -> do
+      callProcessExitCode "docker" $ args <> ["--" | sep] <> map prefix paths
+    DockerRunSingle sep path -> do
+      callProcessExitCode "docker" $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
     ExitSuccess -> pure ()
@@ -281,6 +316,9 @@ dockerRunRestyler r@Restyler {..} paths = do
   prefix p
     | "./" `isPrefixOf` p = p
     | otherwise = "./" <> p
+
+fixNewline :: Text -> Text
+fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
 
 getHostDirectory
   :: (MonadSystem m, MonadReader env m, HasOptions env) => m FilePath
