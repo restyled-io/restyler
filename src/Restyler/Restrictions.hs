@@ -20,7 +20,9 @@ import Data.Semigroup.Generic
 import qualified Env
 
 data Restrictions = Restrictions
-  { cpuShares :: Last Natural
+  { netNone :: Last Bool
+  , capDropAll :: Last Bool
+  , cpuShares :: Last Natural
   , memory :: Last Bytes
   }
   deriving stock (Generic, Eq, Show)
@@ -30,8 +32,8 @@ restrictionOptions :: Restrictions -> [String]
 restrictionOptions Restrictions {..} =
   concat $
     catMaybes
-      [ Just ["--net", "none"]
-      , Just ["--cap-drop", "all"]
+      [ (\b -> if b then ["--net", "none"] else []) <$> getLast netNone
+      , (\b -> if b then ["--cap-drop", "all"] else []) <$> getLast capDropAll
       , (\n -> ["--cpu-shares", show n]) <$> getLast cpuShares
       , (\bs -> ["--memory", bytesOption bs]) <$> getLast memory
       ]
@@ -49,7 +51,7 @@ envRestrictions =
 parseOverrides :: Env.Parser Env.Error Restrictions
 parseOverrides =
   Env.prefixed "RESTYLER_" $
-    Restrictions
+    Restrictions (Last Nothing) (Last Nothing)
       <$> lastReader
         readNat
         "CPU_SHARES"
@@ -74,7 +76,9 @@ parseOverrides =
 fullRestrictions :: Restrictions
 fullRestrictions =
   Restrictions
-    { cpuShares = Last $ Just defaultCpuShares
+    { netNone = Last $ Just True
+    , capDropAll = Last $ Just True
+    , cpuShares = Last $ Just defaultCpuShares
     , memory = Last $ Just defaultMemory
     }
 
@@ -86,7 +90,12 @@ defaultMemory = Bytes {bytesNumber = 512, bytesSuffix = Just M}
 
 noRestrictions :: Restrictions
 noRestrictions =
-  Restrictions {cpuShares = Last Nothing, memory = Last Nothing}
+  Restrictions
+    { netNone = Last $ Just False
+    , capDropAll = Last $ Just False
+    , cpuShares = Last Nothing
+    , memory = Last Nothing
+    }
 
 data Bytes = Bytes
   { bytesNumber :: Natural

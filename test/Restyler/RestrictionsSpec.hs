@@ -16,7 +16,9 @@ spec = do
       let opts =
             restrictionOptions $
               Restrictions
-                { cpuShares = Last Nothing
+                { netNone = Last $ Just True
+                , capDropAll = Last $ Just True
+                , cpuShares = Last Nothing
                 , memory = Last Nothing
                 }
 
@@ -33,7 +35,9 @@ spec = do
       let opts =
             restrictionOptions $
               Restrictions
-                { cpuShares = Last $ Just 256
+                { netNone = Last $ Just True
+                , capDropAll = Last $ Just True
+                , cpuShares = Last $ Just 256
                 , memory = Last $ Just $ Bytes 1 $ Just G
                 }
 
@@ -54,7 +58,9 @@ spec = do
         Env.parsePure envRestrictions [("UNRESTRICTED", x)]
           `shouldBe` Right
             Restrictions
-              { cpuShares = Last Nothing
+              { netNone = Last $ Just False
+              , capDropAll = Last $ Just False
+              , cpuShares = Last Nothing
               , memory = Last Nothing
               }
 
@@ -69,7 +75,9 @@ spec = do
       Env.parsePure envRestrictions env
         `shouldBe` Right
           Restrictions
-            { cpuShares = Last $ Just 256
+            { netNone = Last $ Just True
+            , capDropAll = Last $ Just True
+            , cpuShares = Last $ Just 256
             , memory = Last $ Just $ Bytes 1024 $ Just M
             }
 
@@ -81,7 +89,9 @@ spec = do
       Env.parsePure envRestrictions env
         `shouldBe` Right
           Restrictions
-            { cpuShares = Last Nothing
+            { netNone = Last $ Just False
+            , capDropAll = Last $ Just False
+            , cpuShares = Last Nothing
             , memory = Last $ Just $ Bytes 256 $ Just B
             }
 
