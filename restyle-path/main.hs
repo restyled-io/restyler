@@ -26,6 +26,7 @@ instance HasOptions App where
 data EnvOptions = EnvOptions
   { eoLogSettings :: LogSettings
   , eoHostDirectory :: Maybe FilePath
+  , eoManifest :: Maybe FilePath
   , eoRestrictions :: Restrictions
   }
 
@@ -36,6 +37,7 @@ envParser =
   EnvOptions
     <$> LoggingEnv.parser
     <*> optional (Env.var Env.str "HOST_DIRECTORY" mempty)
+    <*> optional (Env.var Env.str "MANIFEST" mempty)
     <*> envRestrictions
 
 main :: IO ()
@@ -53,6 +55,7 @@ main = do
                 , oOwner = error "unused"
                 , oRepo = error "unused"
                 , oPullRequest = error "unused"
+                , oManifest = eoManifest
                 , oJobUrl = error "unused"
                 , oHostDirectory = eoHostDirectory
                 , oRepoDisabled = False

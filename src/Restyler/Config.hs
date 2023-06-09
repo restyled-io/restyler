@@ -56,6 +56,7 @@ import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
+import Restyler.Options
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
@@ -212,7 +213,13 @@ instance Exception ConfigError where
 -- Read any @.restyled.yaml@, fill it out from defaults, grab the versioned set
 -- of restylers data, and apply the configured choices and overrides.
 loadConfig
-  :: (MonadUnliftIO m, MonadLogger m, MonadSystem m, MonadDownloadFile m)
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadSystem m
+     , MonadDownloadFile m
+     , MonadReader env m
+     , HasOptions env
+     )
   => m Config
 loadConfig =
   loadConfigFrom (map ConfigPath configPaths) $

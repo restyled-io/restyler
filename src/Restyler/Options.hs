@@ -25,7 +25,8 @@ data EnvOptions = EnvOptions
   }
 
 data CLIOptions = CLIOptions
-  { coJobUrl :: Maybe URL
+  { coManifest :: Maybe FilePath
+  , coJobUrl :: Maybe URL
   , coHostDirectory :: Maybe FilePath
   , coPullRequestSpec :: PullRequestSpec
   }
@@ -37,6 +38,7 @@ data Options = Options
   , oOwner :: Name Owner
   , oRepo :: Name Repo
   , oPullRequest :: IssueNumber
+  , oManifest :: Maybe FilePath
   , oJobUrl :: Maybe URL
   , oHostDirectory :: Maybe FilePath
   , oRepoDisabled :: Bool
@@ -73,6 +75,7 @@ parseOptions = do
       , oOwner = prsOwner coPullRequestSpec
       , oRepo = prsRepo coPullRequestSpec
       , oPullRequest = prsPullRequest coPullRequestSpec
+      , oManifest = coManifest
       , oJobUrl = coJobUrl
       , oHostDirectory = coHostDirectory
       , oRepoDisabled = eoRepoDisabled
@@ -106,6 +109,13 @@ optionsParser :: Parser CLIOptions
 optionsParser =
   CLIOptions
     <$> optional
+      ( strOption
+          ( long "manifest"
+              <> metavar "PATH"
+              <> help "Local restylers manifest to use"
+          )
+      )
+    <*> optional
       ( URL
           <$> strOption
             ( long "job-url"

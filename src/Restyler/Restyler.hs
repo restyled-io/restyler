@@ -16,6 +16,7 @@ import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
+import Restyler.Options
 import Restyler.RemoteFile
 
 data Restyler = Restyler
@@ -63,12 +64,18 @@ getAllRestylersVersioned
   :: ( MonadIO m
      , MonadLogger m
      , MonadDownloadFile m
+     , MonadReader env m
+     , HasOptions env
      )
   => String
   -> m [Restyler]
 getAllRestylersVersioned version = do
-  downloadRemoteFile restylers
-  decodeFileThrow $ rfPath restylers
+  mManifest <- oManifest <$> view optionsL
+  case mManifest of
+    Nothing -> do
+      downloadRemoteFile restylers
+      decodeFileThrow $ rfPath restylers
+    Just path -> decodeFileThrow path
  where
   restylers =
     RemoteFile

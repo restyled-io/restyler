@@ -127,6 +127,7 @@ testOptions =
     , oOwner = error "oOwner"
     , oRepo = error "oRepo"
     , oPullRequest = error "oPullRequest"
+    , oManifest = Nothing
     , oJobUrl = error "oJobUrl"
     , oHostDirectory = Nothing
     , oRepoDisabled = False
