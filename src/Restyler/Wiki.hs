@@ -1,7 +1,7 @@
 module Restyler.Wiki
-    ( commonError
-    , page
-    ) where
+  ( commonError
+  , page
+  ) where
 
 import Restyler.Prelude
 
@@ -18,8 +18,8 @@ autoHyphenate = T.replace " " "-"
 
 autoSlashPrefix :: Text -> Text
 autoSlashPrefix x
-    | "/" `T.isPrefixOf` x = x
-    | otherwise = "/" <> x
+  | "/" `T.isPrefixOf` x = x
+  | otherwise = "/" <> x
 
 wikiPrefix :: Text
 wikiPrefix = "https://github.com/restyled-io/restyled.io/wiki"

@@ -1,7 +1,7 @@
 module Restyler.RemoteFile
-    ( RemoteFile(..)
-    , downloadRemoteFile
-    ) where
+  ( RemoteFile (..)
+  , downloadRemoteFile
+  ) where
 
 import Restyler.Prelude
 
@@ -11,20 +11,20 @@ import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
 
 data RemoteFile = RemoteFile
-    { rfUrl :: URL
-    , rfPath :: FilePath
-    }
-    deriving stock (Eq, Show, Generic)
+  { rfUrl :: URL
+  , rfPath :: FilePath
+  }
+  deriving stock (Eq, Show, Generic)
 
 instance FromJSON RemoteFile where
-    parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
+  parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
 
 instance ToJSON RemoteFile where
-    toJSON = genericToJSON $ aesonPrefix snakeCase
-    toEncoding = genericToEncoding $ aesonPrefix snakeCase
+  toJSON = genericToJSON $ aesonPrefix snakeCase
+  toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 downloadRemoteFile
-    :: (MonadLogger m, MonadDownloadFile m) => RemoteFile -> m ()
+  :: (MonadLogger m, MonadDownloadFile m) => RemoteFile -> m ()
 downloadRemoteFile RemoteFile {..} = do
-    logInfo $ "Fetching remote file" :# ["path" .= rfPath]
-    downloadFile (getUrl rfUrl) rfPath
+  logInfo $ "Fetching remote file" :# ["path" .= rfPath]
+  downloadFile (getUrl rfUrl) rfPath

@@ -2,12 +2,12 @@
 
 -- | Small wrapper over @'System.FilePath.Glob.Pattern'@
 module Restyler.Config.Glob
-    ( Glob(..)
-    , GlobTarget(..)
-    , match
-    , matchAny
-    , matchFirst
-    ) where
+  ( Glob (..)
+  , GlobTarget (..)
+  , match
+  , matchAny
+  , matchFirst
+  ) where
 
 import Restyler.Prelude
 
@@ -16,41 +16,43 @@ import GitHub.Data (toPathPart)
 import System.FilePath.Glob hiding (match)
 import qualified System.FilePath.Glob as Glob
 
-newtype Glob a = Glob { unGlob :: String }
-    deriving stock (Eq, Ord, Generic)
-    deriving newtype Show
+newtype Glob a = Glob {unGlob :: String}
+  deriving stock (Eq, Ord, Generic)
+  deriving newtype (Show)
 
 instance FromJSON (Glob a) where
-    parseJSON = withText "Glob" $ pure . Glob . unpack
+  parseJSON = withText "Glob" $ pure . Glob . unpack
 
 instance ToJSON (Glob a) where
-    toJSON = String . pack . unGlob
+  toJSON = String . pack . unGlob
 
 class GlobTarget a where
-    forMatch :: a -> String
-    getCompOptions :: CompOptions
+  forMatch :: a -> String
+  getCompOptions :: CompOptions
 
 instance GlobTarget FilePath where
-    forMatch = id
-    getCompOptions = compDefault
+  forMatch = id
+  getCompOptions = compDefault
 
 instance GlobTarget Text where
-    forMatch = unpack
-    getCompOptions = compDefault
-        { characterClasses = False
-        , characterRanges = False
-        , numberRanges = False
-        }
+  forMatch = unpack
+  getCompOptions =
+    compDefault
+      { characterClasses = False
+      , characterRanges = False
+      , numberRanges = False
+      }
 
 instance GlobTarget (Name a) where
-    forMatch = forMatch . toPathPart
-    getCompOptions = compDefault
-        { characterClasses = False
-        , characterRanges = False
-        , numberRanges = False
-        }
+  forMatch = forMatch . toPathPart
+  getCompOptions =
+    compDefault
+      { characterClasses = False
+      , characterRanges = False
+      , numberRanges = False
+      }
 
-match :: forall a . GlobTarget a => Glob a -> a -> Bool
+match :: forall a. GlobTarget a => Glob a -> a -> Bool
 match (Glob p) = Glob.match (compileWith (getCompOptions @a) p) . forMatch
 
 matchAny :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Bool

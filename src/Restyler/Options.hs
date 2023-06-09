@@ -1,8 +1,8 @@
 module Restyler.Options
-    ( Options(..)
-    , HasOptions(..)
-    , parseOptions
-    ) where
+  ( Options (..)
+  , HasOptions (..)
+  , parseOptions
+  ) where
 
 import Restyler.Prelude
 
@@ -14,78 +14,84 @@ import Restyler.PullRequestSpec
 import Restyler.Restrictions
 
 data EnvOptions = EnvOptions
-    { eoAccessToken :: Text
-    , eoLogSettings :: LogSettings
-    , eoRepoDisabled :: Bool
-    , eoPlanRestriction :: Maybe Text
-    , eoPlanUpgradeUrl :: Maybe URL
-    , eoRestrictions :: Restrictions
-    , eoStatsdHost :: Maybe String
-    , eoStatsdPort :: Maybe Int
-    }
+  { eoAccessToken :: Text
+  , eoLogSettings :: LogSettings
+  , eoRepoDisabled :: Bool
+  , eoPlanRestriction :: Maybe Text
+  , eoPlanUpgradeUrl :: Maybe URL
+  , eoRestrictions :: Restrictions
+  , eoStatsdHost :: Maybe String
+  , eoStatsdPort :: Maybe Int
+  }
 
 data CLIOptions = CLIOptions
-    { coJobUrl :: Maybe URL
-    , coHostDirectory :: Maybe FilePath
-    , coPullRequestSpec :: PullRequestSpec
-    }
+  { coJobUrl :: Maybe URL
+  , coHostDirectory :: Maybe FilePath
+  , coPullRequestSpec :: PullRequestSpec
+  }
 
 data Options = Options
-    { oAccessToken :: Text
-    -- ^ Personal or Installation access token
-    , oLogSettings :: LogSettings
-    , oOwner :: Name Owner
-    , oRepo :: Name Repo
-    , oPullRequest :: IssueNumber
-    , oJobUrl :: Maybe URL
-    , oHostDirectory :: Maybe FilePath
-    , oRepoDisabled :: Bool
-    , oPlanRestriction :: Maybe Text
-    , oPlanUpgradeUrl :: Maybe URL
-    , oRestrictions :: Restrictions
-    , oStatsdHost :: Maybe String
-    , oStatsdPort :: Maybe Int
-    }
+  { oAccessToken :: Text
+  -- ^ Personal or Installation access token
+  , oLogSettings :: LogSettings
+  , oOwner :: Name Owner
+  , oRepo :: Name Repo
+  , oPullRequest :: IssueNumber
+  , oJobUrl :: Maybe URL
+  , oHostDirectory :: Maybe FilePath
+  , oRepoDisabled :: Bool
+  , oPlanRestriction :: Maybe Text
+  , oPlanUpgradeUrl :: Maybe URL
+  , oRestrictions :: Restrictions
+  , oStatsdHost :: Maybe String
+  , oStatsdPort :: Maybe Int
+  }
 
 class HasOptions env where
-    optionsL :: Lens' env Options
+  optionsL :: Lens' env Options
 
 instance HasOptions Options where
-    optionsL = id
+  optionsL = id
 
 -- | Parse required environment variables and command-line options
 --
 -- See @restyler --help@
---
 parseOptions :: IO Options
 parseOptions = do
-    EnvOptions {..} <- Env.parse id envParser
-    CLIOptions {..} <-
-        execParser $ info (optionsParser <**> helper) $ fullDesc <> progDesc
+  EnvOptions {..} <- Env.parse id envParser
+  CLIOptions {..} <-
+    execParser $
+      info (optionsParser <**> helper) $
+        fullDesc
+          <> progDesc
             "Restyle a GitHub Pull Request"
 
-    pure Options
-        { oAccessToken = eoAccessToken
-        , oLogSettings = eoLogSettings
-        , oOwner = prsOwner coPullRequestSpec
-        , oRepo = prsRepo coPullRequestSpec
-        , oPullRequest = prsPullRequest coPullRequestSpec
-        , oJobUrl = coJobUrl
-        , oHostDirectory = coHostDirectory
-        , oRepoDisabled = eoRepoDisabled
-        , oPlanRestriction = eoPlanRestriction
-        , oPlanUpgradeUrl = eoPlanUpgradeUrl
-        , oRestrictions = eoRestrictions
-        , oStatsdHost = eoStatsdHost
-        , oStatsdPort = eoStatsdPort
-        }
+  pure
+    Options
+      { oAccessToken = eoAccessToken
+      , oLogSettings = eoLogSettings
+      , oOwner = prsOwner coPullRequestSpec
+      , oRepo = prsRepo coPullRequestSpec
+      , oPullRequest = prsPullRequest coPullRequestSpec
+      , oJobUrl = coJobUrl
+      , oHostDirectory = coHostDirectory
+      , oRepoDisabled = eoRepoDisabled
+      , oPlanRestriction = eoPlanRestriction
+      , oPlanUpgradeUrl = eoPlanUpgradeUrl
+      , oRestrictions = eoRestrictions
+      , oStatsdHost = eoStatsdHost
+      , oStatsdPort = eoStatsdPort
+      }
 
 -- brittany-disable-next-binding
 
 envParser :: Env.Parser Env.Error EnvOptions
-envParser = EnvOptions
-    <$> Env.var (Env.str <=< Env.nonempty) "GITHUB_ACCESS_TOKEN"
-        (Env.help "GitHub access token with write access to the repository")
+envParser =
+  EnvOptions
+    <$> Env.var
+      (Env.str <=< Env.nonempty)
+      "GITHUB_ACCESS_TOKEN"
+      (Env.help "GitHub access token with write access to the repository")
     <*> LoggingEnv.parser
     <*> Env.switch "REPO_DISABLED" mempty
     <*> optional (Env.var (Env.str <=< Env.nonempty) "PLAN_RESTRICTION" mempty)
@@ -97,18 +103,25 @@ envParser = EnvOptions
 -- brittany-disable-next-binding
 
 optionsParser :: Parser CLIOptions
-optionsParser = CLIOptions
-    <$> optional (URL <$> strOption
-        (  long "job-url"
-        <> metavar "URL"
-        <> help "Link to Job on restyled.io"
-        ))
-    <*> optional (strOption
-        (  long "host-directory"
-        <> metavar "PATH"
-        <> help "Path to host directory of sources"
-        ))
-    <*> argument (eitherReader parseSpec)
-        (  metavar "<owner>/<name>#<number>"
-        <> help "Repository and Pull Request to restyle"
-        )
+optionsParser =
+  CLIOptions
+    <$> optional
+      ( URL
+          <$> strOption
+            ( long "job-url"
+                <> metavar "URL"
+                <> help "Link to Job on restyled.io"
+            )
+      )
+    <*> optional
+      ( strOption
+          ( long "host-directory"
+              <> metavar "PATH"
+              <> help "Path to host directory of sources"
+          )
+      )
+    <*> argument
+      (eitherReader parseSpec)
+      ( metavar "<owner>/<name>#<number>"
+          <> help "Repository and Pull Request to restyle"
+      )

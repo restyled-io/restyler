@@ -1,6 +1,6 @@
 module Main
-    ( main
-    ) where
+  ( main
+  ) where
 
 import Restyler.Prelude
 
@@ -13,21 +13,21 @@ import Restyler.Statsd (withStatsClient)
 
 main :: IO ()
 main = do
-    hSetBuffering stdout LineBuffering
-    hSetBuffering stderr LineBuffering
-    options@Options {..} <- parseOptions
-    logger <- newLogger oLogSettings
-    let tags = [("repo", toPathPart oOwner <> "/" <> toPathPart oRepo)]
+  hSetBuffering stdout LineBuffering
+  hSetBuffering stderr LineBuffering
+  options@Options {..} <- parseOptions
+  logger <- newLogger oLogSettings
+  let tags = [("repo", toPathPart oOwner <> "/" <> toPathPart oRepo)]
 
-    ec <- withStatsClient oStatsdHost oStatsdPort tags $ \statsClient -> do
-        withExitHandler logger statsClient options $ do
-            withSystemTempDirectory "restyler-" $ \path -> do
-                app <- bootstrapApp options logger path statsClient
-                runAppT app restylerMain
+  ec <- withStatsClient oStatsdHost oStatsdPort tags $ \statsClient -> do
+    withExitHandler logger statsClient options $ do
+      withSystemTempDirectory "restyler-" $ \path -> do
+        app <- bootstrapApp options logger path statsClient
+        runAppT app restylerMain
 
-    runLoggerLoggingT logger
-        $ logInfo
-        $ "Restyler done"
+  runLoggerLoggingT logger $
+    logInfo $
+      "Restyler done"
         :# ["exitCode" .= exitCodeInt ec]
 
-    exitWith ec
+  exitWith ec

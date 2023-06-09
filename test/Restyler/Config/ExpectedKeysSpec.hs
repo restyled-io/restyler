@@ -1,6 +1,6 @@
 module Restyler.Config.ExpectedKeysSpec
-    ( spec
-    ) where
+  ( spec
+  ) where
 
 import SpecHelper
 
@@ -8,24 +8,26 @@ import Restyler.Config.ExpectedKeys
 
 spec :: Spec
 spec = do
-    describe "validateExpectedKeyBy" $ do
-        let validate = validateExpectedKeyBy "key" id
+  describe "validateExpectedKeyBy" $ do
+    let validate = validateExpectedKeyBy "key" id
 
-        it "accepts expected keys" $ example $ do
-            validate ["foo"] "foo" `shouldBe` Right "foo"
-            validate ["foo", "bar"] "foo" `shouldBe` Right "foo"
-            validate ["bar", "foo"] "foo" `shouldBe` Right "foo"
-            validate ["foo", "foo"] "foo" `shouldBe` Right "foo"
+    it "accepts expected keys" $ example $ do
+      validate ["foo"] "foo" `shouldBe` Right "foo"
+      validate ["foo", "bar"] "foo" `shouldBe` Right "foo"
+      validate ["bar", "foo"] "foo" `shouldBe` Right "foo"
+      validate ["foo", "foo"] "foo" `shouldBe` Right "foo"
 
-        it "rejects with a default message" $ example $ do
-            let msg :: Text
-                msg =
-                    "Unexpected key \"bxx\", must be one of [\"foo\",\"bar\"]."
+    it "rejects with a default message" $ example $ do
+      let
+        msg :: Text
+        msg =
+          "Unexpected key \"bxx\", must be one of [\"foo\",\"bar\"]."
 
-            validate ["foo", "bar"] "bxx" `shouldBe` Left msg
+      validate ["foo", "bar"] "bxx" `shouldBe` Left msg
 
-        it "suggests based on edit-distance" $ example $ do
-            let msg :: Text
-                msg = "Unexpected key \"baz\", did you mean \"bar\"?"
+    it "suggests based on edit-distance" $ example $ do
+      let
+        msg :: Text
+        msg = "Unexpected key \"baz\", did you mean \"bar\"?"
 
-            validate ["foo", "bar"] "baz" `shouldBe` Left msg
+      validate ["foo", "bar"] "baz" `shouldBe` Left msg

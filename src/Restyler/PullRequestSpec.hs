@@ -2,29 +2,29 @@
 --
 -- This shortened format is useful for passing a Pull Request as a command-line
 -- argument, or showing it in log messages.
---
 module Restyler.PullRequestSpec
-    ( PullRequestSpec(..)
-    , pullRequestSpecToText
-    , parseSpec
-    ) where
+  ( PullRequestSpec (..)
+  , pullRequestSpecToText
+  , parseSpec
+  ) where
 
 import Restyler.Prelude
 
 import GitHub.Data
-import qualified Prelude as Unsafe
 import Text.Megaparsec hiding (some)
 import Text.Megaparsec.Char
+import qualified Prelude as Unsafe
 
 data PullRequestSpec = PullRequestSpec
-    { prsOwner :: Name Owner
-    , prsRepo :: Name Repo
-    , prsPullRequest :: IssueNumber
-    }
-    deriving stock (Eq, Show)
+  { prsOwner :: Name Owner
+  , prsRepo :: Name Repo
+  , prsPullRequest :: IssueNumber
+  }
+  deriving stock (Eq, Show)
 
 pullRequestSpecToText :: PullRequestSpec -> Text
-pullRequestSpecToText PullRequestSpec {..} = mconcat
+pullRequestSpecToText PullRequestSpec {..} =
+  mconcat
     [ untagName prsOwner <> "/"
     , untagName prsRepo <> "#"
     , toPathPart prsPullRequest
@@ -38,10 +38,10 @@ type Parser = Parsec Void String
 
 parser :: Parser PullRequestSpec
 parser =
-    PullRequestSpec
-        <$> (mkName Proxy . pack <$> manyTill nonSpace (char '/'))
-        <*> (mkName Proxy . pack <$> manyTill nonSpace (char '#'))
-        <*> (IssueNumber . Unsafe.read <$> some digitChar)
+  PullRequestSpec
+    <$> (mkName Proxy . pack <$> manyTill nonSpace (char '/'))
+    <*> (mkName Proxy . pack <$> manyTill nonSpace (char '#'))
+    <*> (IssueNumber . Unsafe.read <$> some digitChar)
 
 nonSpace :: Parser Char
 nonSpace = satisfy $ not . isSpace

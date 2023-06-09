@@ -1,8 +1,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Restyler.Content
-    ( pullRequestDescription
-    ) where
+  ( pullRequestDescription
+  ) where
 
 import Restyler.Prelude
 
@@ -16,12 +16,15 @@ import Text.Shakespeare.Text (st)
 -- brittany-disable-next-binding
 
 pullRequestDescription
-    :: Maybe URL -- ^ Job URL, if we have it
-    -> PullRequest -- ^ Original PR
-    -> [RestylerResult]
-    -> Text
+  :: Maybe URL
+  -- ^ Job URL, if we have it
+  -> PullRequest
+  -- ^ Original PR
+  -> [RestylerResult]
+  -> Text
 pullRequestDescription mJobUrl pullRequest results
-    | pullRequestIsFork pullRequest = [st|
+  | pullRequestIsFork pullRequest =
+      [st|
 A duplicate of ##{n} with additional commits that automatically address
 incorrect style, created by [Restyled][].
 
@@ -57,7 +60,8 @@ To incorporate these changes, you can either:
 
 #{footer}
 |]
-    | otherwise = [st|
+  | otherwise =
+      [st|
 Automated style fixes for ##{n}, created by [Restyled][].
 
 The following restylers #{madeFixes}:
@@ -69,27 +73,29 @@ recommend using the Squash or Rebase strategies.
 
 #{footer}
 |]
-  where
-    -- This variable is just so that we can wrap our content above such that
-    -- when the link is rendered at ~3 digits, it looks OK.
-    n = unIssueNumber $ pullRequestNumber pullRequest
+ where
+  -- This variable is just so that we can wrap our content above such that
+  -- when the link is rendered at ~3 digits, it looks OK.
+  n = unIssueNumber $ pullRequestNumber pullRequest
 
-    -- Link the "made fixes" line to the Job log, if we can
-    madeFixes = case mJobUrl of
-        Nothing -> "made fixes"
-        Just jobUrl -> "[made fixes](" <> getUrl jobUrl <> ")"
+  -- Link the "made fixes" line to the Job log, if we can
+  madeFixes = case mJobUrl of
+    Nothing -> "made fixes"
+    Just jobUrl -> "[made fixes](" <> getUrl jobUrl <> ")"
 
-    -- N.B. Assumes something committed changes, otherwise we'd not be opening
-    -- this PR at all
-    resultsList = unlines
-        $ map (("- " <>) . restylerListItem . rrRestyler)
-        $ filter restylerCommittedChanges results
+  -- N.B. Assumes something committed changes, otherwise we'd not be opening
+  -- this PR at all
+  resultsList =
+    unlines $
+      map (("- " <>) . restylerListItem . rrRestyler) $
+        filter restylerCommittedChanges results
 
-    restylerListItem Restyler{..} = pack $ case rDocumentation of
-        (url:_) -> "[" <> rName <> "](" <> url <> ")"
-        _ -> rName
+  restylerListItem Restyler {..} = pack $ case rDocumentation of
+    (url : _) -> "[" <> rName <> "](" <> url <> ")"
+    _ -> rName
 
-    footer = [st|
+  footer =
+    [st|
 **NOTE**: As work continues on the original Pull Request, this process will
 re-run and update (force-push) this Pull Request with updated style fixes as
 necessary. If the style is fixed manually at any point (i.e. this process finds
