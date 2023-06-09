@@ -269,7 +269,7 @@ dockerRunRestyler r@Restyler {..} paths = do
           <> ["--volume", cwd <> ":/code", rImage]
           <> nub (rCommand <> rArguments)
           <> ["--" | rSupportsArgSep]
-          <> map ("./" <>) paths
+          <> map prefix paths
 
   ec <- callProcessExitCode "docker" args
 
@@ -277,6 +277,10 @@ dockerRunRestyler r@Restyler {..} paths = do
     ExitSuccess -> pure ()
     ExitFailure 137 -> throwIO $ RestylerOutOfMemory r args
     ExitFailure i -> throwIO $ RestylerExitFailure r args i
+ where
+  prefix p
+    | "./" `isPrefixOf` p = p
+    | otherwise = "./" <> p
 
 getHostDirectory
   :: (MonadSystem m, MonadReader env m, HasOptions env) => m FilePath
