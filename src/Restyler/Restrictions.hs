@@ -51,8 +51,18 @@ envRestrictions =
 parseOverrides :: Env.Parser Env.Error Restrictions
 parseOverrides =
   Env.prefixed "RESTYLER_" $
-    Restrictions (Last Nothing) (Last Nothing)
-      <$> lastReader
+    Restrictions
+      <$> ( fmap not
+              <$> lastSwitch
+                "NO_NET_NONE"
+                "Run restylers without --net=none"
+          )
+      <*> ( fmap not
+              <$> lastSwitch
+                "NO_CAP_DROP_ALL"
+                "Run restylers without --cap-drop=all"
+          )
+      <*> lastReader
         readNat
         "CPU_SHARES"
         "Run restylers with --cpu-shares=<number>"
@@ -61,6 +71,13 @@ parseOverrides =
         "MEMORY"
         "Run restylers with --memory=<number>[b|k|m|g]"
  where
+  lastSwitch
+    :: String
+    -> String
+    -> Env.Parser Env.Error (Last Bool)
+  lastSwitch name h =
+    Last <$> Env.flag Nothing (Just True) name (Env.help h)
+
   lastReader
     :: (String -> Either String a)
     -> String

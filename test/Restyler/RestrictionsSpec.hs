@@ -68,7 +68,8 @@ spec = do
       let
         env :: [(String, String)]
         env =
-          [ ("RESTYLER_CPU_SHARES", "256")
+          [ ("RESTYLER_NO_CAP_DROP_ALL", "x")
+          , ("RESTYLER_CPU_SHARES", "256")
           , ("RESTYLER_MEMORY", "1024m")
           ]
 
@@ -76,7 +77,7 @@ spec = do
         `shouldBe` Right
           Restrictions
             { netNone = Last $ Just True
-            , capDropAll = Last $ Just True
+            , capDropAll = Last $ Just False
             , cpuShares = Last $ Just 256
             , memory = Last $ Just $ Bytes 1024 $ Just M
             }
