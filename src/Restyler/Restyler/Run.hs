@@ -301,7 +301,7 @@ dockerRunRestyler r@Restyler {..} style = do
 
   ec <- case style of
     DockerRunFilter path -> do
-      (ec, out) <- readProcessExitCode "docker" (args <> [prefix path]) ""
+      (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])
       ec <$ writeFile path (fixNewline $ pack out)
     DockerRunMany sep paths -> do
       callProcessExitCode "docker" $ args <> ["--" | sep] <> map prefix paths

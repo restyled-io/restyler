@@ -103,7 +103,7 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
         :# ["command" .= cmd, "arguments" .= args]
     ec <- liftIO $ Process.withCreateProcess proc $ \_ _ _ p ->
       Process.waitForProcess p
-    logDebug $
+    (if ec == ExitSuccess then logDebug else logWarn) $
       "callProcessExitCode"
         :# [ "command" .= cmd
            , "arguments" .= args
@@ -113,30 +113,28 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
    where
     proc = (Process.proc cmd args) {Process.delegate_ctlc = True}
 
-  readProcess cmd args stdin' = do
+  readProcess cmd args = do
     logDebug $
       "readProcess"
-        :# ["command" .= cmd, "arguments" .= args, "stdin" .= stdin']
-    output <- liftIO $ Process.readProcess cmd args stdin'
+        :# ["command" .= cmd, "arguments" .= args]
+    output <- liftIO $ Process.readProcess cmd args ""
     logDebug $
       "readProcess"
         :# [ "command" .= cmd
            , "arguments" .= args
-           , "stdin" .= stdin'
            , "output" .= output
            ]
     pure output
 
-  readProcessExitCode cmd args stdin' = do
+  readProcessExitCode cmd args = do
     logDebug $
       "readProcess"
-        :# ["command" .= cmd, "arguments" .= args, "stdin" .= stdin']
-    (ec, output, err) <- liftIO $ Process.readProcessWithExitCode cmd args stdin'
-    logDebug $
+        :# ["command" .= cmd, "arguments" .= args]
+    (ec, output, err) <- liftIO $ Process.readProcessWithExitCode cmd args ""
+    (if ec == ExitSuccess then logDebug else logWarn) $
       "readProcessExitCode"
         :# [ "command" .= cmd
            , "arguments" .= args
-           , "stdin" .= stdin'
            , "output" .= output
            , "errorOutput" .= err
            ]
@@ -238,17 +236,16 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
     callProcess "git" ["push", "--force", "origin", branch]
   gitDiffNameOnly mRef = do
     let args = ["diff", "--name-only"] <> maybeToList mRef
-    map unpack . lines . pack <$> readProcess "git" args ""
+    map unpack . lines . pack <$> readProcess "git" args
   gitFormatPatch mRef = do
     let args = ["format-patch", "--stdout"] <> maybeToList mRef
-    pack <$> readProcess "git" args ""
+    pack <$> readProcess "git" args
   gitCommitAll msg = do
     callProcess "git" ["commit", "-a", "--message", msg]
     unpack . T.dropWhileEnd isSpace . pack
       <$> readProcess
         "git"
         ["rev-parse", "HEAD"]
-        ""
   gitCheckout branch = do
     callProcess "git" ["checkout", "--no-progress", "-b", branch]
 

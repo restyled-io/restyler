@@ -93,8 +93,8 @@ instance MonadSystem TestAppT where
 instance MonadProcess TestAppT where
   callProcess _cmd _args = pure ()
   callProcessExitCode _cmd _args = asks taProcessExitCodes
-  readProcess _cmd _args _stdin = pure ""
-  readProcessExitCode _cmd _args _stdin = pure (ExitSuccess, "")
+  readProcess _cmd _args = pure ""
+  readProcessExitCode _cmd _args = pure (ExitSuccess, "")
 
 instance MonadDownloadFile TestAppT where
   downloadFile _url _path = pure ()
