@@ -37,30 +37,26 @@ import Restyler.RestylerResult
 import qualified Restyler.Wiki as Wiki
 import System.FilePath ((</>))
 
-data RestylerExitFailure = RestylerExitFailure Restyler [String] Int
+data RestylerExitFailure = RestylerExitFailure Restyler Int
   deriving stock (Show, Eq)
 
 instance Exception RestylerExitFailure where
-  displayException (RestylerExitFailure Restyler {..} args ec) =
+  displayException (RestylerExitFailure Restyler {..} ec) =
     mconcat
       [ "Restyler " <> rName <> " exited non-zero (" <> show @String ec <> ")"
       , "\n  Error information may be present in debug messages printed above"
-      , "\n"
-      , "\n  Original command: " <> show @String ("docker" : args)
       , "\n"
       , "\n  Help:"
       , concatMap ("\n    " <>) rDocumentation
       ]
 
-data RestylerOutOfMemory = RestylerOutOfMemory Restyler [String]
+newtype RestylerOutOfMemory = RestylerOutOfMemory Restyler
   deriving stock (Show, Eq)
 
 instance Exception RestylerOutOfMemory where
-  displayException (RestylerOutOfMemory Restyler {..} args) =
+  displayException (RestylerOutOfMemory Restyler {..}) =
     mconcat
       [ "Restyler " <> rName <> " used too much memory (exit code 137)"
-      , "\n"
-      , "\n  Original command: " <> show @String ("docker" : args)
       , "\n"
       , "\n  " <> unpack (Wiki.commonError "Restyle Error 137")
       ]
@@ -310,8 +306,8 @@ dockerRunRestyler r@Restyler {..} style = do
 
   case ec of
     ExitSuccess -> pure ()
-    ExitFailure 137 -> throwIO $ RestylerOutOfMemory r args
-    ExitFailure i -> throwIO $ RestylerExitFailure r args i
+    ExitFailure 137 -> throwIO $ RestylerOutOfMemory r
+    ExitFailure i -> throwIO $ RestylerExitFailure r i
  where
   prefix p
     | "./" `isPrefixOf` p = p
