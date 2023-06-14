@@ -39,6 +39,7 @@ class Monad m => MonadSystem m where
   listDirectory :: FilePath -> m [FilePath]
   readFileBS :: FilePath -> m ByteString
   writeFile :: FilePath -> Text -> m ()
+  removeFile :: FilePath -> m ()
 
 readFile :: MonadSystem m => FilePath -> m Text
 readFile = fmap (decodeUtf8With lenientDecode) . readFileBS

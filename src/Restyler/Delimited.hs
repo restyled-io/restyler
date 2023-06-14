@@ -17,6 +17,7 @@ import Data.Aeson.Casing
 import qualified Data.Text as T
 import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
+import UnliftIO.Exception (bracket)
 
 data Delimiters = Delimiters
   { dStart :: Text
@@ -53,16 +54,19 @@ data DelimitedMeta = DelimitedMeta
 
 -- | Restyle delimited content within paths using the given function
 restyleDelimited
-  :: MonadSystem m
+  :: (MonadUnliftIO m, MonadSystem m)
   => Delimiters
   -> ([FilePath] -> m result)
   -- ^ Restyle files inplace
   -> [FilePath]
   -> m result
-restyleDelimited delimiters restyle paths = do
-  delimited <- traverse (delimit delimiters) paths
-  result <- restyle $ concatMap delimitedInPaths delimited
-  result <$ traverse_ (undelimit delimiters) delimited
+restyleDelimited delimiters restyle paths =
+  bracket
+    (traverse (delimit delimiters) paths)
+    (traverse (traverse (removeFile . dppPath) . dpParts))
+    $ \delimited -> do
+      result <- restyle $ concatMap delimitedInPaths delimited
+      result <$ traverse_ (undelimit delimiters) delimited
 
 delimitedInPaths :: DelimitedPath -> [FilePath]
 delimitedInPaths = map dppPath . filter dppIn . dpParts

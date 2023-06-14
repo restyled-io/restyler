@@ -36,6 +36,9 @@ spec = withTestApp $ do
           , "end"
           ]
 
+      -- Test cleanup
+      doesFileExist "foo.rb.0" `shouldReturn` False
+
   describe "delimit" $ do
     it "splits a file, respecting indentation" $ testAppExample $ do
       writeFile "foo.rb" $

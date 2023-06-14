@@ -89,6 +89,7 @@ instance MonadSystem TestAppT where
   listDirectory = FS.listDirectory
   readFileBS = FS.readFileBinary
   writeFile = FS.writeFileUtf8
+  removeFile = FS.removeFile
 
 instance MonadProcess TestAppT where
   callProcess _cmd _args = pure ()

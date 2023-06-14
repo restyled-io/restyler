@@ -86,6 +86,10 @@ instance MonadUnliftIO m => MonadSystem (AppT app m) where
     logDebug $ "writeFile" :# ["path" .= path]
     liftIO $ Prelude.writeFile path $ unpack content
 
+  removeFile path = do
+    logDebug $ "removeFile" :# ["path" .= path]
+    liftIO $ Directory.removeFile path
+
 instance MonadUnliftIO m => MonadProcess (AppT app m) where
   callProcess cmd args = do
     -- N.B. this includes access tokens in log messages when used for

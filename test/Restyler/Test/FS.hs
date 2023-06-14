@@ -18,6 +18,7 @@ module Restyler.Test.FS
   , readFileBinary
   , writeFileUtf8
   , writeFileExecutable
+  , removeFile
   , createFileLink
   , getCurrentDirectory
   , setCurrentDirectory
@@ -48,6 +49,12 @@ modifyFS' :: (MonadIO m, MonadReader env m, HasFS env) => (FS' -> FS') -> m ()
 modifyFS' f = do
   FS ref <- view fsL
   liftIO $ atomicModifyIORef' ref $ \fs -> (f fs, ())
+
+modifyFiles
+  :: (MonadIO m, MonadReader env m, HasFS env)
+  => (Map FilePath ReadableFile -> Map FilePath ReadableFile)
+  -> m ()
+modifyFiles f = modifyFS' $ \fs -> fs {fsFiles = f $ fsFiles fs}
 
 data FS' = FS'
   { fsCwd :: FilePath
@@ -121,6 +128,12 @@ writeFileExecutable
   :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> Text -> m ()
 writeFileExecutable path = writeFile path . executableFile
 
+removeFile
+  :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m ()
+removeFile path' = do
+  path <- getAbsolutePath path'
+  modifyFiles $ Map.delete path
+
 createFileLink
   :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> FilePath -> m ()
 createFileLink target name = writeFile name $ Symlink target
@@ -132,7 +145,7 @@ writeFile
   -> m ()
 writeFile path' content = do
   path <- getAbsolutePath path'
-  modifyFS' $ \fs -> fs {fsFiles = Map.insert path content $ fsFiles fs}
+  modifyFiles $ Map.insert path content
 
 getCurrentDirectory :: (MonadIO m, MonadReader env m, HasFS env) => m FilePath
 getCurrentDirectory = fsCwd <$> readFS'

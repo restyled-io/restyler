@@ -193,7 +193,7 @@ addExecutableInterpreter path = warnIgnoreWith (path, Nothing) $ do
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
-  :: ( MonadIO m
+  :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
      , MonadProcess m
@@ -212,7 +212,7 @@ runRestyler r paths = do
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
-  :: ( MonadIO m
+  :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
      , MonadProcess m
