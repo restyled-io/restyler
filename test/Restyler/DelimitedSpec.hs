@@ -39,6 +39,50 @@ spec = withTestApp $ do
       -- Test cleanup
       doesFileExist "foo.rb.0" `shouldReturn` False
 
+    it "works for markdown lists" $ testAppExample $ do
+      writeFile "foo.md" $
+        T.unlines
+          [ "1. A request API Type should be named `Api{Action}{Resource}({Target})`."
+          , ""
+          , "   ```hs"
+          , "   -- Good (Target omitted, acting on entire resource)"
+          , "   data ApiCreateTeacher"
+          , "   data ApiDeleteTeacher"
+          , ""
+          , "   -- Good (Target included)"
+          , "   data ApiSetTeacherPassword"
+          , ""
+          , "   -- Bad"
+          , "   data TeacherPUT"
+          , "   data CreateApiTeacher"
+          , "   data ApiTeacherSetPassword"
+          , "   ```"
+          ]
+
+      restyleDelimited
+        (Delimiters "```hs" "```")
+        markLinesRestyled
+        ["foo.md"]
+
+      readFile "foo.md"
+        `shouldReturn` T.unlines
+          [ "1. A request API Type should be named `Api{Action}{Resource}({Target})`."
+          , ""
+          , "   ```hs"
+          , "   RESTYLED: -- Good (Target omitted, acting on entire resource)"
+          , "   RESTYLED: data ApiCreateTeacher"
+          , "   RESTYLED: data ApiDeleteTeacher"
+          , "   RESTYLED: "
+          , "   RESTYLED: -- Good (Target included)"
+          , "   RESTYLED: data ApiSetTeacherPassword"
+          , "   RESTYLED: "
+          , "   RESTYLED: -- Bad"
+          , "   RESTYLED: data TeacherPUT"
+          , "   RESTYLED: data CreateApiTeacher"
+          , "   RESTYLED: data ApiTeacherSetPassword"
+          , "   ```"
+          ]
+
   describe "delimit" $ do
     it "splits a file, respecting indentation" $ testAppExample $ do
       writeFile "foo.rb" $

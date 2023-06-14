@@ -137,18 +137,10 @@ cleanDelimitedPart x =
     ( DelimitedMeta
         { dmLeading = leading
         , dmTrailing = trailing
-        , dmIndent = fromIntegral indent
+        , dmIndent = indent
         }
     , dedented
     )
- where
-  dedent t =
-    let
-      lns = T.lines t
-      lns' = map (T.length . T.takeWhile isSpace &&& id) lns
-      minIndent = fromMaybe 0 $ minimumMaybe $ map fst lns'
-    in
-      (minIndent, T.unlines $ map (T.drop minIndent . snd) lns')
 
 -- | Re-construct a file from its delimited parts
 undelimit :: MonadSystem m => Delimiters -> DelimitedPath -> m ()
@@ -170,10 +162,28 @@ readPart Delimiters {..} DelimitedPathPart {..}
           , dEnd
           ]
 
+dedent :: Text -> (Natural, Text)
+dedent t =
+  ( fromIntegral minIndent
+  , T.unlines $ map (T.drop minIndent . snd) lns
+  )
+ where
+  lns = map (T.length . T.takeWhile isSpace &&& id) $ T.lines t
+
+  -- For purposes of choosing min-indent, entirely blank lines are ignored
+  minIndent =
+    fromMaybe 0 $
+      minimumMaybe $
+        map fst $
+          filter (not . T.null . snd) lns
+
 indented :: Text -> Natural -> Text
-indented content level =
-  let prefix = T.replicate (fromIntegral level) " "
-  in  T.unlines $ map (prefix <>) $ T.lines content
+indented content level = T.unlines $ map prefix $ T.lines content
+ where
+  -- For the purposes of indenting, we leave totally-blank lines alone
+  prefix x
+    | T.null x = x
+    | otherwise = T.replicate (fromIntegral level) " " <> x
 
 splitBetween :: Text -> Text -> Text -> [Either Text Text]
 splitBetween d1 d2 = zig
