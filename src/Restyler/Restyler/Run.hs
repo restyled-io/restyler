@@ -7,6 +7,7 @@ module Restyler.Restyler.Run
     -- * Errors
   , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
+  , RestylerCommandNotFound (..)
   , TooManyChangedPaths (..)
 
     -- * Exported for testing only
@@ -58,7 +59,20 @@ instance Exception RestylerOutOfMemory where
     mconcat
       [ "Restyler " <> rName <> " used too much memory (exit code 137)"
       , "\n"
-      , "\n  " <> unpack (Wiki.commonError "Restyle Error 137")
+      , "\nSee " <> unpack (Wiki.commonError "Restyle Error 137") <> " for more details"
+      ]
+
+newtype RestylerCommandNotFound = RestylerCommandNotFound Restyler
+  deriving stock (Show, Eq)
+
+instance Exception RestylerCommandNotFound where
+  displayException (RestylerCommandNotFound Restyler {..}) =
+    mconcat
+      [ "Restyler " <> rName <> " has an invalid command (exit code 127)"
+      , "\n"
+      , "You may need to adjust restylers[" <> rName <> "].command"
+      , "\n"
+      , "\nSee " <> unpack (Wiki.commonError "Restyle Error 127") <> " for more details"
       ]
 
 data TooManyChangedPaths = TooManyChangedPaths Natural Natural
@@ -307,6 +321,7 @@ dockerRunRestyler r@Restyler {..} style = do
   case ec of
     ExitSuccess -> pure ()
     ExitFailure 137 -> throwIO $ RestylerOutOfMemory r
+    ExitFailure 127 -> throwIO $ RestylerCommandNotFound r
     ExitFailure i -> throwIO $ RestylerExitFailure r i
  where
   prefix p

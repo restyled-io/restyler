@@ -14,7 +14,8 @@ import Data.Aeson (ToJSON)
 import Restyler.App (GitHubError (..))
 import Restyler.Config (ConfigError (..))
 import Restyler.Restyler.Run
-  ( RestylerExitFailure (..)
+  ( RestylerCommandNotFound (..)
+  , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
   , TooManyChangedPaths (..)
   )
@@ -99,6 +100,14 @@ handlers e =
           , tag = "restyler-oom"
           , description = "a Restyler has used too much memory"
           , exitCode = 21
+          }
+  , fromException e & First <&> \case
+      RestylerCommandNotFound {} ->
+        ErrorMetadata
+          { severity = "error"
+          , tag = "restyler-command-not-found"
+          , description = "a Restyler's command is invalid"
+          , exitCode = 22
           }
   , fromException e & First <&> \case
       TooManyChangedPaths {} ->
