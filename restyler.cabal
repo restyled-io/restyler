@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cdc7b8a5df33d7a2e15c102440d6e3cf764ba020eb109a94bc8e711896e3b539
+-- hash: 31cb5d7b08d8211068df594604891bf3a2e425d20a7a24ed4c529f36911481b8
 
 name:           restyler
 version:        0.2.0.0
@@ -14,7 +14,6 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Data.Yaml.Ext
       GHC.Generics.Selectors
       GitHub.Endpoints.PullRequests.ReviewRequests
       GitHub.Request.Display
@@ -52,6 +51,7 @@ library
       Restyler.Setup
       Restyler.Statsd
       Restyler.Wiki
+      Restyler.Yaml.Errata
   other-modules:
       Paths_restyler
   hs-source-dirs:
@@ -97,6 +97,7 @@ library
     , directory
     , edit-distance
     , envparse
+    , errata
     , errors
     , exceptions
     , extra
@@ -204,7 +205,6 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Data.Yaml.ExtSpec
       Restyler.CommitTemplateSpec
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
@@ -218,6 +218,7 @@ test-suite test
       Restyler.RestylerSpec
       Restyler.Test.FS
       Restyler.WikiSpec
+      Restyler.Yaml.ErrataSpec
       SpecHelper
       Paths_restyler
   hs-source-dirs:

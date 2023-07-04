@@ -33,7 +33,7 @@ import UnliftIO.Temporary as X (withSystemTempDirectory)
 import Data.Aeson (Key)
 import Data.Aeson.KeyMap (KeyMap)
 import qualified Data.Aeson.KeyMap as KeyMap
-import Data.List (maximumBy, minimum, minimumBy)
+import Data.List (maximumBy, minimum, minimumBy, (!!))
 import UnliftIO.Exception (handleAny)
 
 maximumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
@@ -50,6 +50,14 @@ minimumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
 minimumByMaybe f = \case
   [] -> Nothing
   xs -> Just $ minimumBy f xs
+
+-- | Safe version of '(!!)'
+(!?) :: [a] -> Int -> Maybe a
+xs !? i
+  | length xs > i = Just $ xs !! i
+  | otherwise = Nothing
+
+infixl 9 !?
 
 -- | Ignore an exception, warning about it
 warnIgnore :: Monoid a => (MonadUnliftIO m, MonadLogger m) => m a -> m a

@@ -302,24 +302,14 @@ spec = withTestApp $ do
 
     result `shouldSatisfy` hasError "Do you have incorrect indentation"
 
-  it "handles tabs nicely" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-            statuses:
-            	differences: false
-        |]
-
-    result `shouldSatisfy` hasError "containing tabs"
-
   it "handles no configuration" $ testAppExample $ do
     defaultConfig <- loadDefaultConfig
 
     result <-
-      tryTo showConfigError $
-        loadConfigFrom (map ConfigPath configPaths) $
-          const $
-            pure testRestylers
+      tryTo showConfigError
+        $ loadConfigFrom (map ConfigPath configPaths)
+        $ const
+        $ pure testRestylers
 
     result `shouldBe` Right defaultConfig
 
@@ -328,16 +318,16 @@ spec = withTestApp $ do
     writeFile "/b" "enabled: false\n"
 
     aConfig <-
-      tryTo showConfigError $
-        loadConfigFrom [ConfigPath "/a", ConfigPath "/b"] $
-          const $
-            pure testRestylers
+      tryTo showConfigError
+        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+        $ const
+        $ pure testRestylers
 
     bConfig <-
-      tryTo showConfigError $
-        loadConfigFrom [ConfigPath "/x", ConfigPath "/b"] $
-          const $
-            pure testRestylers
+      tryTo showConfigError
+        $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
+        $ const
+        $ pure testRestylers
 
     fmap cEnabled aConfig `shouldBe` Right True
     fmap cEnabled bConfig `shouldBe` Right False
@@ -347,10 +337,10 @@ spec = withTestApp $ do
     writeFile "/b" "enabled: false\n"
 
     result <-
-      tryTo showConfigError $
-        loadConfigFrom [ConfigPath "/a", ConfigPath "/b"] $
-          const $
-            pure testRestylers
+      tryTo showConfigError
+        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+        $ const
+        $ pure testRestylers
 
     result `shouldSatisfy` isLeft
 
@@ -359,10 +349,10 @@ spec = withTestApp $ do
     writeFile "/b" "[{^"
 
     result <-
-      tryTo showConfigError $
-        loadConfigFrom [ConfigPath "/a", ConfigPath "/b"] $
-          const $
-            pure testRestylers
+      tryTo showConfigError
+        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
+        $ const
+        $ pure testRestylers
 
     fmap cEnabled result `shouldBe` Right False
 
@@ -377,10 +367,10 @@ hasError _ _ = False
 loadTestConfig
   :: (MonadUnliftIO m, MonadSystem m) => Text -> m (Either Text Config)
 loadTestConfig content = do
-  tryTo showConfigError $
-    loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content] $
-      const $
-        pure testRestylers
+  tryTo showConfigError
+    $ loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
+    $ const
+    $ pure testRestylers
 
 -- | Load a @'Text'@ as configuration, fail on errors
 assertTestConfig :: (MonadUnliftIO m, MonadSystem m) => Text -> m Config
@@ -388,7 +378,7 @@ assertTestConfig = either (throwString . unpack) pure <=< loadTestConfig
 
 showConfigError :: ConfigError -> Text
 showConfigError = \case
-  ConfigErrorInvalidYaml yaml ex ->
+  ConfigErrorInvalidYaml _path yaml ex ->
     unlines [pack $ prettyPrintParseException ex, "---", show yaml]
   ConfigErrorInvalidRestylers errs -> unlines errs
   ConfigErrorInvalidRestylersYaml ex -> show ex

@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_HADDOCK prune, ignore-exports #-}
 
@@ -37,15 +38,16 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import qualified Data.ByteString.Char8 as C8
 import Data.FileEmbed (embedFile)
 import Data.Functor.Barbie
-import Data.List (isInfixOf)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
-import qualified Data.Text as T
+import Data.Yaml
+  ( ParseException (..)
+  , YamlException (..)
+  , prettyPrintParseException
+  )
 import qualified Data.Yaml as Yaml
-import qualified Data.Yaml.Ext as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
 import Restyler.CommitTemplate
@@ -61,6 +63,7 @@ import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
 import qualified Restyler.Wiki as Wiki
+import Restyler.Yaml.Errata (formatInvalidYaml)
 import UnliftIO.Exception (handle)
 
 -- | A polymorphic representation of @'Config'@
@@ -156,35 +159,16 @@ instance ToJSON Config where
   toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 data ConfigError
-  = ConfigErrorInvalidYaml ByteString Yaml.ParseException
+  = ConfigErrorInvalidYaml FilePath ByteString ParseException
   | ConfigErrorInvalidRestylers [Text]
   | ConfigErrorInvalidRestylersYaml SomeException
   deriving stock (Show)
 
-configErrorInvalidYaml :: ByteString -> Yaml.ParseException -> ConfigError
-configErrorInvalidYaml yaml =
-  ConfigErrorInvalidYaml yaml
-    . Yaml.modifyYamlProblem modifyMessage
- where
-  modifyMessage msg
-    | isCannotStart msg && hasTabIndent yaml =
-        msg
-          <> "\n\nThis may be caused by your source file containing tabs."
-          <> "\nYAML forbids tabs for indentation. See https://yaml.org/faq.html."
-    | otherwise =
-        msg
-  isCannotStart = ("character that cannot start any token" `isInfixOf`)
-  hasTabIndent = ("\n\t" `C8.isInfixOf`)
-
 instance Exception ConfigError where
   displayException =
-    unpack . T.unlines . \case
-      ConfigErrorInvalidYaml yaml e ->
-        [ "Yaml parse exception:"
-        , pack $ Yaml.prettyPrintParseException e
-        , ""
-        , "Original input:"
-        , Yaml.locateErrorInContent e $ decodeUtf8 yaml
+    unpack . unlines . \case
+      ConfigErrorInvalidYaml path yaml e ->
+        [ formatYamlException path yaml e
         , ""
         , generalHelp
         ]
@@ -208,6 +192,20 @@ instance Exception ConfigError where
     generalHelp :: Text
     generalHelp = Wiki.commonError ".restyled.yaml"
 
+formatYamlException :: FilePath -> ByteString -> ParseException -> Text
+formatYamlException path bs = \case
+  InvalidYaml (Just (YamlParseException problem context mark)) ->
+    formatInvalidYaml path bs problem context mark
+  ex ->
+    unlines
+      [ pack path <> " is not valid yaml"
+      , "Exception:"
+      , pack $ prettyPrintParseException ex
+      , ""
+      , "Input:"
+      , decodeUtf8 bs
+      ]
+
 -- | Load a fully-inflated @'Config'@
 --
 -- Read any @.restyled.yaml@, fill it out from defaults, grab the versioned set
@@ -222,11 +220,11 @@ loadConfig
      )
   => m Config
 loadConfig =
-  loadConfigFrom (map ConfigPath configPaths) $
-    handleTo ConfigErrorInvalidRestylersYaml
-      . getAllRestylersVersioned
-      . runIdentity
-      . cfRestylersVersion
+  loadConfigFrom (map ConfigPath configPaths)
+    $ handleTo ConfigErrorInvalidRestylersYaml
+    . getAllRestylersVersioned
+    . runIdentity
+    . cfRestylersVersion
 
 loadConfigFrom
   :: (MonadUnliftIO m, MonadSystem m)
@@ -242,21 +240,22 @@ data ConfigSource
   = ConfigPath FilePath
   | ConfigContent ByteString
 
-readConfigSources :: MonadSystem m => [ConfigSource] -> m (Maybe ByteString)
+readConfigSources
+  :: MonadSystem m => [ConfigSource] -> m (Maybe (FilePath, ByteString))
 readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
  where
-  go :: MonadSystem m => ConfigSource -> m (Maybe ByteString)
+  go :: MonadSystem m => ConfigSource -> m (Maybe (FilePath, ByteString))
   go = \case
     ConfigPath path -> do
       exists <- doesFileExist path
-      if exists then Just <$> readFileBS path else pure Nothing
-    ConfigContent content -> pure $ Just content
+      if exists then Just . (path,) <$> readFileBS path else pure Nothing
+    ConfigContent content -> pure $ Just ("<config>", content)
 
 -- | Load configuration if present and apply defaults
 --
 -- Returns @'ConfigF' 'Identity'@ because defaulting has populated all fields.
 --
--- May throw any @'ConfigError'@. May through raw @'Yaml.ParseException'@s if
+-- May throw any @'ConfigError'@. May through raw @'ParseException'@s if
 -- there is a programmer error in our static default configuration YAML.
 loadConfigF
   :: (MonadUnliftIO m, MonadSystem m)
@@ -269,12 +268,12 @@ loadConfigF sources =
 
 loadUserConfigF
   :: (MonadUnliftIO m, MonadSystem m) => [ConfigSource] -> m (ConfigF Maybe)
-loadUserConfigF = maybeM (pure emptyConfig) decodeThrow' . readConfigSources
+loadUserConfigF = maybeM (pure emptyConfig) (uncurry decodeThrow') . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
-decodeThrow' :: (MonadUnliftIO m, FromJSON a) => ByteString -> m a
-decodeThrow' content =
-  handleTo (configErrorInvalidYaml content) $ decodeThrow content
+decodeThrow' :: (MonadUnliftIO m, FromJSON a) => FilePath -> ByteString -> m a
+decodeThrow' path content =
+  handleTo (ConfigErrorInvalidYaml path content) $ decodeThrow content
 
 decodeThrow :: (MonadIO m, FromJSON a) => ByteString -> m a
 decodeThrow = either throwIO pure . Yaml.decodeThrow
@@ -285,10 +284,10 @@ decodeThrow = either throwIO pure . Yaml.decodeThrow
 resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
   restylers <-
-    either (throwIO . ConfigErrorInvalidRestylers) pure $
-      overrideRestylers allRestylers $
-        unSketchy $
-          runIdentity cfRestylers
+    either (throwIO . ConfigErrorInvalidRestylers) pure
+      $ overrideRestylers allRestylers
+      $ unSketchy
+      $ runIdentity cfRestylers
 
   pure
     Config
