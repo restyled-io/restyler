@@ -86,9 +86,9 @@ recommend using the Squash or Rebase strategies.
   -- N.B. Assumes something committed changes, otherwise we'd not be opening
   -- this PR at all
   resultsList =
-    unlines $
-      map (("- " <>) . restylerListItem . rrRestyler) $
-        filter restylerCommittedChanges results
+    unlines
+      $ map (("- " <>) . restylerListItem . rrRestyler)
+      $ filter restylerCommittedChanges results
 
   restylerListItem Restyler {..} = pack $ case rDocumentation of
     (url : _) -> "[" <> rName <> "](" <> url <> ")"

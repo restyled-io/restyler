@@ -87,12 +87,12 @@ delimit :: MonadSystem m => Delimiters -> FilePath -> m DelimitedPath
 delimit Delimiters {..} path = do
   content <- readFile path
   parts <-
-    traverse (uncurry $ writePart path) $
-      zip [0 ..] $
-        splitBetween
-          dStart
-          dEnd
-          content
+    traverse (uncurry $ writePart path)
+      $ zip [0 ..]
+      $ splitBetween
+        dStart
+        dEnd
+        content
   pure DelimitedPath {dpSource = path, dpParts = parts}
 
 writePart
@@ -153,8 +153,8 @@ readPart Delimiters {..} DelimitedPathPart {..}
   | not dppIn = readFile dppPath
   | otherwise = do
       content <- readFile dppPath
-      pure $
-        mconcat
+      pure
+        $ mconcat
           [ dStart
           , maybe "" dmLeading dppMeta
           , maybe content (indented content . dmIndent) dppMeta
@@ -172,10 +172,10 @@ dedent t =
 
   -- For purposes of choosing min-indent, entirely blank lines are ignored
   minIndent =
-    fromMaybe 0 $
-      minimumMaybe $
-        map fst $
-          filter (not . T.null . snd) lns
+    fromMaybe 0
+      $ minimumMaybe
+      $ map fst
+      $ filter (not . T.null . snd) lns
 
 indented :: Text -> Natural -> Text
 indented content level = T.unlines $ map prefix $ T.lines content

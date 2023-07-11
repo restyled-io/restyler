@@ -45,8 +45,8 @@ sendPullRequestStatus'
   -> PullRequestStatus
   -> m ()
 sendPullRequestStatus' Config {..} pullRequest status =
-  when (cStatuses `shouldSendStatus` status) $
-    createHeadShaStatus pullRequest status
+  when (cStatuses `shouldSendStatus` status)
+    $ createHeadShaStatus pullRequest status
 
 createHeadShaStatus
   :: (MonadLogger m, MonadGitHub m)
@@ -54,9 +54,9 @@ createHeadShaStatus
   -> PullRequestStatus
   -> m ()
 createHeadShaStatus pullRequest status = do
-  logInfo $
-    "Setting PR status"
-      :# ["status" .= shortStatus, "commit" .= shortSha]
+  logInfo
+    $ "Setting PR status"
+    :# ["status" .= shortStatus, "commit" .= shortSha]
   runGitHub_ $ createStatusR owner name sha $ statusToStatus status
  where
   owner = pullRequestOwnerName pullRequest

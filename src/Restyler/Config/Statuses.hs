@@ -23,9 +23,15 @@ instance FromJSON Statuses where
   parseJSON (Object o) = do
     validateObjectKeys ["skipped", "differences", "no_differences", "error"] o
     Statuses
-      <$> o .:? "skipped" .!= True
-      <*> o .:? "differences" .!= True
-      <*> o .:? "no_differences" .!= True
+      <$> o
+      .:? "skipped"
+      .!= True
+      <*> o
+      .:? "differences"
+      .!= True
+      <*> o
+      .:? "no_differences"
+      .!= True
   parseJSON (Aeson.Bool b) =
     pure
       Statuses

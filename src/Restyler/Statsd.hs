@@ -50,8 +50,8 @@ withStatsClient
 withStatsClient mHost mPort globalTags f = do
   case mSettings of
     Nothing -> f StatsClient {statsClient = DD.Dummy, globalTags}
-    Just settings -> withDogStatsD settings $
-      \statsClient -> f StatsClient {statsClient, globalTags}
+    Just settings -> withDogStatsD settings
+      $ \statsClient -> f StatsClient {statsClient, globalTags}
  where
   mSettings = case (mHost, mPort) of
     (Nothing, Nothing) -> Nothing

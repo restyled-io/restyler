@@ -62,11 +62,11 @@ parseOptions :: IO Options
 parseOptions = do
   EnvOptions {..} <- Env.parse id envParser
   CLIOptions {..} <-
-    execParser $
-      info (optionsParser <**> helper) $
-        fullDesc
-          <> progDesc
-            "Restyle a GitHub Pull Request"
+    execParser
+      $ info (optionsParser <**> helper)
+      $ fullDesc
+      <> progDesc
+        "Restyle a GitHub Pull Request"
 
   pure
     Options

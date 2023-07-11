@@ -81,11 +81,11 @@ getPullRequestLabelNames
   -> m (Vector (Name IssueLabel))
 getPullRequestLabelNames pullRequest = do
   labels <-
-    warnIgnore $
-      runGitHub $
-        labelsOnIssueR
-          (pullRequestOwnerName pullRequest)
-          (pullRequestRepoName pullRequest)
-          (pullRequestIssueId pullRequest)
-          FetchAll
+    warnIgnore
+      $ runGitHub
+      $ labelsOnIssueR
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        (pullRequestIssueId pullRequest)
+        FetchAll
   pure $ labelName <$> labels

@@ -49,9 +49,9 @@ withExitHandler
 withExitHandler logger statsClient options f = do
   start <- liftIO getCurrentTime
   result <- tryAny f
-  runExitHandler logger statsClient options $
-    handleResult result
-      `finally` recordDoneStats start
+  runExitHandler logger statsClient options
+    $ handleResult result
+    `finally` recordDoneStats start
 
 handleResult
   :: ( MonadUnliftIO m
@@ -71,9 +71,9 @@ handleResult = \case
 
     Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
 
-    logError $
-      ("Exception:\n" <> pack (displayException ex))
-        :# ["error" .= md]
+    logError
+      $ ("Exception:\n" <> pack (displayException ex))
+      :# ["error" .= md]
 
     errorMetadataExitCode md
       <$ errorPullRequest (errorMetadataDescription md)

@@ -134,22 +134,22 @@ createRestyledPullRequest pullRequest results = do
 
   logInfo "Creating Restyled PR"
   restyledPullRequest <-
-    fmap createdRestyledPullRequest $
-      runGitHub $
-        createPullRequestR
-          (pullRequestOwnerName pullRequest)
-          (pullRequestRepoName pullRequest)
-          CreatePullRequest
-            { createPullRequestTitle = restyledTitle
-            , createPullRequestBody = restyledBody
-            , createPullRequestBase = pullRequestRestyledBaseRef pullRequest
-            , createPullRequestHead = pullRequestRestyledHeadRef pullRequest
-            }
+    fmap createdRestyledPullRequest
+      $ runGitHub
+      $ createPullRequestR
+        (pullRequestOwnerName pullRequest)
+        (pullRequestRepoName pullRequest)
+        CreatePullRequest
+          { createPullRequestTitle = restyledTitle
+          , createPullRequestBody = restyledBody
+          , createPullRequestBase = pullRequestRestyledBaseRef pullRequest
+          , createPullRequestHead = pullRequestRestyledHeadRef pullRequest
+          }
 
   whenConfigNonEmpty (Set.toList . cLabels) $ \labels -> do
     logInfo $ "Adding labels to Restyled PR" :# ["labels" .= labels]
-    runGitHub_ $
-      addLabelsToIssueR
+    runGitHub_
+      $ addLabelsToIssueR
         (restyledPullRequestOwnerName restyledPullRequest)
         (restyledPullRequestRepoName restyledPullRequest)
         (restyledPullRequestIssueId restyledPullRequest)
@@ -157,16 +157,16 @@ createRestyledPullRequest pullRequest results = do
 
   whenConfigJust (configPullRequestReviewer pullRequest) $ \user -> do
     logInfo $ "Requesting review of Restyled PR" :# ["reviewer" .= user]
-    runGitHub_ $
-      createReviewRequestR
+    runGitHub_
+      $ createReviewRequestR
         (restyledPullRequestOwnerName restyledPullRequest)
         (restyledPullRequestRepoName restyledPullRequest)
         (restyledPullRequestNumber restyledPullRequest)
         (requestOneReviewer user)
 
-  logInfo $
-    "Opened Restyled PR"
-      :# ["number" .= restyledPullRequestNumber restyledPullRequest]
+  logInfo
+    $ "Opened Restyled PR"
+    :# ["number" .= restyledPullRequestNumber restyledPullRequest]
   pure restyledPullRequest
 
 updateRestyledPullRequest
@@ -188,13 +188,13 @@ updateRestyledPullRequest pullRequest restyledPullRequest results = do
   editRestyledPullRequest restyledPullRequest $ \edit ->
     edit
       { editPullRequestBody =
-          Just $
-            Content.pullRequestDescription mJobUrl pullRequest results
+          Just
+            $ Content.pullRequestDescription mJobUrl pullRequest results
       }
 
-  logInfo $
-    "Updated existing Restyled PR"
-      :# ["number" .= restyledPullRequestNumber restyledPullRequest]
+  logInfo
+    $ "Updated existing Restyled PR"
+    :# ["number" .= restyledPullRequestNumber restyledPullRequest]
   pure restyledPullRequest
 
 closeRestyledPullRequest
@@ -202,17 +202,17 @@ closeRestyledPullRequest
   => RestyledPullRequest
   -> m ()
 closeRestyledPullRequest pr = do
-  logInfo $
-    "Closing existing Restyled PR"
-      :# ["number" .= restyledPullRequestNumber pr]
+  logInfo
+    $ "Closing existing Restyled PR"
+    :# ["number" .= restyledPullRequestNumber pr]
   editRestyledPullRequestState StateClosed pr
 
-  warnIgnore $
-    runGitHub_ $
-      deleteReferenceR
-        (restyledPullRequestOwnerName pr)
-        (restyledPullRequestRepoName pr)
-        (mkName Proxy $ "heads/" <> restyledPullRequestHeadRef pr)
+  warnIgnore
+    $ runGitHub_
+    $ deleteReferenceR
+      (restyledPullRequestOwnerName pr)
+      (restyledPullRequestRepoName pr)
+      (mkName Proxy $ "heads/" <> restyledPullRequestHeadRef pr)
 
 editRestyledPullRequestState
   :: (MonadLogger m, MonadGitHub m)
@@ -221,12 +221,12 @@ editRestyledPullRequestState
   -> m ()
 editRestyledPullRequestState issueState pr
   | restyledPullRequestState pr == issueState =
-      logWarn $
-        "Redundant update of Restyled PR"
-          :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
+      logWarn
+        $ "Redundant update of Restyled PR"
+        :# ["number" .= restyledPullRequestNumber pr, "state" .= issueState]
   | otherwise =
-      editRestyledPullRequest pr $
-        \edit -> edit {editPullRequestState = Just issueState}
+      editRestyledPullRequest pr
+        $ \edit -> edit {editPullRequestState = Just issueState}
 
 editRestyledPullRequest
   :: MonadGitHub m

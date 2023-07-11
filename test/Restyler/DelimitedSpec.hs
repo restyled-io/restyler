@@ -11,8 +11,8 @@ spec :: Spec
 spec = withTestApp $ do
   describe "restyleDelimited" $ do
     it "restyles delimited content" $ testAppExample $ do
-      writeFile "foo.rb" $
-        T.unlines
+      writeFile "foo.rb"
+        $ T.unlines
           [ "def some_ruby"
           , "  <<-EOSQL"
           , "    SELECT"
@@ -40,8 +40,8 @@ spec = withTestApp $ do
       doesFileExist "foo.rb.0" `shouldReturn` False
 
     it "works for markdown lists" $ testAppExample $ do
-      writeFile "foo.md" $
-        T.unlines
+      writeFile "foo.md"
+        $ T.unlines
           [ "1. A request API Type should be named `Api{Action}{Resource}({Target})`."
           , ""
           , "   ```hs"
@@ -85,8 +85,8 @@ spec = withTestApp $ do
 
   describe "delimit" $ do
     it "splits a file, respecting indentation" $ testAppExample $ do
-      writeFile "foo.rb" $
-        T.unlines
+      writeFile "foo.rb"
+        $ T.unlines
           [ "def some_ruby"
           , "  <<-EOSQL"
           , "    SELECT"
@@ -138,8 +138,8 @@ spec = withTestApp $ do
           ]
 
 markLinesRestyled :: MonadSystem m => [FilePath] -> m ()
-markLinesRestyled = traverse_ $
-  \path -> writeFile path . mark =<< readFile path
+markLinesRestyled = traverse_
+  $ \path -> writeFile path . mark =<< readFile path
  where
   mark = T.unlines . map ("RESTYLED: " <>) . T.lines
 
