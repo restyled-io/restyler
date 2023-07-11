@@ -254,29 +254,29 @@ runRestyler'
   -> m ()
 runRestyler' r@Restyler {..} paths
   | fromMaybe False rRunAsFilter =
-      traverse_ (dockerRunRestyler r . DockerRunFilter) paths
+      traverse_ (dockerRunRestyler r . DockerRunPathToStdout) paths
   | rSupportsMultiplePaths =
-      dockerRunRestyler r $ DockerRunMany rSupportsArgSep paths
+      dockerRunRestyler r $ DockerRunPathsOverwrite rSupportsArgSep paths
   | otherwise =
-      traverse_ (dockerRunRestyler r . DockerRunSingle rSupportsArgSep) paths
+      traverse_ (dockerRunRestyler r . DockerRunPathOverwrite rSupportsArgSep) paths
 
 data DockerRunStyle
-  = DockerRunFilter FilePath
-  | DockerRunMany Bool [FilePath]
-  | DockerRunSingle Bool FilePath
+  = DockerRunPathToStdout FilePath
+  | DockerRunPathsOverwrite Bool [FilePath]
+  | DockerRunPathOverwrite Bool FilePath
   deriving stock (Show)
 
 dockerRunStyleToText :: DockerRunStyle -> Text
 dockerRunStyleToText = \case
-  DockerRunFilter {} -> "as filter"
-  DockerRunMany sep _paths ->
+  DockerRunPathToStdout {} -> "file to stdout"
+  DockerRunPathsOverwrite sep _paths ->
     if sep
-      then "many files, with separator"
-      else "many files, without separator"
-  DockerRunSingle sep _path ->
+      then "paths, overwrite, separator"
+      else "paths, overwrite, no separator"
+  DockerRunPathOverwrite sep _path ->
     if sep
-      then "single file, with separator"
-      else "single file, without separator"
+      then "path, overwrite, separator"
+      else "path, overwrite, no separator"
 
 instance ToJSON DockerRunStyle where
   toJSON = toJSON . dockerRunStyleToText
@@ -310,12 +310,12 @@ dockerRunRestyler r@Restyler {..} style = do
        ]
 
   ec <- case style of
-    DockerRunFilter path -> do
+    DockerRunPathToStdout path -> do
       (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])
       ec <$ writeFile path (fixNewline $ pack out)
-    DockerRunMany sep paths -> do
+    DockerRunPathsOverwrite sep paths -> do
       callProcessExitCode "docker" $ args <> ["--" | sep] <> map prefix paths
-    DockerRunSingle sep path -> do
+    DockerRunPathOverwrite sep path -> do
       callProcessExitCode "docker" $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
