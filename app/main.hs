@@ -25,9 +25,9 @@ main = do
         app <- bootstrapApp options logger path statsClient
         runAppT app restylerMain
 
-  runLoggerLoggingT logger $
-    logInfo $
-      "Restyler done"
-        :# ["exitCode" .= exitCodeInt ec]
+  runLoggerLoggingT logger
+    $ logInfo
+    $ "Restyler done"
+    :# ["exitCode" .= exitCodeInt ec]
 
   exitWith ec

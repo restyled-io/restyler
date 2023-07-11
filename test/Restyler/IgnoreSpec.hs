@@ -13,8 +13,8 @@ spec = do
   describe "getIgnoredReason" $ do
     it "works in empty state" $ do
       config <-
-        loadModifiedConfig $
-          \c ->
+        loadModifiedConfig
+          $ \c ->
             c
               { cIgnoreAuthors = []
               , cIgnoreBranches = []

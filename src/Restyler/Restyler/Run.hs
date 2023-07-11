@@ -139,9 +139,9 @@ runRestylersWith run Config {..} allPaths = do
   if lenPaths > maxPaths
     then case cpcOutcome cChangedPaths of
       MaximumChangedPathsOutcomeSkip -> do
-        logWarn $
-          "Number of changed paths is greater than configured maximum"
-            :# ["paths" .= lenPaths, "maximum" .= maxPaths]
+        logWarn
+          $ "Number of changed paths is greater than configured maximum"
+          :# ["paths" .= lenPaths, "maximum" .= maxPaths]
         pure []
       MaximumChangedPathsOutcomeError ->
         throwIO $ TooManyChangedPaths lenPaths maxPaths
@@ -178,16 +178,16 @@ withFilteredPaths restylers paths run = do
             else rInclude r
         included = includePath includes path
 
-      logDebug $
-        "Matching paths"
-          :# [ "name" .= rName r
-             , "path" .= path
-             , "matched" .= matched
-             , "includes" .= includes
-             , "included" .= included
-             , "interpreter" .= mInterpreter
-             -- , "filtered" .= filtered
-             ]
+      logDebug
+        $ "Matching paths"
+        :# [ "name" .= rName r
+           , "path" .= path
+           , "matched" .= matched
+           , "includes" .= includes
+           , "included" .= included
+           , "interpreter" .= mInterpreter
+           -- , "filtered" .= filtered
+           ]
 
       pure $ if included then Just path else Nothing
 
@@ -303,11 +303,11 @@ dockerRunRestyler r@Restyler {..} style = do
           <> ["--volume", cwd <> ":/code", rImage]
           <> nub (rCommand <> rArguments)
 
-  logInfo $
-    "Restyling"
-      :# [ "restyler" .= rName
-         , "style" .= style
-         ]
+  logInfo
+    $ "Restyling"
+    :# [ "restyler" .= rName
+       , "style" .= style
+       ]
 
   ec <- case style of
     DockerRunFilter path -> do

@@ -25,8 +25,8 @@ genericParseJSONValidated
 genericParseJSONValidated opts = \case
   v@(Object o) -> do
     let keys =
-          map (pack . fieldLabelModifier opts) $
-            selectors (Proxy @(Rep a))
+          map (pack . fieldLabelModifier opts)
+            $ selectors (Proxy @(Rep a))
     validateObjectKeys keys o
     genericParseJSON opts v
   v -> genericParseJSON opts v

@@ -14,8 +14,8 @@ spec = do
   describe "restrictionOptions" $ do
     it "always adds --net=none and --cap-drop=all" $ do
       let opts =
-            restrictionOptions $
-              Restrictions
+            restrictionOptions
+              $ Restrictions
                 { netNone = Last $ Just True
                 , capDropAll = Last $ Just True
                 , cpuShares = Last Nothing
@@ -33,8 +33,8 @@ spec = do
 
     it "respects cpu-shares and memory" $ do
       let opts =
-            restrictionOptions $
-              Restrictions
+            restrictionOptions
+              $ Restrictions
                 { netNone = Last $ Just True
                 , capDropAll = Last $ Just True
                 , cpuShares = Last $ Just 256

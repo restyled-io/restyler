@@ -52,8 +52,12 @@ instance FromJSON RequestReviewConfig where
   parseJSON (Object o) = do
     validateObjectKeys ["origin", "forked"] o
     RequestReviewConfig
-      <$> o .:? "origin" .!= RequestReviewFromAuthor
-      <*> o .:? "forked" .!= RequestReviewFromNone
+      <$> o
+      .:? "origin"
+      .!= RequestReviewFromAuthor
+      <*> o
+      .:? "forked"
+      .!= RequestReviewFromNone
   parseJSON x =
     typeMismatch
       "Invalid type for RequestReview. Expected String or Object."

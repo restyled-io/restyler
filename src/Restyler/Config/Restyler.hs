@@ -39,8 +39,8 @@ instance FromJSON RestylerOverride where
       | [(name, Object o')] <- KeyMap.toList o ->
           namedOverride name o'
     v ->
-      suffixIncorrectIndentation $
-        genericParseJSONValidated (aesonPrefix snakeCase) v
+      suffixIncorrectIndentation
+        $ genericParseJSONValidated (aesonPrefix snakeCase) v
 
 namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
 namedOverride name =
