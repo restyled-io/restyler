@@ -81,7 +81,7 @@ handleResult = \case
 
 -- TODO: stop using exitSuccess for flow-control
 isExitSuccess :: SomeException -> Bool
-isExitSuccess = maybe False (== ExitSuccess) . fromException
+isExitSuccess = (Just ExitSuccess ==) . fromException
 
 errorPullRequest
   :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasOptions env)
