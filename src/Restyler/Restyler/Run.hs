@@ -238,33 +238,22 @@ runRestyler_
   -> m ()
 runRestyler_ _ [] = pure ()
 runRestyler_ r paths = case rDelimiters r of
-  Nothing -> runRestyler' r paths
-  Just ds -> restyleDelimited ds (runRestyler' r) paths
-
-runRestyler'
-  :: ( MonadIO m
-     , MonadLogger m
-     , MonadSystem m
-     , MonadProcess m
-     , MonadReader env m
-     , HasOptions env
-     )
-  => Restyler
-  -> [FilePath]
-  -> m ()
-runRestyler' r@Restyler {..} paths
-  | fromMaybe False rRunAsFilter =
-      traverse_ (dockerRunRestyler r . DockerRunPathToStdout) paths
-  | rSupportsMultiplePaths =
-      dockerRunRestyler r $ DockerRunPathsOverwrite rSupportsArgSep paths
-  | otherwise =
-      traverse_ (dockerRunRestyler r . DockerRunPathOverwrite rSupportsArgSep) paths
+  Nothing -> run paths
+  Just ds -> restyleDelimited ds run paths
+ where
+  run = traverse_ (dockerRunRestyler r) . getDockerRunStyles r
 
 data DockerRunStyle
   = DockerRunPathToStdout FilePath
   | DockerRunPathsOverwrite Bool [FilePath]
   | DockerRunPathOverwrite Bool FilePath
   deriving stock (Show)
+
+getDockerRunStyles :: Restyler -> [FilePath] -> [DockerRunStyle]
+getDockerRunStyles Restyler {..} paths
+  | fromMaybe False rRunAsFilter = map DockerRunPathToStdout paths
+  | rSupportsMultiplePaths = [DockerRunPathsOverwrite rSupportsArgSep paths]
+  | otherwise = map (DockerRunPathOverwrite rSupportsArgSep) paths
 
 dockerRunStyleToText :: DockerRunStyle -> Text
 dockerRunStyleToText = \case
