@@ -19,7 +19,6 @@ module Restyler.Restyler.Run
 
 import Restyler.Prelude
 
-import Data.Aeson
 import Data.List (nub)
 import qualified Data.Text as T
 import Restyler.App.Class
@@ -250,26 +249,12 @@ data DockerRunStyle
   deriving stock (Show)
 
 getDockerRunStyles :: Restyler -> [FilePath] -> [DockerRunStyle]
-getDockerRunStyles Restyler {..} paths
-  | fromMaybe False rRunAsFilter = map DockerRunPathToStdout paths
-  | rSupportsMultiplePaths = [DockerRunPathsOverwrite rSupportsArgSep paths]
-  | otherwise = map (DockerRunPathOverwrite rSupportsArgSep) paths
-
-dockerRunStyleToText :: DockerRunStyle -> Text
-dockerRunStyleToText = \case
-  DockerRunPathToStdout {} -> "file to stdout"
-  DockerRunPathsOverwrite sep _paths ->
-    if sep
-      then "paths, overwrite, separator"
-      else "paths, overwrite, no separator"
-  DockerRunPathOverwrite sep _path ->
-    if sep
-      then "path, overwrite, separator"
-      else "path, overwrite, no separator"
-
-instance ToJSON DockerRunStyle where
-  toJSON = toJSON . dockerRunStyleToText
-  toEncoding = toEncoding . dockerRunStyleToText
+getDockerRunStyles Restyler {..} paths = case rRunStyle of
+  RestylerRunStylePathToStdout -> map DockerRunPathToStdout paths
+  RestylerRunStylePathsOverwrite -> [DockerRunPathsOverwrite False paths]
+  RestylerRunStylePathsOverwriteSep -> [DockerRunPathsOverwrite True paths]
+  RestylerRunStylePathOverwrite -> map (DockerRunPathOverwrite False) paths
+  RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerRunRestyler
   :: ( MonadIO m
@@ -295,7 +280,7 @@ dockerRunRestyler r@Restyler {..} style = do
   logInfo
     $ "Restyling"
     :# [ "restyler" .= rName
-       , "style" .= style
+       , "style" .= rRunStyle
        ]
 
   ec <- case style of

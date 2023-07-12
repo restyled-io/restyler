@@ -155,9 +155,7 @@ someRestyler =
     , rInclude = ["**/*"]
     , rInterpreters = []
     , rDelimiters = Nothing
-    , rSupportsArgSep = True
-    , rSupportsMultiplePaths = True
-    , rRunAsFilter = Nothing
+    , rRunStyle = RestylerRunStylePathsOverwriteSep
     }
 
 loadDefaultConfig :: MonadIO m => m Config
