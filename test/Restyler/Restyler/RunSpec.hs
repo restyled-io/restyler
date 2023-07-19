@@ -21,8 +21,8 @@ spec = withTestApp $ do
 
       filtered <-
         withFilteredPaths
-          [ someRestyler {rInclude = ["**/*.sh"], rInterpreters = [Sh]}
-          , someRestyler
+          [ (someRestyler "") {rInclude = ["**/*.sh"], rInterpreters = [Sh]}
+          , (someRestyler "")
               { rInclude = ["**/*.sh", "!b"]
               , rInterpreters = [Sh]
               }
@@ -50,10 +50,10 @@ spec = withTestApp $ do
       $ testAppExample
       $ do
         local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
-          runRestyler_ someRestyler ["foo"]
+          runRestyler_ (someRestyler "foo") ["bar"]
             `shouldThrow` ( ==
                               RestylerExitFailure
-                                someRestyler
+                                (someRestyler "foo")
                                 99
                           )
 

@@ -6,6 +6,7 @@ module Restyler.ConfigSpec
 
 import SpecHelper
 
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import Data.Yaml (prettyPrintParseException)
 import Restyler.Config
@@ -31,8 +32,8 @@ spec = withTestApp $ do
       `shouldBe` Right
         defaultConfig
           { cRestylers =
-              [ someRestyler {rName = "stylish-haskell"}
-              , someRestyler {rName = "prettier"}
+              [ someRestyler "stylish-haskell"
+              , someRestyler "prettier"
               ]
           }
 
@@ -40,79 +41,53 @@ spec = withTestApp $ do
     result <-
       loadTestConfig
         [st|
-            ---
             enabled: false
             restylers:
-            - stylish-haskell
+              - stylish-haskell
         |]
 
     fmap cEnabled result `shouldBe` Right False
 
   it "allows re-configuring includes" $ testAppExample $ do
-    defaultConfig <- loadDefaultConfig
+    assertLoadsRestyler
+      rInclude
+      [st|
+          - stylish-haskell:
+              include:
+                - "**/*.lhs"
+      |]
+      [Include "**/*.lhs"]
 
-    result1 <-
-      loadTestConfig
-        [st|
-            ---
+    assertLoadsRestyler
+      rInclude
+      [st|
+          restylers:
             - stylish-haskell:
                 include:
-                - "**/*.lhs"
-        |]
-    result2 <-
-      loadTestConfig
-        [st|
-            ---
-            - stylish-haskell:
-                include:
-                - "**/*.lhs"
-        |]
-    result3 <-
-      loadTestConfig
-        [st|
-            ---
-            restylers:
-            - stylish-haskell:
-                include:
-                - "**/*.lhs"
-        |]
-
-    result1 `shouldBe` result2
-    result2 `shouldBe` result3
-    result3
-      `shouldBe` Right
-        defaultConfig
-          { cRestylers =
-              [ someRestyler
-                  { rName = "stylish-haskell"
-                  , rInclude = [Include "**/*.lhs"]
-                  }
-              ]
-          }
+                  - "**/*.lhs"
+      |]
+      [Include "**/*.lhs"]
 
   it "has good errors for unknown name" $ testAppExample $ do
     result1 <-
       loadTestConfig
         [st|
-            ---
             - uknown-name
         |]
     result2 <-
       loadTestConfig
         [st|
-            ---
             - uknown-name:
                 arguments:
-                - --foo
+                  - --foo
         |]
     result3 <-
       loadTestConfig
         [st|
-            ---
             restylers:
-            - uknown-name:
-                arguments:
-                - --foo
+              - uknown-name:
+                  arguments:
+                    - --foo
         |]
 
     result1
@@ -129,7 +104,6 @@ spec = withTestApp $ do
     result <-
       loadTestConfig
         [st|
-            ---
             - unknown-name-1
             - unknown-name-2
         |]
@@ -145,25 +119,22 @@ spec = withTestApp $ do
     result1 <-
       loadTestConfig
         [st|
-            ---
             - hindex
         |]
     result2 <-
       loadTestConfig
         [st|
-            ---
             - hindex:
                 arguments:
-                - --foo
+                  - --foo
         |]
     result3 <-
       loadTestConfig
         [st|
-            ---
             restylers:
-            - hindex:
-                arguments:
-                - --foo
+              - hindex:
+                  arguments:
+                  - --foo
         |]
 
     result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
@@ -180,43 +151,33 @@ spec = withTestApp $ do
     result `shouldSatisfy` isRight
 
   it "can specify a Restyler with name" $ testAppExample $ do
-    defaultConfig <- loadDefaultConfig
-
-    result <-
-      loadTestConfig
-        [st|
-            restylers:
-              - name: hindent
-                image: restyled/restyler-foo
-                command: [foo]
-                arguments: []
-                include:
-                  - "**/*.js"
-                  - "**/*.jsx"
-        |]
-
-    result
-      `shouldBe` Right
-        defaultConfig
-          { cRestylers =
-              [ someRestyler
-                  { rEnabled = True
-                  , rName = "hindent"
-                  , rImage = "restyled/restyler-foo"
-                  , rCommand = ["foo"]
-                  , rArguments = []
-                  , rInclude = [Include "**/*.js", Include "**/*.jsx"]
-                  }
-              ]
-          }
+    assertLoadsRestyler
+      id
+      [st|
+          restylers:
+            - name: hindent
+              image: restyled/restyler-foo
+              command: [foo]
+              arguments: []
+              include:
+                - "**/*.js"
+                - "**/*.jsx"
+      |]
+      (someRestyler "hindent")
+        { rEnabled = True
+        , rImage = "restyled/restyler-foo"
+        , rCommand = ["foo"]
+        , rArguments = []
+        , rInclude = [Include "**/*.js", Include "**/*.jsx"]
+        }
 
   it "supports * to indicate all other Restylers" $ testAppExample $ do
     result <-
       assertTestConfig
         [st|
             restylers:
-            - jdt
-            - "*"
+              - jdt
+              - "*"
         |]
 
     map (rName &&& rEnabled) (cRestylers result)
@@ -248,9 +209,9 @@ spec = withTestApp $ do
       assertTestConfig
         [st|
             restylers:
-            - jdt
-            - "*"
-            - autopep8
+              - jdt
+              - "*"
+              - autopep8
         |]
 
     map (rName &&& rEnabled) (cRestylers result)
@@ -282,9 +243,9 @@ spec = withTestApp $ do
       loadTestConfig
         [st|
             restylers:
-            - "*"
-            - jdt
-            - "*"
+              - "*"
+              - jdt
+              - "*"
         |]
 
     result `shouldSatisfy` hasError "1 wildcard"
@@ -375,6 +336,34 @@ loadTestConfig content = do
 -- | Load a @'Text'@ as configuration, fail on errors
 assertTestConfig :: (MonadUnliftIO m, MonadSystem m) => Text -> m Config
 assertTestConfig = either (throwString . unpack) pure <=< loadTestConfig
+
+-- | Load a @'Text'@ config and assert on a property of a loaded Restyler
+assertLoadsRestyler
+  :: ( HasCallStack
+     , MonadUnliftIO m
+     , MonadSystem m
+     , Eq a
+     , Show a
+     )
+  => (Restyler -> a)
+  -- ^ Field to assert on
+  -> Text
+  -- ^ Yaml config
+  -> a
+  -- ^ Expected value
+  -> m ()
+assertLoadsRestyler f yaml expected = do
+  eConfig <- loadTestConfig yaml
+
+  let actual = do
+        config <- eConfig
+        restylers <-
+          note "No Restylers loaded"
+            $ NE.nonEmpty
+            $ cRestylers config
+        pure $ f $ head restylers
+
+  actual `shouldBe` Right expected
 
 showConfigError :: ConfigError -> Text
 showConfigError = \case

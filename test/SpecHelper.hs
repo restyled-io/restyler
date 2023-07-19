@@ -143,12 +143,12 @@ testOptions =
 testAppExample :: TestAppT a -> TestAppT a
 testAppExample = id
 
-someRestyler :: Restyler
-someRestyler =
+someRestyler :: String -> Restyler
+someRestyler name =
   Restyler
     { rEnabled = True
-    , rName = "test-restyler"
-    , rImage = "restyled/restyler-test-restyler"
+    , rName = name
+    , rImage = "restyled/restyler-" <> name <> ":v1.0.0"
     , rCommand = ["restyle"]
     , rDocumentation = []
     , rArguments = []
@@ -165,27 +165,27 @@ loadDefaultConfig = do
 
 testRestylers :: [Restyler]
 testRestylers =
-  [ someRestyler {rName = "astyle"}
-  , someRestyler {rName = "autopep8"}
-  , someRestyler {rName = "black"}
-  , someRestyler {rName = "dfmt"}
-  , someRestyler {rName = "elm-format"}
-  , someRestyler {rName = "hindent", rEnabled = False}
-  , someRestyler {rName = "jdt", rEnabled = False}
-  , someRestyler {rName = "pg_format"}
-  , someRestyler {rName = "php-cs-fixer"}
-  , someRestyler {rName = "prettier"}
-  , someRestyler {rName = "prettier-markdown"}
-  , someRestyler {rName = "prettier-ruby"}
-  , someRestyler {rName = "prettier-yaml"}
-  , someRestyler {rName = "reorder-python-imports"}
-  , someRestyler {rName = "rubocop"}
-  , someRestyler {rName = "rustfmt"}
-  , someRestyler {rName = "shellharden"}
-  , someRestyler {rName = "shfmt"}
-  , someRestyler {rName = "stylish-haskell"}
-  , someRestyler {rName = "terraform"}
-  , someRestyler {rName = "yapf"}
+  [ someRestyler "astyle"
+  , someRestyler "autopep8"
+  , someRestyler "black"
+  , someRestyler "dfmt"
+  , someRestyler "elm-format"
+  , (someRestyler "hindent") {rEnabled = False}
+  , (someRestyler "jdt") {rEnabled = False}
+  , someRestyler "pg_format"
+  , someRestyler "php-cs-fixer"
+  , someRestyler "prettier"
+  , someRestyler "prettier-markdown"
+  , someRestyler "prettier-ruby"
+  , someRestyler "prettier-yaml"
+  , someRestyler "reorder-python-imports"
+  , someRestyler "rubocop"
+  , someRestyler "rustfmt"
+  , someRestyler "shellharden"
+  , someRestyler "shfmt"
+  , someRestyler "stylish-haskell"
+  , someRestyler "terraform"
+  , someRestyler "yapf"
   ]
 
 pendingWith :: (HasCallStack, MonadIO m) => String -> m ()

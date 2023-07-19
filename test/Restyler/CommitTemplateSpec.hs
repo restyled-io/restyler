@@ -6,7 +6,6 @@ where
 import SpecHelper
 
 import Restyler.CommitTemplate
-import Restyler.Restyler
 
 spec :: Spec
 spec = do
@@ -15,7 +14,7 @@ spec = do
       let
         inputs =
           CommitTemplateInputs
-            { ctiRestyler = someRestyler {rName = "special"}
+            { ctiRestyler = someRestyler "special"
             }
         template = commitTemplate "Restyled by ${restyler.name}"
 
