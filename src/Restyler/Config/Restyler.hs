@@ -14,6 +14,7 @@ import Data.Aeson.Types (Parser, modifyFailure)
 import qualified Data.HashMap.Strict as HashMap
 import Data.Validation
 import Restyler.Config.ExpectedKeys
+import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.SketchyList
@@ -23,7 +24,7 @@ import Restyler.Restyler
 data RestylerOverride = RestylerOverride
   { roName :: String
   , roEnabled :: Maybe Bool
-  , roImage :: Maybe String
+  , roImage :: Maybe Image
   , roCommand :: Maybe (SketchyList String)
   , roArguments :: Maybe (SketchyList String)
   , roInclude :: Maybe (SketchyList Include)
@@ -101,7 +102,7 @@ overrideRestyler restylers RestylerOverride {..}
   override restyler@Restyler {..} =
     restyler
       { rEnabled = fromMaybe True roEnabled
-      , rImage = fromMaybe rImage roImage
+      , rImage = maybe rImage (overrideRestylerImage rImage) roImage
       , rCommand = maybe rCommand unSketchy roCommand
       , rArguments = maybe rArguments unSketchy roArguments
       , rInclude = maybe rInclude unSketchy roInclude
