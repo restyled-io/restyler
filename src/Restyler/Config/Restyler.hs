@@ -12,6 +12,7 @@ import Data.Aeson.KeyMap (KeyMap)
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types (Parser, modifyFailure)
 import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Text as T
 import Data.Validation
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Image
@@ -35,6 +36,10 @@ data RestylerOverride = RestylerOverride
 
 instance FromJSON RestylerOverride where
   parseJSON = \case
+    String name'
+      | Just name <- T.stripPrefix "!" name' ->
+          namedOverride (Key.fromText name)
+            $ KeyMap.singleton "enabled" (Bool False)
     String name -> namedOverride (Key.fromText name) KeyMap.empty
     Object o
       | [(name, Object o')] <- KeyMap.toList o ->

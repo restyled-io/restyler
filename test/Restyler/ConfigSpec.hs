@@ -37,6 +37,14 @@ spec = withTestApp $ do
               ]
           }
 
+  it "treats !{name} as disabling" $ testAppExample $ do
+    assertLoadsRestyler
+      rEnabled
+      [st|
+          - "!stylish-haskell"
+      |]
+      False
+
   it "has a setting for globally disabling" $ testAppExample $ do
     result <-
       loadTestConfig
