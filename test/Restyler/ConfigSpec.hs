@@ -78,6 +78,29 @@ spec = withTestApp $ do
       |]
       "ghcr.io/my-stylish:v1.0"
 
+  it "allows re-configuring specific image fields" $ testAppExample $ do
+    assertLoadsRestyler
+      rImage
+      [st|
+        restylers:
+          - stylish-haskell:
+              image:
+                registry: ghcr.io
+      |]
+      "ghcr.io/restyler-stylish-haskell:v1.0.0"
+
+  it "allows re-configuring more than one image field" $ testAppExample $ do
+    assertLoadsRestyler
+      rImage
+      [st|
+        restylers:
+          - stylish-haskell:
+              image:
+                name: my-stylish
+                tag: v5.1
+      |]
+      "restyled/my-stylish:v5.1"
+
   it "has good errors for unknown name" $ testAppExample $ do
     result1 <-
       loadTestConfig
