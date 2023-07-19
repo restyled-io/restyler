@@ -68,6 +68,16 @@ spec = withTestApp $ do
       |]
       [Include "**/*.lhs"]
 
+  it "allows re-configuring image" $ testAppExample $ do
+    assertLoadsRestyler
+      rImage
+      [st|
+        restylers:
+          - stylish-haskell:
+              image: ghcr.io/my-stylish:v1.0
+      |]
+      "ghcr.io/my-stylish:v1.0"
+
   it "has good errors for unknown name" $ testAppExample $ do
     result1 <-
       loadTestConfig
