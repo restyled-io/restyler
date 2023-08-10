@@ -240,7 +240,25 @@ runRestyler_ r paths = case rDelimiters r of
   Nothing -> run paths
   Just ds -> restyleDelimited ds run paths
  where
-  run = traverse_ (dockerRunRestyler r) . getDockerRunStyles r
+  run = traverse_ (dockerRunRestyler r) . withProgress . getDockerRunStyles r
+
+data WithProgress a = WithProgress
+  { pItem :: a
+  , pIndex :: Natural
+  , pTotal :: Natural
+  }
+
+withProgress :: [a] -> [WithProgress a]
+withProgress xs = zipWith toWithProgress [1 ..] xs
+ where
+  toWithProgress n x =
+    WithProgress
+      { pItem = x
+      , pIndex = n
+      , pTotal = total
+      }
+
+  total = genericLength xs
 
 data DockerRunStyle
   = DockerRunPathToStdout FilePath
@@ -265,25 +283,30 @@ dockerRunRestyler
      , HasOptions env
      )
   => Restyler
-  -> DockerRunStyle
+  -> WithProgress DockerRunStyle
   -> m ()
-dockerRunRestyler r@Restyler {..} style = do
+dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
   restrictions <- oRestrictions <$> view optionsL
 
-  let args =
-        ["run", "--rm"]
-          <> restrictionOptions restrictions
-          <> ["--volume", cwd <> ":/code", rImage]
-          <> nub (rCommand <> rArguments)
+  let
+    args =
+      ["run", "--rm"]
+        <> restrictionOptions restrictions
+        <> ["--volume", cwd <> ":/code", rImage]
+        <> nub (rCommand <> rArguments)
+
+    progress :: Text
+    progress = pack (show pIndex) <> " of " <> pack (show pTotal)
 
   logInfo
     $ "Restyling"
     :# [ "restyler" .= rName
+       , "run" .= progress
        , "style" .= rRunStyle
        ]
 
-  ec <- case style of
+  ec <- case pItem of
     DockerRunPathToStdout path -> do
       (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])
       ec <$ writeFile path (fixNewline $ pack out)
