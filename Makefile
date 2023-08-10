@@ -29,10 +29,18 @@ lint:
 test:
 	stack build --test
 
+TEST_INTEGRATION_COMMAND ?= restyled
+TEST_INTEGRATION_OPTIONS ?= stable
+
+# Example for using local SDK, etc:
+# make test.integration \
+#   TEST_INTEGRATION_COMMAND='stack --stack-yaml ../sdk/stack.yaml exec --' \
+#   TEST_INTEGRATION_OPTIONS='--debug dev'
+
 .PHONY: test.integration
 test.integration: image
-	AWS_PROFILE=restyled-ci \
-	  restyled promote --image restyled/restyler:edge --debug stable
+	AWS_PROFILE=restyled-ci $(TEST_INTEGRATION_COMMAND) promote \
+	  --image restyled/restyler:edge $(TEST_INTEGRATION_OPTIONS)
 
 .PHONY: watch
 watch:
