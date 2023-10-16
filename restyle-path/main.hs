@@ -64,6 +64,7 @@ main = do
                 , oRestrictions = eoRestrictions
                 , oStatsdHost = Nothing
                 , oStatsdPort = Nothing
+                , oImageCleanup = False
                 }
           }
 

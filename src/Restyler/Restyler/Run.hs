@@ -36,6 +36,7 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 import qualified Restyler.Wiki as Wiki
 import System.FilePath ((</>))
+import UnliftIO.Exception (tryAny)
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
   deriving stock (Show, Eq)
@@ -275,7 +276,7 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerRunRestyler
-  :: ( MonadIO m
+  :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
      , MonadProcess m
@@ -287,6 +288,7 @@ dockerRunRestyler
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
+  imageCleanup <- oImageCleanup <$> view optionsL
   restrictions <- oRestrictions <$> view optionsL
 
   let
@@ -299,6 +301,11 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
     progress :: Text
     progress = pack (show pIndex) <> " of " <> pack (show pTotal)
 
+    -- Our integration tests run every restyler we support in a space-restricted
+    -- environment. This switch triggers removal of each image after running it,
+    -- to avoid out-of-space errors.
+    withImageCleanup f = if imageCleanup then f `finally` cleanupImage else f
+
   logInfo
     $ "Restyling"
     :# [ "restyler" .= rName
@@ -306,7 +313,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
        , "style" .= rRunStyle
        ]
 
-  ec <- case pItem of
+  ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
       (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])
       ec <$ writeFile path (fixNewline $ pack out)
@@ -324,6 +331,20 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   prefix p
     | "./" `isPrefixOf` p = p
     | otherwise = "./" <> p
+
+  cleanupImage = do
+    eec <- tryAny $ callProcessExitCode "docker" ["image", "rm", "--force", rImage]
+    case eec of
+      Left ex ->
+        logWarn
+          $ "Exception removing Restyler image"
+          :# ["exception" .= displayException ex]
+      Right ExitSuccess ->
+        logInfo "Removed Restyler image"
+      Right (ExitFailure i) ->
+        logWarn
+          $ "Error removing Restyler image"
+          :# ["status" .= i]
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')

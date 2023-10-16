@@ -138,6 +138,7 @@ testOptions =
     , oRestrictions = fullRestrictions
     , oStatsdHost = Nothing
     , oStatsdPort = Nothing
+    , oImageCleanup = False
     }
 
 testAppExample :: TestAppT a -> TestAppT a

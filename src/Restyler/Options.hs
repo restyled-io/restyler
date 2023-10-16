@@ -22,6 +22,7 @@ data EnvOptions = EnvOptions
   , eoRestrictions :: Restrictions
   , eoStatsdHost :: Maybe String
   , eoStatsdPort :: Maybe Int
+  , eoImageCleanup :: Bool
   }
 
 data CLIOptions = CLIOptions
@@ -47,6 +48,7 @@ data Options = Options
   , oRestrictions :: Restrictions
   , oStatsdHost :: Maybe String
   , oStatsdPort :: Maybe Int
+  , oImageCleanup :: Bool
   }
 
 class HasOptions env where
@@ -84,6 +86,7 @@ parseOptions = do
       , oRestrictions = eoRestrictions
       , oStatsdHost = eoStatsdHost
       , oStatsdPort = eoStatsdPort
+      , oImageCleanup = eoImageCleanup
       }
 
 -- brittany-disable-next-binding
@@ -102,6 +105,7 @@ envParser =
     <*> envRestrictions
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
     <*> optional (Env.var Env.auto "STATSD_PORT" mempty)
+    <*> Env.switch "IMAGE_CLEANUP" mempty
 
 -- brittany-disable-next-binding
 
