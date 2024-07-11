@@ -6,8 +6,6 @@ inputs:
     default: "restyled/restyler:edge"
   github-token:
     default: ${{ github.token }}
-  github-repository:
-    default: ${{ github.repository }}
 
 outputs: {}
 
@@ -35,6 +33,7 @@ runs:
       run: |
         docker run --rm \
           --env LOG_COLOR=always \
+          --env LOG_LEVEL=debug \
           --env HOST_DIRECTORY="$PWD" \
           --env UNRESTRICTED=1 \
           --volume "$PWD":/code \
