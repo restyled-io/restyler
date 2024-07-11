@@ -3,10 +3,19 @@ author: pbrisbin
 
 inputs:
   image:
+    description: "Restyled image to run"
     default: "restyled/restyler:edge"
+  mode:
+    description: "summary-only|pull-request|push"
+    default: "pull-request"
+  fail-on-differences:
+    description: "Fail if differences were produced?"
+    default: true
   log-level:
+    description: "Set restyler LOG_LEVEL"
     default: "info"
   github-token:
+    description: "GitHub token for fetching PR details"
     default: ${{ github.token }}
 
 outputs: {}
@@ -14,6 +23,12 @@ outputs: {}
 runs:
   using: composite
   steps:
+    # pre-conditions
+    #   correct env?
+    #   not excluded by labels?
+    #   not excluded by author?
+
+    # Determine changed files
     - id: prep
       shell: bash
       run: |
@@ -30,11 +45,13 @@ runs:
         GH_REPO: ${{ github.repository }}
         GH_PR: ${{ github.event.pull_request.number }}
 
+    # Restyle changed files
+    #   TODO: make commits
+
     - if: ${{ steps.prep.outputs.changed }}
       shell: bash
       run: |
         # Run restyler
-
 
         # Turn the quoted paths into a real (unquoted) array
         eval "changed=( $CHANGED )"
@@ -53,3 +70,8 @@ runs:
         IMAGE: ${{ inputs.image }}
         CHANGED: ${{ steps.prep.outputs.changed }}
         LOG_LEVEL: ${{ inputs.log-level }}
+
+    # post-actions:
+    #   print patch to build summary
+    #   commit directly | open new PR | direct to summary
+    #   option: fail if differences

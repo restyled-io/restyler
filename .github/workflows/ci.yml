@@ -64,11 +64,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./
+      - uses: ./action
         with:
           image: ${{ needs.image.outputs.tags }}
-
-      - run: git status
+          mode: summary-only
+          fail: false
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
