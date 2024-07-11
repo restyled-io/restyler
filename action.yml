@@ -3,7 +3,7 @@ author: pbrisbin
 
 inputs:
   image:
-    default: "restyled/restyler:main"
+    default: "restyled/restyler:edge"
   github-token:
     default: ${{ github.token }}
   github-repository:
