@@ -31,6 +31,12 @@ runs:
     - if: ${{ steps.prep.outputs.changed }}
       shell: bash
       run: |
+        # Run restyler
+
+
+        # Turn the quoted paths into a real (unquoted) array
+        eval "changed=( $CHANGED )"
+
         docker run --rm \
           --env LOG_COLOR=always \
           --env LOG_LEVEL=debug \
@@ -40,7 +46,7 @@ runs:
           --volume /tmp:/tmp \
           --volume /var/run/docker.sock:/var/run/docker.sock \
           --entrypoint restyle-path \
-          "$IMAGE" $CHANGED
+          "$IMAGE" "${changed[@]}"
       env:
         IMAGE: ${{ inputs.image }}
         CHANGED: ${{ steps.prep.outputs.changed }}
