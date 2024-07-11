@@ -66,9 +66,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./action
         with:
-          image: ${{ needs.image.outputs.tags }}
           mode: summary-only
           fail: false
+          image: ${{ needs.image.outputs.tags }}
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
