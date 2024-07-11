@@ -5,10 +5,10 @@ module Restyler.Prelude
 
 import Relude as X hiding (exitSuccess, readFile, readFileBS, writeFile)
 
-import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Control.Monad.IO.Unlift as X (MonadUnliftIO (..))
+import Blammo.Logging as X
 import Data.Bitraversable as X (bimapM)
 import Data.Char as X (isSpace)
 import Data.Functor.Syntax as X ((<$$>))
