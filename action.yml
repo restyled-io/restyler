@@ -33,11 +33,8 @@ runs:
     - if: ${{ steps.prep.outputs.changed }}
       shell: bash
       run: |
-        docker_run --interactive --rm \
-          --env LOG_LEVEL \
-          --env LOG_DESTINATION \
-          --env LOG_FORMAT \
-          --env LOG_COLOR \
+        docker run --rm \
+          --env LOG_COLOR=always \
           --env HOST_DIRECTORY="$PWD" \
           --env UNRESTRICTED=1 \
           --volume "$PWD":/code \
