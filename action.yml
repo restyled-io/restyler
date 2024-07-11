@@ -28,7 +28,7 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         GH_REPO: ${{ github.repository }}
-        GH_PR: ${{ github.event.payload.pull_request.number }}
+        GH_PR: ${{ github.event.pull_request.number }}
 
     - if: ${{ steps.prep.outputs.changed }}
       shell: bash
