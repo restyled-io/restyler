@@ -4,6 +4,8 @@ author: pbrisbin
 inputs:
   image:
     default: "restyled/restyler:edge"
+  log-level:
+    default: "info"
   github-token:
     default: ${{ github.token }}
 
@@ -38,8 +40,8 @@ runs:
         eval "changed=( $CHANGED )"
 
         docker run --rm \
+          --env LOG_LEVEL \
           --env LOG_COLOR=always \
-          --env LOG_LEVEL=debug \
           --env HOST_DIRECTORY="$PWD" \
           --env UNRESTRICTED=1 \
           --volume "$PWD":/code \
@@ -50,3 +52,4 @@ runs:
       env:
         IMAGE: ${{ inputs.image }}
         CHANGED: ${{ steps.prep.outputs.changed }}
+        LOG_LEVEL: ${{ inputs.log-level }}
