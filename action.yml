@@ -15,17 +15,23 @@ runs:
   using: composite
   steps:
     - id: prep
+      shell: bash
       run: |
         # Determine added and modified files
         {
           echo 'changed<<EOM'
-          gh api '/repos/freckle/megarepo/pulls/35126/files' |
-            jq '.[] | select(.status|test("added|modified")) | .filename' |
+          gh api "/repos/$GH_REPO/pulls/$GH_PR/files" |
+            jq '.[] | select(.status|test("^(added|modified)$")) | .filename' |
             tr '\n' ' '; echo
           echo 'EOM'
         } >>"$GITHUB_OUTPUT"
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        GH_REPO: ${{ github.repository }}
+        GH_PR: ${{ github.event.payload.pull_request.number }}
 
     - if: ${{ steps.prep.outputs.changed }}
+      shell: bash
       run: |
         docker_run --interactive --rm \
           --env LOG_LEVEL \
@@ -38,4 +44,7 @@ runs:
           --volume /tmp:/tmp \
           --volume /var/run/docker.sock:/var/run/docker.sock \
           --entrypoint restyle-path \
-          '${{ inputs.image }}' ${{ steps.prep.outputs.changed }}
+          "$IMAGE" $CHANGED
+      env:
+        IMAGE: ${{ inputs.image }}
+        CHANGED: ${{ steps.prep.outputs.changed }}
