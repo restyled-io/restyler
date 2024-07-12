@@ -29,19 +29,16 @@ instance HasManifestOption App where
 main :: IO ()
 main = do
   options <- parseOptions
-  logger <- newLogger options.logSettings
 
-  let app =
-        App
-          { logger = logger
-          }
+  withLogger options.logSettings $ \logger -> do
+    let app = App {logger = logger}
 
-  runAppT app $ do
-    config <- loadConfig
-    logInfo $ "Loaded config" :# objectToPairs config
+    runAppT app $ do
+      config <- loadConfig
+      logInfo $ "Loaded config" :# objectToPairs config
 
-    githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
-    logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+      githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
+      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
 
 objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
 objectToPairs a = case toJSON a of

@@ -3,7 +3,28 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: Blammo-1.2.1.0@sha256:d319b91109e14762f06c340bbf955efcfccd6cc853a182e4c384113e236ddcb5,4836
+    pantry-tree:
+      sha256: ea00c0835cbbcfa749803647d2c0415d1991d2bd325ecb13d8de4186b6dd2c4f
+      size: 1725
+  original:
+    hackage: Blammo-1.2.1.0
+- completed:
+    hackage: fast-logger-3.2.3@sha256:41b4f1c07d5ee4a7cc785689eb7772554d29ddbbcced3cc184fe50fc63ece3f7,2176
+    pantry-tree:
+      sha256: c4a8dcfa5f5bc3bd77cfe86d904e96f90607adc1e4f3f1cf082e722673ee7230
+      size: 1302
+  original:
+    hackage: fast-logger-3.2.3
+- completed:
+    hackage: monad-logger-aeson-0.4.1.3@sha256:0a4c29be94a1a3b18659b6c3958f700a1a33359d8b75748367aef9294ca0b76b,6121
+    pantry-tree:
+      sha256: e1b07afbca30cf9dcea9ff687b6f87f3112297cf5547f65bfa2b36dca000fd97
+      size: 7092
+  original:
+    hackage: monad-logger-aeson-0.4.1.3
 snapshots:
 - completed:
     sha256: 17870c63f8041ac17a38096124abeb953cb14d84bfc96deb88f9b24daa97b347

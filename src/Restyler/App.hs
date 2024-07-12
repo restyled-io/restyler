@@ -1,3 +1,5 @@
+{-# LANGUAGE DerivingVia #-}
+
 module Restyler.App
   ( AppT
   , runAppT
@@ -35,7 +37,7 @@ import System.Exit qualified as Exit
 import System.Process qualified as Process
 
 newtype AppT app m a = AppT
-  { unAppT :: ReaderT app (LoggingT m) a
+  { unAppT :: ReaderT app m a
   }
   deriving newtype
     ( Functor
@@ -46,11 +48,13 @@ newtype AppT app m a = AppT
     , MonadMask
     , MonadIO
     , MonadUnliftIO
-    , MonadLogger
     , MonadReader app
     )
+  deriving
+    (MonadLogger, MonadLoggerIO)
+    via (WithLogger app m)
 
-instance MonadUnliftIO m => MonadSystem (AppT app m) where
+instance (MonadUnliftIO m, HasLogger app) => MonadSystem (AppT app m) where
   getCurrentDirectory = do
     logDebug "getCurrentDirectory"
     liftIO Directory.getCurrentDirectory
@@ -91,7 +95,7 @@ instance MonadUnliftIO m => MonadSystem (AppT app m) where
     logDebug $ "removeFile" :# ["path" .= path]
     liftIO $ Directory.removeFile path
 
-instance MonadUnliftIO m => MonadProcess (AppT app m) where
+instance (MonadUnliftIO m, HasLogger app) => MonadProcess (AppT app m) where
   callProcess cmd args = do
     -- N.B. this includes access tokens in log messages when used for
     -- git-clone. That's acceptable because:
@@ -145,7 +149,7 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
            ]
     pure (ec, output)
 
-instance MonadUnliftIO m => MonadExit (AppT app m) where
+instance (MonadUnliftIO m, HasLogger app) => MonadExit (AppT app m) where
   exitSuccess = do
     logDebug "exitSuccess"
     liftIO Exit.exitSuccess
@@ -170,7 +174,7 @@ instance Exception GitHubError where
       <> "\n  Exception:"
       <> show @String gheError
 
-instance (MonadUnliftIO m, HasOptions app) => MonadGitHub (AppT app m) where
+instance (MonadUnliftIO m, HasLogger app, HasOptions app) => MonadGitHub (AppT app m) where
   runGitHub = runGitHubInternal
 
 runGitHubInternal
@@ -188,8 +192,8 @@ runGitHubInternal req = do
     executeRequestWithMgr mgr auth req
   either (throwIO . GitHubError (displayGitHubRequest req)) pure result
 
-runAppT :: MonadUnliftIO m => HasLogger app => app -> AppT app m a -> m a
-runAppT app f = runLoggerLoggingT app $ runReaderT (unAppT f) app
+runAppT :: app -> AppT app m a -> m a
+runAppT app f = runReaderT (unAppT f) app
 
 data StartupApp = StartupApp
   { appLogger :: Logger
