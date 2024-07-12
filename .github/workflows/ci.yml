@@ -23,7 +23,7 @@ jobs:
         with:
           name: binaries
           path: |
-            ${{ steps.stack.outputs.local-install-root }}/bin/restyle-path
+            ${{ steps.stack.outputs.local-install-root }}/bin/restyle-gha
           if-no-files-found: error
 
   lint:
@@ -74,10 +74,10 @@ jobs:
         with:
           name: binaries
           path: ./tmp
-      - run: chmod +x ./tmp/restyle-path
+      - run: chmod +x ./tmp/restyle-gha
       - uses: ./action
         with:
-          restyler: ./tmp/restyle-path
+          restyler: ./tmp/restyle-gha
           mode: summary-only
           fail: false
 

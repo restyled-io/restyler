@@ -109,8 +109,18 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      # - Blammo
-      # - envparse
+      - Blammo
+      - envparse
+      - restyler
+  restyle-gha:
+    main: main.hs
+    source-dirs: restyle-gha
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
       - restyler
 
 tests:

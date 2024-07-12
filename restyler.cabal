@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0bc62e9aa3b30bd907952f51af41c995be54b3188701e40d66f50017edf8bb7c
+-- hash: 63324cc24d42775e30a66895f70c2c9fb3d6271dfc6047fd0783bedd3a5119a1
 
 name:           restyler
 version:        0.2.0.0
@@ -133,6 +133,44 @@ library
     , yaml
   default-language: Haskell2010
 
+executable restyle-gha
+  main-is: main.hs
+  other-modules:
+      Paths_restyler
+  hs-source-dirs:
+      restyle-gha
+  default-extensions:
+      BangPatterns
+      DataKinds
+      DeriveAnyClass
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      LambdaCase
+      MultiParamTypeClasses
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      OverloadedStrings
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TypeApplications
+      TypeFamilies
+      ImportQualifiedPost
+  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , restyler
+  default-language: Haskell2010
+
 executable restyle-path
   main-is: main.hs
   other-modules:
@@ -167,7 +205,9 @@ executable restyle-path
       ImportQualifiedPost
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base
+      Blammo
+    , base
+    , envparse
     , restyler
   default-language: Haskell2010
 
