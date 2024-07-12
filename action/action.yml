@@ -30,15 +30,36 @@ runs:
         echo "This action can only be used on pull_request events" >&2
         exit 1
 
-    # TODO
-    #   if closed -> close any sibling
+    - if: ${{ github.event.action == 'closed' }}
+      shell: bash
+      run: |
+        # Closing Restyled PR due to source PR closing
+        gh pr close 'restyled/${{ github.event.head.ref }}' || true
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+
+    - if: ${{ github.event.action == 'converted_to_draft' }}
+      shell: bash
+      run: |
+        # Closing Restyled PR due to source PR converting to Draft
+        gh pr close 'restyled/${{ github.event.head.ref }}' || true
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
 
     - shell: bash
       run: |
-        # Prepare
+        # Storing GitHub event data
         cat > /tmp/event.json <<'EOM'
         ${{ toJSON(github.event) }}
         EOM
+
+    - shell: bash
+      run: |
+        # Storing Pull Request changed files data
+        gh api "/repos/$GH_REPO/pulls/$GH_PR/files" >/tmp/pr-files.json
+      env:
+        GH_REPO: ${{ github.repository }}
+        GH_PR: ${{ github.event.number }}
 
     - shell: bash
       run: |
@@ -47,6 +68,7 @@ runs:
           --env LOG_LEVEL \
           --env LOG_COLOR=always \
           --env GITHUB_EVENT_JSON=/tmp/event.json \
+          --env GITHUB_PR_FILES_JSON=/tmp/pr-files.json \
           --env HOST_DIRECTORY="$PWD" \
           --env UNRESTRICTED=1 \
           --volume "$PWD":/code \

@@ -13,6 +13,7 @@ import Restyler.Config
 import Restyler.GHA.Event
 import Restyler.GHA.Options
 import Restyler.ManifestOption
+import Restyler.PullRequest.File
 import UnliftIO.Exception (tryAny)
 
 newtype App = App
@@ -40,6 +41,10 @@ main = do
         githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
         logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
 
+        prFiles <- decodeJsonThrow @_ @[PullRequestFile] options.githubEventJson
+        traverse_ (logInfo . ("Changed file" :#) . objectToPairs) prFiles
+
+      -- check draft
       -- check closed
       -- check ignores
       -- restyle, making commits
