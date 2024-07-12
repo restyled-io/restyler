@@ -74,12 +74,12 @@ jobs:
         with:
           name: binaries
           path: ./tmp
+      - run: chmod +x /tmp/restyle-path
       - uses: ./action
         with:
           restyler: ./tmp/restyle-path
           mode: summary-only
           fail: false
-          image: ${{ needs.image.outputs.tags }}
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
