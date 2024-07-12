@@ -28,23 +28,23 @@ data App = App
   , options :: Options
   }
 
-optionsL :: Lens' App Options
-optionsL = lens (.options) $ \x y -> x {options = y}
-
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
 
 instance HasManifestOption App where
-  manifestOptionL = lens (const $ toManifestOption Nothing) const
+  manifestOptionL = constL $ toManifestOption Nothing
 
 instance HasHostDirectoryOption App where
-  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
+  hostDirectoryOptionL = constL $ toHostDirectoryOption Nothing
 
 instance HasImageCleanupOption App where
-  imageCleanupOptionL = lens (const $ toImageCleanupOption False) const
+  imageCleanupOptionL = constL $ toImageCleanupOption False
 
 instance HasRestrictions App where
-  restrictionsL = optionsL . restrictionsL
+  restrictionsL = constL fullRestrictions
+
+constL :: b -> Lens' a b
+constL x = lens (const x) const
 
 instance MonadUnliftIO m => MonadGit (AppT App m) where
   gitPush branch = callProcess "git" ["push", "origin", branch]
