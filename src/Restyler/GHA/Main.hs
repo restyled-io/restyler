@@ -23,7 +23,7 @@ import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
 import Restyler.LogSettingsOption
 import Restyler.ManifestOption
-import Restyler.PullRequestNumberOption
+import Restyler.PullRequestOption
 import Restyler.RepositoryOption
 import Restyler.Restrictions
 import Restyler.Restyler
@@ -84,28 +84,27 @@ main = do
   options <- getOptions
 
   withLogger (unLogSettingsOption options.logSettings) $ \logger -> do
-    let app =
-          App
-            { logger = logger
-            , githubToken = getGitHubTokenOption options.githubToken
-            , restrictions = options.restrictions
-            , manifest = toManifestOption Nothing
-            , hostDirectory = toHostDirectoryOption Nothing
-            , imageCleanup = toImageCleanupOption False
-            }
+    case options.github of
+      Nothing -> error "TODO"
+      Just ghoptions -> do
+        let app =
+              App
+                { logger = logger
+                , githubToken = unGitHubTokenOption ghoptions.githubToken
+                , restrictions = options.restrictions
+                , manifest = toManifestOption Nothing
+                , hostDirectory = toHostDirectoryOption Nothing
+                , imageCleanup = toImageCleanupOption False
+                }
 
-    runAppT app $ handleAny logExit $ do
-      config <- loadConfig
-      logDebug $ "Config" :# objectToPairs config
+        runAppT app $ handleAny logExit $ do
+          config <- loadConfig
+          logDebug $ "Config" :# objectToPairs config
 
-      let repoPR =
-            (,)
-              <$> unRepositoryOption options.repository
-              <*> unPullRequestNumberOption options.pullRequest
+          let
+            repo = unRepositoryOption ghoptions.repository
+            pr = unPullRequestOption ghoptions.pullRequest
 
-      paths <- case repoPR of
-        Nothing -> error "CLI paths"
-        Just (repo, pr) -> do
           pullRequest <- GitHub.getPullRequest repo pr
           logInfo $ "Handling PR" :# objectToPairs pullRequest
 
@@ -114,21 +113,22 @@ main = do
           -- check closed
           -- check ignores
 
-          mapMaybe pullRequestFileToChangedPath
-            <$> GitHub.getPullRequestFiles repo pr
+          paths <-
+            mapMaybe pullRequestFileToChangedPath
+              <$> GitHub.getPullRequestFiles repo pr
 
-      results <- runRestylers config paths
+          results <- runRestylers config paths
 
-      for_ results $ \RestylerResult {..} ->
-        case rrOutcome of
-          ChangesCommitted changed sha -> do
-            logInfo
-              $ "Changes committed"
-              :# [ "restyler" .= rName rrRestyler
-                 , "paths" .= length changed
-                 , "sha" .= sha
-                 ]
-          x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x
+          for_ results $ \RestylerResult {..} ->
+            case rrOutcome of
+              ChangesCommitted changed sha -> do
+                logInfo
+                  $ "Changes committed"
+                  :# [ "restyler" .= rName rrRestyler
+                     , "paths" .= length changed
+                     , "sha" .= sha
+                     ]
+              x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x
 
 logExit :: (MonadIO m, MonadLogger m) => SomeException -> m a
 logExit ex = do

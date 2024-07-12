@@ -4,6 +4,7 @@
 
 module Restyler.GHA.Options
   ( Options (..)
+  , GitHubOptions (..)
   , getOptions
   , envOptions
   , optOptions
@@ -16,19 +17,25 @@ import Env qualified
 import Options.Applicative
 import Restyler.GitHubTokenOption
 import Restyler.LogSettingsOption
-import Restyler.PullRequestNumberOption
+import Restyler.PullRequestOption
 import Restyler.RepositoryOption
 import Restyler.Restrictions
 
 data Options = Options
   { logSettings :: LogSettingsOption
-  , githubToken :: GitHubTokenOption
   , restrictions :: Restrictions
-  , repository :: RepositoryOption
-  , pullRequest :: PullRequestNumberOption
+  , github :: Maybe GitHubOptions
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
+
+data GitHubOptions = GitHubOptions
+  { githubToken :: GitHubTokenOption
+  , repository :: RepositoryOption
+  , pullRequest :: PullRequestOption
+  }
+  deriving stock (Generic)
+  deriving (Semigroup) via (GenericSemigroupMonoid GitHubOptions)
 
 getOptions :: MonadIO m => m Options
 getOptions =
@@ -43,10 +50,15 @@ envParser :: Env.Parser Env.Error Options
 envParser =
   Options
     <$> envLogSettingsOption
-    <*> envGitHubTokenOption
     <*> envRestrictions
+    <*> optional envGitHubOptions
+
+envGitHubOptions :: Env.Parser Env.Error GitHubOptions
+envGitHubOptions =
+  GitHubOptions
+    <$> envGitHubTokenOption
     <*> envRepositoryOption
-    <*> envPullRequestNumberOption
+    <*> envPullRequestOption
 
 optOptions :: MonadIO m => m Options
 optOptions = liftIO $ execParser $ info (optParser <**> helper) fullDesc
@@ -55,7 +67,12 @@ optParser :: Parser Options
 optParser =
   Options
     <$> optLogSettingsOption
-    <*> optGitHubTokenOption
     <*> optRestrictions
+    <*> optional optGitHubOptions
+
+optGitHubOptions :: Parser GitHubOptions
+optGitHubOptions =
+  GitHubOptions
+    <$> optGitHubTokenOption
     <*> optRepositoryOption
-    <*> optPullRequestNumberOption
+    <*> optPullRequestOption

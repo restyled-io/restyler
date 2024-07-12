@@ -1,9 +1,7 @@
 module Restyler.RepositoryOption
   ( RepositoryOption (..)
-  , unRepositoryOption
   , envRepositoryOption
   , optRepositoryOption
-  , Repository (..)
   ) where
 
 import Restyler.Prelude
@@ -12,18 +10,15 @@ import Env qualified
 import Options.Applicative
 import Restyler.GitHub.Repository
 
-newtype RepositoryOption = RepositoryOption (Last Repository)
-  deriving newtype (Semigroup, Monoid)
-
-toRepositoryOption :: Maybe Repository -> RepositoryOption
-toRepositoryOption = RepositoryOption . Last
-
-unRepositoryOption :: RepositoryOption -> Maybe Repository
-unRepositoryOption (RepositoryOption x) = getLast x
+newtype RepositoryOption = RepositoryOption
+  { unRepositoryOption :: Last Repository
+  }
+  deriving newtype (Semigroup)
 
 envRepositoryOption :: Env.Parser Env.Error RepositoryOption
 envRepositoryOption =
-  toRepositoryOption
+  RepositoryOption
+    . Last
     <$> optional
       ( Env.var (first Env.UnreadError . parseRepository) "REPOSITORY"
           $ Env.help optionHelp
@@ -31,7 +26,8 @@ envRepositoryOption =
 
 optRepositoryOption :: Parser RepositoryOption
 optRepositoryOption =
-  toRepositoryOption
+  RepositoryOption
+    . Last
     <$> optional
       ( option (eitherReader parseRepository)
           $ long "repo"
