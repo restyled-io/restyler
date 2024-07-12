@@ -97,17 +97,17 @@ main = do
       for_ results $ \RestylerResult {..} ->
         case rrOutcome of
           ChangesCommitted paths sha -> do
-            logInfo $
-              "Changes committed"
-                :# [ "restyler" .= rName rrRestyler
-                   , "paths" .= paths
-                   , "sha" .= sha
-                   ]
+            logInfo
+              $ "Changes committed"
+              :# [ "restyler" .= rName rrRestyler
+                 , "paths" .= paths
+                 , "sha" .= sha
+                 ]
           x ->
-            logDebug $
-              "Outcome"
-                :# ["restyler" .= rName rrRestyler]
-                <> objectToPairs x
+            logDebug
+              $ "Outcome"
+              :# ["restyler" .= rName rrRestyler]
+              <> objectToPairs x
 
 logExit :: (MonadIO m, MonadLogger m) => SomeException -> m a
 logExit ex = do

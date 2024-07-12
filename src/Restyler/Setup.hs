@@ -27,14 +27,14 @@ data PlanUpgradeRequired = PlanUpgradeRequired Text (Maybe URL)
 
 instance Exception PlanUpgradeRequired where
   displayException (PlanUpgradeRequired message mUpgradeUrl) =
-    unpack $
-      message
-        <> "\nFor additional help, please see: "
-        <> Wiki.commonError "Plan Upgrade Required"
-        <> maybe
-          ""
-          (("\nYou can upgrade your plan at " <>) . getUrl)
-          mUpgradeUrl
+    unpack
+      $ message
+      <> "\nFor additional help, please see: "
+      <> Wiki.commonError "Plan Upgrade Required"
+      <> maybe
+        ""
+        (("\nYou can upgrade your plan at " <>) . getUrl)
+        mUpgradeUrl
 
 restylerSetup
   :: ( HasCallStack
@@ -55,16 +55,16 @@ restylerSetup
 restylerSetup = do
   Options {..} <- view optionsL
 
-  logInfo $
-    "Restyler started"
-      :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
+  logInfo
+    $ "Restyler started"
+    :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
 
-  when oRepoDisabled $
-    exitWithInfo $
-      fromString $
-        "This repository has been disabled for possible abuse."
-          <> " If you believe this is an error, please reach out to"
-          <> " support@restyled.io"
+  when oRepoDisabled
+    $ exitWithInfo
+    $ fromString
+    $ "This repository has been disabled for possible abuse."
+    <> " If you believe this is an error, please reach out to"
+    <> " support@restyled.io"
 
   pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
 

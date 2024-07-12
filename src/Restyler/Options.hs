@@ -61,16 +61,16 @@ instance HasOptions Options where
   optionsL = id
 
 instance HasManifestOption Options where
-  manifestOptionL = lens (toManifestOption . oManifest) $
-    \x y -> x {oManifest = unManifestOption y}
+  manifestOptionL = lens (toManifestOption . oManifest)
+    $ \x y -> x {oManifest = unManifestOption y}
 
 instance HasHostDirectoryOption Options where
-  hostDirectoryOptionL = lens (toHostDirectoryOption . oHostDirectory) $
-    \x y -> x {oHostDirectory = unHostDirectoryOption y}
+  hostDirectoryOptionL = lens (toHostDirectoryOption . oHostDirectory)
+    $ \x y -> x {oHostDirectory = unHostDirectoryOption y}
 
 instance HasImageCleanupOption Options where
-  imageCleanupOptionL = lens (toImageCleanupOption . oImageCleanup) $
-    \x y -> x {oImageCleanup = unImageCleanupOption y}
+  imageCleanupOptionL = lens (toImageCleanupOption . oImageCleanup)
+    $ \x y -> x {oImageCleanup = unImageCleanupOption y}
 
 instance HasRestrictions Options where
   restrictionsL = lens oRestrictions $ \x y -> x {oRestrictions = y}
@@ -82,11 +82,11 @@ parseOptions :: IO Options
 parseOptions = do
   EnvOptions {..} <- Env.parse id envParser
   CLIOptions {..} <-
-    execParser $
-      info (optionsParser <**> helper) $
-        fullDesc
-          <> progDesc
-            "Restyle a GitHub Pull Request"
+    execParser
+      $ info (optionsParser <**> helper)
+      $ fullDesc
+      <> progDesc
+        "Restyle a GitHub Pull Request"
 
   pure
     Options

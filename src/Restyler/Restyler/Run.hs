@@ -146,9 +146,9 @@ runRestylersWith run config@Config {..} allPaths = do
   if lenPaths > maxPaths
     then case cpcOutcome cChangedPaths of
       MaximumChangedPathsOutcomeSkip -> do
-        logWarn $
-          "Number of changed paths is greater than configured maximum"
-            :# ["paths" .= lenPaths, "maximum" .= maxPaths]
+        logWarn
+          $ "Number of changed paths is greater than configured maximum"
+          :# ["paths" .= lenPaths, "maximum" .= maxPaths]
         pure []
       MaximumChangedPathsOutcomeError ->
         throwIO $ TooManyChangedPaths lenPaths maxPaths
@@ -185,16 +185,16 @@ withFilteredPaths restylers paths run = do
             else rInclude r
         included = includePath includes path
 
-      logDebug $
-        "Matching paths"
-          :# [ "name" .= rName r
-             , "path" .= path
-             , "matched" .= matched
-             , "includes" .= includes
-             , "included" .= included
-             , "interpreter" .= mInterpreter
-             -- , "filtered" .= filtered
-             ]
+      logDebug
+        $ "Matching paths"
+        :# [ "name" .= rName r
+           , "path" .= path
+           , "matched" .= matched
+           , "includes" .= includes
+           , "included" .= included
+           , "interpreter" .= mInterpreter
+           -- , "filtered" .= filtered
+           ]
 
       pure $ if included then Just path else Nothing
 
@@ -329,12 +329,12 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
     -- to avoid out-of-space errors.
     withImageCleanup f = if imageCleanup then f `finally` cleanupImage else f
 
-  logInfo $
-    "Restyling"
-      :# [ "restyler" .= rName
-         , "run" .= progress
-         , "style" .= rRunStyle
-         ]
+  logInfo
+    $ "Restyling"
+    :# [ "restyler" .= rName
+       , "run" .= progress
+       , "style" .= rRunStyle
+       ]
 
   flushLogger -- so docker stdout is not interleaved
   ec <- withImageCleanup $ case pItem of
@@ -360,15 +360,15 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
     eec <- tryAny $ callProcessExitCode "docker" ["image", "rm", "--force", rImage]
     case eec of
       Left ex ->
-        logWarn $
-          "Exception removing Restyler image"
-            :# ["exception" .= displayException ex]
+        logWarn
+          $ "Exception removing Restyler image"
+          :# ["exception" .= displayException ex]
       Right ExitSuccess ->
         logInfo "Removed Restyler image"
       Right (ExitFailure i) ->
-        logWarn $
-          "Error removing Restyler image"
-            :# ["status" .= i]
+        logWarn
+          $ "Error removing Restyler image"
+          :# ["status" .= i]
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')

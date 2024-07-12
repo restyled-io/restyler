@@ -48,16 +48,16 @@ spec = withTestApp $ do
         runChangedPaths (mkPaths 1001) setOutcomeSkip `shouldReturn` ()
 
   describe "runRestyler_" $ do
-    it "treats non-zero exit codes as RestylerExitFailure" $
-      testAppExample $
-        do
-          local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
-            runRestyler_ (someRestyler "foo") ["bar"]
-              `shouldThrow` ( ==
-                                RestylerExitFailure
-                                  (someRestyler "foo")
-                                  99
-                            )
+    it "treats non-zero exit codes as RestylerExitFailure"
+      $ testAppExample
+      $ do
+        local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
+          runRestyler_ (someRestyler "foo") ["bar"]
+            `shouldThrow` ( ==
+                              RestylerExitFailure
+                                (someRestyler "foo")
+                                99
+                          )
 
   describe "findFiles" $ do
     it "expands and excludes" $ testAppExample $ do
