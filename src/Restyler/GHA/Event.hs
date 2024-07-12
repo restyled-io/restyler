@@ -3,6 +3,7 @@
 
 module Restyler.GHA.Event
   ( Event (..)
+  , PullRequestPayload (..)
   , PullRequest (..)
   , PullRequestState (..)
   , pullRequestStateFromText

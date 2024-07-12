@@ -79,10 +79,10 @@ main = do
 
     runAppT app $ handleAny logExit $ do
       config <- loadConfig
-      logInfo $ "Loaded config" :# objectToPairs config
+      logDebug $ "Config" :# objectToPairs config
 
       githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
-      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload.pull_request
 
       -- TODO
       -- check draft
@@ -90,7 +90,7 @@ main = do
       -- check ignores
 
       prFiles <- decodeJsonThrow @_ @[PullRequestFile] options.githubPRFilesJson
-      traverse_ (logInfo . ("Changed file" :#) . objectToPairs) prFiles
+      traverse_ (logDebug . ("Changed file" :#) . objectToPairs) prFiles
 
       results <- runRestylers config $ mapMaybe pullRequestFileToChangedPath prFiles
 
