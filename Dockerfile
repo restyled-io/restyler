@@ -26,6 +26,7 @@ RUN stack install --dependencies-only
 COPY app /src/app
 COPY src /src/src
 COPY config /src/config
+COPY restyle-gha /src/restyle-gha
 COPY restyle-path /src/restyle-path
 RUN stack install
 
@@ -66,6 +67,7 @@ RUN \
 
 # Build stage files
 COPY --from=builder /root/.local/bin/restyler /bin/restyler
+COPY --from=builder /root/.local/bin/restyle-gha /bin/restyle-gha
 COPY --from=builder /root/.local/bin/restyle-path /bin/restyle-path
 COPY --from=builder /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=builder /usr/local/bin/jo /usr/local/bin/jo
