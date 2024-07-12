@@ -74,7 +74,7 @@ jobs:
         with:
           name: binaries
           path: ./tmp
-      - run: chmod +x /tmp/restyle-path
+      - run: chmod +x ./tmp/restyle-path
       - uses: ./action
         with:
           restyler: ./tmp/restyle-path
