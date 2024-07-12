@@ -58,6 +58,7 @@ runs:
         # Storing Pull Request changed files data
         gh api "/repos/$GH_REPO/pulls/$GH_PR/files" >/tmp/pr-files.json
       env:
+        GH_TOKEN: ${{ inputs.github-token }}
         GH_REPO: ${{ github.repository }}
         GH_PR: ${{ github.event.number }}
 
