@@ -27,9 +27,12 @@ import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
+import Restyler.HostDirectoryOption
+import Restyler.ImageCleanupOption
 import Restyler.ManifestOption
 import Restyler.Options
 import Restyler.PullRequest
+import Restyler.Restrictions
 import Restyler.Setup
 import Restyler.Statsd (HasStatsClient (..), StatsClient)
 import System.Directory qualified as Directory
@@ -211,6 +214,15 @@ instance HasOptions StartupApp where
 instance HasManifestOption StartupApp where
   manifestOptionL = optionsL . manifestOptionL
 
+instance HasHostDirectoryOption StartupApp where
+  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
+
+instance HasImageCleanupOption StartupApp where
+  imageCleanupOptionL = optionsL . imageCleanupOptionL
+
+instance HasRestrictions StartupApp where
+  restrictionsL = optionsL . restrictionsL
+
 instance HasWorkingDirectory StartupApp where
   workingDirectoryL =
     lens appWorkingDirectory $ \x y -> x {appWorkingDirectory = y}
@@ -232,6 +244,15 @@ instance HasLogger App where
 
 instance HasOptions App where
   optionsL = appL . optionsL
+
+instance HasHostDirectoryOption App where
+  hostDirectoryOptionL = appL . hostDirectoryOptionL
+
+instance HasImageCleanupOption App where
+  imageCleanupOptionL = appL . imageCleanupOptionL
+
+instance HasRestrictions App where
+  restrictionsL = appL . restrictionsL
 
 instance HasWorkingDirectory App where
   workingDirectoryL = appL . workingDirectoryL

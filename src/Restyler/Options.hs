@@ -10,6 +10,8 @@ import Blammo.Logging.LogSettings.Env qualified as LoggingEnv
 import Env qualified
 import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
+import Restyler.HostDirectoryOption
+import Restyler.ImageCleanupOption
 import Restyler.ManifestOption
 import Restyler.PullRequestSpec
 import Restyler.Restrictions
@@ -61,6 +63,17 @@ instance HasOptions Options where
 instance HasManifestOption Options where
   manifestOptionL = lens (toManifestOption . oManifest) $
     \x y -> x {oManifest = unManifestOption y}
+
+instance HasHostDirectoryOption Options where
+  hostDirectoryOptionL = lens (toHostDirectoryOption . oHostDirectory) $
+    \x y -> x {oHostDirectory = unHostDirectoryOption y}
+
+instance HasImageCleanupOption Options where
+  imageCleanupOptionL = lens (toImageCleanupOption . oImageCleanup) $
+    \x y -> x {oImageCleanup = unImageCleanupOption y}
+
+instance HasRestrictions Options where
+  restrictionsL = lens oRestrictions $ \x y -> x {oRestrictions = y}
 
 -- | Parse required environment variables and command-line options
 --

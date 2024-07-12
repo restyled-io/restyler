@@ -4,16 +4,19 @@ module Restyler.Main
 
 import Restyler.Prelude
 
-import qualified Data.Text as T
-import qualified Data.Vector as V
+import Data.Text qualified as T
+import Data.Vector qualified as V
 import GitHub.Data.GitData (File (..))
 import GitHub.Endpoints.PullRequests (FetchCount (..), pullRequestFilesR)
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
+import Restyler.HostDirectoryOption
+import Restyler.ImageCleanupOption
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
+import Restyler.Restrictions
 import Restyler.RestyledPullRequest
 import Restyler.Restyler.Run
 import Restyler.RestylerResult
@@ -30,6 +33,9 @@ restylerMain
      , MonadGitHub m
      , MonadDownloadFile m
      , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
      , HasConfig env
      , HasPullRequest env
      )
@@ -49,9 +55,9 @@ restylerMain = do
   logInfo "Restyling produced differences"
 
   patch <- getRestyledPatch
-  withThreadContext ["patch" .= True]
-    $ traverse_ (logInfo . (:# []))
-    $ T.lines patch
+  withThreadContext ["patch" .= True] $
+    traverse_ (logInfo . (:# [])) $
+      T.lines patch
 
   -- This message only makes sense in the context of a Job
   for_ mJobUrl $ \jobUrl -> do
@@ -68,20 +74,20 @@ restylerMain = do
       then logWarn "Ignoring auto:true because PR is a fork"
       else do
         logInfo "Pushing changes directly to PR branch"
-        gitPush
-          $ unpack
-          $ pullRequestLocalHeadRef pullRequest
-          <> ":"
-          <> pullRequestHeadRef pullRequest
+        gitPush $
+          unpack $
+            pullRequestLocalHeadRef pullRequest
+              <> ":"
+              <> pullRequestHeadRef pullRequest
         exitWithInfo "Restyling successful"
 
   -- NB there is the edge-case of switching this off mid-PR. A previously
   -- opened Restyle PR would stop updating at that point.
   whenConfig (not . cPullRequests) $ do
     sendPullRequestStatus $ DifferencesStatus mJobUrl
-    logInfo
-      $ "Not creating Restyle PR"
-      :# ["reason" .= ("disabled by config" :: Text)]
+    logInfo $
+      "Not creating Restyle PR"
+        :# ["reason" .= ("disabled by config" :: Text)]
     exitWithInfo "Please correct style using the process described above"
 
   let
@@ -115,7 +121,9 @@ restyle
      , MonadGitHub m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
      , HasConfig env
      , HasPullRequest env
      )
@@ -140,8 +148,8 @@ getRestyledPatch = do
 getChangedPaths :: MonadGitHub m => PullRequest -> m [FilePath]
 getChangedPaths pullRequest = do
   files <-
-    runGitHub
-      $ pullRequestFilesR
+    runGitHub $
+      pullRequestFilesR
         (pullRequestOwnerName pullRequest)
         (pullRequestRepoName pullRequest)
         (pullRequestNumber pullRequest)

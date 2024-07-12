@@ -7,6 +7,7 @@ module Restyler.RestylerResult
 
 import Restyler.Prelude
 
+import Data.Aeson (ToJSON)
 import Restyler.CommitTemplate
 import Restyler.Config
 import Restyler.Git
@@ -16,11 +17,15 @@ data RestyleOutcome
   = NoPaths
   | NoChanges
   | ChangesCommitted [FilePath] Text
+  deriving stock (Generic)
+  deriving anyclass (ToJSON)
 
 data RestylerResult = RestylerResult
   { rrRestyler :: Restyler
   , rrOutcome :: RestyleOutcome
   }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON)
 
 -- | A @'RestylerResult'@ indicating there were no paths to restyle
 noPathsRestylerResult :: Restyler -> RestylerResult
@@ -30,10 +35,11 @@ noPathsRestylerResult r = RestylerResult r NoPaths
 --
 -- N.B. This will create commits if appropriate.
 getRestylerResult
-  :: (MonadGit m, MonadReader env m, HasConfig env)
-  => Restyler
+  :: MonadGit m
+  => Config
+  -> Restyler
   -> m RestylerResult
-getRestylerResult r = RestylerResult r <$> getRestyleOutcome r
+getRestylerResult config r = RestylerResult r <$> getRestyleOutcome config r
 
 -- | Does this @'RestylerResult'@ indicate changes were comitted?
 restylerCommittedChanges :: RestylerResult -> Bool
@@ -43,17 +49,17 @@ restylerCommittedChanges = committedChanges . rrOutcome
   committedChanges _ = False
 
 getRestyleOutcome
-  :: (MonadGit m, MonadReader env m, HasConfig env)
-  => Restyler
+  :: MonadGit m
+  => Config
+  -> Restyler
   -> m RestyleOutcome
-getRestyleOutcome restyler = do
+getRestyleOutcome config restyler = do
   changedPaths <- gitDiffNameOnly Nothing
 
   if null changedPaths
     then pure NoChanges
     else do
-      template <- cCommitTemplate <$> view configL
       let
         inputs = CommitTemplateInputs {ctiRestyler = restyler}
-        commitMessage = renderCommitTemplate inputs template
+        commitMessage = renderCommitTemplate inputs $ cCommitTemplate config
       ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage

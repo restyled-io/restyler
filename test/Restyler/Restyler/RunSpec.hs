@@ -7,7 +7,9 @@ import SpecHelper
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
-import Restyler.Options
+import Restyler.HostDirectoryOption
+import Restyler.ImageCleanupOption
+import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import Restyler.Test.FS (createFileLink, writeFileExecutable)
@@ -46,16 +48,16 @@ spec = withTestApp $ do
         runChangedPaths (mkPaths 1001) setOutcomeSkip `shouldReturn` ()
 
   describe "runRestyler_" $ do
-    it "treats non-zero exit codes as RestylerExitFailure"
-      $ testAppExample
-      $ do
-        local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
-          runRestyler_ (someRestyler "foo") ["bar"]
-            `shouldThrow` ( ==
-                              RestylerExitFailure
-                                (someRestyler "foo")
-                                99
-                          )
+    it "treats non-zero exit codes as RestylerExitFailure" $
+      testAppExample $
+        do
+          local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
+            runRestyler_ (someRestyler "foo") ["bar"]
+              `shouldThrow` ( ==
+                                RestylerExitFailure
+                                  (someRestyler "foo")
+                                  99
+                            )
 
   describe "findFiles" $ do
     it "expands and excludes" $ testAppExample $ do
@@ -85,7 +87,9 @@ runChangedPaths
      , MonadProcess m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
      )
   => [FilePath]
   -> (ChangedPathsConfig -> ChangedPathsConfig)

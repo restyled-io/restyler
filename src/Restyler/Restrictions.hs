@@ -1,7 +1,8 @@
 {-# LANGUAGE DerivingVia #-}
 
 module Restyler.Restrictions
-  ( Restrictions (..)
+  ( HasRestrictions (..)
+  , Restrictions (..)
   , restrictionOptions
   , envRestrictions
   , fullRestrictions
@@ -15,9 +16,12 @@ module Restyler.Restrictions
 
 import Restyler.Prelude
 
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Semigroup.Generic
-import qualified Env
+import Env qualified
+
+class HasRestrictions env where
+  restrictionsL :: Lens' env Restrictions
 
 data Restrictions = Restrictions
   { netNone :: Last Bool
@@ -30,8 +34,8 @@ data Restrictions = Restrictions
 
 restrictionOptions :: Restrictions -> [String]
 restrictionOptions Restrictions {..} =
-  concat
-    $ catMaybes
+  concat $
+    catMaybes
       [ (\b -> if b then ["--net", "none"] else []) <$> getLast netNone
       , (\b -> if b then ["--cap-drop", "all"] else []) <$> getLast capDropAll
       , (\n -> ["--cpu-shares", show n]) <$> getLast cpuShares
@@ -50,26 +54,26 @@ envRestrictions =
 
 parseOverrides :: Env.Parser Env.Error Restrictions
 parseOverrides =
-  Env.prefixed "RESTYLER_"
-    $ Restrictions
-    <$> ( fmap not
-            <$> lastSwitch
-              "NO_NET_NONE"
-              "Run restylers without --net=none"
-        )
-    <*> ( fmap not
-            <$> lastSwitch
-              "NO_CAP_DROP_ALL"
-              "Run restylers without --cap-drop=all"
-        )
-    <*> lastReader
-      readNat
-      "CPU_SHARES"
-      "Run restylers with --cpu-shares=<number>"
-    <*> lastReader
-      readBytes
-      "MEMORY"
-      "Run restylers with --memory=<number>[b|k|m|g]"
+  Env.prefixed "RESTYLER_" $
+    Restrictions
+      <$> ( fmap not
+              <$> lastSwitch
+                "NO_NET_NONE"
+                "Run restylers without --net=none"
+          )
+      <*> ( fmap not
+              <$> lastSwitch
+                "NO_CAP_DROP_ALL"
+                "Run restylers without --cap-drop=all"
+          )
+      <*> lastReader
+        readNat
+        "CPU_SHARES"
+        "Run restylers with --cpu-shares=<number>"
+      <*> lastReader
+        readBytes
+        "MEMORY"
+        "Run restylers with --memory=<number>[b|k|m|g]"
  where
   lastSwitch
     :: String

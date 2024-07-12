@@ -42,12 +42,14 @@ import Blammo.Logging.Simple
 import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.Config
+import Restyler.HostDirectoryOption
+import Restyler.ImageCleanupOption
 import Restyler.Options
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..))
-import qualified Restyler.Test.FS as FS
-import qualified Test.Hspec as Hspec
+import Restyler.Test.FS qualified as FS
+import Test.Hspec qualified as Hspec
 import Test.Hspec.Core.Spec (Example (..))
 
 data TestApp = TestApp
@@ -62,6 +64,15 @@ instance HasLogger TestApp where
 
 instance HasOptions TestApp where
   optionsL = lens taOptions $ \x y -> x {taOptions = y}
+
+instance HasHostDirectoryOption TestApp where
+  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
+
+instance HasImageCleanupOption TestApp where
+  imageCleanupOptionL = optionsL . imageCleanupOptionL
+
+instance HasRestrictions TestApp where
+  restrictionsL = optionsL . restrictionsL
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}

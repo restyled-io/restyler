@@ -81,6 +81,8 @@ runs:
         IMAGE: ${{ inputs.image }}
         LOG_LEVEL: ${{ inputs.log-level }}
 
+    - shell: bash
+      run: git log
     # TODO
     #   check if differences
     #   print patch to summary file

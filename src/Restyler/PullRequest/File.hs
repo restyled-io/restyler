@@ -1,8 +1,13 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE NoFieldSelectors #-}
+
 module Restyler.PullRequest.File
   ( PullRequestFile (..)
   , PullRequestFileStatus (..)
   , pullRequestFileStatusFromText
   , pullRequestFileStatusToText
+  , pullRequestFileToChangedPath
   ) where
 
 import Restyler.Prelude
@@ -24,6 +29,7 @@ data PullRequestFileStatus
   | PullRequestFileCopied
   | PullRequestFileChanged
   | PullRequestFileUnchanged
+  deriving stock (Eq)
 
 instance FromJSON PullRequestFileStatus where
   parseJSON = withText "status" $ either fail pure . pullRequestFileStatusFromText
@@ -52,3 +58,16 @@ pullRequestFileStatusToText = \case
   PullRequestFileCopied -> "copied"
   PullRequestFileChanged -> "changed"
   PullRequestFileUnchanged -> "unchanged"
+
+pullRequestFileToChangedPath :: PullRequestFile -> Maybe FilePath
+pullRequestFileToChangedPath file = do
+  guard $
+    file.status
+      `elem` [ PullRequestFileAdded
+             , PullRequestFileCopied
+             , PullRequestFileChanged
+             , PullRequestFileRenamed
+             , PullRequestFileModified
+             ]
+
+  pure $ file.filename
