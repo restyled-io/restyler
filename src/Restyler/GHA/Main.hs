@@ -22,6 +22,7 @@ import Restyler.ManifestOption
 import Restyler.PullRequest.File
 import Restyler.Restrictions
 import Restyler.Restyler.Run (runRestylers)
+import Restyler.RestylerResult
 import UnliftIO.Exception (handleAny)
 
 data App = App
@@ -91,7 +92,12 @@ main = do
       traverse_ (logInfo . ("Changed file" :#) . objectToPairs) prFiles
 
       results <- runRestylers config $ mapMaybe pullRequestFileToChangedPath prFiles
-      traverse_ (logInfo . ("Result" :#) . objectToPairs) results
+
+      for_ results $ \RestylerResult {..} ->
+        case rrOutcome of
+          ChangesCommitted paths sha -> do
+            logInfo $ "Changes committed" :# ["paths" .= paths, "sha" .= sha]
+          _ -> pure ()
 
 logExit :: (MonadIO m, MonadLogger m) => SomeException -> m a
 logExit ex = do

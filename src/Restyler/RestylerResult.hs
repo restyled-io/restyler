@@ -1,5 +1,6 @@
 module Restyler.RestylerResult
   ( RestylerResult (..)
+  , RestyleOutcome (..)
   , noPathsRestylerResult
   , getRestylerResult
   , restylerCommittedChanges
