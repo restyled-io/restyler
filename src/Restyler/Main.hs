@@ -25,13 +25,14 @@ restylerMain
   :: ( MonadMask m
      , MonadUnliftIO m
      , MonadLogger m
-     , MonadReader env m
      , MonadSystem m
      , MonadExit m
      , MonadProcess m
      , MonadGit m
      , MonadGitHub m
      , MonadDownloadFile m
+     , MonadReader env m
+     , HasLogger env
      , HasOptions env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
@@ -121,6 +122,7 @@ restyle
      , MonadGitHub m
      , MonadDownloadFile m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env

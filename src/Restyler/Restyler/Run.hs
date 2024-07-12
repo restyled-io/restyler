@@ -19,6 +19,7 @@ module Restyler.Restyler.Run
 
 import Restyler.Prelude
 
+import Blammo.Logging.Logger (flushLogger)
 import Data.List (nub)
 import Data.Text qualified as T
 import Restyler.App.Class
@@ -98,6 +99,7 @@ runRestylers
      , MonadGit m
      , MonadDownloadFile m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -115,6 +117,7 @@ runRestylers_
      , MonadProcess m
      , MonadDownloadFile m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -217,6 +220,7 @@ runRestyler
      , MonadProcess m
      , MonadGit m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -237,6 +241,7 @@ runRestyler_
      , MonadSystem m
      , MonadProcess m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -289,6 +294,7 @@ dockerRunRestyler
      , MonadSystem m
      , MonadProcess m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -323,6 +329,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
          , "style" .= rRunStyle
          ]
 
+  flushLogger -- so docker stdout is not interleaved
   ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
       (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])

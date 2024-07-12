@@ -87,6 +87,7 @@ runChangedPaths
      , MonadProcess m
      , MonadDownloadFile m
      , MonadReader env m
+     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
