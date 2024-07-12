@@ -13,6 +13,7 @@ import Restyler.Config
 import Restyler.GHA.Event
 import Restyler.GHA.Options
 import Restyler.ManifestOption
+import UnliftIO.Exception (tryAny)
 
 newtype App = App
   { logger :: Logger
@@ -32,8 +33,25 @@ main = do
     let app = App {logger = logger}
 
     runAppT app $ do
-      config <- loadConfig
-      logInfo $ "Loaded config" :# objectToPairs config
+      result <- tryAny $ do
+        config <- loadConfig
+        logInfo $ "Loaded config" :# objectToPairs config
 
-      githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
-      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+        githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
+        logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+
+      -- check ignores
+      -- check if closed -> close siblings
+      -- restyle, making commits
+      -- print patch to summary file
+      --
+      -- From outside:
+      --   check if differences
+      --   mode -> open PR (fork?), push, or do nothing
+      --   fail
+
+      case result of
+        Left ex -> do
+          logError $ pack (displayException ex) :# []
+          exitFailure
+        Right () -> pure ()

@@ -34,7 +34,7 @@ runs:
       run: |
         # Prepare
         cat > /tmp/event.json <<'EOM'
-        ${{ toJSON(github.event) }}'
+        ${{ github.event }}'
         EOM
 
     - shell: bash
