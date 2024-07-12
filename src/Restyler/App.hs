@@ -14,24 +14,25 @@ import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import GitHub.Auth
-import qualified GitHub.Data.Definitions as GitHub
+import GitHub.Data.Definitions qualified as GitHub
 import GitHub.Request
 import GitHub.Request.Display
 import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
-import qualified Relude as Prelude
+import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
+import Restyler.ManifestOption
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.Setup
 import Restyler.Statsd (HasStatsClient (..), StatsClient)
-import qualified System.Directory as Directory
-import qualified System.Exit as Exit
-import qualified System.Process as Process
+import System.Directory qualified as Directory
+import System.Exit qualified as Exit
+import System.Process qualified as Process
 
 newtype AppT app m a = AppT
   { unAppT :: ReaderT app (LoggingT m) a
@@ -102,46 +103,46 @@ instance MonadUnliftIO m => MonadProcess (AppT app m) where
     liftIO $ Process.callProcess cmd args
 
   callProcessExitCode cmd args = do
-    logDebug
-      $ "callProcessExitCode"
-      :# ["command" .= cmd, "arguments" .= args]
+    logDebug $
+      "callProcessExitCode"
+        :# ["command" .= cmd, "arguments" .= args]
     ec <- liftIO $ Process.withCreateProcess proc $ \_ _ _ p ->
       Process.waitForProcess p
-    (if ec == ExitSuccess then logDebug else logWarn)
-      $ "callProcessExitCode"
-      :# [ "command" .= cmd
-         , "arguments" .= args
-         , "exitCode" .= exitCodeInt ec
-         ]
+    (if ec == ExitSuccess then logDebug else logWarn) $
+      "callProcessExitCode"
+        :# [ "command" .= cmd
+           , "arguments" .= args
+           , "exitCode" .= exitCodeInt ec
+           ]
     pure ec
    where
     proc = (Process.proc cmd args) {Process.delegate_ctlc = True}
 
   readProcess cmd args = do
-    logDebug
-      $ "readProcess"
-      :# ["command" .= cmd, "arguments" .= args]
+    logDebug $
+      "readProcess"
+        :# ["command" .= cmd, "arguments" .= args]
     output <- liftIO $ Process.readProcess cmd args ""
-    logDebug
-      $ "readProcess"
-      :# [ "command" .= cmd
-         , "arguments" .= args
-         , "output" .= output
-         ]
+    logDebug $
+      "readProcess"
+        :# [ "command" .= cmd
+           , "arguments" .= args
+           , "output" .= output
+           ]
     pure output
 
   readProcessExitCode cmd args = do
-    logDebug
-      $ "readProcess"
-      :# ["command" .= cmd, "arguments" .= args]
+    logDebug $
+      "readProcess"
+        :# ["command" .= cmd, "arguments" .= args]
     (ec, output, err) <- liftIO $ Process.readProcessWithExitCode cmd args ""
-    (if ec == ExitSuccess then logDebug else logWarn)
-      $ "readProcessExitCode"
-      :# [ "command" .= cmd
-         , "arguments" .= args
-         , "output" .= output
-         , "errorOutput" .= err
-         ]
+    (if ec == ExitSuccess then logDebug else logWarn) $
+      "readProcessExitCode"
+        :# [ "command" .= cmd
+           , "arguments" .= args
+           , "output" .= output
+           , "errorOutput" .= err
+           ]
     pure (ec, output)
 
 instance MonadUnliftIO m => MonadExit (AppT app m) where
@@ -178,9 +179,9 @@ runGitHubInternal
   => GenRequest m k a
   -> n a
 runGitHubInternal req = do
-  logDebug
-    $ "runGitHub"
-    :# ["request" .= show @Text (displayGitHubRequest req)]
+  logDebug $
+    "runGitHub"
+      :# ["request" .= show @Text (displayGitHubRequest req)]
   auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
   result <- liftIO $ do
     mgr <- getGlobalManager
@@ -202,6 +203,9 @@ instance HasLogger StartupApp where
 
 instance HasOptions StartupApp where
   optionsL = lens appOptions $ \x y -> x {appOptions = y}
+
+instance HasManifestOption StartupApp where
+  manifestOptionL = optionsL . manifestOptionL
 
 instance HasWorkingDirectory StartupApp where
   workingDirectoryL =

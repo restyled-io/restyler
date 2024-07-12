@@ -12,13 +12,13 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.KeyMap (KeyMap)
-import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
 import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
-import Restyler.Options
+import Restyler.ManifestOption
 import Restyler.RemoteFile
 
 data Restyler = Restyler
@@ -112,12 +112,12 @@ getAllRestylersVersioned
      , MonadLogger m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
+     , HasManifestOption env
      )
   => String
   -> m [Restyler]
 getAllRestylersVersioned version = do
-  mManifest <- oManifest <$> view optionsL
+  mManifest <- unManifestOption <$> view manifestOptionL
   case mManifest of
     Nothing -> do
       downloadRemoteFile restylers

@@ -28,6 +28,8 @@ default-extensions:
   - TypeApplications
   - TypeFamilies
 
+  - ImportQualifiedPost
+
 ghc-options:
   - -fignore-optim-changes
   - -fwrite-ide-info
@@ -107,8 +109,8 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - Blammo
-      - envparse
+      # - Blammo
+      # - envparse
       - restyler
 
 tests:

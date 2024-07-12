@@ -13,27 +13,28 @@ import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
 import Restyler.Ignore
+import Restyler.ManifestOption
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status
 import Restyler.RestyledPullRequest
 import Restyler.Statsd (HasStatsClient)
-import qualified Restyler.Statsd as Statsd
-import qualified Restyler.Wiki as Wiki
+import Restyler.Statsd qualified as Statsd
+import Restyler.Wiki qualified as Wiki
 
 data PlanUpgradeRequired = PlanUpgradeRequired Text (Maybe URL)
   deriving stock (Eq, Show)
 
 instance Exception PlanUpgradeRequired where
   displayException (PlanUpgradeRequired message mUpgradeUrl) =
-    unpack
-      $ message
-      <> "\nFor additional help, please see: "
-      <> Wiki.commonError "Plan Upgrade Required"
-      <> maybe
-        ""
-        (("\nYou can upgrade your plan at " <>) . getUrl)
-        mUpgradeUrl
+    unpack $
+      message
+        <> "\nFor additional help, please see: "
+        <> Wiki.commonError "Plan Upgrade Required"
+        <> maybe
+          ""
+          (("\nYou can upgrade your plan at " <>) . getUrl)
+          mUpgradeUrl
 
 restylerSetup
   :: ( HasCallStack
@@ -46,6 +47,7 @@ restylerSetup
      , MonadDownloadFile m
      , MonadReader env m
      , HasOptions env
+     , HasManifestOption env
      , HasWorkingDirectory env
      , HasStatsClient env
      )
@@ -53,16 +55,16 @@ restylerSetup
 restylerSetup = do
   Options {..} <- view optionsL
 
-  logInfo
-    $ "Restyler started"
-    :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
+  logInfo $
+    "Restyler started"
+      :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
 
-  when oRepoDisabled
-    $ exitWithInfo
-    $ fromString
-    $ "This repository has been disabled for possible abuse."
-    <> " If you believe this is an error, please reach out to"
-    <> " support@restyled.io"
+  when oRepoDisabled $
+    exitWithInfo $
+      fromString $
+        "This repository has been disabled for possible abuse."
+          <> " If you believe this is an error, please reach out to"
+          <> " support@restyled.io"
 
   pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
 

@@ -40,14 +40,14 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.FileEmbed (embedFile)
 import Data.Functor.Barbie
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Set as Set
+import Data.List.NonEmpty qualified as NE
+import Data.Set qualified as Set
 import Data.Yaml
   ( ParseException (..)
   , YamlException (..)
   , prettyPrintParseException
   )
-import qualified Data.Yaml as Yaml
+import Data.Yaml qualified as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.App.Class
 import Restyler.CommitTemplate
@@ -58,11 +58,11 @@ import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
-import Restyler.Options
+import Restyler.ManifestOption
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
-import qualified Restyler.Wiki as Wiki
+import Restyler.Wiki qualified as Wiki
 import Restyler.Yaml.Errata (formatInvalidYaml)
 import UnliftIO.Exception (handle)
 
@@ -216,15 +216,15 @@ loadConfig
      , MonadSystem m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
+     , HasManifestOption env
      )
   => m Config
 loadConfig =
-  loadConfigFrom (map ConfigPath configPaths)
-    $ handleTo ConfigErrorInvalidRestylersYaml
-    . getAllRestylersVersioned
-    . runIdentity
-    . cfRestylersVersion
+  loadConfigFrom (map ConfigPath configPaths) $
+    handleTo ConfigErrorInvalidRestylersYaml
+      . getAllRestylersVersioned
+      . runIdentity
+      . cfRestylersVersion
 
 loadConfigFrom
   :: (MonadUnliftIO m, MonadSystem m)
@@ -284,10 +284,10 @@ decodeThrow = either throwIO pure . Yaml.decodeThrow
 resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
   restylers <-
-    either (throwIO . ConfigErrorInvalidRestylers) pure
-      $ overrideRestylers allRestylers
-      $ unSketchy
-      $ runIdentity cfRestylers
+    either (throwIO . ConfigErrorInvalidRestylers) pure $
+      overrideRestylers allRestylers $
+        unSketchy $
+          runIdentity cfRestylers
 
   pure
     Config

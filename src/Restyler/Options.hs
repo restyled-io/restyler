@@ -6,10 +6,11 @@ module Restyler.Options
 
 import Restyler.Prelude
 
-import qualified Blammo.Logging.LogSettings.Env as LoggingEnv
-import qualified Env
+import Blammo.Logging.LogSettings.Env qualified as LoggingEnv
+import Env qualified
 import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
+import Restyler.ManifestOption
 import Restyler.PullRequestSpec
 import Restyler.Restrictions
 
@@ -57,6 +58,10 @@ class HasOptions env where
 instance HasOptions Options where
   optionsL = id
 
+instance HasManifestOption Options where
+  manifestOptionL = lens (toManifestOption . oManifest) $
+    \x y -> x {oManifest = unManifestOption y}
+
 -- | Parse required environment variables and command-line options
 --
 -- See @restyler --help@
@@ -64,11 +69,11 @@ parseOptions :: IO Options
 parseOptions = do
   EnvOptions {..} <- Env.parse id envParser
   CLIOptions {..} <-
-    execParser
-      $ info (optionsParser <**> helper)
-      $ fullDesc
-      <> progDesc
-        "Restyle a GitHub Pull Request"
+    execParser $
+      info (optionsParser <**> helper) $
+        fullDesc
+          <> progDesc
+            "Restyle a GitHub Pull Request"
 
   pure
     Options
