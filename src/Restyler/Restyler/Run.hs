@@ -254,7 +254,9 @@ runRestyler_ r paths = case rDelimiters r of
   Nothing -> run paths
   Just ds -> restyleDelimited ds run paths
  where
-  run = traverse_ (dockerRunRestyler r) . withProgress . getDockerRunStyles r
+  run ps = do
+    dockerPullRestyler r
+    traverse_ (dockerRunRestyler r) $ withProgress $ getDockerRunStyles r ps
 
 data WithProgress a = WithProgress
   { pItem :: a
@@ -287,6 +289,11 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathsOverwriteSep -> [DockerRunPathsOverwrite True paths]
   RestylerRunStylePathOverwrite -> map (DockerRunPathOverwrite False) paths
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
+
+dockerPullRestyler :: (MonadLogger m, MonadProcess m) => Restyler -> m ()
+dockerPullRestyler Restyler {..} = do
+  logInfo $ "Pulling Restyler" :# ["image" .= rImage]
+  callProcess "docker" ["pull", "--quiet", rImage]
 
 dockerRunRestyler
   :: ( MonadUnliftIO m
