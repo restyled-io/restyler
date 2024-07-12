@@ -1,4 +1,4 @@
-FROM fpco/stack-build-small:lts-19.10 AS builder
+FROM fpco/stack-build-small:lts-22.28 AS builder
 LABEL maintainer="Pat Brisbin <pbrisbin@gmail.com>"
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN \
@@ -51,7 +51,7 @@ RUN \
   make check && \
   make install
 
-FROM ubuntu:18.04
+FROM ubuntu:24.04
 LABEL maintainer="Pat Brisbin <pbrisbin@gmail.com>"
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN \
