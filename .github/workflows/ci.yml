@@ -73,9 +73,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: binaries
+          path: ./tmp
       - uses: ./action
         with:
-          restyler: ./restyle-path
+          restyler: ./tmp/restyle-path
           mode: summary-only
           fail: false
           image: ${{ needs.image.outputs.tags }}
