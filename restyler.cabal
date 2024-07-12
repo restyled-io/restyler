@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 63324cc24d42775e30a66895f70c2c9fb3d6271dfc6047fd0783bedd3a5119a1
+-- hash: 2036197d377bc30a936c68113b095bbddadac1f5bd7efd8154d091538b9f70b5
 
 name:           restyler
 version:        0.2.0.0
@@ -35,22 +35,28 @@ library
       Restyler.Delimited
       Restyler.ErrorMetadata
       Restyler.Exit
-      Restyler.GHA.Event
       Restyler.GHA.Main
       Restyler.GHA.Options
       Restyler.Git
+      Restyler.GitHub
+      Restyler.GitHub.Api
+      Restyler.GitHub.PullRequest
+      Restyler.GitHub.PullRequest.File
+      Restyler.GitHub.Repository
       Restyler.HostDirectoryOption
       Restyler.Ignore
       Restyler.ImageCleanupOption
+      Restyler.LogSettingsOption
       Restyler.Main
       Restyler.ManifestOption
       Restyler.Options
       Restyler.Prelude
       Restyler.PullRequest
-      Restyler.PullRequest.File
       Restyler.PullRequest.Status
+      Restyler.PullRequestNumberOption
       Restyler.PullRequestSpec
       Restyler.RemoteFile
+      Restyler.RepositoryOption
       Restyler.Restrictions
       Restyler.RestyledPullRequest
       Restyler.Restyler
@@ -115,6 +121,7 @@ library
     , github
     , http-client-tls
     , http-conduit
+    , http-types
     , megaparsec
     , microlens
     , microlens-mtl

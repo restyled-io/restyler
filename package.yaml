@@ -71,6 +71,7 @@ library:
     - github
     - http-client-tls
     - http-conduit
+    - http-types
     - megaparsec
     - microlens
     - microlens-mtl

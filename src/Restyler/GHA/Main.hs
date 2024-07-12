@@ -13,13 +13,12 @@ import Data.Text qualified as T
 import Restyler.App (AppT, runAppT)
 import Restyler.App.Class (MonadProcess (..))
 import Restyler.Config
-import Restyler.GHA.Event
 import Restyler.GHA.Options
 import Restyler.Git (MonadGit (..))
+import Restyler.GitHub qualified as GitHub
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
 import Restyler.ManifestOption
-import Restyler.PullRequest.File
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Restyler.Run (runRestylers)
@@ -72,7 +71,7 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
 
 main :: IO ()
 main = do
-  options <- parseOptions
+  options <- getOptions
 
   withLogger options.logSettings $ \logger -> do
     let app = App {logger = logger, restrictions = options.restrictions}
@@ -81,18 +80,26 @@ main = do
       config <- loadConfig
       logDebug $ "Config" :# objectToPairs config
 
-      githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
-      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload.pull_request
+      let repoPR =
+            (,)
+              <$> unRepositoryOption options.repository
+              <*> unPullRequestNumberOption options.pullRequest
 
-      -- TODO
-      -- check draft
-      -- check closed
-      -- check ignores
+      paths <- case repoPR of
+        Nothing -> error "CLI paths"
+        Just (repo, pr) -> do
+          pullRequest <- GitHub.getPullRequest repo pr
+          logInfo $ "Handling PR" :# objectToPairs pullRequest
 
-      prFiles <- decodeJsonThrow @_ @[PullRequestFile] options.githubPRFilesJson
-      traverse_ (logDebug . ("Changed file" :#) . objectToPairs) prFiles
+          -- TODO
+          -- check draft
+          -- check closed
+          -- check ignores
 
-      results <- runRestylers config $ mapMaybe pullRequestFileToChangedPath prFiles
+          mapMaybe pullRequestFileToChangedPath
+            <$> GitHub.getPullRequestFiles repo pr
+
+      results <- runRestylers config paths
 
       for_ results $ \RestylerResult {..} ->
         case rrOutcome of

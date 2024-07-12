@@ -5,6 +5,7 @@ module Restyler.Restrictions
   , Restrictions (..)
   , restrictionOptions
   , envRestrictions
+  , optRestrictions
   , fullRestrictions
 
     -- * Bytes
@@ -19,6 +20,7 @@ import Restyler.Prelude
 import Data.Char qualified as Char
 import Data.Semigroup.Generic
 import Env qualified
+import Options.Applicative
 
 class HasRestrictions env where
   restrictionsL :: Lens' env Restrictions
@@ -30,7 +32,7 @@ data Restrictions = Restrictions
   , memory :: Last Bytes
   }
   deriving stock (Generic, Eq, Show)
-  deriving (Semigroup) via GenericSemigroupMonoid Restrictions
+  deriving (Semigroup, Monoid) via GenericSemigroupMonoid Restrictions
 
 restrictionOptions :: Restrictions -> [String]
 restrictionOptions Restrictions {..} =
@@ -93,6 +95,10 @@ parseOverrides =
         (bimap Env.UnreadError Just . r)
         name
         (Env.def Nothing <> Env.help h)
+
+-- TODO
+optRestrictions :: Parser Restrictions
+optRestrictions = pure mempty
 
 fullRestrictions :: Restrictions
 fullRestrictions =

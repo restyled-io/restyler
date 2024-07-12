@@ -1,31 +1,57 @@
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
 module Restyler.GHA.Options
   ( Options (..)
-  , parseOptions
+  , getOptions
+  , envOptions
+  , optOptions
   ) where
 
 import Restyler.Prelude
 
-import Blammo.Logging.LogSettings.Env qualified as LogSettingsEnv
+import Data.Semigroup.Generic (GenericSemigroupMonoid (..))
 import Env qualified
+import Options.Applicative
+import Restyler.LogSettingsOption
+import Restyler.PullRequestNumberOption
+import Restyler.RepositoryOption
 import Restyler.Restrictions
 
 data Options = Options
-  { logSettings :: LogSettings
+  { logSettings :: LogSettingsOption
   , restrictions :: Restrictions
-  , githubEventJson :: FilePath
-  , githubPRFilesJson :: FilePath
+  , repository :: RepositoryOption
+  , pullRequestNumber :: PullRequestNumberOption
   }
+  deriving stock (Generic)
+  deriving (Semigroup) via (GenericSemigroupMonoid Options)
 
-parseOptions :: MonadIO m => m Options
-parseOptions = liftIO $ Env.parse id parser
+getOptions :: MonadIO m => m Options
+getOptions =
+  (<>)
+    <$> envOptions
+    <*> optOptions
 
-parser :: Env.Parser Env.Error Options
-parser =
+envOptions :: MonadIO m => m Options
+envOptions = liftIO $ Env.parse id envParser
+
+envParser :: Env.Parser Env.Error Options
+envParser =
   Options
-    <$> LogSettingsEnv.parser
+    <$> envLogSettingsOption
     <*> envRestrictions
-    <*> Env.var Env.nonempty "GITHUB_EVENT_JSON" mempty
-    <*> Env.var Env.nonempty "GITHUB_PR_FILES_JSON" mempty
+    <*> envRepositoryOption
+    <*> envPullRequestNumberOption
+
+optOptions :: MonadIO m => m Options
+optOptions = liftIO $ execParser $ info (optParser <**> helper) fullDesc
+
+optParser :: Parser Options
+optParser =
+  Options
+    <$> optLogSettingsOption
+    <*> optRestrictions
+    <*> optRepositoryOption
+    <*> optPullRequestNumberOption

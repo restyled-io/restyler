@@ -1,30 +1,21 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
-module Restyler.GHA.Event
-  ( Event (..)
-  , PullRequestPayload (..)
-  , PullRequest (..)
+module Restyler.GitHub.PullRequest
+  ( PullRequest (..)
   , PullRequestState (..)
   , pullRequestStateFromText
   , pullRequestStateToText
   , Label (..)
   , Commit (..)
+  , getPullRequest
   ) where
 
 import Restyler.Prelude
 
 import Data.Aeson
-
-newtype Event = PullRequestEvent {payload :: PullRequestPayload}
-  deriving newtype (FromJSON, ToJSON)
-
-data PullRequestPayload = PullRequestPayload
-  { number :: Int
-  , pull_request :: PullRequest
-  }
-  deriving stock (Generic)
-  deriving anyclass (FromJSON, ToJSON)
+import Restyler.GitHub.Api
+import Restyler.GitHub.Repository
 
 data PullRequest = PullRequest
   { number :: Int
@@ -71,3 +62,19 @@ data Commit = Commit
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
+
+getPullRequest
+  :: (MonadIO m, MonadReader env m, HasGitHubToken env)
+  => Repository
+  -> Int
+  -> m PullRequest
+getPullRequest repo pr =
+  getOne
+    $ "https://api.github.com/repos/"
+    <> unpack repo
+    . owner
+    <> "/"
+    <> unpack repo
+    . repo
+    <> "/pulls/"
+    <> show pr

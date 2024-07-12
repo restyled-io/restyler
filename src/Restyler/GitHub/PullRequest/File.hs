@@ -2,17 +2,19 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
-module Restyler.PullRequest.File
+module Restyler.GitHub.PullRequest.File
   ( PullRequestFile (..)
   , PullRequestFileStatus (..)
   , pullRequestFileStatusFromText
   , pullRequestFileStatusToText
   , pullRequestFileToChangedPath
+  , getPullRequestFiles
   ) where
 
 import Restyler.Prelude
 
 import Data.Aeson
+import Restyler.GitHub.Api
 
 data PullRequestFile = PullRequestFile
   { filename :: FilePath
@@ -70,4 +72,19 @@ pullRequestFileToChangedPath file = do
            , PullRequestFileModified
            ]
 
-  pure $ file.filename
+  pure file.filename
+
+getPullRequestFiles
+  :: (MonadIO m, MonadReader env m, HasGitHubToken env)
+  => Repository
+  -> Int
+  -> m [PullRequestFile]
+getPullRequestFiles repo pr =
+  getAll
+    $ "https://api.github.com/repos/"
+    <> unpack repo.owner
+    <> "/"
+    <> unpack repo.repo
+    <> "/pulls/"
+    <> show pr
+    <> "/files"
