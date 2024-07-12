@@ -10,7 +10,7 @@ import GitHub.Data (unIssueNumber)
 import Restyler.PullRequest
 import Restyler.Restyler
 import Restyler.RestylerResult
-import qualified Restyler.Wiki as Wiki
+import Restyler.Wiki qualified as Wiki
 import Text.Shakespeare.Text (st)
 
 -- brittany-disable-next-binding

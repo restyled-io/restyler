@@ -33,8 +33,8 @@ module Restyler.Test.FS
 import Restyler.Prelude
 
 import Data.List.Extra (dropPrefix)
-import qualified Data.Map.Strict as Map
-import qualified System.Directory as Directory
+import Data.Map.Strict qualified as Map
+import System.Directory qualified as Directory
 import System.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
 
 class HasFS env where

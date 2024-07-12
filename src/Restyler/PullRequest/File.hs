@@ -61,13 +61,13 @@ pullRequestFileStatusToText = \case
 
 pullRequestFileToChangedPath :: PullRequestFile -> Maybe FilePath
 pullRequestFileToChangedPath file = do
-  guard $
-    file.status
-      `elem` [ PullRequestFileAdded
-             , PullRequestFileCopied
-             , PullRequestFileChanged
-             , PullRequestFileRenamed
-             , PullRequestFileModified
-             ]
+  guard
+    $ file.status
+    `elem` [ PullRequestFileAdded
+           , PullRequestFileCopied
+           , PullRequestFileChanged
+           , PullRequestFileRenamed
+           , PullRequestFileModified
+           ]
 
   pure $ file.filename

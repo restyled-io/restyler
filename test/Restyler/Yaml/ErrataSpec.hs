@@ -7,9 +7,9 @@ module Restyler.Yaml.ErrataSpec
 import SpecHelper
 
 import Data.Aeson
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Yaml (ParseException (..), YamlException (..))
-import qualified Data.Yaml as Yaml
+import Data.Yaml qualified as Yaml
 import Restyler.Yaml.Errata
 
 spec :: Spec

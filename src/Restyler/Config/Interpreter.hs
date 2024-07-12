@@ -6,8 +6,8 @@ module Restyler.Config.Interpreter
 import Restyler.Prelude
 
 import Data.Aeson
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Text as T
+import Data.List.NonEmpty qualified as NE
+import Data.Text qualified as T
 import System.FilePath (takeFileName)
 
 data Interpreter

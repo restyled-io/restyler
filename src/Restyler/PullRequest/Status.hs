@@ -7,7 +7,7 @@ module Restyler.PullRequest.Status
 
 import Restyler.Prelude
 
-import qualified Data.Text as T
+import Data.Text qualified as T
 import GitHub.Endpoints.Repos.Statuses
 import Restyler.App.Class
 import Restyler.Config

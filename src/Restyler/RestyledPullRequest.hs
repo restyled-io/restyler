@@ -11,8 +11,8 @@ module Restyler.RestyledPullRequest
 
 import Restyler.Prelude
 
-import qualified Data.Set as Set
-import qualified Data.Text as T
+import Data.Set qualified as Set
+import Data.Text qualified as T
 import GitHub.Endpoints.GitData.References (deleteReferenceR)
 import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
 import GitHub.Endpoints.PullRequests
@@ -38,7 +38,7 @@ import GitHub.Endpoints.PullRequests.ReviewRequests
   )
 import Restyler.App.Class (MonadGitHub, runGitHub, runGitHubFirst, runGitHub_)
 import Restyler.Config
-import qualified Restyler.Content as Content
+import Restyler.Content qualified as Content
 import Restyler.Git (MonadGit (..))
 import Restyler.Options
 import Restyler.PullRequest

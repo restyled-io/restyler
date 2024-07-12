@@ -13,7 +13,7 @@ import Restyler.Prelude
 import GitHub.Data
 import Text.Megaparsec hiding (some)
 import Text.Megaparsec.Char
-import qualified Prelude as Unsafe
+import Prelude qualified as Unsafe
 
 data PullRequestSpec = PullRequestSpec
   { prsOwner :: Name Owner

@@ -14,7 +14,7 @@ import Restyler.Prelude
 import Data.Aeson
 import GitHub.Data (toPathPart)
 import System.FilePath.Glob hiding (match)
-import qualified System.FilePath.Glob as Glob
+import System.FilePath.Glob qualified as Glob
 
 newtype Glob a = Glob {unGlob :: String}
   deriving stock (Eq, Ord, Generic)

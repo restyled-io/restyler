@@ -6,8 +6,8 @@ module Restyler.ConfigSpec
 
 import SpecHelper
 
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Text as T
+import Data.List.NonEmpty qualified as NE
+import Data.Text qualified as T
 import Data.Yaml (prettyPrintParseException)
 import Restyler.Config
 import Restyler.Config.Include

@@ -110,46 +110,46 @@ instance (MonadUnliftIO m, HasLogger app) => MonadProcess (AppT app m) where
     liftIO $ Process.callProcess cmd args
 
   callProcessExitCode cmd args = do
-    logDebug $
-      "callProcessExitCode"
-        :# ["command" .= cmd, "arguments" .= args]
+    logDebug
+      $ "callProcessExitCode"
+      :# ["command" .= cmd, "arguments" .= args]
     ec <- liftIO $ Process.withCreateProcess proc $ \_ _ _ p ->
       Process.waitForProcess p
-    (if ec == ExitSuccess then logDebug else logWarn) $
-      "callProcessExitCode"
-        :# [ "command" .= cmd
-           , "arguments" .= args
-           , "exitCode" .= exitCodeInt ec
-           ]
+    (if ec == ExitSuccess then logDebug else logWarn)
+      $ "callProcessExitCode"
+      :# [ "command" .= cmd
+         , "arguments" .= args
+         , "exitCode" .= exitCodeInt ec
+         ]
     pure ec
    where
     proc = (Process.proc cmd args) {Process.delegate_ctlc = True}
 
   readProcess cmd args = do
-    logDebug $
-      "readProcess"
-        :# ["command" .= cmd, "arguments" .= args]
+    logDebug
+      $ "readProcess"
+      :# ["command" .= cmd, "arguments" .= args]
     output <- liftIO $ Process.readProcess cmd args ""
-    logDebug $
-      "readProcess"
-        :# [ "command" .= cmd
-           , "arguments" .= args
-           , "output" .= output
-           ]
+    logDebug
+      $ "readProcess"
+      :# [ "command" .= cmd
+         , "arguments" .= args
+         , "output" .= output
+         ]
     pure output
 
   readProcessExitCode cmd args = do
-    logDebug $
-      "readProcess"
-        :# ["command" .= cmd, "arguments" .= args]
+    logDebug
+      $ "readProcess"
+      :# ["command" .= cmd, "arguments" .= args]
     (ec, output, err) <- liftIO $ Process.readProcessWithExitCode cmd args ""
-    (if ec == ExitSuccess then logDebug else logWarn) $
-      "readProcessExitCode"
-        :# [ "command" .= cmd
-           , "arguments" .= args
-           , "output" .= output
-           , "errorOutput" .= err
-           ]
+    (if ec == ExitSuccess then logDebug else logWarn)
+      $ "readProcessExitCode"
+      :# [ "command" .= cmd
+         , "arguments" .= args
+         , "output" .= output
+         , "errorOutput" .= err
+         ]
     pure (ec, output)
 
 instance (MonadUnliftIO m, HasLogger app) => MonadExit (AppT app m) where
@@ -186,9 +186,9 @@ runGitHubInternal
   => GenRequest m k a
   -> n a
 runGitHubInternal req = do
-  logDebug $
-    "runGitHub"
-      :# ["request" .= show @Text (displayGitHubRequest req)]
+  logDebug
+    $ "runGitHub"
+    :# ["request" .= show @Text (displayGitHubRequest req)]
   auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
   result <- liftIO $ do
     mgr <- getGlobalManager

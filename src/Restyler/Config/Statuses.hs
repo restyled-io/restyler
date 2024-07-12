@@ -7,7 +7,7 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
-import qualified Data.Aeson.Types as Aeson
+import Data.Aeson.Types qualified as Aeson
 import Restyler.Config.ExpectedKeys
 
 data Statuses = Statuses

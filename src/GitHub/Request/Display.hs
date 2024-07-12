@@ -6,7 +6,7 @@ module GitHub.Request.Display
 import Prelude
 
 import Data.Text (Text, pack)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8)
 import GitHub.Request
 

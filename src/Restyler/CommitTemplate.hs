@@ -8,7 +8,7 @@ module Restyler.CommitTemplate
 import Restyler.Prelude
 
 import Data.Aeson
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Restyler.Restyler
 
 newtype CommitTemplateInputs = CommitTemplateInputs

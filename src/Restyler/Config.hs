@@ -220,11 +220,11 @@ loadConfig
      )
   => m Config
 loadConfig =
-  loadConfigFrom (map ConfigPath configPaths) $
-    handleTo ConfigErrorInvalidRestylersYaml
-      . getAllRestylersVersioned
-      . runIdentity
-      . cfRestylersVersion
+  loadConfigFrom (map ConfigPath configPaths)
+    $ handleTo ConfigErrorInvalidRestylersYaml
+    . getAllRestylersVersioned
+    . runIdentity
+    . cfRestylersVersion
 
 loadConfigFrom
   :: (MonadUnliftIO m, MonadSystem m)
@@ -284,10 +284,10 @@ decodeThrow = either throwIO pure . Yaml.decodeThrow
 resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
   restylers <-
-    either (throwIO . ConfigErrorInvalidRestylers) pure $
-      overrideRestylers allRestylers $
-        unSketchy $
-          runIdentity cfRestylers
+    either (throwIO . ConfigErrorInvalidRestylers) pure
+      $ overrideRestylers allRestylers
+      $ unSketchy
+      $ runIdentity cfRestylers
 
   pure
     Config

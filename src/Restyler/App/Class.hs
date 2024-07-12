@@ -19,7 +19,7 @@ module Restyler.App.Class
 import Restyler.Prelude
 
 import Data.Vector (Vector)
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import GitHub.Data (IssueLabel (..))
 import GitHub.Data.Request
 import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)

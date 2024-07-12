@@ -13,7 +13,7 @@ import Restyler.ErrorMetadata
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.Statsd (HasStatsClient (..), StatsClient)
-import qualified Restyler.Statsd as Statsd
+import Restyler.Statsd qualified as Statsd
 import UnliftIO.Exception (tryAny)
 
 newtype ExitHandler = ExitHandler

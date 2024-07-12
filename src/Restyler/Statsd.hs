@@ -33,7 +33,7 @@ import Network.StatsD.Datadog
   , defaultSettings
   , withDogStatsD
   )
-import qualified Network.StatsD.Datadog as DD
+import Network.StatsD.Datadog qualified as DD
 
 data StatsClient = StatsClient
   { statsClient :: DD.StatsClient
