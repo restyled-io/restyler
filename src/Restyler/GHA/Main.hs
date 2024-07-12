@@ -40,15 +40,9 @@ main = do
         githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
         logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
 
+      -- check closed
       -- check ignores
-      -- check if closed -> close siblings
       -- restyle, making commits
-      -- print patch to summary file
-      --
-      -- From outside:
-      --   check if differences
-      --   mode -> open PR (fork?), push, or do nothing
-      --   fail
 
       case result of
         Left ex -> do

@@ -30,11 +30,14 @@ runs:
         echo "This action can only be used on pull_request events" >&2
         exit 1
 
+    # TODO
+    #   if closed -> close any sibling
+
     - shell: bash
       run: |
         # Prepare
         cat > /tmp/event.json <<'EOM'
-        ${{ github.event }}'
+        ${{ toJSON(github.event) }}
         EOM
 
     - shell: bash
@@ -54,3 +57,9 @@ runs:
       env:
         IMAGE: ${{ inputs.image }}
         LOG_LEVEL: ${{ inputs.log-level }}
+
+    # TODO
+    #   check if differences
+    #   print patch to summary file
+    #   mode? -> open PR (fork?), push, or do nothing
+    #   fail?
