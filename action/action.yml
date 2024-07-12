@@ -8,9 +8,9 @@ inputs:
   fail:
     description: "Fail if differences were produced?"
     default: true
-  image:
-    description: "Restyled image to run"
-    default: "restyled/restyler:edge"
+  restyler:
+    description: "Restyler binary to run"
+    required: true
   log-level:
     description: "Set restyler LOG_LEVEL"
     default: "info"
@@ -65,21 +65,13 @@ runs:
     - shell: bash
       run: |
         # Run
-        docker run --rm \
-          --env LOG_LEVEL \
-          --env LOG_COLOR=always \
-          --env GITHUB_EVENT_JSON=/tmp/event.json \
-          --env GITHUB_PR_FILES_JSON=/tmp/pr-files.json \
-          --env HOST_DIRECTORY="$PWD" \
-          --env UNRESTRICTED=1 \
-          --volume "$PWD":/code \
-          --volume /tmp:/tmp \
-          --volume /var/run/docker.sock:/var/run/docker.sock \
-          --entrypoint restyle-path \
-          "$IMAGE"
+        $RESTYLER
       env:
-        IMAGE: ${{ inputs.image }}
+        RESTYLER: ${{ inputs.restyler }}
         LOG_LEVEL: ${{ inputs.log-level }}
+        LOG_COLOR: always
+        GITHUB_EVENT_JSON: /tmp/event.json
+        GITHUB_PR_FILES_JSON: /tmp/pr-files.json
 
     - shell: bash
       run: git log
