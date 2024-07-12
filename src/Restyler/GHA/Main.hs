@@ -8,9 +8,12 @@ module Restyler.GHA.Main
 
 import Restyler.Prelude
 
-import Blammo.Logging.Simple
+import Data.Aeson
+import Data.Aeson.KeyMap qualified as KeyMap
 import Restyler.App (runAppT)
 import Restyler.Config
+import Restyler.GHA.Event
+import Restyler.GHA.Options
 import Restyler.ManifestOption
 
 newtype App = App
@@ -25,11 +28,32 @@ instance HasManifestOption App where
 
 main :: IO ()
 main = do
-  app <- App <$> newLoggerEnv
+  options <- parseOptions
+  logger <- newLogger options.logSettings
+
+  let app =
+        App
+          { logger = logger
+          }
 
   runAppT app $ do
     config <- loadConfig
-    logInfo $ "Loaded config" :# ["config" .= config]
+    logInfo $ "Loaded config" :# objectToPairs config
+
+    mGithubEvent <- traverse (decodeJsonThrow @_ @Event) options.githubEventJson
+    for_ mGithubEvent $ \githubEvent -> do
+      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+
+objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
+objectToPairs a = case toJSON a of
+  Object km -> map (uncurry (.=)) $ KeyMap.toList km
+  _ -> []
+
+decodeJsonThrow :: (MonadIO m, FromJSON a) => FilePath -> m a
+decodeJsonThrow =
+  either throwString pure <=< liftIO . eitherDecodeFileStrict'
+
+-- (either throwString pure <=< traverse eitherDecodeFileStrict')
 
 -- case options . pullRequest of
 --   Nothing -> restyler config options . paths

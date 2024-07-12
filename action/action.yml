@@ -23,53 +23,27 @@ outputs: {}
 runs:
   using: composite
   steps:
-    # pre-conditions
-    #   check ignores
-
-    # Determine changed files
-    - id: prep
-      shell: bash
+    - shell: bash
       run: |
-        # Determine added and modified files
-        {
-          echo 'changed<<EOM'
-          gh api "/repos/$GH_REPO/pulls/$GH_PR/files" |
-            jq '.[] | select(.status|test("^(added|modified)$")) | .filename' |
-            tr '\n' ' '; echo
-          echo 'EOM'
-        } >>"$GITHUB_OUTPUT"
-      env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        GH_REPO: ${{ github.repository }}
-        GH_PR: ${{ github.event.pull_request.number }}
+        # Prepare
+        cat > /tmp/event.json <<'EOM'
+        ${{ github.event }}'
+        EOM
 
-    # Restyle changed files
-    #   TODO: make commits
-    - if: ${{ steps.prep.outputs.changed }}
-      shell: bash
+    - shell: bash
       run: |
-        # Run restyler
-
-        # Turn the quoted paths into a real (unquoted) array
-        eval "changed=( $CHANGED )"
-
+        # Run
         docker run --rm \
           --env LOG_LEVEL \
           --env LOG_COLOR=always \
+          --env GITHUB_EVENT_JSON=/tmp/event.json \
           --env HOST_DIRECTORY="$PWD" \
           --env UNRESTRICTED=1 \
           --volume "$PWD":/code \
           --volume /tmp:/tmp \
           --volume /var/run/docker.sock:/var/run/docker.sock \
           --entrypoint restyle-path \
-          "$IMAGE" "${changed[@]}"
+          "$IMAGE"
       env:
         IMAGE: ${{ inputs.image }}
-        CHANGED: ${{ steps.prep.outputs.changed }}
         LOG_LEVEL: ${{ inputs.log-level }}
-
-    # post-actions:
-    #   print patch to build summary
-    #   options: commit directly | open new PR | nothing
-    #   option: fail if differences
-    #   close any sibling PR?
