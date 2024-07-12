@@ -23,11 +23,18 @@ outputs: {}
 runs:
   using: composite
   steps:
+    - if: ${{ github.event_name != 'pull_request' }}
+      shell: bash
+      run: |
+        # Fail on non-PR events
+        echo "This action can only be used on pull_request events" >&2
+        exit 1
+
     - shell: bash
       run: |
         # Prepare
         cat > /tmp/event.json <<'EOM'
-        ${{ github.event }}'
+        ${{ toJSON(github.event) }}'
         EOM
 
     - shell: bash
