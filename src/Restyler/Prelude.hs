@@ -5,10 +5,10 @@ module Restyler.Prelude
 
 import Relude as X hiding (exitSuccess, readFile, readFileBS, writeFile)
 
+import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Control.Monad.IO.Unlift as X (MonadUnliftIO (..))
-import Blammo.Logging as X
 import Data.Bitraversable as X (bimapM)
 import Data.Char as X (isSpace)
 import Data.Functor.Syntax as X ((<$$>))
@@ -30,9 +30,16 @@ import UnliftIO.Exception as X
   )
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
-import Data.Aeson (Key)
+import Data.Aeson
+  ( FromJSON
+  , Key
+  , KeyValue
+  , ToJSON (..)
+  , Value (..)
+  , eitherDecodeFileStrict'
+  )
 import Data.Aeson.KeyMap (KeyMap)
-import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.List (maximumBy, minimum, minimumBy, (!!))
 import UnliftIO.Exception (handleAny)
 
@@ -82,3 +89,12 @@ exitCodeInt :: ExitCode -> Int
 exitCodeInt = \case
   ExitSuccess -> 0
   ExitFailure x -> x
+
+decodeJsonThrow :: (MonadIO m, FromJSON a) => FilePath -> m a
+decodeJsonThrow =
+  either throwString pure <=< liftIO . eitherDecodeFileStrict'
+
+objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
+objectToPairs a = case toJSON a of
+  Object km -> map (uncurry (.=)) $ KeyMap.toList km
+  x -> ["value" .= x]
