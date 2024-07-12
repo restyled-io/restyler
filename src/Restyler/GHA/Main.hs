@@ -40,9 +40,8 @@ main = do
     config <- loadConfig
     logInfo $ "Loaded config" :# objectToPairs config
 
-    mGithubEvent <- traverse (decodeJsonThrow @_ @Event) options.githubEventJson
-    for_ mGithubEvent $ \githubEvent -> do
-      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+    githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
+    logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
 
 objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
 objectToPairs a = case toJSON a of

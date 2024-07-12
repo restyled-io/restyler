@@ -10,7 +10,7 @@ import Env qualified
 
 data Options = Options
   { logSettings :: LogSettings
-  , githubEventJson :: Maybe FilePath
+  , githubEventJson :: FilePath
   }
 
 parseOptions :: MonadIO m => m Options
@@ -20,4 +20,4 @@ parser :: Env.Parser Env.Error Options
 parser =
   Options
     <$> LogSettingsEnv.parser
-    <*> optional (Env.var Env.nonempty "GITHUB_EVENT_JSON" mempty)
+    <*> Env.var Env.nonempty "GITHUB_EVENT_JSON" mempty
