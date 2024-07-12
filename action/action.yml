@@ -68,6 +68,7 @@ runs:
         $RESTYLER
       env:
         RESTYLER: ${{ inputs.restyler }}
+        RESTYLER_NO_CAP_DROP: x
         LOG_LEVEL: ${{ inputs.log-level }}
         LOG_COLOR: always
         GITHUB_EVENT_JSON: /tmp/event.json

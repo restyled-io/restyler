@@ -10,9 +10,11 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings.Env qualified as LogSettingsEnv
 import Env qualified
+import Restyler.Restrictions
 
 data Options = Options
   { logSettings :: LogSettings
+  , restrictions :: Restrictions
   , githubEventJson :: FilePath
   , githubPRFilesJson :: FilePath
   }
@@ -24,5 +26,6 @@ parser :: Env.Parser Env.Error Options
 parser =
   Options
     <$> LogSettingsEnv.parser
+    <*> envRestrictions
     <*> Env.var Env.nonempty "GITHUB_EVENT_JSON" mempty
     <*> Env.var Env.nonempty "GITHUB_PR_FILES_JSON" mempty

@@ -1,6 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 
 module Restyler.GHA.Main
   ( main
@@ -25,11 +26,17 @@ import UnliftIO.Exception (handleAny)
 
 data App = App
   { logger :: Logger
-  , options :: Options
+  , restrictions :: Restrictions
   }
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
+
+instance HasRestrictions App where
+  restrictionsL = lens (.restrictions) $ \x y -> x {restrictions = y}
+
+constL :: b -> Lens' a b
+constL x = lens (const x) const
 
 instance HasManifestOption App where
   manifestOptionL = constL $ toManifestOption Nothing
@@ -39,12 +46,6 @@ instance HasHostDirectoryOption App where
 
 instance HasImageCleanupOption App where
   imageCleanupOptionL = constL $ toImageCleanupOption False
-
-instance HasRestrictions App where
-  restrictionsL = constL fullRestrictions
-
-constL :: b -> Lens' a b
-constL x = lens (const x) const
 
 instance MonadUnliftIO m => MonadGit (AppT App m) where
   gitPush branch = callProcess "git" ["push", "origin", branch]
@@ -72,7 +73,7 @@ main = do
   options <- parseOptions
 
   withLogger options.logSettings $ \logger -> do
-    let app = App {logger = logger, options = options}
+    let app = App {logger = logger, restrictions = options.restrictions}
 
     runAppT app $ handleAny logExit $ do
       config <- loadConfig
