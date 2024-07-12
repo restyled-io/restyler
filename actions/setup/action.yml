@@ -1,0 +1,63 @@
+name: Restyler
+author: pbrisbin
+
+inputs:
+  binary:
+    description: "Restyler binary to run"
+    required: true
+  log-level:
+    description: "Set restyler LOG_LEVEL"
+    default: "info"
+  github-token:
+    description: "GitHub token for fetching PR details"
+    default: ${{ github.token }}
+
+outputs: {}
+
+runs:
+  using: composite
+  steps:
+    - if: ${{ github.event_name != 'pull_request' }}
+      shell: bash
+      run: |
+        # Fail on non-PR events
+        echo "This action can only be used on pull_request events" >&2
+        exit 1
+
+    - shell: bash
+      run: |
+        # Run
+        $RESTYLER_BINARY --repo "$GH_REPO" --pull-request "$GH_PR"
+      env:
+        GH_PR: ${{ github.event.pull_request.number }}
+        GH_REPO: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ github.token }}
+        GIT_AUTHOR_EMAIL: commits@restyled.io
+        GIT_AUTHOR_NAME: Restyled.io
+        GIT_COMMITTER_EMAIL: commits@restyled.io
+        GIT_COMMITTER_NAME: Restyled.io
+        LOG_BREAKPOINT: 200
+        LOG_COLOR: always
+        LOG_LEVEL: ${{ inputs.log-level }}
+        RESTYLER_BINARY: ${{ inputs.binary }}
+        RESTYLER_NO_CAP_DROP_ALL: x
+
+    - shell: bash
+      run: |
+        # Output restyled patch
+        cat <<'EOM'
+        You can manually apply these fixes, if there are any, by copying the
+        following and supplying it as stdin to `git am`:
+
+        EOM
+
+        git format-patch --stdout "$GH_HEAD_SHA"
+
+      env:
+        GH_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    # TODO
+    #   check if differences
+    #   print patch to summary file
+    #   mode? -> open PR (fork?), push, or do nothing
+    #   fail?

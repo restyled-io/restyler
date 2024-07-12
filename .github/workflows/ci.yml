@@ -77,11 +77,9 @@ jobs:
           name: binaries
           path: ./tmp
       - run: chmod +x ./tmp/restyle-gha
-      - uses: ./action
+      - uses: ./actions/setup
         with:
-          restyler: ./tmp/restyle-gha
-          mode: summary-only
-          fail: false
+          binary: ./tmp/restyle-gha
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}

@@ -14,6 +14,7 @@ import Restyler.Prelude
 import Data.Semigroup.Generic (GenericSemigroupMonoid (..))
 import Env qualified
 import Options.Applicative
+import Restyler.GitHubTokenOption
 import Restyler.LogSettingsOption
 import Restyler.PullRequestNumberOption
 import Restyler.RepositoryOption
@@ -21,9 +22,10 @@ import Restyler.Restrictions
 
 data Options = Options
   { logSettings :: LogSettingsOption
+  , githubToken :: GitHubTokenOption
   , restrictions :: Restrictions
   , repository :: RepositoryOption
-  , pullRequestNumber :: PullRequestNumberOption
+  , pullRequest :: PullRequestNumberOption
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
@@ -41,6 +43,7 @@ envParser :: Env.Parser Env.Error Options
 envParser =
   Options
     <$> envLogSettingsOption
+    <*> envGitHubTokenOption
     <*> envRestrictions
     <*> envRepositoryOption
     <*> envPullRequestNumberOption
@@ -52,6 +55,7 @@ optParser :: Parser Options
 optParser =
   Options
     <$> optLogSettingsOption
+    <*> optGitHubTokenOption
     <*> optRestrictions
     <*> optRepositoryOption
     <*> optPullRequestNumberOption

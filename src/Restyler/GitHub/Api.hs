@@ -1,5 +1,5 @@
 module Restyler.GitHub.Api
-  ( HasGitHubToken
+  ( HasGitHubToken (..)
   , GitHubToken (..)
   , getOne
   , getAll
@@ -17,6 +17,7 @@ class HasGitHubToken env where
 newtype GitHubToken = GitHubToken
   { unGitHubToken :: Text
   }
+  deriving newtype (IsString)
 
 getOne
   :: ( MonadIO m

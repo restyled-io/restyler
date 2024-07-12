@@ -16,9 +16,15 @@ import Restyler.Config
 import Restyler.GHA.Options
 import Restyler.Git (MonadGit (..))
 import Restyler.GitHub qualified as GitHub
+import Restyler.GitHub.Api
+import Restyler.GitHub.PullRequest.File
+import Restyler.GitHubTokenOption
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
+import Restyler.LogSettingsOption
 import Restyler.ManifestOption
+import Restyler.PullRequestNumberOption
+import Restyler.RepositoryOption
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Restyler.Run (runRestylers)
@@ -27,26 +33,30 @@ import UnliftIO.Exception (handleAny)
 
 data App = App
   { logger :: Logger
+  , githubToken :: GitHubToken
   , restrictions :: Restrictions
+  , manifest :: ManifestOption
+  , hostDirectory :: HostDirectoryOption
+  , imageCleanup :: ImageCleanupOption
   }
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
 
+instance HasGitHubToken App where
+  githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
+
 instance HasRestrictions App where
   restrictionsL = lens (.restrictions) $ \x y -> x {restrictions = y}
 
-constL :: b -> Lens' a b
-constL x = lens (const x) const
-
 instance HasManifestOption App where
-  manifestOptionL = constL $ toManifestOption Nothing
+  manifestOptionL = lens (.manifest) $ \x y -> x {manifest = y}
 
 instance HasHostDirectoryOption App where
-  hostDirectoryOptionL = constL $ toHostDirectoryOption Nothing
+  hostDirectoryOptionL = lens (.hostDirectory) $ \x y -> x {hostDirectory = y}
 
 instance HasImageCleanupOption App where
-  imageCleanupOptionL = constL $ toImageCleanupOption False
+  imageCleanupOptionL = lens (.imageCleanup) $ \x y -> x {imageCleanup = y}
 
 instance MonadUnliftIO m => MonadGit (AppT App m) where
   gitPush branch = callProcess "git" ["push", "origin", branch]
@@ -73,8 +83,16 @@ main :: IO ()
 main = do
   options <- getOptions
 
-  withLogger options.logSettings $ \logger -> do
-    let app = App {logger = logger, restrictions = options.restrictions}
+  withLogger (unLogSettingsOption options.logSettings) $ \logger -> do
+    let app =
+          App
+            { logger = logger
+            , githubToken = getGitHubTokenOption options.githubToken
+            , restrictions = options.restrictions
+            , manifest = toManifestOption Nothing
+            , hostDirectory = toHostDirectoryOption Nothing
+            , imageCleanup = toImageCleanupOption False
+            }
 
     runAppT app $ handleAny logExit $ do
       config <- loadConfig
@@ -103,11 +121,11 @@ main = do
 
       for_ results $ \RestylerResult {..} ->
         case rrOutcome of
-          ChangesCommitted paths sha -> do
+          ChangesCommitted changed sha -> do
             logInfo
               $ "Changes committed"
               :# [ "restyler" .= rName rrRestyler
-                 , "paths" .= length paths
+                 , "paths" .= length changed
                  , "sha" .= sha
                  ]
           x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x

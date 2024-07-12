@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
 module Restyler.GitHub.PullRequest
@@ -71,10 +72,8 @@ getPullRequest
 getPullRequest repo pr =
   getOne
     $ "https://api.github.com/repos/"
-    <> unpack repo
-    . owner
+    <> unpack repo.owner
     <> "/"
-    <> unpack repo
-    . repo
+    <> unpack repo.repo
     <> "/pulls/"
     <> show pr

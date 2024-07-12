@@ -15,6 +15,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Restyler.GitHub.Api
+import Restyler.GitHub.Repository
 
 data PullRequestFile = PullRequestFile
   { filename :: FilePath
