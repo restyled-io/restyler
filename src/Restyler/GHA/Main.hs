@@ -14,7 +14,7 @@ import Restyler.GHA.Event
 import Restyler.GHA.Options
 import Restyler.ManifestOption
 import Restyler.PullRequest.File
-import UnliftIO.Exception (tryAny)
+import UnliftIO.Exception (handleAny)
 
 newtype App = App
   { logger :: Logger
@@ -33,24 +33,22 @@ main = do
   withLogger options.logSettings $ \logger -> do
     let app = App {logger = logger}
 
-    runAppT app $ do
-      result <- tryAny $ do
-        config <- loadConfig
-        logInfo $ "Loaded config" :# objectToPairs config
+    runAppT app $ handleAny logExit $ do
+      config <- loadConfig
+      logInfo $ "Loaded config" :# objectToPairs config
 
-        githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
-        logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
+      githubEvent <- decodeJsonThrow @_ @Event options.githubEventJson
+      logInfo $ "Handling PR" :# objectToPairs githubEvent.payload
 
-        prFiles <- decodeJsonThrow @_ @[PullRequestFile] options.githubEventJson
-        traverse_ (logInfo . ("Changed file" :#) . objectToPairs) prFiles
-
+      -- TODO
       -- check draft
       -- check closed
       -- check ignores
-      -- restyle, making commits
 
-      case result of
-        Left ex -> do
-          logError $ pack (displayException ex) :# []
-          exitFailure
-        Right () -> pure ()
+      prFiles <- decodeJsonThrow @_ @[PullRequestFile] options.githubPRFilesJson
+      traverse_ (logInfo . ("Changed file" :#) . objectToPairs) prFiles
+
+logExit :: (MonadIO m, MonadLogger m) => SomeException -> m a
+logExit ex = do
+  logError $ pack (displayException ex) :# []
+  exitFailure
