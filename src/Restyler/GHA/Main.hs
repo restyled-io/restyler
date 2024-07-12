@@ -100,14 +100,10 @@ main = do
             logInfo $
               "Changes committed"
                 :# [ "restyler" .= rName rrRestyler
-                   , "paths" .= paths
+                   , "paths" .= length paths
                    , "sha" .= sha
                    ]
-          x ->
-            logDebug $
-              "Outcome"
-                :# ["restyler" .= rName rrRestyler]
-                <> objectToPairs x
+          x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x
 
 logExit :: (MonadIO m, MonadLogger m) => SomeException -> m a
 logExit ex = do
