@@ -65,14 +65,22 @@ runs:
     - shell: bash
       run: |
         # Run
-        $RESTYLER
+        $INPUT_RESTYLER
       env:
-        RESTYLER: ${{ inputs.restyler }}
-        RESTYLER_NO_CAP_DROP_ALL: x
+        INPUT_RESTYLER: ${{ inputs.restyler }}
+
+        # for restyler
         LOG_LEVEL: ${{ inputs.log-level }}
         LOG_COLOR: always
+        RESTYLER_NO_CAP_DROP_ALL: x
         GITHUB_EVENT_JSON: /tmp/event.json
         GITHUB_PR_FILES_JSON: /tmp/pr-files.json
+
+        # for git
+        GIT_AUTHOR_NAME: Restyled.io
+        GIT_AUTHOR_EMAIL: commits@restyled.io
+        GIT_COMMITTER_NAME: Restyled.io
+        GIT_COMMITTER_EMAIL: commits@restyled.io
 
     - shell: bash
       run: git log
