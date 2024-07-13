@@ -1,20 +1,22 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
 module Restyler.GHA.Options
   ( Options (..)
-  , GitHubOptions (..)
+  , Command (..)
   , getOptions
-  , envOptions
-  , optOptions
   ) where
 
 import Restyler.Prelude
 
+import Data.List.NonEmpty qualified as NE
 import Data.Semigroup.Generic (GenericSemigroupMonoid (..))
 import Env qualified
 import Options.Applicative
+import Restyler.GitHub.Api
+import Restyler.GitHub.Repository
 import Restyler.GitHubTokenOption
 import Restyler.LogSettingsOption
 import Restyler.PullRequestOption
@@ -24,24 +26,37 @@ import Restyler.Restrictions
 data Options = Options
   { logSettings :: LogSettingsOption
   , restrictions :: Restrictions
-  , github :: Maybe GitHubOptions
+  , githubToken :: GitHubTokenOption
+  , repository :: RepositoryOption
+  , pullRequest :: PullRequestOption
+  , paths :: [FilePath]
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
 
-data GitHubOptions = GitHubOptions
-  { githubToken :: GitHubTokenOption
-  , repository :: RepositoryOption
-  , pullRequest :: PullRequestOption
-  }
-  deriving stock (Generic)
-  deriving (Semigroup) via (GenericSemigroupMonoid GitHubOptions)
+data Command
+  = RestylePR GitHubToken Repository Int
+  | RestylePaths (NonEmpty FilePath)
 
-getOptions :: MonadIO m => m Options
-getOptions =
-  (<>)
-    <$> envOptions
-    <*> optOptions
+getOptions :: MonadIO m => m (Options, Command)
+getOptions = do
+  options <- (<>) <$> envOptions <*> optOptions
+
+  let
+    mGitHub =
+      (,,)
+        <$> getLast (unGitHubTokenOption options.githubToken)
+        <*> getLast (unRepositoryOption options.repository)
+        <*> getLast (unPullRequestOption options.pullRequest)
+
+    mPaths = NE.nonEmpty options.paths
+
+  case (mGitHub, mPaths) of
+    (Just (token, repo, pr), Nothing) ->
+      pure (options, RestylePR token repo pr)
+    (Nothing, Just paths) ->
+      pure (options, RestylePaths paths)
+    _ -> error "TODO"
 
 envOptions :: MonadIO m => m Options
 envOptions = liftIO $ Env.parse id envParser
@@ -51,14 +66,10 @@ envParser =
   Options
     <$> envLogSettingsOption
     <*> envRestrictions
-    <*> optional envGitHubOptions
-
-envGitHubOptions :: Env.Parser Env.Error GitHubOptions
-envGitHubOptions =
-  GitHubOptions
-    <$> envGitHubTokenOption
+    <*> envGitHubTokenOption
     <*> envRepositoryOption
     <*> envPullRequestOption
+    <*> pure []
 
 optOptions :: MonadIO m => m Options
 optOptions = liftIO $ execParser $ info (optParser <**> helper) fullDesc
@@ -68,11 +79,7 @@ optParser =
   Options
     <$> optLogSettingsOption
     <*> optRestrictions
-    <*> optional optGitHubOptions
-
-optGitHubOptions :: Parser GitHubOptions
-optGitHubOptions =
-  GitHubOptions
-    <$> optGitHubTokenOption
+    <*> optGitHubTokenOption
     <*> optRepositoryOption
     <*> optPullRequestOption
+    <*> many (argument str $ metavar "PATH")

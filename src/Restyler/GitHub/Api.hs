@@ -1,6 +1,5 @@
 module Restyler.GitHub.Api
-  ( HasGitHubToken (..)
-  , GitHubToken (..)
+  ( GitHubToken (..)
   , getOne
   , getAll
   ) where
@@ -11,36 +10,18 @@ import Data.Aeson
 import Network.HTTP.Simple
 import Network.HTTP.Types.Header (hAuthorization)
 
-class HasGitHubToken env where
-  githubTokenL :: Lens' env GitHubToken
-
 newtype GitHubToken = GitHubToken
   { unGitHubToken :: Text
   }
   deriving newtype (IsString)
 
-getOne
-  :: ( MonadIO m
-     , MonadReader env m
-     , HasGitHubToken env
-     , FromJSON a
-     )
-  => String
-  -> m a
-getOne url = do
-  token <- view githubTokenL
+getOne :: (MonadIO m, FromJSON a) => GitHubToken -> String -> m a
+getOne token url = do
   req <- liftIO $ parseRequest url
   resp <- httpJSON $ addRequestHeader hAuthorization (toBearer token) req
   pure $ getResponseBody resp
 
-getAll
-  :: ( MonadIO m
-     , MonadReader env m
-     , HasGitHubToken env
-     , FromJSON a
-     )
-  => String
-  -> m [a]
+getAll :: (MonadIO m, FromJSON a) => GitHubToken -> String -> m [a]
 getAll = getOne -- TODO: pagination
 
 toBearer :: GitHubToken -> ByteString

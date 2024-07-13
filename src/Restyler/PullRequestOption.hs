@@ -1,33 +1,33 @@
-{-# LANGUAGE DerivingVia #-}
-
 module Restyler.PullRequestOption
   ( PullRequestOption (..)
   , envPullRequestOption
   , optPullRequestOption
   ) where
 
-import Restyler.Prelude hiding (Last (..))
+import Restyler.Prelude
 
-import Data.Semigroup (Last (..))
 import Env qualified
 import Options.Applicative
 
 newtype PullRequestOption = PullRequestOption
-  { unPullRequestOption :: Int
+  { unPullRequestOption :: Last Int
   }
-  deriving (Semigroup) via (Last PullRequestOption)
+  deriving newtype (Semigroup)
 
 envPullRequestOption :: Env.Parser Env.Error PullRequestOption
 envPullRequestOption =
   PullRequestOption
-    <$> Env.var Env.auto "PULL_REQUEST" (Env.help optionHelp)
+    . Last
+    <$> optional (Env.var Env.auto "PULL_REQUEST" $ Env.help optionHelp)
 
 optPullRequestOption :: Parser PullRequestOption
 optPullRequestOption =
   PullRequestOption
-    <$> option
-      auto
-      ( long "pull-request"
+    . Last
+    <$> optional
+      ( option
+          auto
+          $ long "pull-request"
           <> metavar "NUMBER"
           <> help optionHelp
       )

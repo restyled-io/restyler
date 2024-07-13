@@ -9,6 +9,7 @@ module Restyler.GHA.Main
 
 import Restyler.Prelude
 
+import Data.List.NonEmpty qualified as NE
 import Data.Text qualified as T
 import Restyler.App (AppT, runAppT)
 import Restyler.App.Class (MonadProcess (..))
@@ -16,15 +17,11 @@ import Restyler.Config
 import Restyler.GHA.Options
 import Restyler.Git (MonadGit (..))
 import Restyler.GitHub qualified as GitHub
-import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest.File
-import Restyler.GitHubTokenOption
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
 import Restyler.LogSettingsOption
 import Restyler.ManifestOption
-import Restyler.PullRequestOption
-import Restyler.RepositoryOption
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Restyler.Run (runRestylers)
@@ -33,7 +30,6 @@ import UnliftIO.Exception (handleAny)
 
 data App = App
   { logger :: Logger
-  , githubToken :: GitHubToken
   , restrictions :: Restrictions
   , manifest :: ManifestOption
   , hostDirectory :: HostDirectoryOption
@@ -42,9 +38,6 @@ data App = App
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
-
-instance HasGitHubToken App where
-  githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
 
 instance HasRestrictions App where
   restrictionsL = lens (.restrictions) $ \x y -> x {restrictions = y}
@@ -81,31 +74,25 @@ instance MonadUnliftIO m => MonadGit (AppT App m) where
 
 main :: IO ()
 main = do
-  options <- getOptions
+  (options, cmd) <- getOptions
 
-  withLogger (unLogSettingsOption options.logSettings) $ \logger -> do
-    case options.github of
-      Nothing -> error "TODO"
-      Just ghoptions -> do
-        let app =
-              App
-                { logger = logger
-                , githubToken = unGitHubTokenOption ghoptions.githubToken
-                , restrictions = options.restrictions
-                , manifest = toManifestOption Nothing
-                , hostDirectory = toHostDirectoryOption Nothing
-                , imageCleanup = toImageCleanupOption False
-                }
+  withLogger options.logSettings $ \logger -> do
+    let app =
+          App
+            { logger = logger
+            , restrictions = options.restrictions
+            , manifest = toManifestOption Nothing
+            , hostDirectory = toHostDirectoryOption Nothing
+            , imageCleanup = toImageCleanupOption False
+            }
 
-        runAppT app $ handleAny logExit $ do
-          config <- loadConfig
-          logDebug $ "Config" :# objectToPairs config
+    runAppT app $ handleAny logExit $ do
+      config <- loadConfig
+      logDebug $ "Config" :# objectToPairs config
 
-          let
-            repo = unRepositoryOption ghoptions.repository
-            pr = unPullRequestOption ghoptions.pullRequest
-
-          pullRequest <- GitHub.getPullRequest repo pr
+      results <- case cmd of
+        RestylePR token repo pr -> do
+          pullRequest <- GitHub.getPullRequest token repo pr
           logInfo $ "Handling PR" :# objectToPairs pullRequest
 
           -- TODO
@@ -113,22 +100,24 @@ main = do
           -- check closed
           -- check ignores
 
-          paths <-
-            mapMaybe pullRequestFileToChangedPath
-              <$> GitHub.getPullRequestFiles repo pr
+          mPaths <-
+            NE.nonEmpty
+              . mapMaybe pullRequestFileToChangedPath
+              <$> GitHub.getPullRequestFiles token repo pr
 
-          results <- runRestylers config paths
+          traverse_ (runRestylers config . toList) mPaths
+        RestylePaths paths -> runRestylers config $ toList paths
 
-          for_ results $ \RestylerResult {..} ->
-            case rrOutcome of
-              ChangesCommitted changed sha -> do
-                logInfo
-                  $ "Changes committed"
-                  :# [ "restyler" .= rName rrRestyler
-                     , "paths" .= length changed
-                     , "sha" .= sha
-                     ]
-              x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x
+      for_ results $ \RestylerResult {..} ->
+        case rrOutcome of
+          ChangesCommitted changed sha -> do
+            logInfo
+              $ "Changes committed"
+              :# [ "restyler" .= rName rrRestyler
+                 , "paths" .= length changed
+                 , "sha" .= sha
+                 ]
+          x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x
 
 logExit :: (MonadIO m, MonadLogger m) => SomeException -> m a
 logExit ex = do

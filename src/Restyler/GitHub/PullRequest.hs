@@ -65,12 +65,13 @@ data Commit = Commit
   deriving anyclass (FromJSON, ToJSON)
 
 getPullRequest
-  :: (MonadIO m, MonadReader env m, HasGitHubToken env)
-  => Repository
+  :: MonadIO m
+  => GitHubToken
+  -> Repository
   -> Int
   -> m PullRequest
-getPullRequest repo pr =
-  getOne
+getPullRequest token repo pr =
+  getOne token
     $ "https://api.github.com/repos/"
     <> unpack repo.owner
     <> "/"

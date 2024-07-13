@@ -76,12 +76,13 @@ pullRequestFileToChangedPath file = do
   pure file.filename
 
 getPullRequestFiles
-  :: (MonadIO m, MonadReader env m, HasGitHubToken env)
-  => Repository
+  :: MonadIO m
+  => GitHubToken
+  -> Repository
   -> Int
   -> m [PullRequestFile]
-getPullRequestFiles repo pr =
-  getAll
+getPullRequestFiles token repo pr =
+  getAll token
     $ "https://api.github.com/repos/"
     <> unpack repo.owner
     <> "/"
