@@ -9,16 +9,21 @@ import Restyler.Prelude
 
 import Env qualified
 import Options.Applicative
+import Restyler.GHA
 import Restyler.GitHub.Api (GitHubToken, HasGitHubToken (..), envGitHubToken)
 import Restyler.LogSettingsOption
 
 data Options = Options
   { logSettings :: LogSettings
   , githubToken :: GitHubToken
+  , githubOutput :: GitHubOutput
   }
 
 instance HasGitHubToken Options where
   githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
+
+instance HasGitHubOutput Options where
+  githubOutputL = lens (.githubOutput) $ \x y -> x {githubOutput = y}
 
 getOptions :: IO Options
 getOptions = do
@@ -29,11 +34,13 @@ getOptions = do
     $ Options
       { logSettings = resolveLogSettings $ env.logSettings <> opt.logSettings
       , githubToken = env.githubToken
+      , githubOutput = env.githubOutput
       }
 
 -- | Options as read from the environment
 data EnvOptions = EnvOptions
   { githubToken :: GitHubToken
+  , githubOutput :: GitHubOutput
   , logSettings :: LogSettingsOption
   }
 
@@ -42,6 +49,7 @@ envOptions =
   Env.parse id
     $ EnvOptions
     <$> envGitHubToken
+    <*> envGitHubOutput
     <*> envLogSettingsOption
 
 -- | Options as read via the CLI

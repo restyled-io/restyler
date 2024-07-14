@@ -16,6 +16,7 @@ import Data.Aeson
 
 data PullRequest = PullRequest
   { number :: Int
+  , title :: Text
   , state :: PullRequestState
   , labels :: [Label]
   , head :: Commit

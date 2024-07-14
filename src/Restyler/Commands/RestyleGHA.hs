@@ -14,6 +14,7 @@ import Restyler.App (runAppT)
 import Restyler.App.Class (MonadDownloadFile, MonadSystem)
 import Restyler.Commands.RestyleLocal qualified as RestyleLocal
 import Restyler.Config (loadConfig)
+import Restyler.GHA
 import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
@@ -35,6 +36,9 @@ instance HasLogger App where
 instance HasGitHubToken App where
   githubTokenL = optionsL . githubTokenL
 
+instance HasGitHubOutput App where
+  githubOutputL = optionsL . githubOutputL
+
 instance HasManifestOption App where
   manifestOptionL = noManifestOptionL
 
@@ -49,13 +53,7 @@ main repo pr = do
             , options = options
             }
 
-    runAppT app $ do
-      result <- run repo pr
-
-      -- TODO:
-      -- write outputs
-
-      logRestyleResult result
+    void $ runAppT app $ run repo pr
 
 run
   :: ( MonadUnliftIO m
@@ -64,6 +62,7 @@ run
      , MonadDownloadFile m
      , MonadGitHub m
      , MonadReader env m
+     , HasGitHubOutput env
      , HasManifestOption env
      )
   => Repository
@@ -77,11 +76,20 @@ run repo pr = do
   logInfo $ "Handling PR" :# objectToPairs pullRequest
 
   -- TODO
-  -- before: check draft
-  -- before: check closed
-  -- before: check ignores
-  -- after: cleanup PR if no diff
+  -- check draft
+  -- check closed
+  -- check ignores
+  -- => skip and cleanup PR
 
   paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
+  traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
 
-  RestyleLocal.run paths
+  result <- RestyleLocal.run paths
+
+  -- Move to RestyleLocal
+  -- logRestyleResult result
+
+  _differences <- setRestylerResultOutputs pullRequest result
+  -- TODO no differences? cleanup PR
+
+  pure result

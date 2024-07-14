@@ -130,7 +130,10 @@ createRestyledPullRequest pullRequest results = do
   let
     restyledTitle = "Restyle " <> pullRequestTitle pullRequest
     restyledBody =
-      Content.pullRequestDescription mJobUrl pullRequest results
+      Content.pullRequestDescription
+        mJobUrl
+        (unIssueNumber $ pullRequestNumber pullRequest)
+        results
 
   logInfo "Creating Restyled PR"
   restyledPullRequest <-
@@ -189,7 +192,10 @@ updateRestyledPullRequest pullRequest restyledPullRequest results = do
     edit
       { editPullRequestBody =
           Just
-            $ Content.pullRequestDescription mJobUrl pullRequest results
+            $ Content.pullRequestDescription
+              mJobUrl
+              (unIssueNumber $ pullRequestNumber pullRequest)
+              results
       }
 
   logInfo
