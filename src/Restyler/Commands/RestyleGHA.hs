@@ -4,7 +4,8 @@
 -- - Check closed, ignore, etc
 -- - Run @RestyleLocal@ with commits
 module Restyler.Commands.RestyleGHA
-  ( run
+  ( main
+  , run
   ) where
 
 import Restyler.Prelude
@@ -18,18 +19,8 @@ import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
 import Restyler.LogSettingsOption
+import Restyler.Options.RestyleGHA
 import Restyler.RestylerResult
-
-data Options = Options
-  { logSettings :: LogSettingsOption
-  , githubToken :: GitHubToken
-  }
-
-instance HasLogSettingsOption Options where
-  logSettingsOptionL = lens (.logSettings) $ \x y -> x {logSettings = y}
-
-instance HasGitHubToken Options where
-  githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
 
 data App = App
   { logger :: Logger
@@ -45,13 +36,11 @@ instance HasLogger App where
 instance HasGitHubToken App where
   githubTokenL = optionsL . githubTokenL
 
-run :: Repository -> Int -> m (Maybe [RestylerResult])
-run repo pr = do
+main :: Repository Int -> IO (Maybe [RestylerResult])
+main repo pr = do
   options <- getOptions
 
-  let logSettings = options ^. logSettingsOptionL . to resolveLogSettings
-
-  withLogger logSettings $ \logger -> do
+  withLogger options.logSettings $ \logger -> do
     let app =
           App
             { logger = logger
@@ -59,23 +48,26 @@ run repo pr = do
             }
 
     runAppT app $ do
-      config <- loadConfig
-      logDebug $ "Config" :# objectToPairs config
 
-      pullRequest <- getPullRequest repo pr
-      logInfo $ "Handling PR" :# objectToPairs pullRequest
+run :: Repository -> Int -> m (Maybe [RestylerResult])
+run repo pr = do
+  config <- loadConfig
+  logDebug $ "Config" :# objectToPairs config
 
-      -- TODO
-      -- check draft
-      -- check closed
-      -- check ignores
+  pullRequest <- getPullRequest repo pr
+  logInfo $ "Handling PR" :# objectToPairs pullRequest
 
-      mPaths <-
-        NE.nonEmpty
-          . mapMaybe pullRequestFileToChangedPath
-          <$> getPullRequestFiles repo pr
+  -- TODO
+  -- check draft
+  -- check closed
+  -- check ignores
 
-      traverse RestyleLocal.run mPaths
+  mPaths <-
+    NE.nonEmpty
+      . mapMaybe pullRequestFileToChangedPath
+      <$> getPullRequestFiles repo pr
+
+  traverse RestyleLocal.run mPaths
 
 --         traverse_ (runRestylers config . toList) mPaths
 --       RestylePaths paths -> runRestylers config $ toList paths

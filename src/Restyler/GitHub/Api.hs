@@ -5,6 +5,7 @@ module Restyler.GitHub.Api
 
     -- * @DerivingVia@
   , GitHubToken (..)
+  , envGitHubToken
   , HasGitHubToken (..)
   , ActualGitHub (..)
   ) where
@@ -12,6 +13,7 @@ module Restyler.GitHub.Api
 import Restyler.Prelude
 
 import Data.Aeson
+import Env qualified
 import Network.HTTP.Simple
 import Network.HTTP.Types.Header (hAuthorization)
 import Restyler.GitHub.PullRequest
@@ -49,6 +51,11 @@ newtype GitHubToken = GitHubToken
   { unGitHubToken :: Text
   }
   deriving newtype (IsString)
+
+envGitHubToken :: Env.Parser Env.Error GitHubToken
+envGitHubToken =
+  Env.var Env.str "GITHUB_TOKEN"
+    $ Env.help "GitHub token with access to the repo and PR"
 
 githubTokenToBearer :: GitHubToken -> ByteString
 githubTokenToBearer = ("Bearer " <>) . encodeUtf8 . unGitHubToken

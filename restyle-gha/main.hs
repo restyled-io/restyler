@@ -12,4 +12,4 @@ main = do
   cmd <- getCommand
 
   case cmd of
-    RestyleGHA repo number -> RestyleGHA.run repo number
+    RestyleGHA repo number -> RestyleGHA.main repo number
