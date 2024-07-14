@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e50be1ce38888795015e3aae0d30e0144938580818302fbd4b30553172641a2d
+-- hash: 37747bf712f831a96f4b6b9c79f4a15fe1a18ae2a36b1b1c7b7fb02747e9f7bd
 
 name:           restyler
 version:        0.2.0.0
@@ -100,6 +100,7 @@ library
       StandaloneDeriving
       TypeApplications
       TypeFamilies
+      DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
       OverloadedRecordDot
@@ -179,6 +180,7 @@ executable restyle-gha
       StandaloneDeriving
       TypeApplications
       TypeFamilies
+      DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
       OverloadedRecordDot

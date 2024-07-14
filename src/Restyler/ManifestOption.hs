@@ -3,6 +3,7 @@ module Restyler.ManifestOption
   , HasManifestOption (..)
   , toManifestOption
   , unManifestOption
+  , noManifestOptionL
   ) where
 
 import Restyler.Prelude
@@ -18,3 +19,6 @@ toManifestOption = ManifestOption . Last
 
 unManifestOption :: ManifestOption -> Maybe FilePath
 unManifestOption (ManifestOption x) = getLast x
+
+noManifestOptionL :: Lens' a ManifestOption
+noManifestOptionL = lens (const $ toManifestOption Nothing) const

@@ -28,6 +28,7 @@ default-extensions:
   - TypeApplications
   - TypeFamilies
 
+  - DerivingVia
   - DuplicateRecordFields
   - ImportQualifiedPost
   - OverloadedRecordDot

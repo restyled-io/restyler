@@ -20,8 +20,8 @@ data Options = Options
 instance HasGitHubToken Options where
   githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
 
-getOptions :: MonadIO m => m Options
-getOptions = liftIO $ do
+getOptions :: IO Options
+getOptions = do
   env <- envOptions
   opt <- optOptions
 

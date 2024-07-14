@@ -12,13 +12,13 @@ import Restyler.Prelude
 
 import Data.List.NonEmpty qualified as NE
 import Restyler.App (runAppT)
-import Restyler.App.Class (MonadProcess (..))
+import Restyler.App.Class (MonadDownloadFile, MonadSystem)
 import Restyler.Commands.RestyleLocal qualified as RestyleLocal
 import Restyler.Config (loadConfig)
 import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
-import Restyler.LogSettingsOption
+import Restyler.ManifestOption
 import Restyler.Options.RestyleGHA
 import Restyler.RestylerResult
 
@@ -36,7 +36,10 @@ instance HasLogger App where
 instance HasGitHubToken App where
   githubTokenL = optionsL . githubTokenL
 
-main :: Repository Int -> IO (Maybe [RestylerResult])
+instance HasManifestOption App where
+  manifestOptionL = noManifestOptionL
+
+main :: Repository -> Int -> IO (Maybe [RestylerResult])
 main repo pr = do
   options <- getOptions
 
@@ -47,9 +50,20 @@ main repo pr = do
             , options = options
             }
 
-    runAppT app $ do
+    runAppT app $ run repo pr
 
-run :: Repository -> Int -> m (Maybe [RestylerResult])
+run
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadSystem m
+     , MonadDownloadFile m
+     , MonadGitHub m
+     , MonadReader env m
+     , HasManifestOption env
+     )
+  => Repository
+  -> Int
+  -> m (Maybe [RestylerResult])
 run repo pr = do
   config <- loadConfig
   logDebug $ "Config" :# objectToPairs config
