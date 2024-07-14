@@ -1,7 +1,12 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Restyler.GitHub.Api
-  ( GitHubToken (..)
-  , getOne
-  , getAll
+  ( MonadGitHub (..)
+
+    -- * @DerivingVia@
+  , GitHubToken (..)
+  , HasGitHubToken (..)
+  , ActualGitHub (..)
   ) where
 
 import Restyler.Prelude
@@ -9,20 +14,65 @@ import Restyler.Prelude
 import Data.Aeson
 import Network.HTTP.Simple
 import Network.HTTP.Types.Header (hAuthorization)
+import Restyler.GitHub.PullRequest
+import Restyler.GitHub.PullRequest.File
+import Restyler.GitHub.Repository
+
+class Monad m => MonadGitHub m where
+  getPullRequest :: Repository -> Int -> m PullRequest
+  getPullRequest repo pr =
+    getOne
+      $ "https://api.github.com/repos/"
+      <> unpack repo.owner
+      <> "/"
+      <> unpack repo.repo
+      <> "/pulls/"
+      <> show pr
+
+  getPullRequestFiles :: Repository -> Int -> m [PullRequestFile]
+  getPullRequestFiles repo pr =
+    getAll
+      $ "https://api.github.com/repos/"
+      <> unpack repo.owner
+      <> "/"
+      <> unpack repo.repo
+      <> "/pulls/"
+      <> show pr
+      <> "/files"
+
+  getAll :: FromJSON a => String -> m [a]
+  getAll = getOne -- TODO: pagination
+
+  getOne :: FromJSON a => String -> m a
 
 newtype GitHubToken = GitHubToken
   { unGitHubToken :: Text
   }
   deriving newtype (IsString)
 
-getOne :: (MonadIO m, FromJSON a) => GitHubToken -> String -> m a
-getOne token url = do
-  req <- liftIO $ parseRequest url
-  resp <- httpJSON $ addRequestHeader hAuthorization (toBearer token) req
-  pure $ getResponseBody resp
+githubTokenToBearer :: GitHubToken -> ByteString
+githubTokenToBearer = ("Bearer " <>) . encodeUtf8 . unGitHubToken
 
-getAll :: (MonadIO m, FromJSON a) => GitHubToken -> String -> m [a]
-getAll = getOne -- TODO: pagination
+class HasGitHubToken env where
+  githubTokenL :: Lens' env GitHubToken
 
-toBearer :: GitHubToken -> ByteString
-toBearer = ("Bearer " <>) . encodeUtf8 . unGitHubToken
+instance HasGitHubToken GitHubToken where
+  githubTokenL = id
+
+newtype ActualGitHub m a = ActualGitHub
+  { unwrap :: m a
+  }
+  deriving newtype
+    ( Applicative
+    , Functor
+    , Monad
+    , MonadReader env
+    , MonadIO
+    )
+
+instance (Monad m, MonadIO m, MonadReader env m, HasGitHubToken env) => MonadGitHub m where
+  getOne url = do
+    auth <- view $ githubTokenL . to githubTokenToBearer
+    req <- liftIO $ parseRequest url
+    resp <- httpJSON $ addRequestHeader hAuthorization auth req
+    pure $ getResponseBody resp

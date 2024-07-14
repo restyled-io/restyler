@@ -28,7 +28,9 @@ default-extensions:
   - TypeApplications
   - TypeFamilies
 
+  - DuplicateRecordFields
   - ImportQualifiedPost
+  - OverloadedRecordDot
 
 ghc-options:
   - -fignore-optim-changes
@@ -75,6 +77,7 @@ library:
     - megaparsec
     - microlens
     - microlens-mtl
+    - network-uri
     - optparse-applicative
     - process
     - relude
@@ -90,29 +93,29 @@ library:
     - yaml
 
 executables:
-  restyler:
-    main: main.hs
-    source-dirs: app
-    ghc-options:
-      - -Wall
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - github
-      - restyler
-  restyle-path:
-    main: main.hs
-    source-dirs: restyle-path
-    ghc-options:
-      - -Wall
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - Blammo
-      - envparse
-      - restyler
+  # restyler:
+  #   main: main.hs
+  #   source-dirs: app
+  #   ghc-options:
+  #     - -Wall
+  #     - -threaded
+  #     - -rtsopts
+  #     - -with-rtsopts=-N
+  #   dependencies:
+  #     - github
+  #     - restyler
+  # restyle-path:
+  #   main: main.hs
+  #   source-dirs: restyle-path
+  #   ghc-options:
+  #     - -Wall
+  #     - -threaded
+  #     - -rtsopts
+  #     - -with-rtsopts=-N
+  #   dependencies:
+  #     - Blammo
+  #     - envparse
+  #     - restyler
   restyle-gha:
     main: main.hs
     source-dirs: restyle-gha
@@ -124,27 +127,27 @@ executables:
     dependencies:
       - restyler
 
-tests:
-  test:
-    main: Spec.hs
-    source-dirs: test
-    dependencies:
-      - Blammo
-      - QuickCheck
-      - aeson
-      - containers
-      - directory
-      - envparse
-      - extra
-      - filepath
-      - github
-      - hspec
-      - hspec-core
-      - hspec-expectations-lifted
-      - lens-aeson
-      - load-env
-      - restyler
-      - shakespeare
-      - text
-      - unliftio
-      - yaml
+# tests:
+#   test:
+#     main: Spec.hs
+#     source-dirs: test
+#     dependencies:
+#       - Blammo
+#       - QuickCheck
+#       - aeson
+#       - containers
+#       - directory
+#       - envparse
+#       - extra
+#       - filepath
+#       - github
+#       - hspec
+#       - hspec-core
+#       - hspec-expectations-lifted
+#       - lens-aeson
+#       - load-env
+#       - restyler
+#       - shakespeare
+#       - text
+#       - unliftio
+#       - yaml

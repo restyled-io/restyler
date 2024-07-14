@@ -1,6 +1,7 @@
 module Restyler.LogSettingsOption
   ( LogSettingsOption (..)
-  , unLogSettingsOption
+  , resolveLogSettings
+  , HasLogSettingsOption (..)
   , envLogSettingsOption
   , optLogSettingsOption
   )
@@ -18,8 +19,14 @@ newtype LogSettingsOption = LogSettingsOption (Endo LogSettings)
 toLogSettingsOption :: LogSettings -> LogSettingsOption
 toLogSettingsOption = LogSettingsOption . Endo . const
 
-unLogSettingsOption :: LogSettingsOption -> LogSettings
-unLogSettingsOption (LogSettingsOption f) = appEndo f defaultLogSettings
+resolveLogSettings :: LogSettingsOption -> LogSettings
+resolveLogSettings (LogSettingsOption f) = appEndo f defaultLogSettings
+
+class HasLogSettingsOption env where
+  logSettingsOptionL :: Lens' env LogSettingsOption
+
+instance HasLogSettingsOption LogSettingsOption where
+  logSettingsOptionL = id
 
 envLogSettingsOption :: Env.Parser Env.Error LogSettingsOption
 envLogSettingsOption = toLogSettingsOption <$> LogSettingsEnv.parser

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d1abeef5ea870f394364550c6b0d5a97f24f13868dbac6c006b4e0a34e028bf1
+-- hash: 60e9e502b57ca48752abf82792044eda51926332389343573f1cb9dfffc2725d
 
 name:           restyler
 version:        0.2.0.0
@@ -19,6 +19,9 @@ library
       GitHub.Request.Display
       Restyler.App
       Restyler.App.Class
+      Restyler.Command
+      Restyler.Commands.RestyleGHA
+      Restyler.Commands.RestyleLocal
       Restyler.CommitTemplate
       Restyler.Config
       Restyler.Config.ChangedPaths
@@ -96,7 +99,9 @@ library
       StandaloneDeriving
       TypeApplications
       TypeFamilies
+      DuplicateRecordFields
       ImportQualifiedPost
+      OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Blammo
@@ -126,6 +131,7 @@ library
     , megaparsec
     , microlens
     , microlens-mtl
+    , network-uri
     , optparse-applicative
     , process
     , relude
@@ -172,160 +178,11 @@ executable restyle-gha
       StandaloneDeriving
       TypeApplications
       TypeFamilies
+      DuplicateRecordFields
       ImportQualifiedPost
+      OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , restyler
-  default-language: Haskell2010
-
-executable restyle-path
-  main-is: main.hs
-  other-modules:
-      Paths_restyler
-  hs-source-dirs:
-      restyle-path
-  default-extensions:
-      BangPatterns
-      DataKinds
-      DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
-      DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
-      ImportQualifiedPost
-  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      Blammo
-    , base
-    , envparse
-    , restyler
-  default-language: Haskell2010
-
-executable restyler
-  main-is: main.hs
-  other-modules:
-      Paths_restyler
-  hs-source-dirs:
-      app
-  default-extensions:
-      BangPatterns
-      DataKinds
-      DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
-      DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
-      ImportQualifiedPost
-  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base
-    , github
-    , restyler
-  default-language: Haskell2010
-
-test-suite test
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Restyler.CommitTemplateSpec
-      Restyler.Config.ExpectedKeysSpec
-      Restyler.Config.IncludeSpec
-      Restyler.Config.InterpreterSpec
-      Restyler.ConfigSpec
-      Restyler.DelimitedSpec
-      Restyler.IgnoreSpec
-      Restyler.PullRequestSpecSpec
-      Restyler.RestrictionsSpec
-      Restyler.Restyler.RunSpec
-      Restyler.RestylerSpec
-      Restyler.Test.FS
-      Restyler.WikiSpec
-      Restyler.Yaml.ErrataSpec
-      SpecHelper
-      Paths_restyler
-  hs-source-dirs:
-      test
-  default-extensions:
-      BangPatterns
-      DataKinds
-      DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
-      DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
-      ImportQualifiedPost
-  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
-  build-depends:
-      Blammo
-    , QuickCheck
-    , aeson
-    , base
-    , containers
-    , directory
-    , envparse
-    , extra
-    , filepath
-    , github
-    , hspec
-    , hspec-core
-    , hspec-expectations-lifted
-    , lens-aeson
-    , load-env
-    , restyler
-    , shakespeare
-    , text
-    , unliftio
-    , yaml
   default-language: Haskell2010

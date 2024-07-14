@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
 module Restyler.GitHub.PullRequest
@@ -9,14 +8,11 @@ module Restyler.GitHub.PullRequest
   , pullRequestStateToText
   , Label (..)
   , Commit (..)
-  , getPullRequest
   ) where
 
 import Restyler.Prelude
 
 import Data.Aeson
-import Restyler.GitHub.Api
-import Restyler.GitHub.Repository
 
 data PullRequest = PullRequest
   { number :: Int
@@ -63,18 +59,3 @@ data Commit = Commit
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
-
-getPullRequest
-  :: MonadIO m
-  => GitHubToken
-  -> Repository
-  -> Int
-  -> m PullRequest
-getPullRequest token repo pr =
-  getOne token
-    $ "https://api.github.com/repos/"
-    <> unpack repo.owner
-    <> "/"
-    <> unpack repo.repo
-    <> "/pulls/"
-    <> show pr
