@@ -12,52 +12,40 @@ inputs:
     description: "GitHub token for fetching PR details"
     default: ${{ github.token }}
 
-outputs: {}
+outputs:
+  differences:
+    description: ""
+    value: ${{ steps.restyler.outputs.differences }}
+  restyled-branch-name:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-branch-name }}
+  restyled-pr-title:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-pr-title }}
+  restyled-pr-body:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-pr-body }}
 
 runs:
   using: composite
   steps:
-    - if: ${{ github.event_name != 'pull_request' }}
+    - id: restyler
       shell: bash
       run: |
-        # Fail on non-PR events
-        echo "This action can only be used on pull_request events" >&2
-        exit 1
-
-    - shell: bash
-      run: |
-        # Run
-        $RESTYLER_BINARY --repo "$GH_REPO" --pull-request "$GH_PR"
+        $RESTYLER_BINARY --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
       env:
-        GH_PR: ${{ github.event.pull_request.number }}
-        GH_REPO: ${{ github.repository }}
+        # For passing to run
+        RESTYLER_BINARY: ${{ inputs.binary }}
+
+        # For env-based options
         GITHUB_TOKEN: ${{ github.token }}
+        LOG_BREAKPOINT: 200
+        LOG_COLOR: always
+        LOG_LEVEL: ${{ inputs.log-level }}
+        RESTYLER_NO_CAP_DROP_ALL: x
+
+        # TODO: defaulted inputs
         GIT_AUTHOR_EMAIL: commits@restyled.io
         GIT_AUTHOR_NAME: Restyled.io
         GIT_COMMITTER_EMAIL: commits@restyled.io
         GIT_COMMITTER_NAME: Restyled.io
-        LOG_BREAKPOINT: 200
-        LOG_COLOR: always
-        LOG_LEVEL: ${{ inputs.log-level }}
-        RESTYLER_BINARY: ${{ inputs.binary }}
-        RESTYLER_NO_CAP_DROP_ALL: x
-
-    - shell: bash
-      run: |
-        # Output restyled patch
-        cat <<'EOM'
-        You can manually apply these fixes, if there are any, by copying the
-        following and supplying it as stdin to `git am`:
-
-        EOM
-
-        git format-patch --stdout "$GH_HEAD_SHA"
-
-      env:
-        GH_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-    # TODO
-    #   check if differences
-    #   print patch to summary file
-    #   mode? -> open PR (fork?), push, or do nothing
-    #   fail?

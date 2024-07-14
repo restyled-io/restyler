@@ -81,11 +81,10 @@ jobs:
         uses: ./actions/run
         with:
           binary: ./tmp/restyle-gha
-          branch-prefix: "restyled/"
       - run: |
           cat <<'EOM'
           Differences? ${{ steps.restyler.outputs.differences }}
-          Branch:   ${{ steps.restyler.outputs.restyle-branch }}
+          Branch:   ${{ steps.restyler.outputs.restyle-branch-name }}
           PR Title: ${{ steps.restyler.outputs.restyle-pr-title }}
           PR Body:
           ${{ steps.restyler.outputs.restyle-pr-body }}
