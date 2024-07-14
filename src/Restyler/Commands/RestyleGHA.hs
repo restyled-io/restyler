@@ -10,7 +10,6 @@ module Restyler.Commands.RestyleGHA
 
 import Restyler.Prelude
 
-import Data.List.NonEmpty qualified as NE
 import Restyler.App (runAppT)
 import Restyler.App.Class (MonadDownloadFile, MonadSystem)
 import Restyler.Commands.RestyleLocal qualified as RestyleLocal
@@ -20,7 +19,7 @@ import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
 import Restyler.ManifestOption
 import Restyler.Options.RestyleGHA
-import Restyler.RestylerResult
+import Restyler.RestyleResult
 
 data App = App
   { logger :: Logger
@@ -39,7 +38,7 @@ instance HasGitHubToken App where
 instance HasManifestOption App where
   manifestOptionL = noManifestOptionL
 
-main :: Repository -> Int -> IO (Maybe [RestylerResult])
+main :: Repository -> Int -> IO ()
 main repo pr = do
   options <- getOptions
 
@@ -50,7 +49,13 @@ main repo pr = do
             , options = options
             }
 
-    runAppT app $ run repo pr
+    runAppT app $ do
+      result <- run repo pr
+
+      -- TODO:
+      -- write outputs
+
+      logRestyleResult result
 
 run
   :: ( MonadUnliftIO m
@@ -63,7 +68,7 @@ run
      )
   => Repository
   -> Int
-  -> m (Maybe [RestylerResult])
+  -> m RestyleResult
 run repo pr = do
   config <- loadConfig
   logDebug $ "Config" :# objectToPairs config
@@ -76,67 +81,5 @@ run repo pr = do
   -- check closed
   -- check ignores
 
-  mPaths <-
-    NE.nonEmpty
-      . mapMaybe pullRequestFileToChangedPath
-      <$> getPullRequestFiles repo pr
-
-  traverse RestyleLocal.run mPaths
-
---         traverse_ (runRestylers config . toList) mPaths
---       RestylePaths paths -> runRestylers config $ toList paths
-
---     for_ results $ \RestylerResult {..} ->
---       case rrOutcome of
---         ChangesCommitted changed sha -> do
---           logInfo
---             $ "Changes committed"
---             :# [ "restyler" .= rName rrRestyler
---                , "paths" .= length changed
---                , "sha" .= sha
---                ]
---         x -> logDebug $ "Outcome" :# ["restyler" .= rName rrRestyler] <> objectToPairs x
-
--- data App = App
---   { logger :: Logger
---   , restrictions :: Restrictions
---   , manifest :: ManifestOption
---   , hostDirectory :: HostDirectoryOption
---   , imageCleanup :: ImageCleanupOption
---   }
-
--- instance HasLogger App where
---   loggerL = lens (.logger) $ \x y -> x {logger = y}
-
--- instance HasRestrictions App where
---   restrictionsL = lens (.restrictions) $ \x y -> x {restrictions = y}
-
--- instance HasManifestOption App where
---   manifestOptionL = lens (.manifest) $ \x y -> x {manifest = y}
-
--- instance HasHostDirectoryOption App where
---   hostDirectoryOptionL = lens (.hostDirectory) $ \x y -> x {hostDirectory = y}
-
--- instance HasImageCleanupOption App where
---   imageCleanupOptionL = lens (.imageCleanup) $ \x y -> x {imageCleanup = y}
-
--- instance MonadUnliftIO m => MonadGit (AppT App m) where
---   gitPush branch = callProcess "git" ["push", "origin", branch]
---   gitPushForce branch =
---     callProcess "git" ["push", "--force", "origin", branch]
---   gitDiffNameOnly mRef = do
---     let args = ["diff", "--name-only"] <> maybeToList mRef
---     map unpack . lines . pack <$> readProcess "git" args
---   gitFormatPatch mRef = do
---     let args = ["format-patch", "--stdout"] <> maybeToList mRef
---     pack <$> readProcess "git" args
---   gitCommitAll msg = do
---     callProcess "git" ["commit", "-a", "--message", msg]
---     unpack
---       . T.dropWhileEnd isSpace
---       . pack
---       <$> readProcess
---         "git"
---         ["rev-parse", "HEAD"]
---   gitCheckout branch = do
---     callProcess "git" ["checkout", "--no-progress", "-b", branch]
+  paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
+  RestyleLocal.run paths

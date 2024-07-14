@@ -1,13 +1,19 @@
 -- | @restyle path...@
 --
 -- - Run restylers with or without commits
+--
+-- TODO
 module Restyler.Commands.RestyleLocal
-  ( run
+  ( main
+  , run
   ) where
 
 import Restyler.Prelude
 
-import Restyler.RestylerResult
+import Restyler.RestyleResult
 
-run :: NonEmpty FilePath -> m [RestylerResult]
-run _ = error "TODO"
+main :: NonEmpty FilePath -> IO ()
+main = void . run . toList
+
+run :: Applicative m => [FilePath] -> m RestyleResult
+run _ = pure RestyleSkippedNoPaths
