@@ -77,9 +77,19 @@ jobs:
           name: binaries
           path: ./tmp
       - run: chmod +x ./tmp/restyle-gha
-      - uses: ./actions/setup
+      - id: restyler
+        uses: ./actions/run
         with:
           binary: ./tmp/restyle-gha
+          branch-prefix: "restyled/"
+      - run: |
+          cat <<'EOM'
+          Differences? ${{ steps.restyler.outputs.differences }}
+          Branch:   ${{ steps.restyler.outputs.restyle-branch }}
+          PR Title: ${{ steps.restyler.outputs.restyle-pr-title }}
+          PR Body:
+          ${{ steps.restyler.outputs.restyle-pr-body }}
+          EOM
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}

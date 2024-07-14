@@ -77,9 +77,11 @@ run repo pr = do
   logInfo $ "Handling PR" :# objectToPairs pullRequest
 
   -- TODO
-  -- check draft
-  -- check closed
-  -- check ignores
+  -- before: check draft
+  -- before: check closed
+  -- before: check ignores
+  -- after: cleanup PR if no diff
 
   paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
+
   RestyleLocal.run paths
