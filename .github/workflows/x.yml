@@ -1,0 +1,23 @@
+name: X
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          echo "Hi" > foo.txt
+          git add foo.text
+          git commit -m 'Add foo.txt"
+        env:
+          GIT_AUTHOR_EMAIL: commits@restyled.io
+          GIT_AUTHOR_NAME: Restyled.io
+          GIT_COMMITTER_EMAIL: commits@restyled.io
+          GIT_COMMITTER_NAME: Restyled.io
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          base: ${{ github.event.pull_request.head.ref }}
