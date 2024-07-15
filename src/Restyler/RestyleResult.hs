@@ -41,10 +41,10 @@ setRestylerResultOutputs
   :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
   => PullRequest
   -> RestyleResult
-  -> m Bool
+  -> m ()
 setRestylerResultOutputs pr = \case
   Restyled results
-    | any restylerCommittedChanges results -> do
+    | any restylerCommittedChanges results ->
         appendGitHubOutput
           $ unlines
             [ "differences=true"
@@ -54,8 +54,7 @@ setRestylerResultOutputs pr = \case
             , Content.pullRequestDescription Nothing pr.number results
             , "EOM"
             ]
-        pure True
-  _ -> False <$ appendGitHubOutput "differences=false"
+  _ -> appendGitHubOutput "differences=false"
 
 t :: Text -> Text
 t = id

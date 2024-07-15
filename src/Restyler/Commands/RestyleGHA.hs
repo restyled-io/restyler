@@ -45,7 +45,4 @@ run repo pr = do
   traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
 
   result <- RestyleLocal.run pullRequest paths
-  _differences <- setRestylerResultOutputs pullRequest result
-  -- TODO no differences? cleanup PR
-
-  pure result
+  result <$ setRestylerResultOutputs pullRequest result
