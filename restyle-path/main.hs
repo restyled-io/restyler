@@ -4,30 +4,29 @@ module Main
 
 import Restyler.Prelude
 
-import Blammo.Logging.LogSettings.Env qualified as LoggingEnv
+import Data.List.NonEmpty (some1)
 import Env qualified
-import Restyler.App (runAppT)
-import Restyler.Config (loadConfig)
+import Restyler.App (AppT, runAppT)
+import Restyler.Commands.RestyleLocal
+import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
+import Restyler.LogSettingsOption
 import Restyler.ManifestOption
-import Restyler.Options
+import Restyler.Opt qualified as Opt
+import Restyler.Options.RestyleLocal
 import Restyler.Restrictions
-import Restyler.Restyler.Run (runRestylers_)
 
 data App = App
-  { appLogger :: Logger
-  , appOptions :: Options
+  { logger :: Logger
+  , options :: Options
   }
 
+optionsL :: Lens' App Options
+optionsL = lens (.options) $ \x y -> x {options = y}
+
 instance HasLogger App where
-  loggerL = lens appLogger $ \x y -> x {appLogger = y}
-
-instance HasOptions App where
-  optionsL = lens appOptions $ \x y -> x {appOptions = y}
-
-instance HasManifestOption App where
-  manifestOptionL = optionsL . manifestOptionL
+  loggerL = lens (.logger) $ \x y -> x {logger = y}
 
 instance HasRestrictions App where
   restrictionsL = optionsL . restrictionsL
@@ -35,57 +34,31 @@ instance HasRestrictions App where
 instance HasHostDirectoryOption App where
   hostDirectoryOptionL = optionsL . hostDirectoryOptionL
 
-constL :: b -> Lens' a b
-constL x = lens (const x) const
+instance HasManifestOption App where
+  manifestOptionL = noManifestOptionL
 
 instance HasImageCleanupOption App where
-  imageCleanupOptionL = constL $ toImageCleanupOption False
+  imageCleanupOptionL = noImageCleanupOptionL
 
-data EnvOptions = EnvOptions
-  { eoLogSettings :: LogSettings
-  , eoHostDirectory :: Maybe FilePath
-  , eoManifest :: Maybe FilePath
-  , eoRestrictions :: Restrictions
-  }
-
--- brittany-disable-next-binding
-
-envParser :: Env.Parser Env.Error EnvOptions
-envParser =
-  EnvOptions
-    <$> LoggingEnv.parser
-    <*> optional (Env.var Env.str "HOST_DIRECTORY" mempty)
-    <*> optional (Env.var Env.str "MANIFEST" mempty)
-    <*> envRestrictions
+deriving via
+  (ActualGit (AppT App m))
+  instance
+    MonadUnliftIO m => MonadGit (AppT App m)
 
 main :: IO ()
 main = do
-  EnvOptions {..} <- Env.parse id envParser
-  logger <- newLogger eoLogSettings
+  hSetBuffering stdout LineBuffering
+  hSetBuffering stderr LineBuffering
 
-  let app =
-        App
-          { appLogger = logger
-          , appOptions =
-              Options
-                { oAccessToken = error "unused"
-                , oLogSettings = eoLogSettings
-                , oOwner = error "unused"
-                , oRepo = error "unused"
-                , oPullRequest = error "unused"
-                , oManifest = eoManifest
-                , oJobUrl = error "unused"
-                , oHostDirectory = eoHostDirectory
-                , oRepoDisabled = False
-                , oPlanRestriction = Nothing
-                , oPlanUpgradeUrl = Nothing
-                , oRestrictions = eoRestrictions
-                , oStatsdHost = Nothing
-                , oStatsdPort = Nothing
-                , oImageCleanup = False
-                }
-          }
+  env <- Env.parse id envParser
+  (opt, paths) <-
+    Opt.parse "Restyle local files"
+      $ (,)
+      <$> optParser
+      <*> some1 (Opt.argument Opt.str $ Opt.metavar "PATH")
 
-  runAppT app $ do
-    config <- loadConfig
-    runRestylers_ config =<< getArgs
+  let options = env <> opt
+
+  withLogger (resolveLogSettings options.logSettings) $ \logger -> do
+    let app = App {logger = logger, options = options}
+    void $ runAppT app $ run NullPullRequest $ toList paths

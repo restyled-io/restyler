@@ -105,18 +105,17 @@ executables:
   #   dependencies:
   #     - github
   #     - restyler
-  # restyle-path:
-  #   main: main.hs
-  #   source-dirs: restyle-path
-  #   ghc-options:
-  #     - -Wall
-  #     - -threaded
-  #     - -rtsopts
-  #     - -with-rtsopts=-N
-  #   dependencies:
-  #     - Blammo
-  #     - envparse
-  #     - restyler
+  restyle-path:
+    main: main.hs
+    source-dirs: restyle-path
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - envparse
+      - restyler
   restyle-gha:
     main: main.hs
     source-dirs: restyle-gha

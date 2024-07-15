@@ -2,27 +2,24 @@
 --
 -- - Run restylers (TODO with or without commits)
 module Restyler.Commands.RestyleLocal
-  ( main
+  ( NullPullRequest (..)
   , run
   ) where
 
 import Restyler.Prelude
 
-import Restyler.App (AppT, runAppT)
 import Restyler.App.Class
   ( MonadDownloadFile (..)
   , MonadProcess (..)
   , MonadSystem (..)
   )
 import Restyler.Config
-import Restyler.Git (ActualGit (..), MonadGit)
+import Restyler.Git (MonadGit)
 import Restyler.GitHub.PullRequest
 import Restyler.HostDirectoryOption
 import Restyler.Ignore
 import Restyler.ImageCleanupOption
-import Restyler.LogSettingsOption
 import Restyler.ManifestOption
-import Restyler.Options.RestyleLocal
 import Restyler.Restrictions
 import Restyler.RestyleResult
 import Restyler.Restyler.Run
@@ -42,45 +39,6 @@ instance HasBaseRef NullPullRequest where
 
 instance HasLabelNames NullPullRequest where
   getLabelNames = const []
-
-data App = App
-  { logger :: Logger
-  , options :: Options
-  }
-
-optionsL :: Lens' App Options
-optionsL = lens (.options) $ \x y -> x {options = y}
-
-instance HasLogger App where
-  loggerL = lens (.logger) $ \x y -> x {logger = y}
-
-instance HasRestrictions App where
-  restrictionsL = optionsL . restrictionsL
-
-instance HasHostDirectoryOption App where
-  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
-
-instance HasManifestOption App where
-  manifestOptionL = noManifestOptionL
-
-instance HasImageCleanupOption App where
-  imageCleanupOptionL = noImageCleanupOptionL
-
-deriving via
-  (ActualGit (AppT App m))
-  instance
-    MonadUnliftIO m => MonadGit (AppT App m)
-
-main :: Options -> NonEmpty FilePath -> IO ()
-main options paths = do
-  withLogger (resolveLogSettings options.logSettings) $ \logger -> do
-    let app =
-          App
-            { logger = logger
-            , options = options
-            }
-
-    void $ runAppT app $ run NullPullRequest $ toList paths
 
 run
   :: ( MonadUnliftIO m
