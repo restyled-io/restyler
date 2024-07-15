@@ -144,9 +144,6 @@ data Config = Config
   , cIgnoreBranches :: [Glob Text]
   , cIgnoreLabels :: [Glob (Name IssueLabel)]
   , cRestylers :: [Restyler]
-  -- ^ TODO: @'NonEmpty'@
-  --
-  -- It's true, but what's the benefit?
   }
   deriving stock (Eq, Show, Generic)
 
