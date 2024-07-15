@@ -88,6 +88,7 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           branch: ${{ steps.restyler.outputs.restyled-branch-name }}
+          base: ${{ github.event.pull_request.head.ref }}
           title: ${{ steps.restyler.outputs.restyled-pr-title }}
           body: ${{ steps.restyler.outputs.restyled-pr-body }}
           delete-branch: true
