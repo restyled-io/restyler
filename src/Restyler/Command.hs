@@ -32,25 +32,25 @@ getCommand :: MonadIO m => m Command
 getCommand = liftIO $ execParser $ info (optParser <**> helper) fullDesc
 
 optParser :: Parser Command
-optParser = optRestyleJob <|> optRestyleGHA <|> optRestyleLocal
+optParser = optRestyleJobOrGHA <|> optRestyleLocal
 
-optRestyleJob :: Parser Command
-optRestyleJob =
-  go
-    <$> optPR
-    <*> option (eitherReader readURL) (long "job-url")
+optRestyleJobOrGHA :: Parser Command
+optRestyleJobOrGHA = go <$> optPR <*> optional optJobURL
  where
-  go :: PR -> URL -> Command
-  go pr = RestyleJob pr.repo pr.number
-
-optRestyleGHA :: Parser Command
-optRestyleGHA = go <$> optPR
- where
-  go :: PR -> Command
-  go pr = RestyleGHA pr.repo pr.number
+  go :: PR -> Maybe URL -> Command
+  go pr = \case
+    Nothing -> RestyleGHA pr.repo pr.number
+    Just url -> RestyleJob pr.repo pr.number url
 
 optRestyleLocal :: Parser Command
 optRestyleLocal = RestyleLocal <$> some1 (argument str $ metavar "PATH")
+
+optJobURL :: Parser URL
+optJobURL =
+  option (eitherReader readURL)
+    $ long "job-url"
+    <> metavar "URL"
+    <> help "Triggering Restyled Job's URL"
 
 data PR = PR
   { repo :: Repository
@@ -71,7 +71,11 @@ readPR _ =
       }
 
 optPR :: Parser PR
-optPR = option (eitherReader readPR) $ long "pr"
+optPR =
+  option (eitherReader readPR)
+    $ long "pr"
+    <> metavar "OWNER/REPO#NUMBER"
+    <> help "Pull Request to restyler"
 
 newtype URL = URL URI
 
