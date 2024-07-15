@@ -86,11 +86,13 @@ jobs:
         with:
           binary: ./tmp/restyle-gha
 
+      - run: git reset --hard ${{ github.event.pull_request.head.sha }}
+
       - if: ${{ steps.restyler.outputs.differences == 'true' }}
         uses: peter-evans/create-pull-request@v6
         with:
           branch: ${{ steps.restyler.outputs.restyled-branch-name }}
-          base: ${{ github.event.pull_request.head.ref }}
+          base: ${{ github.head.ref }}
           title: ${{ steps.restyler.outputs.restyled-pr-title }}
           body: ${{ steps.restyler.outputs.restyled-pr-body }}
           delete-branch: true
