@@ -81,6 +81,5 @@ reviewerFor RequestReviewFromAuthor = Just . pullRequestUserLogin
 reviewerFor RequestReviewFromOwner = Just . coerceName . pullRequestOwnerName
 reviewerFor (RequestReviewFrom name) = const $ Just name
 
--- TODO: centralize this?
 coerceName :: Name a -> Name b
 coerceName = mkName Proxy . untagName
