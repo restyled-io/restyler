@@ -70,8 +70,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       # TODO: actions/setup
       - uses: actions/download-artifact@v4
@@ -90,7 +88,6 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           branch: ${{ steps.restyler.outputs.restyled-branch-name }}
-          base: ${{ github.event.pull_request.head.ref }}
           title: ${{ steps.restyler.outputs.restyled-pr-title }}
           body: ${{ steps.restyler.outputs.restyled-pr-body }}
           delete-branch: true
