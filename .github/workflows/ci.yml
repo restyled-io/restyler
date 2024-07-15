@@ -72,23 +72,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      # TODO: actions/setup
       - uses: actions/download-artifact@v4
         with:
           name: binaries
           path: ./tmp
       - run: chmod +x ./tmp/restyle-gha
+      # END actions/setup
+
       - id: restyler
         uses: ./actions/run
         with:
           binary: ./tmp/restyle-gha
-      - run: |
-          cat <<'EOM'
-          Differences? ${{ steps.restyler.outputs.differences }}
-          Branch:   ${{ steps.restyler.outputs.restyled-branch-name }}
-          PR Title: ${{ steps.restyler.outputs.restyled-pr-title }}
-          PR Body:
-          ${{ steps.restyler.outputs.restyled-pr-body }}
-          EOM
+
+      - if: ${{ steps.restyler.outputs.differences == 'true' }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ steps.restyler.outputs.restyled-branch-name }}
+          base: ${{ github.event.pull_request.head.ref }}
+          title: ${{ steps.restyler.outputs.restyled-pr-title }}
+          body: ${{ steps.restyler.outputs.restyled-pr-body }}
+          delete-branch: true
+          # TODO:
+          # labels
+          # reviewers
+          # team-reviewers
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
