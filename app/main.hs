@@ -25,9 +25,32 @@ main = do
         app <- bootstrapApp options logger path statsClient
         runAppT app restylerMain
 
-  runLoggerLoggingT logger
-    $ logInfo
-    $ "Restyler done"
-    :# ["exitCode" .= exitCodeInt ec]
+  runLoggerLoggingT logger $
+    logInfo $
+      "Restyler done"
+        :# ["exitCode" .= exitCodeInt ec]
 
   exitWith ec
+
+-- Wrap in statds
+-- Wrap in error-handling
+--
+-- Check repo disabled
+-- Check plan restriction
+-- Clone
+--
+-- (config.enabled -> move to RestyleGHA)
+--
+-- Use RestyleGHA.run (more checks, runs, commit, clean up PR)
+--
+-- If differences:
+--   Log git patch first
+--
+--   if auto
+--      if Fork -> nope
+--      else push
+--   else
+--      if Fork -> nope
+--      else create-or-update PR
+--
+-- Emit PR statuses
