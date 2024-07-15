@@ -3,3 +3,4 @@
 .stack-work*
 *.hie
 **/.hiedb
+tmp
