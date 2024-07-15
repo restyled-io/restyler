@@ -42,25 +42,20 @@ setRestylerResultOutputs
   => PullRequest
   -> RestyleResult
   -> m Bool
-setRestylerResultOutputs pr result = do
-  output <- view githubOutputL
-
-  let write = liftIO . appendFileText output.unwrap
-
-  case result of
-    Restyled results
-      | any restylerCommittedChanges results -> do
-          write
-            $ unlines
-              [ "differences=true"
-              , "restyle-branch-name=restyled/" <> pr.head.ref
-              , "restyle-pr-title=Restyle " <> pr.title
-              , "restyle-pr-body<<EOM"
-              , Content.pullRequestDescription Nothing pr.number results
-              , "EOM"
-              ]
-          pure True
-    _ -> False <$ write "differences=false"
+setRestylerResultOutputs pr = \case
+  Restyled results
+    | any restylerCommittedChanges results -> do
+        appendGitHubOutput
+          $ unlines
+            [ "differences=true"
+            , "restyle-branch-name=restyled/" <> pr.head.ref
+            , "restyle-pr-title=Restyle " <> pr.title
+            , "restyle-pr-body<<EOM"
+            , Content.pullRequestDescription Nothing pr.number results
+            , "EOM"
+            ]
+        pure True
+  _ -> False <$ appendGitHubOutput "differences=false"
 
 t :: Text -> Text
 t = id

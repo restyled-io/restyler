@@ -2,8 +2,7 @@ module Restyler.GHA
   ( GitHubOutput (..)
   , envGitHubOutput
   , HasGitHubOutput (..)
-  , setGitHubOutput
-  , setGitHubOutputLn
+  , appendGitHubOutput
   ) where
 
 import Restyler.Prelude
@@ -21,28 +20,10 @@ class HasGitHubOutput env where
 envGitHubOutput :: Env.Parser Env.Error GitHubOutput
 envGitHubOutput = Env.var Env.nonempty "GITHUB_OUTPUT" mempty
 
-setGitHubOutput
-  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
+appendGitHubOutput
+  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
   => Text
-  -> Text
   -> m ()
-setGitHubOutput name value = do
-  path <- view $ githubOutputL . to (.unwrap)
-  logInfo $ "Setting GitHub Output" :# ["name" .= name]
-  liftIO $ appendFileText path $ name <> "=" <> value <> "\n"
-
-setGitHubOutputLn
-  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
-  => Text
-  -> Text
-  -> m ()
-setGitHubOutputLn name value = do
-  path <- view $ githubOutputL . to (.unwrap)
-  logInfo $ "Setting GitHub Output" :# ["name" .= name]
-  liftIO
-    $ appendFileText path
-    $ mconcat
-      [ name <> "<<EOM\n"
-      , value <> "\n"
-      , "EOM\n"
-      ]
+appendGitHubOutput x = do
+  path <- view githubOutputL
+  liftIO $ appendFileText path.unwrap x
