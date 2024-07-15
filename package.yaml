@@ -126,6 +126,7 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
+      - envparse
       - restyler
 
 # tests:

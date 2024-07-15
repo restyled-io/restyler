@@ -1,8 +1,7 @@
-{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
-
 module Restyler.Options.RestyleGHA
   ( EnvOptions (..)
   , envOptions
+  , envParser
   ) where
 
 import Restyler.Prelude
@@ -23,8 +22,10 @@ instance HasGitHubOutput EnvOptions where
   githubOutputL = lens (.githubOutput) $ \x y -> x {githubOutput = y}
 
 envOptions :: IO EnvOptions
-envOptions =
-  Env.parse id
-    $ EnvOptions
+envOptions = Env.parse id envParser
+
+envParser :: Env.Parser Env.Error EnvOptions
+envParser =
+  EnvOptions
     <$> envGitHubToken
     <*> envGitHubOutput

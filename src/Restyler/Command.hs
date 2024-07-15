@@ -1,4 +1,6 @@
-module Restyler.Command
+module Restyler.Command () where
+
+{-
   ( Command (..)
   , getCommand
   ) where
@@ -54,9 +56,9 @@ optParser :: Parser Cmd
 optParser =
   subparser
     $ mconcat
-      [ command "job" $ info' optJob "Restyle a hosted Job"
-      , command "gha" $ info' optGHA "Restyle on GitHub Actions"
-      , command "local" $ info' optLocal "Restyle local files"
+      [ command "io" $ info' optJob "Restyle on restyled.io"
+      , command "gh" $ info' optGHA "Restyle on GitHub Actions"
+      , command "fs" $ info' optLocal "Restyle local files"
       ]
 
 info' :: Parser a -> String -> ParserInfo a
@@ -69,10 +71,7 @@ optJob = go <$> RestyleLocal.optParser <*> optPR <*> optJobURL
   go opt pr = Job opt pr.repo pr.number
 
 optGHA :: Parser Cmd
-optGHA = go <$> RestyleLocal.optParser <*> optPR
- where
-  go :: RestyleLocal.Options -> PR -> Cmd
-  go opt pr = GHA opt pr.repo pr.number
+optGHA =
 
 optLocal :: Parser Cmd
 optLocal =
@@ -117,3 +116,4 @@ newtype URL = URL URI
 readURL :: String -> Either String URL
 readURL x =
   URL <$> note ("Not a valid absolute URI: " <> x) (parseAbsoluteURI x)
+  -}
