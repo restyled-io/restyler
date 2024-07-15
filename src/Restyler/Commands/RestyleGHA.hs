@@ -13,7 +13,6 @@ import Restyler.Prelude
 import Restyler.App (AppT, runAppT)
 import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
 import Restyler.Commands.RestyleLocal qualified as RestyleLocal
-import Restyler.Config (loadConfig)
 import Restyler.GHA
 import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.GitHub.Api
@@ -88,7 +87,6 @@ run
      , MonadDownloadFile m
      , HasRestrictions env
      , HasHostDirectoryOption env
-     , HasManifestOption env
      , HasImageCleanupOption env
      , HasManifestOption env
      )
