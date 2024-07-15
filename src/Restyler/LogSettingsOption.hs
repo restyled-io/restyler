@@ -8,12 +8,14 @@ where
 
 import Restyler.Prelude
 
+import Blammo.Logging.LogSettings
 import Blammo.Logging.LogSettings.Env qualified as LogSettingsEnv
+import Blammo.Logging.LogSettings.LogLevels
 import Env qualified
 import Options.Applicative
 
 newtype LogSettingsOption = LogSettingsOption (Endo LogSettings)
-  deriving newtype (Semigroup)
+  deriving newtype (Semigroup, Monoid)
 
 toLogSettingsOption :: LogSettings -> LogSettingsOption
 toLogSettingsOption = LogSettingsOption . Endo . const
@@ -24,8 +26,21 @@ resolveLogSettings (LogSettingsOption f) = appEndo f defaultLogSettings
 envLogSettingsOption :: Env.Parser Env.Error LogSettingsOption
 envLogSettingsOption = toLogSettingsOption <$> LogSettingsEnv.parser
 
--- TODO
--- @--color=never|always|auto@
--- @--debug@
 optLogSettingsOption :: Parser LogSettingsOption
-optLogSettingsOption = pure $ LogSettingsOption $ Endo id
+optLogSettingsOption = mconcat <$> sequenceA [optDebug, optColor]
+
+optDebug :: Parser LogSettingsOption
+optDebug = flag mempty setDebug $ long "debug" <> help "Enable debug logging"
+ where
+  setDebug = LogSettingsOption $ Endo $ setLogSettingsLevels debug
+  debug = newLogLevels LevelDebug []
+
+optColor :: Parser LogSettingsOption
+optColor =
+  maybe mempty (LogSettingsOption . Endo . setLogSettingsColor)
+    <$> optional
+      ( option (eitherReader readLogColor)
+          $ long "color"
+          <> metavar "WHEN"
+          <> help "When to use color: always|never|auto"
+      )
