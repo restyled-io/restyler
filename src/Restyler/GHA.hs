@@ -28,10 +28,7 @@ setGitHubOutput
   -> m ()
 setGitHubOutput name value = do
   path <- view $ githubOutputL . to (.unwrap)
-  liftIO $ do
-    writeFileText path $ name <> "="
-    writeFileBS path value
-    writeFileText path "\n"
+  liftIO $ writeFileBS path $ encodeUtf8 name <> "=" <> value <> "\n"
 
 setGitHubOutputLn
   :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
@@ -40,7 +37,10 @@ setGitHubOutputLn
   -> m ()
 setGitHubOutputLn name value = do
   path <- view $ githubOutputL . to (.unwrap)
-  liftIO $ do
-    writeFileText path $ name <> "<<EOM\n"
-    writeFileBS path value
-    writeFileText path "\nEOM\n"
+  liftIO
+    $ writeFileBS path
+    $ mconcat
+      [ encodeUtf8 name <> "<<EOM\n"
+      , value <> "\n"
+      , "EOM\n"
+      ]
