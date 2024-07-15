@@ -3,6 +3,7 @@ module Restyler.ImageCleanupOption
   , HasImageCleanupOption (..)
   , toImageCleanupOption
   , unImageCleanupOption
+  , noImageCleanupOptionL
   ) where
 
 import Restyler.Prelude hiding (Last (..))
@@ -20,3 +21,6 @@ toImageCleanupOption = ImageCleanupOption . Last
 
 unImageCleanupOption :: ImageCleanupOption -> Bool
 unImageCleanupOption (ImageCleanupOption x) = getLast x
+
+noImageCleanupOptionL :: Lens' a ImageCleanupOption
+noImageCleanupOptionL = lens (const $ toImageCleanupOption False) const

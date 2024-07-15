@@ -6,8 +6,15 @@ module Restyler.GitHub.PullRequest
   , PullRequestState (..)
   , pullRequestStateFromText
   , pullRequestStateToText
+  , User (..)
   , Label (..)
   , Commit (..)
+
+    -- * Classy access
+  , HasPullRequestState (..)
+  , HasAuthor (..)
+  , HasBaseRef (..)
+  , HasLabelNames (..)
   ) where
 
 import Restyler.Prelude
@@ -17,6 +24,7 @@ import Data.Aeson
 data PullRequest = PullRequest
   { number :: Int
   , title :: Text
+  , user :: User
   , state :: PullRequestState
   , labels :: [Label]
   , head :: Commit
@@ -48,6 +56,12 @@ pullRequestStateToText = \case
   PullRequestOpen -> "open"
   PullRequestClosed -> "closed"
 
+newtype User = User
+  { login :: Text
+  }
+  deriving stock (Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
 newtype Label = Label
   { name :: Text
   }
@@ -60,3 +74,27 @@ data Commit = Commit
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
+
+class HasPullRequestState a where
+  getPullRequestState :: a -> PullRequestState
+
+instance HasPullRequestState PullRequest where
+  getPullRequestState pr = pr.state
+
+class HasAuthor a where
+  getAuthor :: a -> Text
+
+instance HasAuthor PullRequest where
+  getAuthor pr = pr.user.login
+
+class HasBaseRef a where
+  getBaseRef :: a -> Text
+
+instance HasBaseRef PullRequest where
+  getBaseRef pr = pr.base.ref
+
+class HasLabelNames a where
+  getLabelNames :: a -> [Text]
+
+instance HasLabelNames PullRequest where
+  getLabelNames pr = map (.name) pr.labels

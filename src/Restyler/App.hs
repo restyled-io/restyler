@@ -16,7 +16,6 @@ import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
-import Data.Text qualified as T
 import GitHub.Auth
 import GitHub.Data.Definitions qualified as GitHub
 import GitHub.Request
@@ -263,26 +262,30 @@ instance HasConfig App where
 instance HasPullRequest App where
   pullRequestL = lens appPullRequest $ \x y -> x {appPullRequest = y}
 
-instance MonadUnliftIO m => MonadGit (AppT App m) where
-  gitPush branch = callProcess "git" ["push", "origin", branch]
-  gitPushForce branch =
-    callProcess "git" ["push", "--force", "origin", branch]
-  gitDiffNameOnly mRef = do
-    let args = ["diff", "--name-only"] <> maybeToList mRef
-    map unpack . lines . pack <$> readProcess "git" args
-  gitFormatPatch mRef = do
-    let args = ["format-patch", "--stdout"] <> maybeToList mRef
-    pack <$> readProcess "git" args
-  gitCommitAll msg = do
-    callProcess "git" ["commit", "-a", "--message", msg]
-    unpack
-      . T.dropWhileEnd isSpace
-      . pack
-      <$> readProcess
-        "git"
-        ["rev-parse", "HEAD"]
-  gitCheckout branch = do
-    callProcess "git" ["checkout", "--no-progress", "-b", branch]
+deriving via
+  (ActualGit (AppT App m))
+  instance
+    MonadUnliftIO m => MonadGit (AppT App m)
+
+-- gitPush branch = callProcess "git" ["push", "origin", branch]
+-- gitPushForce branch =
+--   callProcess "git" ["push", "--force", "origin", branch]
+-- gitDiffNameOnly mRef = do
+--   let args = ["diff", "--name-only"] <> maybeToList mRef
+--   map unpack . lines . pack <$> readProcess "git" args
+-- gitFormatPatch mRef = do
+--   let args = ["format-patch", "--stdout"] <> maybeToList mRef
+--   pack <$> readProcess "git" args
+-- gitCommitAll msg = do
+--   callProcess "git" ["commit", "-a", "--message", msg]
+--   unpack
+--     . T.dropWhileEnd isSpace
+--     . pack
+--     <$> readProcess
+--       "git"
+--       ["rev-parse", "HEAD"]
+-- gitCheckout branch = do
+--   callProcess "git" ["checkout", "--no-progress", "-b", branch]
 
 bootstrapApp
   :: MonadUnliftIO m

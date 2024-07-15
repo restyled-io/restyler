@@ -20,7 +20,7 @@ data RestyleResult
   | RestyleSkippedIgnored IgnoredReason
   | RestyleSkippedNoRestylers
   | RestyleSkippedNoPaths
-  | Restyled (NonEmpty RestylerResult)
+  | Restyled [RestylerResult]
 
 logRestyleResult :: MonadLogger m => RestyleResult -> m ()
 logRestyleResult = \case
@@ -59,7 +59,7 @@ setNoDifferences = False <$ setGitHubOutput "differences" "false"
 setDifferences
   :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
   => PullRequest
-  -> NonEmpty RestylerResult
+  -> [RestylerResult]
   -> m Bool
 setDifferences pr results =
   True <$ do
@@ -68,8 +68,7 @@ setDifferences pr results =
     setGitHubOutput "restyle-pr-title" $ encodeUtf8 $ "Restyle " <> pr.title
     setGitHubOutputLn "restyle-pr-body"
       $ encodeUtf8
-      $ Content.pullRequestDescription Nothing pr.number
-      $ toList results
+      $ Content.pullRequestDescription Nothing pr.number results
 
 t :: Text -> Text
 t = id

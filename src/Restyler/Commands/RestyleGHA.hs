@@ -10,16 +10,20 @@ module Restyler.Commands.RestyleGHA
 
 import Restyler.Prelude
 
-import Restyler.App (runAppT)
-import Restyler.App.Class (MonadDownloadFile, MonadSystem)
+import Restyler.App (AppT, runAppT)
+import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
 import Restyler.Commands.RestyleLocal qualified as RestyleLocal
 import Restyler.Config (loadConfig)
 import Restyler.GHA
+import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
+import Restyler.HostDirectoryOption
+import Restyler.ImageCleanupOption
 import Restyler.ManifestOption
 import Restyler.Options.RestyleGHA
+import Restyler.Restrictions
 import Restyler.RestyleResult
 
 data App = App
@@ -39,8 +43,22 @@ instance HasGitHubToken App where
 instance HasGitHubOutput App where
   githubOutputL = optionsL . githubOutputL
 
+instance HasRestrictions App where
+  restrictionsL = optionsL . restrictionsL
+
+instance HasHostDirectoryOption App where
+  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
+
 instance HasManifestOption App where
   manifestOptionL = noManifestOptionL
+
+instance HasImageCleanupOption App where
+  imageCleanupOptionL = noImageCleanupOptionL
+
+deriving via
+  (ActualGit (AppT App m))
+  instance
+    MonadUnliftIO m => MonadGit (AppT App m)
 
 main :: Repository -> Int -> IO ()
 main repo pr = do
@@ -58,37 +76,33 @@ main repo pr = do
 run
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadSystem m
-     , MonadDownloadFile m
-     , MonadGitHub m
      , MonadReader env m
+     , HasLogger env
+     , -- Needed for our own logic
+       HasGitHubToken env
      , HasGitHubOutput env
+     , -- Needed for RestyleLocal
+       MonadSystem m
+     , MonadProcess m
+     , MonadGit m
+     , MonadDownloadFile m
+     , HasRestrictions env
+     , HasHostDirectoryOption env
+     , HasManifestOption env
+     , HasImageCleanupOption env
      , HasManifestOption env
      )
   => Repository
   -> Int
   -> m RestyleResult
 run repo pr = do
-  config <- loadConfig
-  logDebug $ "Config" :# objectToPairs config
-
   pullRequest <- getPullRequest repo pr
   logInfo $ "Handling PR" :# objectToPairs pullRequest
-
-  -- TODO
-  -- check draft
-  -- check closed
-  -- check ignores
-  -- => skip and cleanup PR
 
   paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
   traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
 
-  result <- RestyleLocal.run paths
-
-  -- Move to RestyleLocal
-  -- logRestyleResult result
-
+  result <- RestyleLocal.run pullRequest paths
   _differences <- setRestylerResultOutputs pullRequest result
   -- TODO no differences? cleanup PR
 
