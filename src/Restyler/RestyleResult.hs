@@ -48,9 +48,9 @@ setRestylerResultOutputs pr = \case
         appendGitHubOutput
           $ unlines
             [ "differences=true"
-            , "restyle-branch-name=restyled/" <> pr.head.ref
-            , "restyle-pr-title=Restyle " <> pr.title
-            , "restyle-pr-body<<EOM"
+            , "restyled-branch-name=restyled/" <> pr.head.ref
+            , "restyled-pr-title=Restyle " <> pr.title
+            , "restyled-pr-body<<EOM"
             , Content.pullRequestDescription Nothing pr.number results
             , "EOM"
             ]

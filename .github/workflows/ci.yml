@@ -84,10 +84,10 @@ jobs:
       - run: |
           cat <<'EOM'
           Differences? ${{ steps.restyler.outputs.differences }}
-          Branch:   ${{ steps.restyler.outputs.restyle-branch-name }}
-          PR Title: ${{ steps.restyler.outputs.restyle-pr-title }}
+          Branch:   ${{ steps.restyler.outputs.restyled-branch-name }}
+          PR Title: ${{ steps.restyler.outputs.restyled-pr-title }}
           PR Body:
-          ${{ steps.restyler.outputs.restyle-pr-body }}
+          ${{ steps.restyler.outputs.restyled-pr-body }}
           EOM
 
   deploy:
