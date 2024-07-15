@@ -79,7 +79,6 @@ handleResult = \case
       <$ errorPullRequest (errorMetadataDescription md)
   Right () -> ExitSuccess <$ Statsd.increment "restyler.success" []
 
--- TODO: stop using exitSuccess for flow-control
 isExitSuccess :: SomeException -> Bool
 isExitSuccess = (Just ExitSuccess ==) . fromException
 
