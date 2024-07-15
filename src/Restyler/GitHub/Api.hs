@@ -15,7 +15,7 @@ import Restyler.Prelude
 import Data.Aeson
 import Env qualified
 import Network.HTTP.Simple
-import Network.HTTP.Types.Header (hAuthorization)
+import Network.HTTP.Types.Header (hAuthorization, hUserAgent)
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
@@ -81,5 +81,9 @@ instance (Monad m, MonadIO m, MonadReader env m, HasGitHubToken env) => MonadGit
   getOne url = do
     auth <- view $ githubTokenL . to githubTokenToBearer
     req <- liftIO $ parseRequest url
-    resp <- httpJSON $ addRequestHeader hAuthorization auth req
+    resp <-
+      httpJSON
+        . addRequestHeader hAuthorization auth
+        . addRequestHeader hUserAgent "Restyled"
+        $ req
     pure $ getResponseBody resp
