@@ -22,8 +22,8 @@ import Data.Semigroup.Generic
 import Env qualified
 import Options.Applicative
 
-class HasRestrictions env where
-  restrictionsL :: Lens' env Restrictions
+class HasRestrictions a where
+  getRestrictions :: a -> Restrictions
 
 data Restrictions = Restrictions
   { netNone :: Last Bool

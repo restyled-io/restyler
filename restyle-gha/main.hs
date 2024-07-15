@@ -16,20 +16,29 @@ import Restyler.LogSettingsOption
 import Restyler.ManifestOption
 import Restyler.Opt qualified as Opt
 import Restyler.Options.RestyleGHA
+import Restyler.Options.RestyleLocal
+  ( HasOptions (..)
+  , Options (..)
+  , ThroughOptions (..)
+  )
 import Restyler.Options.RestyleLocal qualified as RestyleLocal
 import Restyler.Restrictions
 
 data App = App
   { logger :: Logger
   , env :: EnvOptions
-  , options :: RestyleLocal.Options
+  , options :: Options
   }
+  deriving (HasHostDirectoryOption) via (ThroughOptions App)
+  deriving (HasImageCleanupOption) via (ThroughOptions App)
+  deriving (HasManifestOption) via (ThroughOptions App)
+  deriving (HasRestrictions) via (ThroughOptions App)
+
+instance HasOptions App where
+  getOptions = (.options)
 
 envL :: Lens' App EnvOptions
 envL = lens (.env) $ \x y -> x {env = y}
-
-optionsL :: Lens' App RestyleLocal.Options
-optionsL = lens (.options) $ \x y -> x {options = y}
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
@@ -39,18 +48,6 @@ instance HasGitHubToken App where
 
 instance HasGitHubOutput App where
   githubOutputL = envL . githubOutputL
-
-instance HasRestrictions App where
-  restrictionsL = optionsL . restrictionsL
-
-instance HasHostDirectoryOption App where
-  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
-
-instance HasManifestOption App where
-  manifestOptionL = noManifestOptionL
-
-instance HasImageCleanupOption App where
-  imageCleanupOptionL = noImageCleanupOptionL
 
 deriving via
   (ActualGit (AppT App m))

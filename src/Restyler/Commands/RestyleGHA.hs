@@ -1,8 +1,4 @@
--- |
---
--- - Fetch PR details
--- - Check closed, ignore, etc
--- - Run @RestyleLocal@ with commits
+-- | @restyle --pr "OWNER/REPO#NUMBER"@
 module Restyler.Commands.RestyleGHA
   ( run
   ) where

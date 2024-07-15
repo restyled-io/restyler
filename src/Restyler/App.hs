@@ -211,16 +211,16 @@ instance HasOptions StartupApp where
   optionsL = lens appOptions $ \x y -> x {appOptions = y}
 
 instance HasManifestOption StartupApp where
-  manifestOptionL = optionsL . manifestOptionL
+  getManifestOption = getManifestOption . appOptions
 
 instance HasHostDirectoryOption StartupApp where
-  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
+  getHostDirectoryOption = getHostDirectoryOption . appOptions
 
 instance HasImageCleanupOption StartupApp where
-  imageCleanupOptionL = optionsL . imageCleanupOptionL
+  getImageCleanupOption = getImageCleanupOption . appOptions
 
 instance HasRestrictions StartupApp where
-  restrictionsL = optionsL . restrictionsL
+  getRestrictions = getRestrictions . appOptions
 
 instance HasWorkingDirectory StartupApp where
   workingDirectoryL =
@@ -245,13 +245,13 @@ instance HasOptions App where
   optionsL = appL . optionsL
 
 instance HasHostDirectoryOption App where
-  hostDirectoryOptionL = appL . hostDirectoryOptionL
+  getHostDirectoryOption = getHostDirectoryOption . appApp
 
 instance HasImageCleanupOption App where
-  imageCleanupOptionL = appL . imageCleanupOptionL
+  getImageCleanupOption = getImageCleanupOption . appApp
 
 instance HasRestrictions App where
-  restrictionsL = appL . restrictionsL
+  getRestrictions = getRestrictions . appApp
 
 instance HasWorkingDirectory App where
   workingDirectoryL = appL . workingDirectoryL
@@ -266,26 +266,6 @@ deriving via
   (ActualGit (AppT App m))
   instance
     MonadUnliftIO m => MonadGit (AppT App m)
-
--- gitPush branch = callProcess "git" ["push", "origin", branch]
--- gitPushForce branch =
---   callProcess "git" ["push", "--force", "origin", branch]
--- gitDiffNameOnly mRef = do
---   let args = ["diff", "--name-only"] <> maybeToList mRef
---   map unpack . lines . pack <$> readProcess "git" args
--- gitFormatPatch mRef = do
---   let args = ["format-patch", "--stdout"] <> maybeToList mRef
---   pack <$> readProcess "git" args
--- gitCommitAll msg = do
---   callProcess "git" ["commit", "-a", "--message", msg]
---   unpack
---     . T.dropWhileEnd isSpace
---     . pack
---     <$> readProcess
---       "git"
---       ["rev-parse", "HEAD"]
--- gitCheckout branch = do
---   callProcess "git" ["checkout", "--no-progress", "-b", branch]
 
 bootstrapApp
   :: MonadUnliftIO m

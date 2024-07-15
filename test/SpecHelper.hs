@@ -66,7 +66,7 @@ instance HasOptions TestApp where
   optionsL = lens taOptions $ \x y -> x {taOptions = y}
 
 instance HasHostDirectoryOption TestApp where
-  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
+  getHostDirectoryOption x = x ^. optionsL . to getHostDirectory
 
 instance HasImageCleanupOption TestApp where
   imageCleanupOptionL = optionsL . imageCleanupOptionL

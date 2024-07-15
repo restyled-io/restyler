@@ -1,9 +1,9 @@
 module Restyler.ManifestOption
   ( ManifestOption (..)
   , HasManifestOption (..)
+  , getManifest
   , toManifestOption
-  , unManifestOption
-  , noManifestOptionL
+  , NoManifestOption (..)
   ) where
 
 import Restyler.Prelude
@@ -11,8 +11,11 @@ import Restyler.Prelude
 newtype ManifestOption = ManifestOption (Last FilePath)
   deriving newtype (Semigroup, Monoid)
 
-class HasManifestOption env where
-  manifestOptionL :: Lens' env ManifestOption
+class HasManifestOption a where
+  getManifestOption :: a -> ManifestOption
+
+getManifest :: (MonadReader env m, HasManifestOption env) => m (Maybe FilePath)
+getManifest = asks $ unManifestOption . getManifestOption
 
 toManifestOption :: Maybe FilePath -> ManifestOption
 toManifestOption = ManifestOption . Last
@@ -20,5 +23,9 @@ toManifestOption = ManifestOption . Last
 unManifestOption :: ManifestOption -> Maybe FilePath
 unManifestOption (ManifestOption x) = getLast x
 
-noManifestOptionL :: Lens' a ManifestOption
-noManifestOptionL = lens (const $ toManifestOption Nothing) const
+newtype NoManifestOption a = NoManifestOption
+  { unwrap :: a
+  }
+
+instance HasManifestOption (NoManifestOption a) where
+  getManifestOption = const $ toManifestOption Nothing

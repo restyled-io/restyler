@@ -1,8 +1,8 @@
 module Restyler.HostDirectoryOption
   ( HostDirectoryOption (..)
   , HasHostDirectoryOption (..)
+  , getHostDirectory
   , toHostDirectoryOption
-  , unHostDirectoryOption
   , envHostDirectoryOption
   , optHostDirectoryOption
   ) where
@@ -11,12 +11,23 @@ import Restyler.Prelude
 
 import Env qualified
 import Options.Applicative
+import Restyler.App.Class (MonadSystem (..))
 
 newtype HostDirectoryOption = HostDirectoryOption (Last FilePath)
   deriving newtype (Semigroup, Monoid)
 
 class HasHostDirectoryOption env where
-  hostDirectoryOptionL :: Lens' env HostDirectoryOption
+  getHostDirectoryOption :: env -> HostDirectoryOption
+
+getHostDirectory
+  :: ( MonadSystem m
+     , MonadReader env m
+     , HasHostDirectoryOption env
+     )
+  => m FilePath
+getHostDirectory = do
+  mHostDirectory <- asks $ unHostDirectoryOption . getHostDirectoryOption
+  maybe getCurrentDirectory pure mHostDirectory
 
 toHostDirectoryOption :: Maybe FilePath -> HostDirectoryOption
 toHostDirectoryOption = HostDirectoryOption . Last

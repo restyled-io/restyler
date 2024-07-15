@@ -1,6 +1,4 @@
--- | @restyle path...@
---
--- - Run restylers (TODO with or without commits)
+-- | @restyle PATH [PATH...]@
 module Restyler.Commands.RestyleLocal
   ( NullPullRequest (..)
   , run

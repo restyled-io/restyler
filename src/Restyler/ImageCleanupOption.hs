@@ -1,9 +1,9 @@
 module Restyler.ImageCleanupOption
   ( ImageCleanupOption (..)
   , HasImageCleanupOption (..)
+  , getImageCleanup
   , toImageCleanupOption
-  , unImageCleanupOption
-  , noImageCleanupOptionL
+  , NoImageCleanupOption (..)
   ) where
 
 import Restyler.Prelude hiding (Last (..))
@@ -13,8 +13,11 @@ import Data.Semigroup (Last (..))
 newtype ImageCleanupOption = ImageCleanupOption (Last Bool)
   deriving newtype (Semigroup)
 
-class HasImageCleanupOption env where
-  imageCleanupOptionL :: Lens' env ImageCleanupOption
+class HasImageCleanupOption a where
+  getImageCleanupOption :: a -> ImageCleanupOption
+
+getImageCleanup :: (MonadReader env m, HasImageCleanupOption env) => m Bool
+getImageCleanup = asks $ unImageCleanupOption . getImageCleanupOption
 
 toImageCleanupOption :: Bool -> ImageCleanupOption
 toImageCleanupOption = ImageCleanupOption . Last
@@ -22,5 +25,9 @@ toImageCleanupOption = ImageCleanupOption . Last
 unImageCleanupOption :: ImageCleanupOption -> Bool
 unImageCleanupOption (ImageCleanupOption x) = getLast x
 
-noImageCleanupOptionL :: Lens' a ImageCleanupOption
-noImageCleanupOptionL = lens (const $ toImageCleanupOption False) const
+newtype NoImageCleanupOption a = NoImageCleanupOption
+  { unwrap :: a
+  }
+
+instance HasImageCleanupOption (NoImageCleanupOption a) where
+  getImageCleanupOption = const $ toImageCleanupOption False

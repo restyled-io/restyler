@@ -117,7 +117,7 @@ getAllRestylersVersioned
   => String
   -> m [Restyler]
 getAllRestylersVersioned version = do
-  mManifest <- unManifestOption <$> view manifestOptionL
+  mManifest <- getManifest
   case mManifest of
     Nothing -> do
       downloadRemoteFile restylers

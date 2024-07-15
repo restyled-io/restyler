@@ -21,24 +21,16 @@ data App = App
   { logger :: Logger
   , options :: Options
   }
+  deriving (HasHostDirectoryOption) via (ThroughOptions App)
+  deriving (HasImageCleanupOption) via (ThroughOptions App)
+  deriving (HasManifestOption) via (ThroughOptions App)
+  deriving (HasRestrictions) via (ThroughOptions App)
 
-optionsL :: Lens' App Options
-optionsL = lens (.options) $ \x y -> x {options = y}
+instance HasOptions App where
+  getOptions = (.options)
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
-
-instance HasRestrictions App where
-  restrictionsL = optionsL . restrictionsL
-
-instance HasHostDirectoryOption App where
-  hostDirectoryOptionL = optionsL . hostDirectoryOptionL
-
-instance HasManifestOption App where
-  manifestOptionL = noManifestOptionL
-
-instance HasImageCleanupOption App where
-  imageCleanupOptionL = noImageCleanupOptionL
 
 deriving via
   (ActualGit (AppT App m))

@@ -311,8 +311,8 @@ dockerRunRestyler
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
-  imageCleanup <- unImageCleanupOption <$> view imageCleanupOptionL
-  restrictions <- view restrictionsL
+  imageCleanup <- getImageCleanup
+  restrictions <- asks getRestrictions
 
   let
     args =
@@ -372,16 +372,6 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
-
-getHostDirectory
-  :: ( MonadSystem m
-     , MonadReader env m
-     , HasHostDirectoryOption env
-     )
-  => m FilePath
-getHostDirectory = do
-  mHostDirectory <- unHostDirectoryOption <$> view hostDirectoryOptionL
-  maybe getCurrentDirectory pure mHostDirectory
 
 -- | Expand directory arguments and filter to only existing paths
 --

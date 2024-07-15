@@ -61,19 +61,16 @@ instance HasOptions Options where
   optionsL = id
 
 instance HasManifestOption Options where
-  manifestOptionL = lens (toManifestOption . oManifest)
-    $ \x y -> x {oManifest = unManifestOption y}
+  getManifestOption = toManifestOption . oManifest
 
 instance HasHostDirectoryOption Options where
-  hostDirectoryOptionL = lens (toHostDirectoryOption . oHostDirectory)
-    $ \x y -> x {oHostDirectory = unHostDirectoryOption y}
+  getHostDirectoryOption = toHostDirectoryOption . oHostDirectory
 
 instance HasImageCleanupOption Options where
-  imageCleanupOptionL = lens (toImageCleanupOption . oImageCleanup)
-    $ \x y -> x {oImageCleanup = unImageCleanupOption y}
+  getImageCleanupOption = toImageCleanupOption . oImageCleanup
 
 instance HasRestrictions Options where
-  restrictionsL = lens oRestrictions $ \x y -> x {oRestrictions = y}
+  getRestrictions = oRestrictions
 
 -- | Parse required environment variables and command-line options
 --
