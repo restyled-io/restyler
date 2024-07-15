@@ -45,7 +45,7 @@ setRestylerResultOutputs
 setRestylerResultOutputs pr result = do
   output <- view githubOutputL
 
-  let write = liftIO . writeFileText output.unwrap
+  let write = liftIO . appendFileText output.unwrap
 
   case result of
     Restyled results
