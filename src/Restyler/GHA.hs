@@ -22,25 +22,38 @@ envGitHubOutput :: Env.Parser Env.Error GitHubOutput
 envGitHubOutput = Env.var Env.nonempty "GITHUB_OUTPUT" mempty
 
 setGitHubOutput
-  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
+  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
   => Text
-  -> ByteString
+  -> Text
   -> m ()
 setGitHubOutput name value = do
   path <- view $ githubOutputL . to (.unwrap)
-  liftIO $ writeFileBS path $ encodeUtf8 name <> "=" <> value <> "\n"
+  let content = name <> "=" <> value <> "\n"
+  logInfo
+    $ "Setting GitHub Output"
+    :# [ "GITHUB_OUTPUT" .= path
+       , "content" .= content
+       ]
+
+  liftIO $ writeFileText path content
 
 setGitHubOutputLn
-  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
+  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
   => Text
-  -> ByteString
+  -> Text
   -> m ()
 setGitHubOutputLn name value = do
   path <- view $ githubOutputL . to (.unwrap)
-  liftIO
-    $ writeFileBS path
-    $ mconcat
-      [ encodeUtf8 name <> "<<EOM\n"
-      , value <> "\n"
-      , "EOM\n"
-      ]
+  let content =
+        mconcat
+          [ name <> "<<EOM\n"
+          , value <> "\n"
+          , "EOM\n"
+          ]
+  logInfo
+    $ "Setting GitHub Output"
+    :# [ "GITHUB_OUTPUT" .= path
+       , "content" .= content
+       ]
+
+  liftIO $ writeFileText path content

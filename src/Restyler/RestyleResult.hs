@@ -44,7 +44,7 @@ logRestylerResult RestylerResult {..} =
     x -> logDebug $ "" :# ["result" .= x]
 
 setRestylerResultOutputs
-  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
+  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
   => PullRequest
   -> RestyleResult
   -> m Bool
@@ -53,21 +53,20 @@ setRestylerResultOutputs pr = \case
   _ -> setNoDifferences
 
 setNoDifferences
-  :: (MonadIO m, MonadReader env m, HasGitHubOutput env) => m Bool
+  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env) => m Bool
 setNoDifferences = False <$ setGitHubOutput "differences" "false"
 
 setDifferences
-  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
+  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
   => PullRequest
   -> [RestylerResult]
   -> m Bool
 setDifferences pr results =
   True <$ do
     setGitHubOutput "differences" "true"
-    setGitHubOutput "restyle-branch-name" $ encodeUtf8 $ "restyled/" <> pr.head.ref
-    setGitHubOutput "restyle-pr-title" $ encodeUtf8 $ "Restyle " <> pr.title
+    setGitHubOutput "restyle-branch-name" $ "restyled/" <> pr.head.ref
+    setGitHubOutput "restyle-pr-title" $ "Restyle " <> pr.title
     setGitHubOutputLn "restyle-pr-body"
-      $ encodeUtf8
       $ Content.pullRequestDescription Nothing pr.number results
 
 t :: Text -> Text
