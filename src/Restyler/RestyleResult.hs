@@ -16,19 +16,13 @@ import Restyler.RestylerResult
 
 data RestyleResult
   = RestyleSkippedClosed
-  | RestyleSkippedDraft
   | RestyleSkippedIgnored IgnoredReason
-  | RestyleSkippedNoRestylers
-  | RestyleSkippedNoPaths
   | Restyled [RestylerResult]
 
 logRestyleResult :: MonadLogger m => RestyleResult -> m ()
 logRestyleResult = \case
   RestyleSkippedClosed -> logInfo $ "Restyle skipped" :# ["reason" .= t "closed"]
-  RestyleSkippedDraft -> logInfo $ "Restyle skipped" :# ["reason" .= t "closed"]
   RestyleSkippedIgnored reason -> logInfo $ "Restyle skipped" :# ["reason" .= show @Text reason]
-  RestyleSkippedNoRestylers -> logInfo $ "Restyle skipped" :# ["reason" .= t "No Restylers"]
-  RestyleSkippedNoPaths -> logInfo $ "Restyle skipped" :# ["reason" .= t "No paths"]
   Restyled results -> traverse_ logRestylerResult results
 
 logRestylerResult :: MonadLogger m => RestylerResult -> m ()
@@ -44,30 +38,29 @@ logRestylerResult RestylerResult {..} =
     x -> logDebug $ "" :# ["result" .= x]
 
 setRestylerResultOutputs
-  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
+  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
   => PullRequest
   -> RestyleResult
   -> m Bool
-setRestylerResultOutputs pr = \case
-  Restyled results | any restylerCommittedChanges results -> setDifferences pr results
-  _ -> setNoDifferences
+setRestylerResultOutputs pr result = do
+  output <- view githubOutputL
 
-setNoDifferences
-  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env) => m Bool
-setNoDifferences = False <$ setGitHubOutput "differences" "false"
+  let write = liftIO . writeFileText output.unwrap
 
-setDifferences
-  :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
-  => PullRequest
-  -> [RestylerResult]
-  -> m Bool
-setDifferences pr results =
-  True <$ do
-    setGitHubOutput "differences" "true"
-    setGitHubOutput "restyle-branch-name" $ "restyled/" <> pr.head.ref
-    setGitHubOutput "restyle-pr-title" $ "Restyle " <> pr.title
-    setGitHubOutputLn "restyle-pr-body"
-      $ Content.pullRequestDescription Nothing pr.number results
+  case result of
+    Restyled results
+      | any restylerCommittedChanges results -> do
+          write
+            $ unlines
+              [ "differences=true"
+              , "restyle-branch-name=restyled/" <> pr.head.ref
+              , "restyle-pr-title=Restyle " <> pr.title
+              , "restyle-pr-body<<EOM"
+              , Content.pullRequestDescription Nothing pr.number results
+              , "EOM"
+              ]
+          pure True
+    _ -> False <$ write "differences=false"
 
 t :: Text -> Text
 t = id
