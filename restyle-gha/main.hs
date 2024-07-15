@@ -77,11 +77,5 @@ main = do
   let options = envLocal <> optLocal
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
-    let app =
-          App
-            { logger = logger
-            , env = env
-            , options = options
-            }
-
+    let app = App {logger = logger, env = env, options = options}
     void $ runAppT app $ run pr.repo pr.number
