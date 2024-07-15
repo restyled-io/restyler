@@ -18,5 +18,5 @@ main = do
 
   case cmd of
     RestyleJob {} -> pure () -- TODO
-    RestyleGHA repo number -> RestyleGHA.main repo number
-    RestyleLocal paths -> RestyleLocal.main paths
+    RestyleGHA env options repo number -> RestyleGHA.main env options repo number
+    RestyleLocal options paths -> RestyleLocal.main options paths

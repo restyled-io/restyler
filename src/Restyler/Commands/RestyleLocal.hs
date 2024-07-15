@@ -71,10 +71,8 @@ deriving via
   instance
     MonadUnliftIO m => MonadGit (AppT App m)
 
-main :: NonEmpty FilePath -> IO ()
-main paths = do
-  options <- getOptions
-
+main :: Options -> NonEmpty FilePath -> IO ()
+main options paths = do
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     let app =
           App

@@ -9,6 +9,8 @@ import Data.List.NonEmpty (some1)
 import Network.URI (URI, parseAbsoluteURI)
 import Options.Applicative
 import Restyler.GitHub.Repository
+import Restyler.Options.RestyleGHA qualified as RestyleGHA
+import Restyler.Options.RestyleLocal qualified as RestyleLocal
 
 data Command
   = -- | @restyle --pr "owner/repo#number" --job-url ...@
@@ -16,34 +18,67 @@ data Command
     -- - Clone
     -- - Run @RestyleGHA@
     -- - Emit status
-    RestyleJob Repository Int URL
+    RestyleJob RestyleLocal.Options Repository Int URL
   | -- | @restyle --pr "owner/repo#number"
     --
     -- - Fetch PR details
     -- - Check closed, ignore, etc
     -- - Run @RestyleLocal@ with commits
-    RestyleGHA Repository Int
+    RestyleGHA RestyleGHA.EnvOptions RestyleLocal.Options Repository Int
   | -- | @restyle path...@
     --
     -- - Run restylers with or without commits
-    RestyleLocal (NonEmpty FilePath)
+    RestyleLocal RestyleLocal.Options (NonEmpty FilePath)
 
-getCommand :: MonadIO m => m Command
-getCommand = liftIO $ execParser $ info (optParser <**> helper) fullDesc
+getCommand :: IO Command
+getCommand = do
+  env <- RestyleLocal.envOptions
+  cmd <- execParser $ info (optParser <**> helper) fullDesc
 
-optParser :: Parser Command
-optParser = optRestyleJobOrGHA <|> optRestyleLocal
+  case cmd of
+    Job opt repo pr url -> pure $ RestyleJob opt repo pr url
+    GHA opt repo pr ->
+      RestyleGHA
+        <$> RestyleGHA.envOptions
+        <*> pure (env <> opt)
+        <*> pure repo
+        <*> pure pr
+    Local opt paths -> pure $ RestyleLocal (env <> opt) paths
 
-optRestyleJobOrGHA :: Parser Command
-optRestyleJobOrGHA = go <$> optPR <*> optional optJobURL
+data Cmd
+  = Job RestyleLocal.Options Repository Int URL
+  | GHA RestyleLocal.Options Repository Int
+  | Local RestyleLocal.Options (NonEmpty FilePath)
+
+optParser :: Parser Cmd
+optParser =
+  subparser
+    $ mconcat
+      [ command "job" $ info' optJob "Restyle a hosted Job"
+      , command "gha" $ info' optGHA "Restyle on GitHub Actions"
+      , command "local" $ info' optLocal "Restyle local files"
+      ]
+
+info' :: Parser a -> String -> ParserInfo a
+info' p d = info (p <**> helper) $ fullDesc <> progDesc d
+
+optJob :: Parser Cmd
+optJob = go <$> RestyleLocal.optParser <*> optPR <*> optJobURL
  where
-  go :: PR -> Maybe URL -> Command
-  go pr = \case
-    Nothing -> RestyleGHA pr.repo pr.number
-    Just url -> RestyleJob pr.repo pr.number url
+  go :: RestyleLocal.Options -> PR -> URL -> Cmd
+  go opt pr = Job opt pr.repo pr.number
 
-optRestyleLocal :: Parser Command
-optRestyleLocal = RestyleLocal <$> some1 (argument str $ metavar "PATH")
+optGHA :: Parser Cmd
+optGHA = go <$> RestyleLocal.optParser <*> optPR
+ where
+  go :: RestyleLocal.Options -> PR -> Cmd
+  go opt pr = GHA opt pr.repo pr.number
+
+optLocal :: Parser Cmd
+optLocal =
+  Local
+    <$> RestyleLocal.optParser
+    <*> some1 (argument str $ metavar "PATH")
 
 optJobURL :: Parser URL
 optJobURL =

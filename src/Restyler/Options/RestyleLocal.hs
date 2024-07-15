@@ -1,6 +1,9 @@
 module Restyler.Options.RestyleLocal
   ( Options (..)
-  , getOptions
+  , envOptions
+  , optOptions
+  , envParser
+  , optParser
   ) where
 
 import Restyler.Prelude
@@ -26,25 +29,22 @@ instance HasRestrictions Options where
 instance HasHostDirectoryOption Options where
   hostDirectoryOptionL = lens (.hostDirectory) $ \x y -> x {hostDirectory = y}
 
-getOptions :: IO Options
-getOptions =
-  (<>)
-    <$> envOptions
-    <*> optOptions
-
 envOptions :: IO Options
-envOptions =
-  Env.parse id
-    $ Options
+envOptions = Env.parse id envParser
+
+envParser :: Env.Parser Env.Error Options
+envParser =
+  Options
     <$> envLogSettingsOption
     <*> envRestrictions
     <*> envHostDirectoryOption
 
 optOptions :: IO Options
-optOptions = execParser $ info (p <**> helper) fullDesc
- where
-  p =
-    Options
-      <$> optLogSettingsOption
-      <*> optRestrictions
-      <*> optHostDirectoryOption
+optOptions = execParser $ info (optParser <**> helper) fullDesc
+
+optParser :: Parser Options
+optParser =
+  Options
+    <$> optLogSettingsOption
+    <*> optRestrictions
+    <*> optHostDirectoryOption

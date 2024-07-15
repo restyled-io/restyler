@@ -20,15 +20,22 @@ import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
+import Restyler.LogSettingsOption
 import Restyler.ManifestOption
 import Restyler.Options.RestyleGHA
+import Restyler.Options.RestyleLocal (Options (..))
+import Restyler.Options.RestyleLocal qualified as RestyleLocal
 import Restyler.Restrictions
 import Restyler.RestyleResult
 
 data App = App
   { logger :: Logger
+  , env :: EnvOptions
   , options :: Options
   }
+
+envL :: Lens' App EnvOptions
+envL = lens (.env) $ \x y -> x {env = y}
 
 optionsL :: Lens' App Options
 optionsL = lens (.options) $ \x y -> x {options = y}
@@ -37,10 +44,10 @@ instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
 
 instance HasGitHubToken App where
-  githubTokenL = optionsL . githubTokenL
+  githubTokenL = envL . githubTokenL
 
 instance HasGitHubOutput App where
-  githubOutputL = optionsL . githubOutputL
+  githubOutputL = envL . githubOutputL
 
 instance HasRestrictions App where
   restrictionsL = optionsL . restrictionsL
@@ -59,14 +66,13 @@ deriving via
   instance
     MonadUnliftIO m => MonadGit (AppT App m)
 
-main :: Repository -> Int -> IO ()
-main repo pr = do
-  options <- getOptions
-
-  withLogger options.logSettings $ \logger -> do
+main :: EnvOptions -> RestyleLocal.Options -> Repository -> Int -> IO ()
+main env options repo pr = do
+  withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     let app =
           App
             { logger = logger
+            , env = env
             , options = options
             }
 
@@ -75,16 +81,14 @@ main repo pr = do
 run
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadReader env m
-     , HasLogger env
-     , -- Needed for our own logic
-       HasGitHubToken env
-     , HasGitHubOutput env
-     , -- Needed for RestyleLocal
-       MonadSystem m
+     , MonadDownloadFile m
+     , MonadSystem m
      , MonadProcess m
      , MonadGit m
-     , MonadDownloadFile m
+     , MonadReader env m
+     , HasLogger env
+     , HasGitHubToken env
+     , HasGitHubOutput env
      , HasRestrictions env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
