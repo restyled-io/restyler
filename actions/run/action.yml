@@ -32,7 +32,7 @@ runs:
     - id: restyler
       shell: bash
       run: |
-        $RESTYLER_BINARY gha --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
+        $RESTYLER_BINARY --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
       env:
         # For passing to run
         RESTYLER_BINARY: ${{ inputs.binary }}
