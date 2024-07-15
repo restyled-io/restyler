@@ -11,7 +11,7 @@ jobs:
       - run: |
           echo "Hi" > foo.txt
           git add foo.txt
-          git commit -m 'Add foo.txt"
+          git commit -m "Add foo.txt"
         env:
           GIT_AUTHOR_EMAIL: commits@restyled.io
           GIT_AUTHOR_NAME: Restyled.io
