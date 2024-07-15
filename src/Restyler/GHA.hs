@@ -28,14 +28,8 @@ setGitHubOutput
   -> m ()
 setGitHubOutput name value = do
   path <- view $ githubOutputL . to (.unwrap)
-  let content = name <> "=" <> value <> "\n"
-  logInfo
-    $ "Setting GitHub Output"
-    :# [ "GITHUB_OUTPUT" .= path
-       , "content" .= content
-       ]
-
-  liftIO $ writeFileText path content
+  logInfo $ "Setting GitHub Output" :# ["name" .= name]
+  liftIO $ appendFileText path $ name <> "=" <> value <> "\n"
 
 setGitHubOutputLn
   :: (MonadIO m, MonadLogger m, MonadReader env m, HasGitHubOutput env)
@@ -44,16 +38,11 @@ setGitHubOutputLn
   -> m ()
 setGitHubOutputLn name value = do
   path <- view $ githubOutputL . to (.unwrap)
-  let content =
-        mconcat
-          [ name <> "<<EOM\n"
-          , value <> "\n"
-          , "EOM\n"
-          ]
-  logInfo
-    $ "Setting GitHub Output"
-    :# [ "GITHUB_OUTPUT" .= path
-       , "content" .= content
-       ]
-
-  liftIO $ writeFileText path content
+  logInfo $ "Setting GitHub Output" :# ["name" .= name]
+  liftIO
+    $ appendFileText path
+    $ mconcat
+      [ name <> "<<EOM\n"
+      , value <> "\n"
+      , "EOM\n"
+      ]
