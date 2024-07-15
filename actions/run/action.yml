@@ -33,7 +33,7 @@ runs:
       shell: bash
       run: |
         $RESTYLER_BINARY --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
-        echo "differences=true" >"$GITHUB_OUTPUT"
+        echo "differences=true" >>"$GITHUB_OUTPUT"
       env:
         # For passing to run
         RESTYLER_BINARY: ${{ inputs.binary }}
