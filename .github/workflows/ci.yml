@@ -86,8 +86,6 @@ jobs:
         with:
           binary: ./tmp/restyle-gha
 
-      - run: git reset --hard ${{ github.event.pull_request.head.sha }}
-
       - if: ${{ steps.restyler.outputs.differences == 'true' }}
         uses: peter-evans/create-pull-request@v6
         with:
