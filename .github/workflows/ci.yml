@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # TODO: actions/setup
+      # BEGIN actions/setup
       - uses: actions/download-artifact@v4
         with:
           name: binaries
@@ -92,10 +92,6 @@ jobs:
           title: ${{ steps.restyler.outputs.restyled-pr-title }}
           body: ${{ steps.restyler.outputs.restyled-pr-body }}
           delete-branch: true
-          # TODO:
-          # labels
-          # reviewers
-          # team-reviewers
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
