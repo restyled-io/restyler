@@ -8,6 +8,7 @@ import Data.List.NonEmpty (some1)
 import Env qualified
 import Restyler.App (AppT, runAppT)
 import Restyler.Commands.RestyleLocal
+import Restyler.ErrorMetadata
 import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
@@ -16,6 +17,7 @@ import Restyler.ManifestOption
 import Restyler.Opt qualified as Opt
 import Restyler.Options.RestyleLocal
 import Restyler.Restrictions
+import UnliftIO.Exception (catchAny)
 
 data App = App
   { logger :: Logger
@@ -53,4 +55,6 @@ main = do
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     let app = App {logger = logger, options = options}
-    void $ runAppT app $ run NullPullRequest $ toList paths
+    void $ runAppT app $ do
+      run NullPullRequest (toList paths) `catchAny` \ex -> do
+        logErrorMetadataAndExit $ errorMetadata ex

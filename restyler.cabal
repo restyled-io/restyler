@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f7145a603154b7d0606945bb3918eb6aed87af17adbfb281f34454b0a7a6caa6
+-- hash: 238c3cc18d195f56bf57555031e730f55041b6e865e6ee01155ddfb215035ae8
 
 name:           restyler
 version:        0.2.0.0
@@ -233,6 +233,7 @@ executable restyle-path
       base
     , envparse
     , restyler
+    , unliftio
   default-language: Haskell2010
 
 executable restyler

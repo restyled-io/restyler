@@ -118,6 +118,7 @@ executables:
     dependencies:
       - envparse
       - restyler
+      - unliftio
   restyle-gha:
     main: main.hs
     source-dirs: restyle-gha
