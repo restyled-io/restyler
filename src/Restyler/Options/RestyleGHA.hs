@@ -1,6 +1,5 @@
 module Restyler.Options.RestyleGHA
   ( EnvOptions (..)
-  , envOptions
   , envParser
   ) where
 
@@ -20,9 +19,6 @@ instance HasGitHubToken EnvOptions where
 
 instance HasGitHubOutput EnvOptions where
   githubOutputL = lens (.githubOutput) $ \x y -> x {githubOutput = y}
-
-envOptions :: IO EnvOptions
-envOptions = Env.parse id envParser
 
 envParser :: Env.Parser Env.Error EnvOptions
 envParser =

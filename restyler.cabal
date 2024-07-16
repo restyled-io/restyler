@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4816b3b2f708de9c5b9210760ff40bd8223aa1c4df1d8d0f4244bfbc4f4e045a
+-- hash: 13ec437971b51c682b4c742c583799422409fef512acb0064465351b3cb5fdde
 
 name:           restyler
 version:        0.2.0.0
@@ -44,7 +44,6 @@ library
       Restyler.GitHub.PullRequest
       Restyler.GitHub.PullRequest.File
       Restyler.GitHub.Repository
-      Restyler.GitHubTokenOption
       Restyler.HostDirectoryOption
       Restyler.Ignore
       Restyler.ImageCleanupOption
@@ -58,7 +57,6 @@ library
       Restyler.Prelude
       Restyler.PullRequest
       Restyler.PullRequest.Status
-      Restyler.PullRequestOption
       Restyler.PullRequestSpec
       Restyler.ReadP
       Restyler.RemoteFile
@@ -231,6 +229,48 @@ executable restyle-path
   build-depends:
       base
     , envparse
+    , restyler
+  default-language: Haskell2010
+
+executable restyler
+  main-is: main.hs
+  other-modules:
+      Paths_restyler
+  hs-source-dirs:
+      app
+  default-extensions:
+      BangPatterns
+      DataKinds
+      DeriveAnyClass
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      LambdaCase
+      MultiParamTypeClasses
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      OverloadedStrings
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TypeApplications
+      TypeFamilies
+      DerivingVia
+      DuplicateRecordFields
+      ImportQualifiedPost
+      OverloadedRecordDot
+  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , github
     , restyler
   default-language: Haskell2010
 

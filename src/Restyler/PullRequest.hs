@@ -9,7 +9,6 @@ module Restyler.PullRequest
   , pullRequestRepoName
   , pullRequestRepoPublic
   , pullRequestUserLogin
-  , pullRequestCloneUrl
   , pullRequestCloneUrlToken
   , pullRequestIssueId
   , pullRequestIsClosed
@@ -41,16 +40,6 @@ pullRequestRepoPublic = not . repoPrivate . pullRequestRepo
 
 pullRequestUserLogin :: PullRequest -> Name User
 pullRequestUserLogin = simpleUserLogin . pullRequestUser
-
--- | Clone URL appropriate to output in a message
---
--- This is a URL that will work if you are otherwised authorized to clone the
--- repository (e.g.) you have an SSH key.
-pullRequestCloneUrl :: HasCallStack => PullRequest -> URL
-pullRequestCloneUrl =
-  fromMaybe (error "Pull Request without clone URL")
-    . repoCloneUrl
-    . pullRequestRepo
 
 -- | Clone URL using the given Access Token
 pullRequestCloneUrlToken :: HasCallStack => Text -> PullRequest -> Text
