@@ -1,6 +1,7 @@
 module Restyler.Opt
   ( -- * Domain options
     PullRequestOption (..)
+  , readPullRequest
   , optPullRequest
   , URL
   , optJobURL
@@ -24,9 +25,10 @@ data PullRequestOption = PullRequestOption
   { repo :: Repository
   , number :: Int
   }
+  deriving stock (Eq, Show)
 
-readPR :: String -> Either String PullRequestOption
-readPR =
+readPullRequest :: String -> Either String PullRequestOption
+readPullRequest =
   parseReadP
     $ PullRequestOption
     <$> ( Repository
@@ -37,7 +39,7 @@ readPR =
 
 optPullRequest :: Parser PullRequestOption
 optPullRequest =
-  option (eitherReader readPR)
+  option (eitherReader readPullRequest)
     $ long "pr"
     <> metavar "OWNER/REPO#NUMBER"
     <> help "Pull Request to restyler"

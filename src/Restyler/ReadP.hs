@@ -29,8 +29,8 @@ charsTill1 c = do
   as <- many1 (satisfy (/= c))
   as <$ char c
 
-digits :: ReadP Int
-digits = Unsafe.read <$> many1 (satisfy isDigit)
-
 word :: ReadP String
 word = many1 $ satisfy $ not . isSpace
+
+digits :: ReadP Int
+digits = Unsafe.read <$> many1 (satisfy isDigit)
