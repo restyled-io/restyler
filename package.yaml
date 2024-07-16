@@ -128,27 +128,27 @@ executables:
       - envparse
       - restyler
 
-# tests:
-#   test:
-#     main: Spec.hs
-#     source-dirs: test
-#     dependencies:
-#       - Blammo
-#       - QuickCheck
-#       - aeson
-#       - containers
-#       - directory
-#       - envparse
-#       - extra
-#       - filepath
-#       - github
-#       - hspec
-#       - hspec-core
-#       - hspec-expectations-lifted
-#       - lens-aeson
-#       - load-env
-#       - restyler
-#       - shakespeare
-#       - text
-#       - unliftio
-#       - yaml
+tests:
+  test:
+    main: Spec.hs
+    source-dirs: test
+    dependencies:
+      - Blammo
+      - QuickCheck
+      - aeson
+      - containers
+      - directory
+      - envparse
+      - extra
+      - filepath
+      - github
+      - hspec
+      - hspec-core
+      - hspec-expectations-lifted
+      - lens-aeson
+      - load-env
+      - restyler
+      - shakespeare
+      - text
+      - unliftio
+      - yaml

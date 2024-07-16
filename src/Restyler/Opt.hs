@@ -18,24 +18,22 @@ import Restyler.Prelude hiding (URL (..))
 import Network.URI (URI, parseAbsoluteURI)
 import Options.Applicative
 import Restyler.GitHub.Repository
+import Restyler.ReadP
 
 data PullRequestOption = PullRequestOption
   { repo :: Repository
   , number :: Int
   }
 
--- | TODO @owner/repo#number@
 readPR :: String -> Either String PullRequestOption
-readPR _ =
-  Right
+readPR =
+  parseReadP
     $ PullRequestOption
-      { repo =
-          Repository
-            { owner = "restyled-io"
-            , repo = "restyler"
-            }
-      , number = 235
-      }
+    <$> ( Repository
+            <$> textTill1 '/'
+            <*> textTill1 '#'
+        )
+    <*> digits
 
 optPullRequest :: Parser PullRequestOption
 optPullRequest =

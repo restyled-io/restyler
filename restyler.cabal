@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 743079dce8918ba02a6a99e1fd94045781b73ce14d0e9c9317b6b178dfd69517
+-- hash: 7cfd7e90772a609bd28720611a178f529f65197714b3443f7e931cf97e93ae6b
 
 name:           restyler
 version:        0.2.0.0
@@ -60,6 +60,7 @@ library
       Restyler.PullRequest.Status
       Restyler.PullRequestOption
       Restyler.PullRequestSpec
+      Restyler.ReadP
       Restyler.RemoteFile
       Restyler.RepositoryOption
       Restyler.Restrictions
@@ -232,4 +233,79 @@ executable restyle-path
       base
     , envparse
     , restyler
+  default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Restyler.CommitTemplateSpec
+      Restyler.Config.ExpectedKeysSpec
+      Restyler.Config.IncludeSpec
+      Restyler.Config.InterpreterSpec
+      Restyler.ConfigSpec
+      Restyler.DelimitedSpec
+      Restyler.IgnoreSpec
+      Restyler.PullRequestSpecSpec
+      Restyler.RestrictionsSpec
+      Restyler.Restyler.RunSpec
+      Restyler.RestylerSpec
+      Restyler.Test.FS
+      Restyler.WikiSpec
+      Restyler.Yaml.ErrataSpec
+      SpecHelper
+      Paths_restyler
+  hs-source-dirs:
+      test
+  default-extensions:
+      BangPatterns
+      DataKinds
+      DeriveAnyClass
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      LambdaCase
+      MultiParamTypeClasses
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      OverloadedStrings
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TypeApplications
+      TypeFamilies
+      DerivingVia
+      DuplicateRecordFields
+      ImportQualifiedPost
+      OverloadedRecordDot
+  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
+  build-depends:
+      Blammo
+    , QuickCheck
+    , aeson
+    , base
+    , containers
+    , directory
+    , envparse
+    , extra
+    , filepath
+    , github
+    , hspec
+    , hspec-core
+    , hspec-expectations-lifted
+    , lens-aeson
+    , load-env
+    , restyler
+    , shakespeare
+    , text
+    , unliftio
+    , yaml
   default-language: Haskell2010

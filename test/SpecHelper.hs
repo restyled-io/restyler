@@ -62,17 +62,14 @@ data TestApp = TestApp
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
-instance HasOptions TestApp where
-  optionsL = lens taOptions $ \x y -> x {taOptions = y}
-
 instance HasHostDirectoryOption TestApp where
-  getHostDirectoryOption x = x ^. optionsL . to getHostDirectory
+  getHostDirectoryOption = getHostDirectoryOption . taOptions
 
 instance HasImageCleanupOption TestApp where
-  imageCleanupOptionL = optionsL . imageCleanupOptionL
+  getImageCleanupOption = getImageCleanupOption . taOptions
 
 instance HasRestrictions TestApp where
-  restrictionsL = optionsL . restrictionsL
+  getRestrictions = getRestrictions . taOptions
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}

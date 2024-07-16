@@ -52,10 +52,10 @@ envRestrictions =
       noRestrictions
       "UNRESTRICTED"
       (Env.help "Run restylers without CPU or Memory restrictions")
-    <*> parseOverrides
+    <*> envOverrides
 
-parseOverrides :: Env.Parser Env.Error Restrictions
-parseOverrides =
+envOverrides :: Env.Parser Env.Error Restrictions
+envOverrides =
   Env.prefixed "RESTYLER_"
     $ Restrictions
     <$> ( fmap not
@@ -96,9 +96,54 @@ parseOverrides =
         name
         (Env.def Nothing <> Env.help h)
 
--- TODO
 optRestrictions :: Parser Restrictions
-optRestrictions = pure mempty
+optRestrictions =
+  (<>)
+    <$> flag
+      fullRestrictions
+      noRestrictions
+      (long "unrestricted" <> help "Run restylers without CPU or Memory restrictions")
+    <*> optOverrides
+
+optOverrides :: Parser Restrictions
+optOverrides =
+  Restrictions
+    <$> ( fmap not
+            <$> lastSwitch
+              "no-net-none"
+              "Run restylers without --net=none"
+        )
+    <*> ( fmap not
+            <$> lastSwitch
+              "no-cap-drop-all"
+              "Run restylers without --cap-drop=all"
+        )
+    <*> lastReader
+      readNat
+      "cpu-shares"
+      "Run restylers with --cpu-shares=<number>"
+    <*> lastReader
+      readBytes
+      "memory"
+      "Run restylers with --memory=<number>[b|k|m|g]"
+ where
+  lastSwitch
+    :: String
+    -> String
+    -> Parser (Last Bool)
+  lastSwitch name h =
+    Last <$> flag Nothing (Just True) (long name <> help h)
+
+  lastReader
+    :: (String -> Either String a)
+    -> String
+    -> String
+    -> Parser (Last a)
+  lastReader r name h =
+    Last
+      <$> option
+        (eitherReader $ second Just . r)
+        (long ("restrict-" <> name) <> help h <> value Nothing)
 
 fullRestrictions :: Restrictions
 fullRestrictions =
