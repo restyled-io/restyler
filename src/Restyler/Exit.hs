@@ -71,9 +71,7 @@ handleResult = \case
 
     Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
 
-    logError
-      $ ("Exception:\n" <> pack (displayException ex))
-      :# ["error" .= md]
+    logErrorMetadata md
 
     errorMetadataExitCode md
       <$ errorPullRequest (errorMetadataDescription md)

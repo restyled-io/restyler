@@ -72,11 +72,14 @@ library:
     - file-embed
     - filepath
     - github
+    - http-client
     - http-client-tls
     - http-conduit
+    - http-types
     - megaparsec
     - microlens
     - microlens-mtl
+    - monad-logger-aeson
     - network-uri
     - optparse-applicative
     - process
@@ -126,6 +129,7 @@ executables:
     dependencies:
       - envparse
       - restyler
+      - unliftio
 
 tests:
   test:

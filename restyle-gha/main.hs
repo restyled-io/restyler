@@ -7,6 +7,7 @@ import Restyler.Prelude
 import Env qualified
 import Restyler.App (AppT, runAppT)
 import Restyler.Commands.RestyleGHA
+import Restyler.ErrorMetadata
 import Restyler.GHA
 import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.GitHub.Api
@@ -23,6 +24,7 @@ import Restyler.Options.RestyleLocal
   )
 import Restyler.Options.RestyleLocal qualified as RestyleLocal
 import Restyler.Restrictions
+import UnliftIO.Exception (catchAny)
 
 data App = App
   { logger :: Logger
@@ -75,4 +77,6 @@ main = do
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     let app = App {logger = logger, env = env, options = options}
-    void $ runAppT app $ run pr.repo pr.number
+    void $ runAppT app $ do
+      run pr.repo pr.number `catchAny` \ex -> do
+        logErrorMetadataAndExit $ errorMetadata ex
