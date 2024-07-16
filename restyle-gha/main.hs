@@ -5,9 +5,9 @@ module Main
 import Restyler.Prelude
 
 import Env qualified
-import Restyler.App (AppT, runAppT)
+import Restyler.App (AppT)
+import Restyler.CLI qualified as CLI
 import Restyler.Commands.RestyleGHA
-import Restyler.ErrorMetadata
 import Restyler.GHA
 import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.GitHub.Api
@@ -15,6 +15,7 @@ import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
 import Restyler.LogSettingsOption
 import Restyler.ManifestOption
+import Restyler.Opt (PullRequestOption)
 import Restyler.Opt qualified as Opt
 import Restyler.Options.RestyleGHA
 import Restyler.Options.RestyleLocal
@@ -24,12 +25,12 @@ import Restyler.Options.RestyleLocal
   )
 import Restyler.Options.RestyleLocal qualified as RestyleLocal
 import Restyler.Restrictions
-import UnliftIO.Exception (catchAny)
 
 data App = App
   { logger :: Logger
   , env :: EnvOptions
   , options :: Options
+  , pullRequest :: PullRequestOption
   }
   deriving (HasHostDirectoryOption) via (ThroughOptions App)
   deriving (HasImageCleanupOption) via (ThroughOptions App)
@@ -56,11 +57,8 @@ deriving via
   instance
     MonadUnliftIO m => MonadGit (AppT App m)
 
-main :: IO ()
-main = do
-  hSetBuffering stdout LineBuffering
-  hSetBuffering stderr LineBuffering
-
+withApp :: (App -> IO a) -> IO a
+withApp f = do
   (env, envLocal) <-
     Env.parse id
       $ (,)
@@ -76,7 +74,9 @@ main = do
   let options = envLocal <> optLocal
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
-    let app = App {logger = logger, env = env, options = options}
-    void $ runAppT app $ do
-      run pr.repo pr.number `catchAny` \ex -> do
-        logErrorMetadataAndExit $ errorMetadata ex
+    f $ App {logger = logger, env = env, options = options, pullRequest = pr}
+
+main :: IO ()
+main = CLI.main withApp $ do
+  pr <- asks (.pullRequest)
+  void $ run pr.repo pr.number
