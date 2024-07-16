@@ -29,7 +29,6 @@ data PullRequest = PullRequest
   , labels :: [Label]
   , head :: Commit
   , base :: Commit
-  , draft :: Bool
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)

@@ -46,7 +46,7 @@ pullRequestFileStatusFromText = \case
   "copied" -> Right PullRequestFileCopied
   "changed" -> Right PullRequestFileChanged
   "unchanged" -> Right PullRequestFileUnchanged
-  x -> Left $ "Invalid status " <> show x
+  x -> Left $ "Unexpected file status " <> show x
 
 pullRequestFileStatusToText :: PullRequestFileStatus -> Text
 pullRequestFileStatusToText = \case

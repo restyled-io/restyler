@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 13ec437971b51c682b4c742c583799422409fef512acb0064465351b3cb5fdde
+-- hash: ec637a44a4458c09c9ce6e401406f7c54096ef9fdd69bb6379aea898acba7a23
 
 name:           restyler
 version:        0.2.0.0
@@ -128,7 +128,6 @@ library
     , github
     , http-client-tls
     , http-conduit
-    , http-types
     , megaparsec
     , microlens
     , microlens-mtl
