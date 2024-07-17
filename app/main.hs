@@ -23,7 +23,7 @@ main = do
     withExitHandler logger statsClient options $ do
       withSystemTempDirectory "restyler-" $ \path -> do
         app <- bootstrapApp options logger path statsClient
-        runAppT app restylerMain
+        runAppT app Job.run
 
   runLoggerLoggingT logger
     $ logInfo
@@ -31,27 +31,3 @@ main = do
     :# ["exitCode" .= exitCodeInt ec]
 
   exitWith ec
-
--- Wrap in statsd
--- Wrap in error-handling
---
--- Check repo disabled
--- Check plan restriction
--- Clone
---
--- RestyleGHA.run
---
--- If differences:
---   Log git patch first
---
---   if auto
---      if Fork -> nope
---      else push
---   else
---      if Fork -> nope
---      else create-or-update PR
--- Else:
---   clean up PR
---
---
--- Emit PR statuses

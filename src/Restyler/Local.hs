@@ -14,8 +14,8 @@ import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git (MonadGit)
 import Restyler.GitHub.PullRequest
-import Restyler.Options.HostDirectory
 import Restyler.Ignore
+import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
 import Restyler.Restrictions
@@ -58,7 +58,7 @@ run
      )
   => pr
   -> [FilePath]
-  -> m RestyleResult
+  -> m (RestyleResult pr)
 run pr paths = do
   config <- loadConfig
   logDebug $ "Config" :# objectToPairs config
@@ -69,7 +69,7 @@ run pr paths = do
       (_, PullRequestClosed) -> pure RestyleSkippedClosed
       (_, PullRequestOpen) -> do
         maybe
-          (Restyled <$> runRestylers config paths)
+          (Restyled pr <$> runRestylers config paths)
           (pure . RestyleSkippedIgnored)
           $ getIgnoredReason' config (getAuthor pr) (getBaseRef pr)
           $ getLabelNames pr

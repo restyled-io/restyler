@@ -4,7 +4,6 @@ module Restyler.App
   ( AppT
   , runAppT
   , App (..)
-  , StartupApp (..)
   , bootstrapApp
 
     -- * App's implementation, exposed for use outside of AppT
@@ -24,13 +23,11 @@ import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import Relude qualified as Prelude
 import Restyler.App.Class
-import Restyler.Config
 import Restyler.Git
 import Restyler.Options
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
-import Restyler.PullRequest
 import Restyler.Restrictions
 import Restyler.Setup
 import Restyler.Statsd (HasStatsClient (..), StatsClient)
@@ -202,70 +199,37 @@ runGitHubInternal req = do
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT (unAppT f) app
 
-data StartupApp = StartupApp
+data App = App
   { appLogger :: Logger
   , appOptions :: Options
   , appWorkingDirectory :: FilePath
   , appStatsClient :: StatsClient
   }
 
-instance HasLogger StartupApp where
+instance HasLogger App where
   loggerL = lens appLogger $ \x y -> x {appLogger = y}
 
-instance HasOptions StartupApp where
+instance HasOptions App where
   optionsL = lens appOptions $ \x y -> x {appOptions = y}
 
-instance HasManifestOption StartupApp where
+instance HasManifestOption App where
   getManifestOption = getManifestOption . appOptions
 
-instance HasHostDirectoryOption StartupApp where
+instance HasHostDirectoryOption App where
   getHostDirectoryOption = getHostDirectoryOption . appOptions
 
-instance HasImageCleanupOption StartupApp where
+instance HasImageCleanupOption App where
   getImageCleanupOption = getImageCleanupOption . appOptions
 
-instance HasRestrictions StartupApp where
+instance HasRestrictions App where
   getRestrictions = getRestrictions . appOptions
 
-instance HasWorkingDirectory StartupApp where
+instance HasWorkingDirectory App where
   workingDirectoryL =
     lens appWorkingDirectory $ \x y -> x {appWorkingDirectory = y}
 
-instance HasStatsClient StartupApp where
+instance HasStatsClient App where
   statsClientL = lens appStatsClient $ \x y -> x {appStatsClient = y}
-
-data App = App
-  { appApp :: StartupApp
-  , appConfig :: Config
-  , appPullRequest :: PullRequest
-  }
-
-appL :: Lens' App StartupApp
-appL = lens appApp $ \x y -> x {appApp = y}
-
-instance HasLogger App where
-  loggerL = appL . loggerL
-
-instance HasOptions App where
-  optionsL = appL . optionsL
-
-instance HasHostDirectoryOption App where
-  getHostDirectoryOption = getHostDirectoryOption . appApp
-
-instance HasImageCleanupOption App where
-  getImageCleanupOption = getImageCleanupOption . appApp
-
-instance HasRestrictions App where
-  getRestrictions = getRestrictions . appApp
-
-instance HasWorkingDirectory App where
-  workingDirectoryL = appL . workingDirectoryL
-
-instance HasConfig App where
-  configL = lens appConfig $ \x y -> x {appConfig = y}
-
-instance HasPullRequest App where
-  pullRequestL = lens appPullRequest $ \x y -> x {appPullRequest = y}
 
 bootstrapApp
   :: MonadUnliftIO m
@@ -274,15 +238,16 @@ bootstrapApp
   -> FilePath
   -> StatsClient
   -> m App
-bootstrapApp options logger path statsClient =
-  runAppT app $ toApp <$> restylerSetup
- where
-  app =
-    StartupApp
-      { appLogger = logger
-      , appOptions = options
-      , appWorkingDirectory = path
-      , appStatsClient = statsClient
-      }
-  toApp (pullRequest, config) =
-    App {appApp = app, appPullRequest = pullRequest, appConfig = config}
+bootstrapApp options logger path statsClient = do
+  let app =
+        App
+          { appLogger = logger
+          , appOptions = options
+          , appWorkingDirectory = path
+          , appStatsClient = statsClient
+          }
+
+  -- Move into run
+  runAppT app restylerSetup
+
+  pure app

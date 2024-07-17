@@ -14,18 +14,18 @@ import Restyler.Ignore
 import Restyler.Restyler
 import Restyler.RestylerResult
 
-data RestyleResult
+data RestyleResult pr
   = RestyleSkippedDisabled
   | RestyleSkippedClosed
   | RestyleSkippedIgnored IgnoredReason
-  | Restyled [RestylerResult]
+  | Restyled pr [RestylerResult]
 
-logRestyleResult :: MonadLogger m => RestyleResult -> m ()
+logRestyleResult :: MonadLogger m => RestyleResult pr -> m ()
 logRestyleResult = \case
   RestyleSkippedDisabled -> logInfo $ "Restyle skipped" :# ["reason" .= t "disabled"]
   RestyleSkippedClosed -> logInfo $ "Restyle skipped" :# ["reason" .= t "closed"]
   RestyleSkippedIgnored reason -> logInfo $ "Restyle skipped" :# ["reason" .= show @Text reason]
-  Restyled results -> traverse_ logRestylerResult results
+  Restyled _ results -> traverse_ logRestylerResult results
 
 logRestylerResult :: MonadLogger m => RestylerResult -> m ()
 logRestylerResult RestylerResult {..} =
@@ -42,10 +42,10 @@ logRestylerResult RestylerResult {..} =
 setRestylerResultOutputs
   :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
   => PullRequest
-  -> RestyleResult
+  -> RestyleResult pr
   -> m ()
 setRestylerResultOutputs pr = \case
-  Restyled results
+  Restyled _ results
     | any restylerCommittedChanges results ->
         appendGitHubOutput
           $ unlines

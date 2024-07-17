@@ -8,6 +8,7 @@ import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
 import Restyler.GHA.Output
 import Restyler.Git (MonadGit)
 import Restyler.GitHub.Api
+import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
 import Restyler.Local qualified as Local
@@ -35,7 +36,7 @@ run
      )
   => Repository
   -> Int
-  -> m RestyleResult
+  -> m (RestyleResult PullRequest)
 run repo pr = do
   pullRequest <- getPullRequest repo pr
   logInfo $ "Handling PR" :# objectToPairs pullRequest

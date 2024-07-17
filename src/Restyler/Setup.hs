@@ -8,16 +8,12 @@ module Restyler.Setup
 
 import Restyler.Prelude
 
-import GitHub.Endpoints.PullRequests
 import Restyler.App.Class
-import Restyler.Config
 import Restyler.Git
-import Restyler.Ignore
-import Restyler.Options.Manifest
-import Restyler.Options
-import Restyler.PullRequest
-import Restyler.PullRequest.Status
-import Restyler.RestyledPullRequest
+import Restyler.GitHub.Api
+import Restyler.GitHub.Repository
+import Restyler.JobEnv
+import Restyler.Options.PullRequest
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
 import Restyler.Wiki qualified as Wiki
@@ -43,89 +39,42 @@ restylerSetup
      , MonadSystem m
      , MonadExit m
      , MonadProcess m
-     , MonadGitHub m
-     , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
-     , HasManifestOption env
-     , HasWorkingDirectory env
      , HasStatsClient env
+     , HasGitHubToken env
+     , HasWorkingDirectory env
      )
-  => m (PullRequest, Config)
-restylerSetup = do
-  Options {..} <- view optionsL
-
-  logInfo
-    $ "Restyler started"
-    :# ["owner" .= oOwner, "repo" .= oRepo, "pull" .= oPullRequest]
-
-  when oRepoDisabled
+  => JobEnv
+  -> PullRequestOption
+  -> m ()
+restylerSetup env pr = do
+  when env.repoDisabled
     $ exitWithInfo
     $ fromString
     $ "This repository has been disabled for possible abuse."
     <> " If you believe this is an error, please reach out to"
     <> " support@restyled.io"
 
-  pullRequest <- runGitHub $ pullRequestR oOwner oRepo oPullRequest
-
-  let author = pullRequestUserLogin pullRequest
-
-  when (author == "pull[bot]") $ do
-    let status = SkippedStatus "Ignore pull[bot]" oJobUrl
-    createHeadShaStatus pullRequest status
-    exitWithInfo "Ignoring pull[bot] Pull Request"
-
-  when (author == "restyled-io[bot]") $ do
-    let status = SkippedStatus "Ignore restyled-io[bot]" oJobUrl
-    createHeadShaStatus pullRequest status
-    exitWithInfo "Ignoring Restyled Pull Request"
-
-  when (pullRequestIsClosed pullRequest) $ do
-    mRestyledPullRequest <- findRestyledPullRequest pullRequest
-    traverse_ closeRestyledPullRequest mRestyledPullRequest
-    exitWithInfo "Source Pull Request is closed"
-
-  for_ oPlanRestriction $ \planRestriction -> do
-    throwIO $ PlanUpgradeRequired planRestriction oPlanUpgradeUrl
+  for_ env.planRestriction $ \planRestriction -> do
+    throwIO $ PlanUpgradeRequired planRestriction env.planUpgradeUrl
 
   logInfo "Cloning repository"
-  wrapClone $ setupClone pullRequest
-
-  config <- loadConfig
-  logDebug $ "Resolved configuration" :# ["config" .= config]
-  unless (cEnabled config) $ exitWithInfo "Restyler disabled by config"
-
-  mIgnoredReason <- getIgnoredReason config pullRequest
-  for_ mIgnoredReason $ \reason -> do
-    let
-      item = case reason of
-        IgnoredByAuthor {} -> "author"
-        IgnoredByBranch {} -> "branch"
-        IgnoredByLabels {} -> "labels"
-      status = SkippedStatus ("Ignore " <> item) oJobUrl
-    sendPullRequestStatus' config pullRequest status
-    exitWithInfo $ "Ignoring PR" :# ["reason" .= show @Text reason]
-
-  pure (pullRequest, config)
-
-setupClone
-  :: ( HasCallStack
-     , MonadSystem m
-     , MonadProcess m
-     , MonadReader env m
-     , HasOptions env
-     , HasWorkingDirectory env
-     )
-  => PullRequest
-  -> m ()
-setupClone pullRequest = do
+  token <- view githubTokenL
   dir <- view workingDirectoryL
-  token <- oAccessToken <$> view optionsL
-  gitCloneBranchByRef
-    (unpack $ pullRequestRemoteHeadRef pullRequest)
-    (unpack $ pullRequestLocalHeadRef pullRequest)
-    (unpack $ pullRequestCloneUrlToken token pullRequest)
-    dir
+  wrapClone
+    $ gitCloneBranchByRef
+      ("pull/" <> show pr.number <> "/head")
+      ("pull-" <> show pr.number)
+      ( unpack
+          $ "https://x-access-token:"
+          <> unGitHubToken token
+          <> "@github.com/"
+          <> pr.repo.owner
+          <> "/"
+          <> pr.repo.repo
+          <> ".git"
+      )
+      dir
 
 newtype CloneTimeoutError = CloneTimeoutError
   { cloneTimeoutDurationMinutes :: Int
