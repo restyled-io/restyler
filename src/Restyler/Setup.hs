@@ -13,7 +13,7 @@ import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
 import Restyler.Ignore
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status

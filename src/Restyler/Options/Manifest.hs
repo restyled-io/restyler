@@ -1,4 +1,4 @@
-module Restyler.ManifestOption
+module Restyler.Options.Manifest
   ( ManifestOption (..)
   , HasManifestOption (..)
   , getManifest

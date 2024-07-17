@@ -14,7 +14,7 @@ import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.Restrictions
 import Restyler.RestyleResult
 

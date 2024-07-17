@@ -1,6 +1,7 @@
-module Restyler.Options.RestyleGHA
-  ( EnvOptions (..)
-  , envParser
+-- | Environment variables available on GitHub Actions
+module Restyler.GitHubEnv
+  ( GitHubEnv (..)
+  , githubEnvParser
   ) where
 
 import Restyler.Prelude
@@ -9,19 +10,19 @@ import Env qualified
 import Restyler.GHA
 import Restyler.GitHub.Api (GitHubToken, HasGitHubToken (..), envGitHubToken)
 
-data EnvOptions = EnvOptions
-  { githubToken :: GitHubToken
-  , githubOutput :: GitHubOutput
+data GitHubEnv = GitHubEnv
+  { token :: GitHubToken
+  , output :: GitHubOutput
   }
 
-instance HasGitHubToken EnvOptions where
+instance HasGitHubToken GitHubEnv where
   githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
 
-instance HasGitHubOutput EnvOptions where
+instance HasGitHubOutput GitHubEnv where
   githubOutputL = lens (.githubOutput) $ \x y -> x {githubOutput = y}
 
-envParser :: Env.Parser Env.Error EnvOptions
-envParser =
-  EnvOptions
+githubEnvParser :: Env.Parser Env.Error GitHubEnv
+githubEnvParser =
+  GitHubEnv
     <$> envGitHubToken
     <*> envGitHubOutput

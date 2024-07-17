@@ -1,4 +1,4 @@
-module Restyler.HostDirectoryOption
+module Restyler.Options.HostDirectory
   ( HostDirectoryOption (..)
   , HasHostDirectoryOption (..)
   , getHostDirectory

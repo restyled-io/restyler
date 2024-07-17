@@ -12,7 +12,7 @@ import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.PullRequestSpec
 import Restyler.Restrictions
 

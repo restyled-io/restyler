@@ -28,7 +28,7 @@ import Restyler.Config
 import Restyler.Git
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.Restrictions

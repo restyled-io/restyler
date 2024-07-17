@@ -1,4 +1,4 @@
-module Restyler.ImageCleanupOption
+module Restyler.Options.ImageCleanup
   ( ImageCleanupOption (..)
   , HasImageCleanupOption (..)
   , getImageCleanup

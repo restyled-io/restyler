@@ -1,5 +1,5 @@
 -- | @restyle PATH [PATH...]@
-module Restyler.Commands.RestyleLocal
+module Restyler.Local
   ( NullPullRequest (..)
   , run
   ) where
@@ -17,12 +17,12 @@ import Restyler.GitHub.PullRequest
 import Restyler.HostDirectoryOption
 import Restyler.Ignore
 import Restyler.ImageCleanupOption
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.Restrictions
 import Restyler.RestyleResult
 import Restyler.Restyler.Run
 
--- | A 'PullRequest'-like object designed to never match the statue or ignore
+-- | A 'PullRequest'-like object designed to never match the state or ignore
 -- checks we do here when running against a real PR.
 data NullPullRequest = NullPullRequest
 

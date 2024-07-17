@@ -18,7 +18,7 @@ import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.RemoteFile
 
 data Restyler = Restyler

@@ -1,4 +1,4 @@
-module Restyler.LogSettingsOption
+module Restyler.Options.LogSettings
   ( LogSettingsOption (..)
   , resolveLogSettings
   , envLogSettingsOption

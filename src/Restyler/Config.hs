@@ -58,7 +58,7 @@ import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler

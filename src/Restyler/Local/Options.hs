@@ -1,4 +1,4 @@
-module Restyler.Options.RestyleLocal
+module Restyler.Local.Options
   ( Options (..)
   , HasOptions (..)
   , envParser
@@ -16,7 +16,7 @@ import Options.Applicative
 import Restyler.HostDirectoryOption
 import Restyler.ImageCleanupOption
 import Restyler.LogSettingsOption
-import Restyler.ManifestOption
+import Restyler.Options.Manifest
 import Restyler.Restrictions
 
 data Options = Options
