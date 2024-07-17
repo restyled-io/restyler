@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE NoFieldSelectors #-}
 
 module Restyler.GitHub.Api
   ( -- * Domain-specific constructs
@@ -138,7 +139,7 @@ class Monad m => MonadGitHub m where
     -> m (Either GitHub.Error (Vector GitHub.File))
 
 newtype GitHubToken = GitHubToken
-  { unGitHubToken :: Text
+  { unwrap :: Text
   }
   deriving newtype (IsString)
 
@@ -148,13 +149,13 @@ envGitHubToken =
     $ Env.help "GitHub token with access to the repo and PR"
 
 githubTokenGitHubAuth :: GitHubToken -> GitHub.Auth
-githubTokenGitHubAuth = GitHub.OAuth . encodeUtf8 . unGitHubToken
+githubTokenGitHubAuth = GitHub.OAuth . encodeUtf8 . (.unwrap)
 
-class HasGitHubToken env where
-  githubTokenL :: Lens' env GitHubToken
+class HasGitHubToken a where
+  getGitHubToken :: a -> GitHubToken
 
 instance HasGitHubToken GitHubToken where
-  githubTokenL = id
+  getGitHubToken = id
 
 newtype ActualGitHub m a = ActualGitHub
   { unwrap :: m a
@@ -186,5 +187,5 @@ runGitHub
   => req
   -> m b
 runGitHub req = do
-  auth <- view $ githubTokenL . to githubTokenGitHubAuth
+  auth <- asks $ githubTokenGitHubAuth . getGitHubToken
   liftIO $ github auth req

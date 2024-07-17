@@ -73,7 +73,6 @@ library:
     - filepath
     - github
     - http-client
-    - http-client-tls
     - http-conduit
     - http-types
     - megaparsec
@@ -104,7 +103,6 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - github
       - restyler
   restyle-path:
     main: main.hs

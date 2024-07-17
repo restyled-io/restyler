@@ -35,17 +35,14 @@ data App = App
 instance HasOptions App where
   getOptions = (.options)
 
-githubEnvL :: Lens' App GitHubEnv
-githubEnvL = lens (.githubEnv) $ \x y -> x {githubEnv = y}
-
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
 
 instance HasGitHubToken App where
-  githubTokenL = githubEnvL . githubTokenL
+  getGitHubToken = getGitHubToken . (.githubEnv)
 
 instance HasGitHubOutput App where
-  githubOutputL = githubEnvL . githubOutputL
+  getGitHubOutput = getGitHubOutput . (.githubEnv)
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do

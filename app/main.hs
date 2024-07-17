@@ -4,30 +4,22 @@ module Main
 
 import Restyler.Prelude
 
-import GitHub.Data (toPathPart)
-import Restyler.App
-import Restyler.Exit
-import Restyler.Main
-import Restyler.Options
-import Restyler.Statsd (withStatsClient)
+import Restyler.CLI qualified as CLI
+import Restyler.Job
+import Restyler.Job.App
 
 main :: IO ()
-main = do
-  hSetBuffering stdout LineBuffering
-  hSetBuffering stderr LineBuffering
-  options@Options {..} <- parseOptions
-  logger <- newLogger oLogSettings
-  let tags = [("repo", toPathPart oOwner <> "/" <> toPathPart oRepo)]
+main = CLI.main withApp $ do
+  jobUrl <- asks (.jobUrl)
+  pr <- asks (.pullRequest)
+  void $ run jobUrl pr
 
-  ec <- withStatsClient oStatsdHost oStatsdPort tags $ \statsClient -> do
-    withExitHandler logger statsClient options $ do
-      withSystemTempDirectory "restyler-" $ \path -> do
-        app <- bootstrapApp options logger path statsClient
-        runAppT app Job.run
+-- TODO
+-- withExitHandler logger statsClient options $ do
+--
+-- runLoggerLoggingT logger
+--   $ logInfo
+--   $ "Restyler done"
+--   :# ["exitCode" .= exitCodeInt ec]
 
-  runLoggerLoggingT logger
-    $ logInfo
-    $ "Restyler done"
-    :# ["exitCode" .= exitCodeInt ec]
-
-  exitWith ec
+-- exitWith ec

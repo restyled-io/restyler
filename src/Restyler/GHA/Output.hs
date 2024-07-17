@@ -1,21 +1,24 @@
 module Restyler.GHA.Output
-  ( GitHubOutput (..)
+  ( GitHubOutput
   , envGitHubOutput
   , HasGitHubOutput (..)
   , appendGitHubOutput
+
+    -- * @DerivingVia@
+  , NullGitHubOutput (..)
   ) where
 
 import Restyler.Prelude
 
 import Env qualified
 
-newtype GitHubOutput = GitHubOutput
-  { unwrap :: FilePath
-  }
-  deriving newtype (IsString)
+data GitHubOutput = GitHubOutputNull | GitHubOutput FilePath
 
-class HasGitHubOutput env where
-  githubOutputL :: Lens' env GitHubOutput
+instance IsString GitHubOutput where
+  fromString = GitHubOutput
+
+class HasGitHubOutput a where
+  getGitHubOutput :: a -> GitHubOutput
 
 envGitHubOutput :: Env.Parser Env.Error GitHubOutput
 envGitHubOutput = Env.var Env.nonempty "GITHUB_OUTPUT" mempty
@@ -25,5 +28,12 @@ appendGitHubOutput
   => Text
   -> m ()
 appendGitHubOutput x = do
-  path <- view githubOutputL
-  liftIO $ appendFileText path.unwrap x
+  gho <- asks getGitHubOutput
+  case gho of
+    GitHubOutputNull -> pure ()
+    GitHubOutput path -> liftIO $ appendFileText path x
+
+newtype NullGitHubOutput a = NullGitHubOutput a
+
+instance HasGitHubOutput (NullGitHubOutput a) where
+  getGitHubOutput = const GitHubOutputNull

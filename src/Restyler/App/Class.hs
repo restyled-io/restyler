@@ -1,6 +1,5 @@
 module Restyler.App.Class
-  ( HasWorkingDirectory (..)
-  , MonadSystem (..)
+  ( MonadSystem (..)
   , MonadExit (..)
   , exitWithInfo
   , MonadProcess (..)
@@ -25,9 +24,6 @@ import GitHub.Data.Request
 import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)
 import GitHub.Request
 import Restyler.PullRequest
-
-class HasWorkingDirectory env where
-  workingDirectoryL :: Lens' env FilePath
 
 class Monad m => MonadSystem m where
   getCurrentDirectory :: m FilePath

@@ -41,13 +41,12 @@ restylerSetup
      , MonadProcess m
      , MonadReader env m
      , HasStatsClient env
-     , HasGitHubToken env
-     , HasWorkingDirectory env
+     , HasJobEnv env
      )
-  => JobEnv
-  -> PullRequestOption
+  => PullRequestOption
   -> m ()
-restylerSetup env pr = do
+restylerSetup pr = do
+  env <- asks getJobEnv
   when env.repoDisabled
     $ exitWithInfo
     $ fromString
@@ -59,22 +58,20 @@ restylerSetup env pr = do
     throwIO $ PlanUpgradeRequired planRestriction env.planUpgradeUrl
 
   logInfo "Cloning repository"
-  token <- view githubTokenL
-  dir <- view workingDirectoryL
   wrapClone
     $ gitCloneBranchByRef
       ("pull/" <> show pr.number <> "/head")
       ("pull-" <> show pr.number)
       ( unpack
           $ "https://x-access-token:"
-          <> unGitHubToken token
+          <> env.githubToken.unwrap
           <> "@github.com/"
           <> pr.repo.owner
           <> "/"
           <> pr.repo.repo
           <> ".git"
       )
-      dir
+      "."
 
 newtype CloneTimeoutError = CloneTimeoutError
   { cloneTimeoutDurationMinutes :: Int

@@ -3,10 +3,8 @@
 module Restyler.App
   ( AppT
   , runAppT
-  , App (..)
-  , bootstrapApp
 
-    -- * App's implementation, exposed for use outside of AppT
+    -- * 'AppT's implementation, exposed for use outside of 'AppT'
   , GitHubError (..)
   , runGitHubInternal
   ) where
@@ -19,18 +17,11 @@ import GitHub.Auth
 import GitHub.Data.Definitions qualified as GitHub
 import GitHub.Request
 import GitHub.Request.Display
-import Network.HTTP.Client.TLS
 import Network.HTTP.Simple hiding (Request)
 import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Git
 import Restyler.Options
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.Manifest
-import Restyler.Restrictions
-import Restyler.Setup
-import Restyler.Statsd (HasStatsClient (..), StatsClient)
 import System.Directory qualified as Directory
 import System.Exit qualified as Exit
 import System.Process qualified as Process
@@ -191,63 +182,8 @@ runGitHubInternal req = do
     $ "runGitHub"
     :# ["request" .= show @Text (displayGitHubRequest req)]
   auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
-  result <- liftIO $ do
-    mgr <- getGlobalManager
-    executeRequestWithMgr mgr auth req
+  result <- liftIO $ github auth req
   either (throwIO . GitHubError (displayGitHubRequest req)) pure result
 
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT (unAppT f) app
-
-data App = App
-  { appLogger :: Logger
-  , appOptions :: Options
-  , appWorkingDirectory :: FilePath
-  , appStatsClient :: StatsClient
-  }
-
-instance HasLogger App where
-  loggerL = lens appLogger $ \x y -> x {appLogger = y}
-
-instance HasOptions App where
-  optionsL = lens appOptions $ \x y -> x {appOptions = y}
-
-instance HasManifestOption App where
-  getManifestOption = getManifestOption . appOptions
-
-instance HasHostDirectoryOption App where
-  getHostDirectoryOption = getHostDirectoryOption . appOptions
-
-instance HasImageCleanupOption App where
-  getImageCleanupOption = getImageCleanupOption . appOptions
-
-instance HasRestrictions App where
-  getRestrictions = getRestrictions . appOptions
-
-instance HasWorkingDirectory App where
-  workingDirectoryL =
-    lens appWorkingDirectory $ \x y -> x {appWorkingDirectory = y}
-
-instance HasStatsClient App where
-  statsClientL = lens appStatsClient $ \x y -> x {appStatsClient = y}
-
-bootstrapApp
-  :: MonadUnliftIO m
-  => Options
-  -> Logger
-  -> FilePath
-  -> StatsClient
-  -> m App
-bootstrapApp options logger path statsClient = do
-  let app =
-        App
-          { appLogger = logger
-          , appOptions = options
-          , appWorkingDirectory = path
-          , appStatsClient = statsClient
-          }
-
-  -- Move into run
-  runAppT app restylerSetup
-
-  pure app

@@ -18,10 +18,10 @@ data GitHubEnv = GitHubEnv
   }
 
 instance HasGitHubToken GitHubEnv where
-  githubTokenL = lens (.token) $ \x y -> x {token = y}
+  getGitHubToken = (.token)
 
 instance HasGitHubOutput GitHubEnv where
-  githubOutputL = lens (.output) $ \x y -> x {output = y}
+  getGitHubOutput = (.output)
 
 githubEnvParser :: Env.Parser Env.Error GitHubEnv
 githubEnvParser =

@@ -5,10 +5,8 @@ module Restyler.Job
 import Restyler.Prelude
 
 import Data.Text qualified as T
-import GitHub qualified
 import Restyler.App.Class
-  ( HasWorkingDirectory
-  , MonadDownloadFile
+  ( MonadDownloadFile
   , MonadExit
   , MonadProcess
   , MonadSystem
@@ -19,9 +17,10 @@ import Restyler.GHA.Output
 import Restyler.Git
 import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest
-import Restyler.GitHub.Repository
+import Restyler.JobEnv
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
+import Restyler.Options.JobUrl
 import Restyler.Options.Manifest
 import Restyler.Options.PullRequest
 import Restyler.Restrictions
@@ -41,7 +40,7 @@ run
      , MonadReader env m
      , HasLogger env
      , HasStatsClient env
-     , HasWorkingDirectory env
+     , HasJobEnv env
      , HasGitHubToken env
      , HasGitHubOutput env
      , HasHostDirectoryOption env
@@ -49,13 +48,13 @@ run
      , HasManifestOption env
      , HasRestrictions env
      )
-  => URL
+  => JobUrl
   -- ^ Job URL
   -> PullRequestOption
   -> m ()
-run jobUrl pr = do
+run (JobUrl jobUrl) pr = do
   -- TODO: in-line
-  restylerSetup jobEnv pr
+  restylerSetup pr
 
   result <- GHA.run pr.repo pr.number
 
