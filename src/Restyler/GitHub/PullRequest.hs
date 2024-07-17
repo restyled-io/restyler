@@ -9,6 +9,8 @@ module Restyler.GitHub.PullRequest
   , User (..)
   , Label (..)
   , Commit (..)
+  , Repo (..)
+  , Owner (..)
 
     -- * Classy access
   , HasHtmlUrl (..)
@@ -21,7 +23,6 @@ module Restyler.GitHub.PullRequest
 import Restyler.Prelude
 
 import Data.Aeson (ToJSON (..))
-import Restyler.GitHub.Repository
 
 data PullRequest = PullRequest
   { html_url :: URL
@@ -70,7 +71,21 @@ newtype Label = Label
 data Commit = Commit
   { ref :: Text
   , sha :: Text
-  , repo :: Repository
+  , repo :: Repo
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON)
+
+data Repo = Repo
+  { name :: Text
+  , owner :: Owner
+  , private :: Bool
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON)
+
+newtype Owner = Owner
+  { login :: Text
   }
   deriving stock (Generic)
   deriving anyclass (ToJSON)

@@ -10,13 +10,14 @@ import Restyler.Git (MonadGit)
 import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
-import Restyler.GitHub.Repository
 import Restyler.Local qualified as Local
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
+import Restyler.Options.Repository
 import Restyler.Restrictions
 import Restyler.RestyleResult
+import UnliftIO.Exception (handleAny)
 
 run
   :: ( MonadUnliftIO m
@@ -34,15 +35,16 @@ run
      , HasImageCleanupOption env
      , HasManifestOption env
      )
-  => Repository
+  => RepositoryOption
   -> Int
   -> m (RestyleResult PullRequest)
 run repo pr = do
-  pullRequest <- getPullRequest repo pr
-  logInfo $ "Handling PR" :# objectToPairs pullRequest
+  handleAny (pure . RestyleFailedEarly) $ do
+    pullRequest <- getPullRequest repo pr
+    logInfo $ "Handling PR" :# objectToPairs pullRequest
 
-  paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
-  traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
+    paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
+    traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
 
-  result <- Local.run pullRequest paths
-  result <$ setRestylerResultOutputs pullRequest result
+    result <- Local.run pullRequest paths
+    result <$ setRestylerResultOutputs pullRequest result

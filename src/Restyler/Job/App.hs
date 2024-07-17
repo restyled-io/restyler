@@ -11,7 +11,6 @@ import Restyler.Prelude
 import Env qualified
 import Restyler.GHA.Output
 import Restyler.GitHub.Api
-import Restyler.GitHub.Repository
 import Restyler.JobEnv
 import Restyler.Local.Options
 import Restyler.Opt qualified as Opt
@@ -21,6 +20,7 @@ import Restyler.Options.JobUrl
 import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
 import Restyler.Options.PullRequest
+import Restyler.Options.Repository
 import Restyler.Restrictions
 import Restyler.Statsd
 import System.Directory qualified as Directory

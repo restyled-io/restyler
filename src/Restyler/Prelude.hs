@@ -3,13 +3,7 @@ module Restyler.Prelude
   , module Restyler.Prelude
   ) where
 
-import Relude as X hiding
-  ( All (..)
-  , exitSuccess
-  , readFile
-  , readFileBS
-  , writeFile
-  )
+import Relude as X hiding (All (..), readFile, readFileBS, writeFile)
 
 import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)

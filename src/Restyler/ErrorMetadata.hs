@@ -25,6 +25,7 @@ import Restyler.App (GitHubError (..))
 import Restyler.Clone (CloneTimeoutError (..))
 import Restyler.Config (ConfigError (..))
 import Restyler.Job.PlanUpgradeRequired (PlanUpgradeRequired (..))
+import Restyler.Job.RepoDisabled (RepoDisabled (..))
 import Restyler.Restyler.Run
   ( RestylerCommandNotFound (..)
   , RestylerExitFailure (..)
@@ -64,6 +65,16 @@ errorMetadataExitCode ErrorMetadata {exitCode} = case exitCode of
 handlers :: SomeException -> [First ErrorMetadata]
 handlers e =
   [ fromException e & First <&> \case
+      RepoDisabled {} ->
+        ErrorMetadata
+          { exception = e
+          , severity = "warning"
+          , tag = "repo-disabled"
+          , description = "repo disabled"
+          , message = Nothing
+          , exitCode = 0
+          }
+  , fromException e & First <&> \case
       PlanUpgradeRequired {} ->
         ErrorMetadata
           { exception = e

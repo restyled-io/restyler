@@ -11,4 +11,4 @@ import Restyler.Local.App
 main :: IO ()
 main = CLI.main withApp $ do
   paths <- asks (.paths)
-  void $ run NullPullRequest $ toList paths
+  run NullPullRequest $ toList paths

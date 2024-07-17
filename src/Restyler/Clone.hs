@@ -8,8 +8,8 @@ import Restyler.Prelude
 import Restyler.App.Class (MonadProcess, MonadSystem)
 import Restyler.Git (gitCloneBranchByRef)
 import Restyler.GitHub.Api
-import Restyler.GitHub.Repository
 import Restyler.Options.PullRequest
+import Restyler.Options.Repository
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
 

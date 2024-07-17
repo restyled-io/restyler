@@ -4,8 +4,8 @@ module Restyler.Options.PullRequestSpec
 
 import Restyler.Prelude
 
-import Restyler.GitHub.Repository
 import Restyler.Options.PullRequest
+import Restyler.Options.Repository
 import Test.Hspec
 
 spec :: Spec
@@ -16,7 +16,7 @@ spec = do
         `shouldBe` Right
           PullRequestOption
             { repo =
-                Repository
+                RepositoryOption
                   { owner = "owner"
                   , repo = "repo"
                   }

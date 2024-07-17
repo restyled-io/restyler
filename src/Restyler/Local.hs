@@ -63,15 +63,19 @@ run pr paths = do
   config <- loadConfig
   logDebug $ "Config" :# objectToPairs config
 
-  result <- do
-    case (cEnabled config, getPullRequestState pr) of
-      (False, _) -> pure RestyleSkippedDisabled
-      (_, PullRequestClosed) -> pure RestyleSkippedClosed
-      (_, PullRequestOpen) -> do
-        maybe
-          (Restyled pr <$> runRestylers config paths)
-          (pure . RestyleSkippedIgnored)
-          $ getIgnoredReason' config (getAuthor pr) (getBaseRef pr)
+  let mIgnoredReason =
+        getIgnoredReason
+          config
+          (getAuthor pr)
+          (getBaseRef pr)
           $ getLabelNames pr
 
-  result <$ logRestyleResult result
+  case (cEnabled config, getPullRequestState pr) of
+    (False, _) ->
+      pure $ RestyleSkipped config pr RestyleNotEnabled
+    (True, PullRequestClosed) ->
+      pure $ RestyleSkipped config pr RestylePullRequestClosed
+    (True, PullRequestOpen)
+      | Just reason <- mIgnoredReason ->
+          pure $ RestyleSkipped config pr $ RestyleIgnored reason
+    (True, PullRequestOpen) -> runRestyle config pr $ runRestylers config paths

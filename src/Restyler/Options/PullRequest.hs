@@ -8,11 +8,11 @@ module Restyler.Options.PullRequest
 import Restyler.Prelude
 
 import Options.Applicative
-import Restyler.GitHub.Repository
+import Restyler.Options.Repository
 import Restyler.ReadP
 
 data PullRequestOption = PullRequestOption
-  { repo :: Repository
+  { repo :: RepositoryOption
   , number :: Int
   }
   deriving stock (Eq, Show)
@@ -21,7 +21,7 @@ readPullRequest :: String -> Either String PullRequestOption
 readPullRequest =
   parseReadP
     $ PullRequestOption
-    <$> ( Repository
+    <$> ( RepositoryOption
             <$> textTill1 '/'
             <*> textTill1 '#'
         )

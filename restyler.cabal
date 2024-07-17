@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b9bc6d0fa669b76fa61d9b92bb1945b8ce58e65bab02e1461af215f30944f429
+-- hash: d79c8064115c9451f1cb991ef9cf19e8603af30064af68abf7d79cf7bf3593e9
 
 name:           restyler
 version:        0.2.0.0
@@ -34,24 +34,23 @@ library
       Restyler.Config.SketchyList
       Restyler.Config.Statuses
       Restyler.Content
+      Restyler.DangerousPullRequest
       Restyler.Delimited
       Restyler.ErrorMetadata
-      Restyler.Exit
       Restyler.GHA
       Restyler.GHA.App
       Restyler.GHA.Output
       Restyler.Git
-      Restyler.GitHub
       Restyler.GitHub.Api
       Restyler.GitHub.Commit.Status
       Restyler.GitHub.PullRequest
       Restyler.GitHub.PullRequest.File
-      Restyler.GitHub.Repository
       Restyler.GitHubEnv
       Restyler.Ignore
       Restyler.Job
       Restyler.Job.App
       Restyler.Job.PlanUpgradeRequired
+      Restyler.Job.RepoDisabled
       Restyler.JobEnv
       Restyler.Local
       Restyler.Local.App
@@ -64,6 +63,7 @@ library
       Restyler.Options.LogSettings
       Restyler.Options.Manifest
       Restyler.Options.PullRequest
+      Restyler.Options.Repository
       Restyler.Prelude
       Restyler.PullRequest
       Restyler.PullRequest.Status

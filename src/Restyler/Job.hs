@@ -5,15 +5,12 @@ module Restyler.Job
 import Restyler.Prelude
 
 import Data.Text qualified as T
-import Restyler.App.Class
-  ( MonadDownloadFile
-  , MonadExit
-  , MonadProcess
-  , MonadSystem
-  , exitWithInfo
-  )
+import Data.Time (UTCTime, getCurrentTime)
+import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
 import Restyler.Clone
 import Restyler.Config
+import Restyler.DangerousPullRequest
+import Restyler.ErrorMetadata
 import Restyler.GHA qualified as GHA
 import Restyler.GHA.Output
 import Restyler.Git
@@ -21,6 +18,7 @@ import Restyler.GitHub.Api
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.Job.PlanUpgradeRequired
+import Restyler.Job.RepoDisabled
 import Restyler.JobEnv
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -36,13 +34,14 @@ import Restyler.RestyledPullRequest
   , updateRestyledPullRequest
   )
 import Restyler.Statsd (HasStatsClient)
+import Restyler.Statsd qualified as Statsd
+import UnliftIO.Exception (handleAny)
 
 run
   :: ( MonadMask m
      , MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadExit m
      , MonadProcess m
      , MonadGit m
      , MonadDownloadFile m
@@ -60,28 +59,35 @@ run
   => JobUrl
   -- ^ Job URL
   -> PullRequestOption
-  -> m ()
+  -> m (RestyleResult PullRequest)
 run (JobUrl jobUrl) pr = do
-  env <- asks getJobEnv
+  start <- liftIO getCurrentTime
+  result <- handleAny (pure . RestyleFailedEarly) $ do
+    env <- asks getJobEnv
+    when env.repoDisabled $ throwIO RepoDisabled
+    for_ env.planRestriction $ throwIO . flip PlanUpgradeRequired env.planUpgradeUrl
 
-  when env.repoDisabled
-    $ exitWithInfo
-    $ fromString
-    $ "This repository has been disabled for possible abuse."
-    <> " If you believe this is an error, please reach out to"
-    <> " support@restyled.io"
+    clonePullRequest pr
+    GHA.run pr.repo pr.number
 
-  for_ env.planRestriction $ \planRestriction -> do
-    throwIO $ PlanUpgradeRequired planRestriction env.planUpgradeUrl
-
-  clonePullRequest pr
-
-  result <- GHA.run pr.repo pr.number
-
-  case result of
-    Restyled pullRequest results -> do
-      logInfo "Restyling produced differences"
-
+  warnIgnore $ case result of
+    RestyleFailedEarly ex -> do
+      let md = errorMetadata ex
+      recordDoneStats start $ Left md
+    RestyleFailed config pullRequest ex -> do
+      let md = errorMetadata ex
+      cleanupRestyledPullRequest pullRequest
+      setPullRequestError config pullRequest jobUrl md
+      recordDoneStats start $ Left md
+    RestyleSkipped config pullRequest reason -> do
+      cleanupRestyledPullRequest pullRequest
+      setPullRequestSkipped config pullRequest jobUrl reason
+      recordDoneStats start $ Right ()
+    RestyleSuccessNoDifference config pullRequest _ -> do
+      cleanupRestyledPullRequest pullRequest
+      setPullRequestNoDifferences config pullRequest jobUrl
+      recordDoneStats start $ Right ()
+    RestyleSuccessDifference config pullRequest results -> do
       patch <- gitFormatPatch $ Just $ unpack pullRequest.head.sha
       withThreadContext ["patch" .= True]
         $ traverse_ (logInfo . (:# []))
@@ -95,18 +101,9 @@ run (JobUrl jobUrl) pr = do
       logInfo "    git push"
       logInfo ""
 
-      let
-        -- TODO
-        config :: Config
-        config = error "TODO"
+      let mDetails = checkDangerousPullRequest pullRequest
 
-        -- TODO
-        -- let isDangerous = pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
-        -- "Forks in open source projects could contain unsafe contributions"
-        mDetails :: Maybe Text
-        mDetails = Nothing
-
-      url <- case (cPullRequests config, mDetails) of
+      statusUrl <- case (cPullRequests config, mDetails) of
         (False, _) -> do
           logInfo
             $ "Not creating Restyle PR"
@@ -121,20 +118,69 @@ run (JobUrl jobUrl) pr = do
           mRestyledPullRequest <- findRestyledPullRequest pullRequest
           getHtmlUrl <$> case mRestyledPullRequest of
             Nothing -> createRestyledPullRequest pullRequest results
-            Just restyledPullRequest -> updateRestyledPullRequest pullRequest restyledPullRequest results
+            Just rpr -> updateRestyledPullRequest pullRequest rpr results
 
-      setPullRequestStatus
-        pullRequest
-        CommitStatusFailure
-        url
-        "Restyling found differences"
-      exitWithInfo "Restyling successful"
-    _ -> do
-      let
-        -- TODO
-        pullRequest :: PullRequest
-        pullRequest = error "TODO"
-      mRestyledPullRequest <- findRestyledPullRequest pullRequest
-      traverse_ closeRestyledPullRequest mRestyledPullRequest
-      setPullRequestStatus pullRequest CommitStatusSuccess jobUrl "No differences"
-      exitWithInfo "No style differences found"
+      setPullRequestDifferences config pullRequest statusUrl
+      recordDoneStats start $ Right ()
+
+  pure result
+
+cleanupRestyledPullRequest :: MonadGitHub m => PullRequest -> m ()
+cleanupRestyledPullRequest pullRequest = do
+  mRestyledPullRequest <- findRestyledPullRequest pullRequest
+  traverse_ closeRestyledPullRequest mRestyledPullRequest
+
+setPullRequestError
+  :: (MonadIO m, MonadGitHub m)
+  => Config
+  -> PullRequest
+  -> URL
+  -> ErrorMetadata
+  -> m ()
+setPullRequestError _config pullRequest url md =
+  setPullRequestStatus pullRequest CommitStatusError url
+    $ "Error ("
+    <> errorMetadataDescription md
+    <> ")"
+
+setPullRequestSkipped
+  :: (MonadIO m, MonadGitHub m)
+  => Config
+  -> PullRequest
+  -> URL
+  -> RestyleSkipped
+  -> m ()
+setPullRequestSkipped _config pullRequest url skipped =
+  setPullRequestStatus pullRequest CommitStatusSuccess url
+    $ "Skipped ("
+    <> renderSkipped skipped
+    <> ")"
+
+renderSkipped :: RestyleSkipped -> Text
+renderSkipped = error "TODO"
+
+setPullRequestNoDifferences
+  :: (MonadIO m, MonadGitHub m) => Config -> PullRequest -> URL -> m ()
+setPullRequestNoDifferences _config pullRequest url =
+  setPullRequestStatus pullRequest CommitStatusSuccess url "No differences"
+
+setPullRequestDifferences
+  :: (MonadIO m, MonadGitHub m) => Config -> PullRequest -> URL -> m ()
+setPullRequestDifferences _config pullRequest url =
+  setPullRequestStatus
+    pullRequest
+    CommitStatusFailure
+    url
+    "Restyling produced differences"
+
+recordDoneStats
+  :: (MonadIO m, MonadReader env m, HasStatsClient env)
+  => UTCTime
+  -> Either ErrorMetadata ()
+  -> m ()
+recordDoneStats start emd = do
+  case emd of
+    Left md -> Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
+    Right () -> Statsd.increment "restyler.success" []
+  Statsd.increment "restyler.finished" []
+  Statsd.histogramSince "restyler.duration" [] start

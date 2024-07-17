@@ -6,18 +6,23 @@ import Restyler.Prelude
 
 import Restyler.App (AppT, runAppT)
 import Restyler.ErrorMetadata
-import UnliftIO.Exception (catchAny)
+import Restyler.RestyleResult
 
 main
   :: HasLogger app
-  => ((app -> IO a) -> IO b)
-  -> AppT app IO a
-  -> IO b
+  => ((app -> IO ()) -> IO a)
+  -> AppT app IO (RestyleResult pr)
+  -> IO a
 main withApp run = do
   hSetBuffering stdout LineBuffering
   hSetBuffering stderr LineBuffering
 
   withApp $ \app -> do
     runAppT app $ do
-      run `catchAny` \ex -> do
-        logErrorMetadataAndExit $ errorMetadata ex
+      result <- run
+      case result of
+        RestyleFailedEarly ex -> logErrorMetadataAndExit $ errorMetadata ex
+        RestyleFailed _ _ ex -> logErrorMetadataAndExit $ errorMetadata ex
+        RestyleSkipped _ _ reason -> logInfo $ "Restyle skipped" :# ["reason" .= reason]
+        RestyleSuccessNoDifference {} -> logInfo "No differences"
+        RestyleSuccessDifference {} -> logInfo "Differences found"

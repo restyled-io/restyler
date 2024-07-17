@@ -1,7 +1,5 @@
 module Restyler.App.Class
   ( MonadSystem (..)
-  , MonadExit (..)
-  , exitWithInfo
   , MonadProcess (..)
   , MonadDownloadFile (..)
   , readFile
@@ -39,14 +37,6 @@ class Monad m => MonadSystem m where
 
 readFile :: MonadSystem m => FilePath -> m Text
 readFile = fmap (decodeUtf8With lenientDecode) . readFileBS
-
-class Monad m => MonadExit m where
-  exitSuccess :: m a
-
-exitWithInfo :: (MonadLogger m, MonadExit m) => Message -> m a
-exitWithInfo msg = do
-  logInfo msg
-  exitSuccess
 
 class Monad m => MonadProcess m where
   callProcess :: String -> [String] -> m ()

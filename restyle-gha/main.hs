@@ -12,4 +12,4 @@ import Restyler.Options.PullRequest
 main :: IO ()
 main = CLI.main withApp $ do
   pr <- asks (.pullRequest)
-  void $ run pr.repo pr.number
+  run pr.repo pr.number

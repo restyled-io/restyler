@@ -23,7 +23,6 @@ import Restyler.App.Class
 import Restyler.Git
 import Restyler.Options
 import System.Directory qualified as Directory
-import System.Exit qualified as Exit
 import System.Process qualified as Process
 
 newtype AppT app m a = AppT
@@ -138,11 +137,6 @@ instance (MonadUnliftIO m, HasLogger app) => MonadProcess (AppT app m) where
          , "errorOutput" .= err
          ]
     pure (ec, output)
-
-instance (MonadUnliftIO m, HasLogger app) => MonadExit (AppT app m) where
-  exitSuccess = do
-    logDebug "exitSuccess"
-    liftIO Exit.exitSuccess
 
 instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
   downloadFile url path = do

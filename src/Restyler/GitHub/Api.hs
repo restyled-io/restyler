@@ -27,11 +27,11 @@ import GitHub qualified
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
-import Restyler.GitHub.Repository
+import Restyler.Options.Repository
 
 getPullRequest
   :: (MonadIO m, MonadGitHub m)
-  => Repository
+  => RepositoryOption
   -> Int
   -> m PullRequest
 getPullRequest repo pr = do
@@ -49,7 +49,7 @@ getPullRequest repo pr = do
 
 getPullRequestFiles
   :: (MonadIO m, MonadGitHub m)
-  => Repository
+  => RepositoryOption
   -> Int
   -> m [PullRequestFile]
 getPullRequestFiles repo pr = do
@@ -71,8 +71,8 @@ setPullRequestStatus pr cstate url description = do
   fromGitHub (const $ Right ())
     =<< ghCreateStatus ghOwner ghRepo ghSha ghStatus
  where
-  ghOwner = GitHub.mkOwnerName pr.base.repo.owner
-  ghRepo = GitHub.mkRepoName pr.base.repo.repo
+  ghOwner = GitHub.mkOwnerName pr.base.repo.owner.login
+  ghRepo = GitHub.mkRepoName pr.base.repo.name
   ghSha = mkName Proxy $ pr.head.sha
   ghStatus =
     GitHub.NewStatus
@@ -125,14 +125,21 @@ convertCommit gh =
     , repo = convertRepo $ GitHub.pullRequestCommitRepo gh
     }
 
-convertRepo :: Maybe GitHub.Repo -> Repository
+convertRepo :: Maybe GitHub.Repo -> Repo
 convertRepo = \case
   Nothing -> error "unexpected: PR had no repo in head or base"
   Just gh ->
-    Repository
-      { owner = GitHub.untagName $ GitHub.simpleOwnerLogin $ GitHub.repoOwner gh
-      , repo = GitHub.untagName $ GitHub.repoName gh
+    Repo
+      { name = GitHub.untagName $ GitHub.repoName gh
+      , owner = convertOwner $ GitHub.repoOwner gh
+      , private = GitHub.repoPrivate gh
       }
+
+convertOwner :: GitHub.SimpleOwner -> Owner
+convertOwner gh =
+  Owner
+    { login = GitHub.untagName $ GitHub.simpleOwnerLogin gh
+    }
 
 convertFile :: GitHub.File -> Either String PullRequestFile
 convertFile gh = do
