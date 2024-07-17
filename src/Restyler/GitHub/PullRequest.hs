@@ -11,6 +11,7 @@ module Restyler.GitHub.PullRequest
   , Commit (..)
 
     -- * Classy access
+  , HasHtmlUrl (..)
   , HasPullRequestState (..)
   , HasAuthor (..)
   , HasBaseRef (..)
@@ -23,7 +24,8 @@ import Data.Aeson (ToJSON (..))
 import Restyler.GitHub.Repository
 
 data PullRequest = PullRequest
-  { number :: Int
+  { html_url :: URL
+  , number :: Int
   , title :: Text
   , user :: User
   , state :: PullRequestState
@@ -72,6 +74,12 @@ data Commit = Commit
   }
   deriving stock (Generic)
   deriving anyclass (ToJSON)
+
+class HasHtmlUrl a where
+  getHtmlUrl :: a -> URL
+
+instance HasHtmlUrl PullRequest where
+  getHtmlUrl pr = pr.html_url
 
 class HasPullRequestState a where
   getPullRequestState :: a -> PullRequestState

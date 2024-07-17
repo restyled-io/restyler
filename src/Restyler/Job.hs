@@ -13,10 +13,12 @@ import Restyler.App.Class
   , exitWithInfo
   )
 import Restyler.Clone
+import Restyler.Config
 import Restyler.GHA qualified as GHA
 import Restyler.GHA.Output
 import Restyler.Git
 import Restyler.GitHub.Api
+import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.Job.PlanUpgradeRequired
 import Restyler.JobEnv
@@ -27,6 +29,12 @@ import Restyler.Options.Manifest
 import Restyler.Options.PullRequest
 import Restyler.Restrictions
 import Restyler.RestyleResult
+import Restyler.RestyledPullRequest
+  ( closeRestyledPullRequest
+  , createRestyledPullRequest
+  , findRestyledPullRequest
+  , updateRestyledPullRequest
+  )
 import Restyler.Statsd (HasStatsClient)
 
 run
@@ -71,7 +79,7 @@ run (JobUrl jobUrl) pr = do
   result <- GHA.run pr.repo pr.number
 
   case result of
-    Restyled pullRequest _ -> do
+    Restyled pullRequest results -> do
       logInfo "Restyling produced differences"
 
       patch <- gitFormatPatch $ Just $ unpack pullRequest.head.sha
@@ -87,38 +95,46 @@ run (JobUrl jobUrl) pr = do
       logInfo "    git push"
       logInfo ""
 
-      -- -- NB there is the edge-case of switching this off mid-PR. A previously
-      -- -- opened Restyle PR would stop updating at that point.
-      -- whenConfig (not . cPullRequests) $ do
-      --   sendPullRequestStatus $ DifferencesStatus mJobUrl
-      --   logInfo
-      --     $ "Not creating Restyle PR"
-      --     :# ["reason" .= ("disabled by config" :: Text)]
-      --   exitWithInfo "Please correct style using the process described above"
+      let
+        -- TODO
+        config :: Config
+        config = error "TODO"
 
-      -- let
-      --   isDangerous =
-      --     pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
+        -- TODO
+        -- let isDangerous = pullRequestRepoPublic pullRequest && pullRequestIsFork pullRequest
+        -- "Forks in open source projects could contain unsafe contributions"
+        mDetails :: Maybe Text
+        mDetails = Nothing
 
-      --   dangerDetails :: Text
-      --   dangerDetails =
-      --     "Forks in open source projects could contain unsafe contributions"
+      url <- case (cPullRequests config, mDetails) of
+        (False, _) -> do
+          logInfo
+            $ "Not creating Restyle PR"
+            :# ["reason" .= ("disabled by config" :: Text)]
+          logInfo "Please correct style using the process described above"
+          pure jobUrl
+        (True, Just details) -> do
+          logInfo $ "Not creating Restyle PR" :# ["reason" .= details]
+          logInfo "Please correct style using the process described above"
+          pure jobUrl
+        (True, Nothing) -> do
+          mRestyledPullRequest <- findRestyledPullRequest pullRequest
+          getHtmlUrl <$> case mRestyledPullRequest of
+            Nothing -> createRestyledPullRequest pullRequest results
+            Just restyledPullRequest -> updateRestyledPullRequest pullRequest restyledPullRequest results
 
-      -- when isDangerous $ do
-      --   sendPullRequestStatus $ DifferencesStatus mJobUrl
-      --   logInfo $ "Not creating Restyle PR" :# ["reason" .= dangerDetails]
-      --   exitWithInfo "Please correct style using the process described above"
-
-      -- mRestyledPullRequest <- findRestyledPullRequest pullRequest
-      -- url <-
-      --   restyledPullRequestHtmlUrl <$> case mRestyledPullRequest of
-      --     Nothing -> createRestyledPullRequest pullRequest results
-      --     Just pr -> updateRestyledPullRequest pullRequest pr results
-
-      -- sendPullRequestStatus $ DifferencesStatus $ Just url
+      setPullRequestStatus
+        pullRequest
+        CommitStatusFailure
+        url
+        "Restyling found differences"
       exitWithInfo "Restyling successful"
     _ -> do
-      -- mRestyledPullRequest <- findRestyledPullRequest pullRequest
-      -- traverse_ closeRestyledPullRequest mRestyledPullRequest
-      -- sendPullRequestStatus $ NoDifferencesStatus mJobUrl
+      let
+        -- TODO
+        pullRequest :: PullRequest
+        pullRequest = error "TODO"
+      mRestyledPullRequest <- findRestyledPullRequest pullRequest
+      traverse_ closeRestyledPullRequest mRestyledPullRequest
+      setPullRequestStatus pullRequest CommitStatusSuccess jobUrl "No differences"
       exitWithInfo "No style differences found"

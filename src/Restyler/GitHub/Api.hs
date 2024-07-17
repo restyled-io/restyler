@@ -99,7 +99,8 @@ convertPullRequest
   -> PullRequest
 convertPullRequest labels gh =
   PullRequest
-    { number = GitHub.unIssueNumber $ GitHub.pullRequestNumber gh
+    { html_url = GitHub.pullRequestHtmlUrl gh
+    , number = GitHub.unIssueNumber $ GitHub.pullRequestNumber gh
     , title = GitHub.pullRequestTitle gh
     , user = convertUser $ GitHub.pullRequestUser gh
     , state = convertState $ GitHub.pullRequestState gh
