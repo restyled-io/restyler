@@ -5,100 +5,73 @@ module Restyler.Exit
 import Restyler.Prelude
 
 import Data.Time (UTCTime, getCurrentTime)
-import GitHub.Endpoints.PullRequests
-import GitHub.Endpoints.Repos.Statuses
-import Lens.Micro (_1, _2, _3)
-import Restyler.App (runGitHubInternal)
 import Restyler.ErrorMetadata
-import Restyler.Options
-import Restyler.PullRequest
-import Restyler.Statsd (HasStatsClient (..), StatsClient)
+import Restyler.GitHub.Api
+import Restyler.GitHub.Commit.Status
+import Restyler.Options.JobUrl
+import Restyler.Options.PullRequest
+import Restyler.Statsd (HasStatsClient (..))
 import Restyler.Statsd qualified as Statsd
 import UnliftIO.Exception (tryAny)
 
-newtype ExitHandler = ExitHandler
-  { unExitHandler :: (Logger, StatsClient, Options)
-  }
-
-unL :: Lens' ExitHandler (Logger, StatsClient, Options)
-unL = lens unExitHandler $ \x y -> x {unExitHandler = y}
-
-instance HasLogger ExitHandler where
-  loggerL = unL . _1 . loggerL
-
-instance HasStatsClient ExitHandler where
-  statsClientL = unL . _2 . statsClientL
-
-instance HasOptions ExitHandler where
-  optionsL = unL . _3 . optionsL
-
-runExitHandler
-  :: MonadUnliftIO m
-  => Logger
-  -> StatsClient
-  -> Options
-  -> ReaderT ExitHandler (LoggingT m) a
-  -> m a
-runExitHandler logger statsClient options =
-  runLoggerLoggingT logger . flip runReaderT env
- where
-  env = ExitHandler (logger, statsClient, options)
-
 withExitHandler
-  :: MonadUnliftIO m => Logger -> StatsClient -> Options -> m () -> m ExitCode
-withExitHandler logger statsClient options f = do
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadGitHub m
+     , MonadReader env m
+     , HasStatsClient env
+     )
+  => JobUrl
+  -> PullRequestOption
+  -> m a
+  -> m ()
+withExitHandler jobUrl pr f = do
   start <- liftIO getCurrentTime
   result <- tryAny f
-  runExitHandler logger statsClient options
-    $ handleResult result
-    `finally` recordDoneStats start
+  handleResult jobUrl pr result `finally` recordDoneStats start
 
 handleResult
   :: ( MonadUnliftIO m
      , MonadLogger m
+     , MonadGitHub m
      , MonadReader env m
      , HasStatsClient env
-     , HasOptions env
      )
-  => Either SomeException ()
-  -> m ExitCode
-handleResult = \case
-  Left ex
-    | isExitSuccess ex ->
-        ExitSuccess <$ Statsd.increment "restyler.success" []
-  Left ex -> do
+  => JobUrl
+  -> PullRequestOption
+  -> Either SomeException a
+  -> m ()
+handleResult jobUrl pr = \case
+  Left ex | notExitSuccess ex -> do
     let md = errorMetadata ex
+    recordErrorStat md
+    errorPullRequest jobUrl pr md
+  _ -> recordSuccessStat
 
-    Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
-
-    logErrorMetadata md
-
-    errorMetadataExitCode md
-      <$ errorPullRequest (errorMetadataDescription md)
-  Right () -> ExitSuccess <$ Statsd.increment "restyler.success" []
-
-isExitSuccess :: SomeException -> Bool
-isExitSuccess = (Just ExitSuccess ==) . fromException
+notExitSuccess :: SomeException -> Bool
+notExitSuccess = (Just ExitSuccess /=) . fromException
 
 errorPullRequest
-  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasOptions env)
-  => Text
+  :: (MonadIO m, MonadGitHub m)
+  => JobUrl
+  -> PullRequestOption
+  -> ErrorMetadata
   -> m ()
-errorPullRequest description = warnIgnore $ do
-  Options {..} <- view optionsL
-  pr <- runGitHubInternal $ pullRequestR oOwner oRepo oPullRequest
+errorPullRequest jobUrl pr md = do
+  pullRequest <- getPullRequest pr.repo pr.number
+  setPullRequestStatus pullRequest CommitStatusError jobUrl.unwrap
+    $ "Error ("
+    <> errorMetadataDescription md
+    <> ")"
 
-  let
-    sha = mkName Proxy $ pullRequestHeadSha pr
-    status =
-      NewStatus
-        { newStatusState = StatusError
-        , newStatusTargetUrl = oJobUrl
-        , newStatusDescription = Just $ "Error (" <> description <> ")"
-        , newStatusContext = Just "restyled"
-        }
+recordSuccessStat
+  :: (MonadIO m, MonadReader env m, HasStatsClient env) => m ()
+recordSuccessStat = Statsd.increment "restyler.success" []
 
-  void $ runGitHubInternal $ createStatusR oOwner oRepo sha status
+recordErrorStat
+  :: (MonadIO m, MonadReader env m, HasStatsClient env) => ErrorMetadata -> m ()
+recordErrorStat md =
+  Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
 
 recordDoneStats
   :: (MonadIO m, MonadReader env m, HasStatsClient env) => UTCTime -> m ()

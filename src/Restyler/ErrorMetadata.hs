@@ -22,14 +22,15 @@ import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Simple (getResponseStatus)
 import Network.HTTP.Types.Status (statusCode)
 import Restyler.App (GitHubError (..))
+import Restyler.Clone (CloneTimeoutError (..))
 import Restyler.Config (ConfigError (..))
+import Restyler.Job.PlanUpgradeRequired (PlanUpgradeRequired (..))
 import Restyler.Restyler.Run
   ( RestylerCommandNotFound (..)
   , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
   , TooManyChangedPaths (..)
   )
-import Restyler.Setup (CloneTimeoutError (..), PlanUpgradeRequired (..))
 
 data ErrorMetadata = ErrorMetadata
   { exception :: SomeException

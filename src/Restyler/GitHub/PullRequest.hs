@@ -19,7 +19,8 @@ module Restyler.GitHub.PullRequest
 
 import Restyler.Prelude
 
-import Data.Aeson
+import Data.Aeson (ToJSON (..))
+import Restyler.GitHub.Repository
 
 data PullRequest = PullRequest
   { number :: Int
@@ -31,14 +32,11 @@ data PullRequest = PullRequest
   , base :: Commit
   }
   deriving stock (Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (ToJSON)
 
 data PullRequestState
   = PullRequestOpen
   | PullRequestClosed
-
-instance FromJSON PullRequestState where
-  parseJSON = withText "state" $ either fail pure . pullRequestStateFromText
 
 instance ToJSON PullRequestState where
   toJSON = toJSON . pullRequestStateToText
@@ -59,20 +57,21 @@ newtype User = User
   { login :: Text
   }
   deriving stock (Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (ToJSON)
 
 newtype Label = Label
   { name :: Text
   }
   deriving stock (Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (ToJSON)
 
 data Commit = Commit
   { ref :: Text
   , sha :: Text
+  , repo :: Repository
   }
   deriving stock (Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (ToJSON)
 
 class HasPullRequestState a where
   getPullRequestState :: a -> PullRequestState

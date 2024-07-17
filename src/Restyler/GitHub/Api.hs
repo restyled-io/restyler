@@ -6,6 +6,7 @@ module Restyler.GitHub.Api
   ( -- * Domain-specific constructs
     getPullRequest
   , getPullRequestFiles
+  , setPullRequestStatus
 
     -- * "GitHub" dependency-injection
   , MonadGitHub (..)
@@ -23,6 +24,7 @@ import Data.Vector (Vector)
 import Env qualified
 import GitHub (github)
 import GitHub qualified
+import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
 import Restyler.GitHub.Repository
@@ -57,6 +59,32 @@ getPullRequestFiles repo pr = do
   ghOwner = GitHub.mkOwnerName repo.owner
   ghRepo = GitHub.mkRepoName repo.repo
   ghNumber = GitHub.IssueNumber pr
+
+setPullRequestStatus
+  :: (MonadIO m, MonadGitHub m)
+  => PullRequest
+  -> CommitStatusState
+  -> URL
+  -> Text
+  -> m ()
+setPullRequestStatus pr cstate url description = do
+  fromGitHub (const $ Right ())
+    =<< ghCreateStatus ghOwner ghRepo ghSha ghStatus
+ where
+  ghOwner = GitHub.mkOwnerName pr.base.repo.owner
+  ghRepo = GitHub.mkRepoName pr.base.repo.repo
+  ghSha = mkName Proxy $ pr.head.sha
+  ghStatus =
+    GitHub.NewStatus
+      { GitHub.newStatusState = case cstate of
+          CommitStatusPending -> GitHub.StatusPending
+          CommitStatusSuccess -> GitHub.StatusSuccess
+          CommitStatusError -> GitHub.StatusError
+          CommitStatusFailure -> GitHub.StatusFailure
+      , GitHub.newStatusTargetUrl = Just url
+      , GitHub.newStatusDescription = Just description
+      , GitHub.newStatusContext = Just "restyled"
+      }
 
 convertLabel :: GitHub.IssueLabel -> Label
 convertLabel gh = Label {name = GitHub.untagName $ GitHub.labelName gh}
@@ -93,7 +121,17 @@ convertCommit gh =
   Commit
     { ref = GitHub.pullRequestCommitRef gh
     , sha = GitHub.pullRequestCommitSha gh
+    , repo = convertRepo $ GitHub.pullRequestCommitRepo gh
     }
+
+convertRepo :: Maybe GitHub.Repo -> Repository
+convertRepo = \case
+  Nothing -> error "unexpected: PR had no repo in head or base"
+  Just gh ->
+    Repository
+      { owner = GitHub.untagName $ GitHub.simpleOwnerLogin $ GitHub.repoOwner gh
+      , repo = GitHub.untagName $ GitHub.repoName gh
+      }
 
 convertFile :: GitHub.File -> Either String PullRequestFile
 convertFile gh = do
@@ -138,6 +176,13 @@ class Monad m => MonadGitHub m where
     -> GitHub.IssueNumber
     -> m (Either GitHub.Error (Vector GitHub.File))
 
+  ghCreateStatus
+    :: GitHub.Name GitHub.Owner
+    -> GitHub.Name GitHub.Repo
+    -> GitHub.Name GitHub.Commit
+    -> GitHub.NewStatus
+    -> m (Either GitHub.Error GitHub.Status)
+
 newtype GitHubToken = GitHubToken
   { unwrap :: Text
   }
@@ -177,6 +222,9 @@ instance (Monad m, MonadIO m, MonadReader env m, HasGitHubToken env) => MonadGit
 
   ghPullRequestFiles owner repo number =
     runGitHub $ GitHub.pullRequestFilesR owner repo number GitHub.FetchAll
+
+  ghCreateStatus owner repo sha status =
+    runGitHub $ GitHub.createStatusR owner repo sha status
 
 runGitHub
   :: ( MonadIO m

@@ -1,5 +1,6 @@
 module Restyler.Clone
-  ( clonePullRequest
+  ( CloneTimeoutError (..)
+  , clonePullRequest
   ) where
 
 import Restyler.Prelude
