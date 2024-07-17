@@ -64,9 +64,10 @@ run pr paths = do
   logDebug $ "Config" :# objectToPairs config
 
   result <- do
-    case getPullRequestState pr of
-      PullRequestClosed -> pure RestyleSkippedClosed
-      PullRequestOpen -> do
+    case (cEnabled config, getPullRequestState pr) of
+      (False, _) -> pure RestyleSkippedDisabled
+      (_, PullRequestClosed) -> pure RestyleSkippedClosed
+      (_, PullRequestOpen) -> do
         maybe
           (Restyled <$> runRestylers config paths)
           (pure . RestyleSkippedIgnored)

@@ -15,12 +15,14 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 
 data RestyleResult
-  = RestyleSkippedClosed
+  = RestyleSkippedDisabled
+  | RestyleSkippedClosed
   | RestyleSkippedIgnored IgnoredReason
   | Restyled [RestylerResult]
 
 logRestyleResult :: MonadLogger m => RestyleResult -> m ()
 logRestyleResult = \case
+  RestyleSkippedDisabled -> logInfo $ "Restyle skipped" :# ["reason" .= t "disabled"]
   RestyleSkippedClosed -> logInfo $ "Restyle skipped" :# ["reason" .= t "closed"]
   RestyleSkippedIgnored reason -> logInfo $ "Restyle skipped" :# ["reason" .= show @Text reason]
   Restyled results -> traverse_ logRestylerResult results
