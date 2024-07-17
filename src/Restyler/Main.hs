@@ -11,8 +11,8 @@ import GitHub.Endpoints.PullRequests (FetchCount (..), pullRequestFilesR)
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Options
 import Restyler.PullRequest
 import Restyler.PullRequest.Status

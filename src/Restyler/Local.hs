@@ -14,9 +14,9 @@ import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git (MonadGit)
 import Restyler.GitHub.PullRequest
-import Restyler.HostDirectoryOption
+import Restyler.Options.HostDirectory
 import Restyler.Ignore
-import Restyler.ImageCleanupOption
+import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
 import Restyler.Restrictions
 import Restyler.RestyleResult

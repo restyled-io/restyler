@@ -7,8 +7,8 @@ import SpecHelper
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Restyler.Run

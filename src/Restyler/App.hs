@@ -26,8 +26,8 @@ import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
 import Restyler.Options
 import Restyler.PullRequest

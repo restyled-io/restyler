@@ -10,8 +10,8 @@ import Blammo.Logging.LogSettings.Env qualified as LoggingEnv
 import Env qualified
 import GitHub.Data (IssueNumber, Owner, Repo)
 import Options.Applicative
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
 import Restyler.PullRequestSpec
 import Restyler.Restrictions

@@ -13,9 +13,9 @@ import Restyler.Prelude
 import Data.Semigroup.Generic
 import Env qualified
 import Options.Applicative
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
-import Restyler.LogSettingsOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
+import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
 import Restyler.Restrictions
 

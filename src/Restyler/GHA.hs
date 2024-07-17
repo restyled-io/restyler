@@ -1,29 +1,47 @@
 module Restyler.GHA
-  ( GitHubOutput (..)
-  , envGitHubOutput
-  , HasGitHubOutput (..)
-  , appendGitHubOutput
+  ( run
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
+import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
+import Restyler.GHA.Output
+import Restyler.Git (MonadGit)
+import Restyler.GitHub.Api
+import Restyler.GitHub.PullRequest.File
+import Restyler.GitHub.Repository
+import Restyler.Local qualified as Local
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
+import Restyler.Options.Manifest
+import Restyler.Restrictions
+import Restyler.RestyleResult
 
-newtype GitHubOutput = GitHubOutput
-  { unwrap :: FilePath
-  }
-  deriving newtype (IsString)
+run
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadDownloadFile m
+     , MonadSystem m
+     , MonadProcess m
+     , MonadGit m
+     , MonadReader env m
+     , HasLogger env
+     , HasGitHubToken env
+     , HasGitHubOutput env
+     , HasRestrictions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasManifestOption env
+     )
+  => Repository
+  -> Int
+  -> m RestyleResult
+run repo pr = do
+  pullRequest <- getPullRequest repo pr
+  logInfo $ "Handling PR" :# objectToPairs pullRequest
 
-class HasGitHubOutput env where
-  githubOutputL :: Lens' env GitHubOutput
+  paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
+  traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
 
-envGitHubOutput :: Env.Parser Env.Error GitHubOutput
-envGitHubOutput = Env.var Env.nonempty "GITHUB_OUTPUT" mempty
-
-appendGitHubOutput
-  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
-  => Text
-  -> m ()
-appendGitHubOutput x = do
-  path <- view githubOutputL
-  liftIO $ appendFileText path.unwrap x
+  result <- Local.run pullRequest paths
+  result <$ setRestylerResultOutputs pullRequest result

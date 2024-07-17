@@ -1,3 +1,5 @@
+{-# LANGUAGE NoFieldSelectors #-}
+
 -- | Environment variables available on GitHub Actions
 module Restyler.GitHubEnv
   ( GitHubEnv (..)
@@ -7,7 +9,7 @@ module Restyler.GitHubEnv
 import Restyler.Prelude
 
 import Env qualified
-import Restyler.GHA
+import Restyler.GHA.Output
 import Restyler.GitHub.Api (GitHubToken, HasGitHubToken (..), envGitHubToken)
 
 data GitHubEnv = GitHubEnv
@@ -16,10 +18,10 @@ data GitHubEnv = GitHubEnv
   }
 
 instance HasGitHubToken GitHubEnv where
-  githubTokenL = lens (.githubToken) $ \x y -> x {githubToken = y}
+  githubTokenL = lens (.token) $ \x y -> x {token = y}
 
 instance HasGitHubOutput GitHubEnv where
-  githubOutputL = lens (.githubOutput) $ \x y -> x {githubOutput = y}
+  githubOutputL = lens (.output) $ \x y -> x {output = y}
 
 githubEnvParser :: Env.Parser Env.Error GitHubEnv
 githubEnvParser =

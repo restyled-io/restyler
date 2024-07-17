@@ -42,8 +42,8 @@ import Blammo.Logging.Simple
 import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.Config
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Options
 import Restyler.Restrictions
 import Restyler.Restyler

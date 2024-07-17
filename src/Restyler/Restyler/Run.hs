@@ -30,8 +30,8 @@ import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
 import Restyler.Git
-import Restyler.HostDirectoryOption
-import Restyler.ImageCleanupOption
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restrictions
 import Restyler.Restyler

@@ -8,7 +8,7 @@ module Restyler.RestyleResult
 import Restyler.Prelude
 
 import Restyler.Content qualified as Content
-import Restyler.GHA
+import Restyler.GHA.Output
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
 import Restyler.Restyler
