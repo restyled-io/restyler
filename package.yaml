@@ -116,7 +116,6 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - envparse
       - restyler
   restyle-gha:
     main: main.hs

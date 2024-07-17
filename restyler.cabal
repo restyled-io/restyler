@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4cf222174ae24cbe8f57e8a22a47998548d4909deda9e147984a31202d62fe59
+-- hash: 0c919670ec782324510b6caf5317f335b0037dc7c10ae4e8f1c534d621b5ad14
 
 name:           restyler
 version:        0.2.0.0
@@ -48,6 +48,7 @@ library
       Restyler.GitHubEnv
       Restyler.Ignore
       Restyler.Local
+      Restyler.Local.App
       Restyler.Local.Options
       Restyler.Main
       Restyler.Opt
@@ -231,7 +232,6 @@ executable restyle-path
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
-    , envparse
     , restyler
   default-language: Haskell2010
 
