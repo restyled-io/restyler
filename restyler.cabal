@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1084c5b72759377ee6c5313fc41ab6a8d4166984c0c61677ff1886c3790bd8fe
+-- hash: fa98e0fe31a3a34f82e7a874dab842f7bb3350fa2859fe6e9236acbc01e0bf3f
 
 name:           restyler
 version:        0.2.0.0
@@ -20,6 +20,7 @@ library
       Restyler.App
       Restyler.App.Class
       Restyler.CLI
+      Restyler.Clone
       Restyler.CommitTemplate
       Restyler.Config
       Restyler.Config.ChangedPaths
@@ -49,6 +50,7 @@ library
       Restyler.Ignore
       Restyler.Job
       Restyler.Job.App
+      Restyler.Job.PlanUpgradeRequired
       Restyler.JobEnv
       Restyler.Local
       Restyler.Local.App
@@ -73,7 +75,6 @@ library
       Restyler.Restyler.Run
       Restyler.RestyleResult
       Restyler.RestylerResult
-      Restyler.Setup
       Restyler.Statsd
       Restyler.Wiki
       Restyler.Yaml.Errata

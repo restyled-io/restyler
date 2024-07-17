@@ -1,70 +1,38 @@
-module Restyler.Setup
-  ( restylerSetup
-
-    -- * Errors
-  , PlanUpgradeRequired (..)
-  , CloneTimeoutError (..)
+module Restyler.Clone
+  ( clonePullRequest
   ) where
 
 import Restyler.Prelude
 
-import Restyler.App.Class
-import Restyler.Git
+import Restyler.App.Class (MonadProcess, MonadSystem)
+import Restyler.Git (gitCloneBranchByRef)
 import Restyler.GitHub.Api
 import Restyler.GitHub.Repository
-import Restyler.JobEnv
 import Restyler.Options.PullRequest
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
-import Restyler.Wiki qualified as Wiki
 
-data PlanUpgradeRequired = PlanUpgradeRequired Text (Maybe URL)
-  deriving stock (Eq, Show)
-
-instance Exception PlanUpgradeRequired where
-  displayException (PlanUpgradeRequired message mUpgradeUrl) =
-    unpack
-      $ message
-      <> "\nFor additional help, please see: "
-      <> Wiki.commonError "Plan Upgrade Required"
-      <> maybe
-        ""
-        (("\nYou can upgrade your plan at " <>) . getUrl)
-        mUpgradeUrl
-
-restylerSetup
-  :: ( HasCallStack
-     , MonadUnliftIO m
+clonePullRequest
+  :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadExit m
      , MonadProcess m
      , MonadReader env m
      , HasStatsClient env
-     , HasJobEnv env
+     , HasGitHubToken env
      )
   => PullRequestOption
   -> m ()
-restylerSetup pr = do
-  env <- asks getJobEnv
-  when env.repoDisabled
-    $ exitWithInfo
-    $ fromString
-    $ "This repository has been disabled for possible abuse."
-    <> " If you believe this is an error, please reach out to"
-    <> " support@restyled.io"
-
-  for_ env.planRestriction $ \planRestriction -> do
-    throwIO $ PlanUpgradeRequired planRestriction env.planUpgradeUrl
-
+clonePullRequest pr = do
   logInfo "Cloning repository"
+  token <- asks $ (.unwrap) . getGitHubToken
   wrapClone
     $ gitCloneBranchByRef
       ("pull/" <> show pr.number <> "/head")
       ("pull-" <> show pr.number)
       ( unpack
           $ "https://x-access-token:"
-          <> env.githubToken.unwrap
+          <> token
           <> "@github.com/"
           <> pr.repo.owner
           <> "/"

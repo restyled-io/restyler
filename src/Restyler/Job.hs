@@ -12,11 +12,13 @@ import Restyler.App.Class
   , MonadSystem
   , exitWithInfo
   )
+import Restyler.Clone
 import Restyler.GHA qualified as GHA
 import Restyler.GHA.Output
 import Restyler.Git
 import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest
+import Restyler.Job.PlanUpgradeRequired
 import Restyler.JobEnv
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -25,7 +27,6 @@ import Restyler.Options.Manifest
 import Restyler.Options.PullRequest
 import Restyler.Restrictions
 import Restyler.RestyleResult
-import Restyler.Setup
 import Restyler.Statsd (HasStatsClient)
 
 run
@@ -53,8 +54,19 @@ run
   -> PullRequestOption
   -> m ()
 run (JobUrl jobUrl) pr = do
-  -- TODO: in-line
-  restylerSetup pr
+  env <- asks getJobEnv
+
+  when env.repoDisabled
+    $ exitWithInfo
+    $ fromString
+    $ "This repository has been disabled for possible abuse."
+    <> " If you believe this is an error, please reach out to"
+    <> " support@restyled.io"
+
+  for_ env.planRestriction $ \planRestriction -> do
+    throwIO $ PlanUpgradeRequired planRestriction env.planUpgradeUrl
+
+  clonePullRequest pr
 
   result <- GHA.run pr.repo pr.number
 

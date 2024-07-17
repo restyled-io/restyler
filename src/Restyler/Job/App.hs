@@ -9,7 +9,6 @@ module Restyler.Job.App
 import Restyler.Prelude
 
 import Env qualified
-import Restyler.App.Class (HasWorkingDirectory (..))
 import Restyler.GHA.Output
 import Restyler.GitHub.Api
 import Restyler.GitHub.Repository
@@ -24,6 +23,7 @@ import Restyler.Options.Manifest
 import Restyler.Options.PullRequest
 import Restyler.Restrictions
 import Restyler.Statsd
+import System.Directory qualified as Directory
 
 data App = App
   { logger :: Logger
@@ -31,7 +31,6 @@ data App = App
   , jobEnv :: JobEnv
   , jobUrl :: JobUrl
   , pullRequest :: PullRequestOption
-  , workingDirectory :: FilePath
   , statsClient :: StatsClient
   }
   deriving (HasManifestOption) via (ThroughOptions App)
@@ -51,9 +50,6 @@ instance HasJobEnv App where
 
 instance HasGitHubToken App where
   getGitHubToken = getGitHubToken . (.jobEnv)
-
-instance HasWorkingDirectory App where
-  workingDirectoryL = lens (.workingDirectory) $ \x y -> x {workingDirectory = y}
 
 instance HasStatsClient App where
   statsClientL = lens (.statsClient) $ \x y -> x {statsClient = y}
@@ -83,14 +79,14 @@ withApp f = do
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     withStatsClient jobEnv.statsdHost jobEnv.statsdPort statsdTags $ \statsClient -> do
-      withSystemTempDirectory "restyler-" $ \workingDirectory -> do
-        f
-          $ App
-            { logger
-            , options
-            , jobEnv
-            , jobUrl
-            , pullRequest
-            , workingDirectory
-            , statsClient
-            }
+      withSystemTempDirectory "restyler-" $ \tmp -> do
+        Directory.withCurrentDirectory tmp $ do
+          f
+            $ App
+              { logger
+              , options
+              , jobEnv
+              , jobUrl
+              , pullRequest
+              , statsClient
+              }
