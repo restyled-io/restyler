@@ -1,11 +1,11 @@
-module Restyler.OptSpec
+module Restyler.Options.PullRequestSpec
   ( spec
   ) where
 
 import Restyler.Prelude
 
 import Restyler.GitHub.Repository
-import Restyler.Opt
+import Restyler.Options.PullRequest
 import Test.Hspec
 
 spec :: Spec

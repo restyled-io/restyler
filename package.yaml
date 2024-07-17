@@ -80,7 +80,6 @@ library:
     - microlens
     - microlens-mtl
     - monad-logger-aeson
-    - network-uri
     - optparse-applicative
     - process
     - relude

@@ -9,18 +9,16 @@ module Restyler.GHA.App
 import Restyler.Prelude
 
 import Env qualified
-import Restyler.App (AppT)
 import Restyler.GHA.Output
-import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.GitHub.Api
 import Restyler.GitHubEnv
 import Restyler.Local.Options
-import Restyler.Opt (PullRequestOption)
 import Restyler.Opt qualified as Opt
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
+import Restyler.Options.PullRequest
 import Restyler.Restrictions
 
 data App = App
@@ -49,11 +47,6 @@ instance HasGitHubToken App where
 instance HasGitHubOutput App where
   githubOutputL = githubEnvL . githubOutputL
 
-deriving via
-  (ActualGit (AppT App m))
-  instance
-    MonadUnliftIO m => MonadGit (AppT App m)
-
 withApp :: (App -> IO a) -> IO a
 withApp f = do
   (githubEnv, env) <-
@@ -66,7 +59,7 @@ withApp f = do
     Opt.parse "Restyle on GitHub Actions"
       $ (,)
       <$> optParser
-      <*> Opt.optPullRequest
+      <*> optPullRequest
 
   let options = env <> opt
 

@@ -10,8 +10,6 @@ import Restyler.Prelude
 
 import Data.List.NonEmpty (some1)
 import Env qualified
-import Restyler.App (AppT)
-import Restyler.Git (ActualGit (..), MonadGit)
 import Restyler.Local.Options
 import Restyler.Opt qualified as Opt
 import Restyler.Options.HostDirectory
@@ -35,11 +33,6 @@ instance HasOptions App where
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
-
-deriving via
-  (ActualGit (AppT App m))
-  instance
-    MonadUnliftIO m => MonadGit (AppT App m)
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do

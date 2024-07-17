@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0c919670ec782324510b6caf5317f335b0037dc7c10ae4e8f1c534d621b5ad14
+-- hash: 13b7ef0b5521da917bc51137aa61bfbb082d4a700427f04c24f6cb4e3786915c
 
 name:           restyler
 version:        0.2.0.0
@@ -57,6 +57,7 @@ library
       Restyler.Options.ImageCleanup
       Restyler.Options.LogSettings
       Restyler.Options.Manifest
+      Restyler.Options.PullRequest
       Restyler.Prelude
       Restyler.PullRequest
       Restyler.PullRequest.Status
@@ -137,7 +138,6 @@ library
     , microlens
     , microlens-mtl
     , monad-logger-aeson
-    , network-uri
     , optparse-applicative
     , process
     , relude
@@ -288,7 +288,7 @@ test-suite test
       Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
-      Restyler.OptSpec
+      Restyler.Options.PullRequestSpec
       Restyler.PullRequestSpecSpec
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec

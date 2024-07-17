@@ -26,10 +26,10 @@ import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Git
+import Restyler.Options
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
-import Restyler.Options
 import Restyler.PullRequest
 import Restyler.Restrictions
 import Restyler.Setup
@@ -162,6 +162,11 @@ instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
       request <- parseRequestThrow $ unpack url
       runResourceT $ httpSink request $ \_ -> sinkFile path
 
+deriving via
+  (ActualGit (AppT app m))
+  instance
+    (MonadUnliftIO m, HasLogger app) => MonadGit (AppT app m)
+
 data GitHubError = GitHubError
   { gheRequest :: DisplayGitHubRequest
   , gheError :: GitHub.Error
@@ -261,11 +266,6 @@ instance HasConfig App where
 
 instance HasPullRequest App where
   pullRequestL = lens appPullRequest $ \x y -> x {appPullRequest = y}
-
-deriving via
-  (ActualGit (AppT App m))
-  instance
-    MonadUnliftIO m => MonadGit (AppT App m)
 
 bootstrapApp
   :: MonadUnliftIO m
