@@ -5,7 +5,6 @@
 -- <https://developer.github.com/v3/pulls/review_requests>
 module GitHub.Endpoints.PullRequests.ReviewRequests
   ( RequestReview (..)
-  , requestOneReviewer
   , ReviewRequest (..)
   , createReviewRequest
   , createReviewRequestR
@@ -17,17 +16,11 @@ import Data.Aeson
 import GitHub.Data
 import GitHub.Request
 
+-- | Request details
 data RequestReview = RequestReview
   { requestReviewReviewers :: [Name User]
   , requestReviewTeamReviewers :: [Name Team]
   }
-
-requestOneReviewer :: Name User -> RequestReview
-requestOneReviewer reviewer =
-  RequestReview
-    { requestReviewReviewers = [reviewer]
-    , requestReviewTeamReviewers = []
-    }
 
 instance ToJSON RequestReview where
   toJSON rr =
@@ -36,6 +29,7 @@ instance ToJSON RequestReview where
       , "team_reviewers" .= requestReviewTeamReviewers rr
       ]
 
+-- | Response details
 newtype ReviewRequest = ReviewRequest
   { reviewRequestUrl :: URL
   }

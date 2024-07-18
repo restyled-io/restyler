@@ -6,6 +6,7 @@ module Restyler.GitHub.Api
   , getPullRequestFiles
   , setPullRequestStatus
   , createPullRequest
+  , createReviewRequest
 
     -- * "GitHub" dependency-injection
   , MonadGitHub (..)
@@ -19,10 +20,12 @@ module Restyler.GitHub.Api
 
 import Restyler.Prelude
 
+import Data.These
 import Data.Vector (Vector)
 import Env qualified
 import GitHub (github)
 import GitHub qualified
+import GitHub.Endpoints.PullRequests.ReviewRequests qualified as GitHub
 import Restyler.AnnotatedException (throw)
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
@@ -114,6 +117,39 @@ createPullRequest repo title body baseRef headRef = do
       , GitHub.createPullRequestBase = baseRef
       , GitHub.createPullRequestHead = headRef
       }
+
+createReviewRequest
+  :: (MonadIO m, MonadGitHub m)
+  => PullRequest
+  -> These (NonEmpty Text) (NonEmpty Text)
+  -- ^ User names, Team names, or both
+  -> m ()
+createReviewRequest pr =
+  fromGitHub (const $ Right ())
+    <=< ghCreateReviewRequest ghOwner ghRepo ghNumber
+    . toRequest
+ where
+  ghOwner = GitHub.mkOwnerName pr.base.repo.owner.login
+  ghRepo = GitHub.mkRepoName pr.base.repo.name
+  ghNumber = GitHub.IssueNumber pr.number
+
+  toRequest :: These (NonEmpty Text) (NonEmpty Text) -> GitHub.RequestReview
+  toRequest = \case
+    This users ->
+      GitHub.RequestReview
+        { GitHub.requestReviewReviewers = map (mkName Proxy) $ toList users
+        , GitHub.requestReviewTeamReviewers = []
+        }
+    That teams ->
+      GitHub.RequestReview
+        { GitHub.requestReviewReviewers = []
+        , GitHub.requestReviewTeamReviewers = map (mkName Proxy) $ toList teams
+        }
+    These users teams ->
+      GitHub.RequestReview
+        { GitHub.requestReviewReviewers = map (mkName Proxy) $ toList users
+        , GitHub.requestReviewTeamReviewers = map (mkName Proxy) $ toList teams
+        }
 
 convertLabel :: GitHub.IssueLabel -> Label
 convertLabel gh = Label {name = GitHub.untagName $ GitHub.labelName gh}
@@ -226,6 +262,13 @@ class Monad m => MonadGitHub m where
     -> GitHub.CreatePullRequest
     -> m (Either GitHub.Error GitHub.PullRequest)
 
+  ghCreateReviewRequest
+    :: GitHub.Name GitHub.Owner
+    -> GitHub.Name GitHub.Repo
+    -> GitHub.IssueNumber
+    -> GitHub.RequestReview
+    -> m (Either GitHub.Error GitHub.ReviewRequest)
+
 newtype GitHubToken = GitHubToken
   { unwrap :: Text
   }
@@ -271,6 +314,9 @@ instance (Monad m, MonadIO m, MonadReader env m, HasGitHubToken env) => MonadGit
 
   ghCreatePullRequest owner repo create =
     runGitHub $ GitHub.createPullRequestR owner repo create
+
+  ghCreateReviewRequest owner repo number req =
+    runGitHub $ GitHub.createReviewRequestR owner repo number req
 
 runGitHub
   :: ( MonadIO m

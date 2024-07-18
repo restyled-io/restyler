@@ -26,7 +26,7 @@ runRestyle
   :: (Monad m, HasCallStack)
   => Config
   -> pr
-  -> m [RestylerResult]
+  -> (HasCallStack => m [RestylerResult])
   -> m (RestyleResult pr)
 runRestyle config pr run = do
   results <- run

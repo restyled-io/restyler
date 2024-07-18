@@ -73,6 +73,7 @@ library:
     - semigroups
     - shakespeare
     - text
+    - these
     - time
     - unliftio
     - unliftio-core
