@@ -49,27 +49,24 @@ tryErrorHandlers e = go errorHandlers
 
 errorHandlers :: (MonadIO m, MonadLogger m) => [Handler m Error]
 errorHandlers =
-  [ errorHandler $ \case
-      ex@RepoDisabled {} ->
-        (warning ex)
-          { tag = "repo-disabled"
-          , description = "repo disabled"
-          , exitCode = ExitSuccess
-          }
-  , errorHandler $ \case
-      ex@PlanUpgradeRequired {} ->
-        (warning ex)
-          { tag = "plan-upgrade-required"
-          , description = "plan upgrade required"
-          , exitCode = ExitFailure 3
-          }
-  , errorHandler $ \case
-      ex@CloneTimeoutError {} ->
-        (unknown ex)
-          { tag = "clone-timeout"
-          , description = "clone timed out"
-          , exitCode = ExitFailure 5
-          }
+  [ errorHandler $ \ex@RepoDisabled {} ->
+      (warning ex)
+        { tag = "repo-disabled"
+        , description = "repo disabled"
+        , exitCode = ExitSuccess
+        }
+  , errorHandler $ \ex@PlanUpgradeRequired {} ->
+      (warning ex)
+        { tag = "plan-upgrade-required"
+        , description = "plan upgrade required"
+        , exitCode = ExitFailure 3
+        }
+  , errorHandler $ \ex@CloneTimeoutError {} ->
+      (unknown ex)
+        { tag = "clone-timeout"
+        , description = "clone timed out"
+        , exitCode = ExitFailure 5
+        }
   , errorHandler $ \case
       ex@ConfigErrorInvalidYaml {} ->
         (warning ex)
@@ -89,41 +86,36 @@ errorHandlers =
           , description = "bad Restylers manifest"
           , exitCode = ExitFailure 12
           }
-  , errorHandler $ \case
-      ex@RestylerExitFailure {} ->
-        (warning ex)
-          { tag = "restyler"
-          , description = "a Restyler errored"
-          , exitCode = ExitFailure 20
-          }
-  , errorHandler $ \case
-      ex@RestylerOutOfMemory {} ->
-        (unknown ex)
-          { tag = "restyler-oom"
-          , description = "a Restyler has used too much memory"
-          , exitCode = ExitFailure 21
-          }
-  , errorHandler $ \case
-      ex@RestylerCommandNotFound {} ->
-        (unknown ex)
-          { tag = "restyler-command-not-found"
-          , description = "a Restyler's command is invalid"
-          , exitCode = ExitFailure 22
-          }
-  , errorHandler $ \case
-      ex@RestylerPullFailure {} ->
-        (warning ex)
-          { tag = "restyler-pull"
-          , description = "unable to pull image"
-          , exitCode = ExitFailure 23
-          }
-  , errorHandler $ \case
-      ex@TooManyChangedPaths {} ->
-        (warning ex)
-          { tag = "too-many-changed-paths"
-          , description = "PR is too large"
-          , exitCode = ExitFailure 25
-          }
+  , errorHandler $ \ex@RestylerExitFailure {} ->
+      (warning ex)
+        { tag = "restyler"
+        , description = "a Restyler errored"
+        , exitCode = ExitFailure 20
+        }
+  , errorHandler $ \ex@RestylerOutOfMemory {} ->
+      (unknown ex)
+        { tag = "restyler-oom"
+        , description = "a Restyler has used too much memory"
+        , exitCode = ExitFailure 21
+        }
+  , errorHandler $ \ex@RestylerCommandNotFound {} ->
+      (unknown ex)
+        { tag = "restyler-command-not-found"
+        , description = "a Restyler's command is invalid"
+        , exitCode = ExitFailure 22
+        }
+  , errorHandler $ \ex@RestylerPullFailure {} ->
+      (warning ex)
+        { tag = "restyler-pull"
+        , description = "unable to pull image"
+        , exitCode = ExitFailure 23
+        }
+  , errorHandler $ \ex@TooManyChangedPaths {} ->
+      (warning ex)
+        { tag = "too-many-changed-paths"
+        , description = "PR is too large"
+        , exitCode = ExitFailure 25
+        }
   , errorHandler $ \case
       ex@(GitHub.HTTPError (HttpExceptionRequest req (StatusCodeException resp body))) ->
         (github ex)
