@@ -6,7 +6,6 @@ module Restyler.Config.Interpreter
 import Restyler.Prelude
 
 import Data.Aeson
-import Data.List.NonEmpty qualified as NE
 import Data.Text qualified as T
 import Restyler.ReadP
 import System.FilePath (takeFileName)
@@ -28,7 +27,7 @@ instance ToJSON Interpreter where
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
-  line <- head <$> NE.nonEmpty (lines contents)
+  line <- head <$> nonEmpty (lines contents)
   parseInterpreter . unpack $ T.strip line
 
 parseInterpreter :: String -> Maybe Interpreter

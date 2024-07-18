@@ -6,7 +6,6 @@ module Restyler.ConfigSpec
 
 import SpecHelper
 
-import Data.List.NonEmpty qualified as NE
 import Data.Text qualified as T
 import Data.Yaml (prettyPrintParseException)
 import Restyler.AnnotatedException
@@ -396,7 +395,7 @@ assertLoadsRestyler f yaml expected = do
         config <- eConfig
         restylers <-
           note "No Restylers loaded"
-            $ NE.nonEmpty
+            $ nonEmpty
             $ cRestylers config
         pure $ f $ head restylers
 

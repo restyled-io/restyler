@@ -15,7 +15,7 @@ import Text.ParserCombinators.ReadP hiding (option)
 import Prelude qualified as Unsafe
 
 parseReadP :: ReadP a -> String -> Either String a
-parseReadP p s = case NE.nonEmpty (readP_to_S p s) of
+parseReadP p s = case nonEmpty (readP_to_S p s) of
   Nothing -> Left "No parse"
   Just ne -> case NE.last ne of
     (a, []) -> Right a

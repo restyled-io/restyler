@@ -20,8 +20,6 @@ module Restyler.GitHub.Api
 
 import Restyler.Prelude
 
-import Data.These
-import Data.Vector (Vector)
 import Env qualified
 import GitHub (github)
 import GitHub qualified
