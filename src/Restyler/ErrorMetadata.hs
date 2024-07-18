@@ -1,5 +1,8 @@
 module Restyler.ErrorMetadata
-  ( withExitHandler
+  ( ErrorMetadata (..)
+  , runErrorHandlers
+  , tryErrorHandlers
+  , errorHandlers
   ) where
 
 import Restyler.Prelude
@@ -24,35 +27,47 @@ import Restyler.Restyler.Run
   , TooManyChangedPaths (..)
   )
 
-withExitHandler :: (MonadUnliftIO m, MonadLogger m) => m a -> m ()
-withExitHandler f = do
-  ec <- (ExitSuccess <$ f) `catches` handlers
-  exitWith ec
+runErrorHandlers
+  :: (MonadIO m, MonadLogger m)
+  => SomeException
+  -> m ErrorMetadata
+runErrorHandlers e = fromMaybe (unknown e) <$> tryErrorHandlers e
 
-handlers :: (MonadIO m, MonadLogger m) => [Handler m ExitCode]
-handlers =
-  [ toHandler $ \case
+tryErrorHandlers
+  :: (MonadIO m, MonadLogger m)
+  => SomeException
+  -> m (Maybe ErrorMetadata)
+tryErrorHandlers e = go errorHandlers
+ where
+  go [] = pure Nothing
+  go (Handler f : hs)
+    | Just ex <- fromException e = Just <$> f ex
+    | otherwise = go hs
+
+errorHandlers :: (MonadIO m, MonadLogger m) => [Handler m ErrorMetadata]
+errorHandlers =
+  [ errorHandler $ \case
       ex@RepoDisabled {} ->
         (warning ex)
           { tag = "repo-disabled"
           , description = "repo disabled"
           , exitCode = ExitSuccess
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@PlanUpgradeRequired {} ->
         (warning ex)
           { tag = "plan-upgrade-required"
           , description = "plan upgrade required"
           , exitCode = ExitFailure 3
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@CloneTimeoutError {} ->
         (unknown ex)
           { tag = "clone-timeout"
           , description = "clone timed out"
           , exitCode = ExitFailure 5
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@ConfigErrorInvalidYaml {} ->
         (warning ex)
           { tag = "invalid-config"
@@ -71,35 +86,35 @@ handlers =
           , description = "bad Restylers manifest"
           , exitCode = ExitFailure 12
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@RestylerExitFailure {} ->
         (warning ex)
           { tag = "restyler"
           , description = "a Restyler errored"
           , exitCode = ExitFailure 20
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@RestylerOutOfMemory {} ->
         (unknown ex)
           { tag = "restyler-oom"
           , description = "a Restyler has used too much memory"
           , exitCode = ExitFailure 21
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@RestylerCommandNotFound {} ->
         (unknown ex)
           { tag = "restyler-command-not-found"
           , description = "a Restyler's command is invalid"
           , exitCode = ExitFailure 22
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@TooManyChangedPaths {} ->
         (warning ex)
           { tag = "too-many-changed-paths"
           , description = "PR is too large"
           , exitCode = ExitFailure 25
           }
-  , toHandler $ \case
+  , errorHandler $ \case
       ex@(GitHub.HTTPError (HttpExceptionRequest req (StatusCodeException resp body))) ->
         (github ex)
           { message =
@@ -111,7 +126,7 @@ handlers =
                 :# bodyToSeries body
           }
       ex -> github ex
-  , toHandler $ unknown @SomeException
+  , errorHandler $ unknown @SomeException
   ]
 
 github :: Exception ex => ex -> ErrorMetadata
@@ -135,17 +150,13 @@ unknown ex =
     , exitCode = ExitFailure 99
     }
 
-toHandler
-  :: (MonadIO m, MonadLogger m, Exception e)
-  => (e -> ErrorMetadata)
-  -> Handler m ExitCode
-toHandler f = Handler $ \aex@AnnotatedException {exception} -> do
+errorHandler
+  :: (MonadIO m, MonadLogger m, Exception ex)
+  => (ex -> ErrorMetadata)
+  -> Handler m ErrorMetadata
+errorHandler f = Handler $ \aex@AnnotatedException {exception} -> do
   let md = f exception
-  logDebug $ displayAnnotatedException aex :# []
-  case md.severity of
-    "warning" -> logWarn md.message
-    _ -> logError md.message
-  pure md.exitCode
+  md <$ logDebug (displayAnnotatedException aex :# [])
 
 data ErrorMetadata = ErrorMetadata
   { severity :: Text

@@ -47,7 +47,6 @@ run
      , MonadProcess m
      , MonadGit m
      , MonadReader env m
-     , HasLogger env
      , HasRestrictions env
      , HasHostDirectoryOption env
      , HasManifestOption env

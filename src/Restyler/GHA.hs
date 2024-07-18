@@ -27,7 +27,6 @@ run
      , MonadProcess m
      , MonadGit m
      , MonadReader env m
-     , HasLogger env
      , HasGitHubToken env
      , HasGitHubOutput env
      , HasRestrictions env

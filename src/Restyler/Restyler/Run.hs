@@ -39,7 +39,7 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
-import UnliftIO.Exception (tryAny)
+import UnliftIO.Exception (handleAny, tryAny)
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
   deriving stock (Show, Eq)
@@ -100,7 +100,6 @@ runRestylers
      , MonadGit m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -119,7 +118,6 @@ runRestylers_
      , MonadProcess m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -213,7 +211,7 @@ addExecutableInterpreter
   :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
   => FilePath
   -> m (FilePath, Maybe Interpreter)
-addExecutableInterpreter path = do
+addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
   isExec <- isFileExecutable path
 
   (path,)
@@ -229,7 +227,6 @@ runRestyler
      , MonadProcess m
      , MonadGit m
      , MonadReader env m
-     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -251,7 +248,6 @@ runRestyler_
      , MonadSystem m
      , MonadProcess m
      , MonadReader env m
-     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env
@@ -313,7 +309,6 @@ dockerRunRestyler
      , MonadSystem m
      , MonadProcess m
      , MonadReader env m
-     , HasLogger env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasRestrictions env

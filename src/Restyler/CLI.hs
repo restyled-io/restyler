@@ -5,7 +5,7 @@ module Restyler.CLI
 import Restyler.Prelude
 
 import Restyler.App (AppT, runAppT)
-import Restyler.ErrorMetadata
+import Restyler.Exit
 import Restyler.RestyleResult
 
 main

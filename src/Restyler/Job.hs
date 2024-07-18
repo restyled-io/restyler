@@ -46,7 +46,6 @@ run
      , MonadGit m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasLogger env
      , HasStatsClient env
      , HasJobEnv env
      , HasGitHubToken env
@@ -128,7 +127,12 @@ handleDifferences config jobUrl pullRequest results = do
   mDetails = checkDangerousPullRequest pullRequest
 
 withStatsAndCleanup
-  :: (MonadUnliftIO m, MonadGitHub m, MonadReader env m, HasStatsClient env)
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadGitHub m
+     , MonadReader env m
+     , HasStatsClient env
+     )
   => URL
   -> m a
   -> m a
@@ -139,22 +143,22 @@ withStatsAndCleanup jobUrl f = do
   Statsd.histogramSince "restyler.duration" [] start
   case result of
     Left aex -> do
-      -- let
-      --   ex = unannotatedException aex
-      --   md = errorMetadata ex
-      --   mConfig = findAnnotation @Config aex
-      --   mPullRequest = findAnnotation @PullRequest aex
+      md <- runErrorHandlers $ toException aex
 
-      -- for_ mPullRequest $ \pullRequest -> do
-      --   cleanupRestyledPullRequest pullRequest
-      --   for_ mConfig $ \config -> do
-      --     setPullRequestRed config pullRequest jobUrl
-      --       $ "Error ("
-      --       <> errorMetadataDescription md
-      --       <> ")"
+      let
+        mConfig = findAnnotation @Config aex
+        mPullRequest = findAnnotation @PullRequest aex
 
-      -- Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
-      throwIO aex -- already annotated through as-is
+      for_ mPullRequest $ \pullRequest -> do
+        cleanupRestyledPullRequest pullRequest
+        for_ mConfig $ \config -> do
+          setPullRequestRed config pullRequest jobUrl
+            $ "Error ("
+            <> md.description
+            <> ")"
+
+      Statsd.increment "restyler.error" [("severity", md.severity), ("error", md.tag)]
+      throwIO aex -- already annotated, throw as-is
     Right a -> a <$ Statsd.increment "restyler.success" []
 
 cleanupRestyledPullRequest :: MonadGitHub m => PullRequest -> m ()

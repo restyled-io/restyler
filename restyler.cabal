@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1bc8cc09f6baa7d297ef9d591c2e22f0830aa0d07c9d042a7feb91064ce5189f
+-- hash: 0026d6e715e0789f5f524f24ea1f14682ec60d45d490d18c5be00eb0d4f9160b
 
 name:           restyler
 version:        0.2.0.0
@@ -38,6 +38,7 @@ library
       Restyler.DangerousPullRequest
       Restyler.Delimited
       Restyler.ErrorMetadata
+      Restyler.Exit
       Restyler.GHA
       Restyler.GHA.App
       Restyler.GHA.Output
