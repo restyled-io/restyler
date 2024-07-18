@@ -1,4 +1,3 @@
--- TODO
 {-# LANGUAGE FieldSelectors #-}
 
 module Restyler.Restyler

@@ -1,4 +1,3 @@
--- TODO
 {-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Config.RequestReview
