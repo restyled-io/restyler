@@ -3,7 +3,6 @@
 
 module Restyler.Restyler.Run
   ( runRestylers
-  , runRestylers_
 
     -- * Errors
   , RestylerExitFailure (..)
@@ -108,38 +107,7 @@ runRestylers
   => Config
   -> [FilePath]
   -> m [RestylerResult]
-runRestylers = runRestylersWith runRestyler
-
--- | @'runRestylers'@, but without committing or reporting results
-runRestylers_
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadSystem m
-     , MonadProcess m
-     , MonadDownloadFile m
-     , MonadReader env m
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasRestrictions env
-     , HasCallStack
-     )
-  => Config
-  -> [FilePath]
-  -> m ()
-runRestylers_ config = void . runRestylersWith (const runRestyler_) config
-
-runRestylersWith
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadSystem m
-     , MonadDownloadFile m
-     , HasCallStack
-     )
-  => (Config -> Restyler -> [FilePath] -> m a)
-  -> Config
-  -> [FilePath]
-  -> m [a]
-runRestylersWith run config@Config {..} allPaths = do
+runRestylers config@Config {..} allPaths = do
   paths <- findFiles $ filter included allPaths
 
   logDebug $ "" :# ["restylers" .= map rName restylers]
@@ -160,7 +128,7 @@ runRestylersWith run config@Config {..} allPaths = do
         throw $ TooManyChangedPaths lenPaths maxPaths
     else do
       traverse_ downloadRemoteFile cRemoteFiles
-      withFilteredPaths restylers paths $ run config
+      withFilteredPaths restylers paths $ runRestyler config
  where
   included path = none (`match` path) cExclude
   restylers = filter rEnabled cRestylers

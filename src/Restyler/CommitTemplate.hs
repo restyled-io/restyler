@@ -1,6 +1,5 @@
 module Restyler.CommitTemplate
-  ( CommitTemplate
-  , commitTemplate
+  ( CommitTemplate (..)
   , CommitTemplateInputs (..)
   , renderCommitTemplate
   ) where
@@ -20,9 +19,6 @@ newtype CommitTemplate = CommitTemplate
   }
   deriving stock (Eq, Show, Generic)
   deriving newtype (FromJSON, ToJSON)
-
-commitTemplate :: Text -> CommitTemplate
-commitTemplate = CommitTemplate
 
 renderCommitTemplate :: CommitTemplateInputs -> CommitTemplate -> String
 renderCommitTemplate cti =
