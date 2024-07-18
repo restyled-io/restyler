@@ -207,12 +207,21 @@ action `shouldThrow` p = do
       expectationFailure
         $ "did not get expected exception: "
         <> exceptionType
-    Left AnnotatedException {exception} ->
-      (`expectTrue` p exception)
-        $ "predicate failed on expected exception: "
-        <> exceptionType
-        <> "\n"
-        <> show exception
+    Left aex@(AnnotatedException {exception}) ->
+      case fromException exception of
+        Nothing ->
+          expectationFailure
+            $ "Did not get expected exception type"
+            <> "\n  Expected type: "
+            <> exceptionType
+            <> "\n       Received: "
+            <> unpack (displayAnnotatedException aex)
+        Just ex ->
+          (`expectTrue` p ex)
+            $ "predicate failed on expected exception: "
+            <> exceptionType
+            <> "\n"
+            <> show ex
  where
   -- a string representation of the expected exception's type
   exceptionType = (show . typeOf . instanceOf) p

@@ -52,7 +52,7 @@ spec = withTestApp $ do
     it "treats non-zero exit codes as RestylerExitFailure"
       $ testAppExample
       $ do
-        pendingWith "Annotations and separate docker-pull process breaks this"
+        pendingWith "The separate docker-pull process fails first now"
         local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
           runRestyler_ (someRestyler "foo") ["bar"]
             `shouldThrow` ( ==
