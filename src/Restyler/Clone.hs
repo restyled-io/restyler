@@ -6,7 +6,7 @@ module Restyler.Clone
 import Restyler.Prelude
 
 import Restyler.AnnotatedException (throw)
-import Restyler.App.Class (MonadProcess, MonadSystem)
+import Restyler.App.Class (MonadProcess)
 import Restyler.Git (gitCloneBranchByRef)
 import Restyler.GitHub.Api
 import Restyler.Options.PullRequest
@@ -17,7 +17,6 @@ import Restyler.Statsd qualified as Statsd
 clonePullRequest
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadSystem m
      , MonadProcess m
      , MonadReader env m
      , HasStatsClient env
@@ -41,7 +40,6 @@ clonePullRequest pr = do
           <> pr.repo.repo
           <> ".git"
       )
-      "."
 
 newtype CloneTimeoutError = CloneTimeoutError
   { unwrap :: Int

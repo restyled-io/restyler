@@ -59,19 +59,16 @@ instance (MonadSystem m, MonadProcess m) => MonadGit (ActualGit m) where
 -- GitHub's @pulls/N/head@ ref isn't real enough to work with @clone --branch@,
 -- so we do the functionally-equivalent thing of @init@/@remote-add@/@fetch@.
 gitCloneBranchByRef
-  :: (MonadSystem m, MonadProcess m)
+  :: MonadProcess m
   => String
   -- ^ Remote ref
   -> String
   -- ^ Local branch name
   -> String
   -- ^ URL
-  -> FilePath
-  -- ^ Directory
   -> m ()
-gitCloneBranchByRef ref branch url dir = do
-  callGit "init" ["--quiet", dir]
-  setCurrentDirectory dir
+gitCloneBranchByRef ref branch url = do
+  callGit "init" ["--quiet", "."]
   callGit "remote" ["add", "origin", url]
   callGit "fetch" ["--quiet", "--depth", "1", "origin", ref <> ":" <> branch]
   callGit "checkout" ["--no-progress", branch]
