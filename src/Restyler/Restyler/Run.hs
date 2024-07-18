@@ -48,10 +48,7 @@ instance Exception RestylerPullFailure where
   displayException (RestylerPullFailure Restyler {..} ec) =
     mconcat
       [ "Unable to pull " <> rImage <> " (" <> show @String ec <> ")"
-      , "\n  Error information may be present in debug messages printed above"
-      , "\n"
-      , "\n  Help:"
-      , concatMap ("\n    " <>) rDocumentation
+      , "\n  The source of the error may be visible in debug messages above"
       ]
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
