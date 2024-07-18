@@ -13,7 +13,7 @@ import Restyler.Config
 import Restyler.Config.Include
 import Restyler.Restyler
 import Text.Shakespeare.Text (st)
-import UnliftIO.Exception (try)
+import UnliftIO.Exception (throwString, try)
 
 spec :: Spec
 spec = withTestApp $ do

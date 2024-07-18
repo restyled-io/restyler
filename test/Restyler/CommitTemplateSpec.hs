@@ -13,7 +13,7 @@ spec = do
     it "replaces variables" $ example $ do
       let
         inputs = CommitTemplateInputs {restyler = someRestyler "special"}
-        template = commitTemplate "Restyled by ${restyler.name}"
+        template = CommitTemplate "Restyled by ${restyler.name}"
 
       renderCommitTemplate inputs template
         `shouldBe` "Restyled by special"

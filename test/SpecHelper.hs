@@ -45,6 +45,7 @@ import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException (throw)
 import Restyler.Config
+import Restyler.Git
 import Restyler.Local.Options
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -106,6 +107,14 @@ instance MonadProcess TestAppT where
 
 instance MonadDownloadFile TestAppT where
   downloadFile _url _path = pure ()
+
+instance MonadGit TestAppT where
+  gitPush _ = pure ()
+  gitPushForce _ = pure ()
+  gitDiffNameOnly _ = pure []
+  gitFormatPatch _ = pure ""
+  gitCommitAll _ = pure ""
+  gitCheckout _ = pure ()
 
 instance Example (TestAppT a) where
   type Arg (TestAppT a) = TestApp
