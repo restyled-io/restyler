@@ -35,7 +35,7 @@ import Restyler.RestyledPullRequest
 import Restyler.RestylerResult
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
-import UnliftIO.Exception (handleAny, throwIO)
+import UnliftIO.Exception (throwIO)
 
 run
   :: ( MonadMask m
@@ -151,7 +151,7 @@ withStatsAndCleanup jobUrl f = do
 
       for_ mPullRequest $ \pullRequest -> do
         for_ mConfig $ \config -> do
-          handleAny (const $ pure ())
+          suppressWarn
             $ setPullRequestRed config pullRequest jobUrl
             $ "Error ("
             <> err.description

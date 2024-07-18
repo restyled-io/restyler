@@ -22,7 +22,7 @@ import Restyler.Prelude
 
 import Data.List (nub)
 import Data.Text qualified as T
-import Restyler.AnnotatedException (throw)
+import Restyler.AnnotatedException
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.ChangedPaths
@@ -39,7 +39,6 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
-import UnliftIO.Exception (handleAny, tryAny)
 
 data RestylerPullFailure = RestylerPullFailure Restyler Int
   deriving stock (Show, Eq)
@@ -189,7 +188,7 @@ addExecutableInterpreter
   :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
   => FilePath
   -> m (FilePath, Maybe Interpreter)
-addExecutableInterpreter path = handleAny (const $ pure (path, Nothing)) $ do
+addExecutableInterpreter path = suppressWith (path, Nothing) $ do
   isExec <- isFileExecutable path
 
   (path,)
@@ -345,18 +344,9 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
     | otherwise = "./" <> p
 
   cleanupImage = do
-    eec <- tryAny $ callProcessExitCode "docker" ["image", "rm", "--force", rImage]
-    case eec of
-      Left ex ->
-        logWarn
-          $ "Exception removing Restyler image"
-          :# ["exception" .= displayException ex]
-      Right ExitSuccess ->
-        logInfo "Removed Restyler image"
-      Right (ExitFailure i) ->
-        logWarn
-          $ "Error removing Restyler image"
-          :# ["status" .= i]
+    suppressWarn $ do
+      callProcess "docker" ["image", "rm", "--force", rImage]
+      logInfo "Removed Restyler image"
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')

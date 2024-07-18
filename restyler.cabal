@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2e94f7c3e5fc1938ac6015fdd895de75ec8d9841a5e569dcacc03ca1f81bb74b
+-- hash: 5fec3b34acb15c445ac04e97a78c409486fa8931f6265632cd8091b9f5022ccf
 
 name:           restyler
 version:        0.2.0.0
@@ -284,6 +284,5 @@ test-suite test
     , restyler
     , shakespeare
     , text
-    , unliftio
     , yaml
   default-language: GHC2021

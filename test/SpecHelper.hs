@@ -41,9 +41,10 @@ import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
 import Blammo.Logging.Simple
+import Data.Typeable (typeOf)
 import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
-import Restyler.AnnotatedException (throw)
+import Restyler.AnnotatedException
 import Restyler.Config
 import Restyler.Git
 import Restyler.Local.Options
@@ -196,7 +197,30 @@ testRestylers =
 pendingWith :: (HasCallStack, MonadIO m) => String -> m ()
 pendingWith = liftIO . Hspec.pendingWith
 
+-- | 'shouldThrow' but in 'MonadUnliftIO' and handling annotations
 shouldThrow
-  :: (HasCallStack, MonadUnliftIO m, Exception e) => m a -> Selector e -> m ()
-shouldThrow f matcher = withRunInIO $ \runInIO -> do
-  runInIO f `Hspec.shouldThrow` matcher
+  :: (MonadUnliftIO m, Exception e, HasCallStack) => m a -> Selector e -> m ()
+action `shouldThrow` p = do
+  r <- tryAnnotated action
+  case r of
+    Right _ ->
+      expectationFailure
+        $ "did not get expected exception: "
+        <> exceptionType
+    Left AnnotatedException {exception} ->
+      (`expectTrue` p exception)
+        $ "predicate failed on expected exception: "
+        <> exceptionType
+        <> "\n"
+        <> show exception
+ where
+  -- a string representation of the expected exception's type
+  exceptionType = (show . typeOf . instanceOf) p
+   where
+    instanceOf :: Selector a -> a
+    instanceOf _ = error "Test.Hspec.Expectations.shouldThrow: broken Typeable instance"
+
+infix 1 `shouldThrow`
+
+expectTrue :: (MonadIO m, HasCallStack) => String -> Bool -> m ()
+expectTrue msg b = unless b (expectationFailure msg)

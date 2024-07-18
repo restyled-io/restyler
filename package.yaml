@@ -135,5 +135,4 @@ tests:
       - restyler
       - shakespeare
       - text
-      - unliftio
       - yaml

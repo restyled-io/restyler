@@ -45,7 +45,7 @@ import Data.Yaml
   )
 import Data.Yaml qualified as Yaml
 import GitHub.Data (IssueLabel, User)
-import Restyler.AnnotatedException (throw)
+import Restyler.AnnotatedException
 import Restyler.App.Class
 import Restyler.CommitTemplate
 import Restyler.Config.ChangedPaths
@@ -60,7 +60,6 @@ import Restyler.RemoteFile
 import Restyler.Restyler
 import Restyler.Wiki qualified as Wiki
 import Restyler.Yaml.Errata (formatInvalidYaml)
-import UnliftIO.Exception (handle)
 
 -- | A polymorphic representation of @'Config'@
 --
@@ -308,7 +307,3 @@ configPaths =
   , ".github/restyled.yaml"
   , ".github/restyled.yml"
   ]
-
-handleTo
-  :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
-handleTo f = handle (throw . f)
