@@ -9,8 +9,6 @@ module Restyler.Statsd
     -- ** Convenience
   , wrap
   , timeoutWithMetric
-  , incrementOnException
-  , incrementOnSuccess
 
     -- * Lower-level
   , increment
@@ -32,6 +30,7 @@ import Network.StatsD.Datadog
   , withDogStatsD
   )
 import Network.StatsD.Datadog qualified as DD
+import UnliftIO.Exception (onException)
 
 data StatsClient = StatsClient
   { statsClient :: DD.StatsClient

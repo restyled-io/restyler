@@ -20,28 +20,13 @@ import Lens.Micro.Mtl as X (view)
 import System.Exit as X (ExitCode (..))
 import UnliftIO.Async as X (race)
 import UnliftIO.Concurrent as X (threadDelay)
-import UnliftIO.Exception as X
-  ( Handler (..)
-  , IOException
-  , finally
-  , onException
-  , throwIO
-  , throwString
-  )
+import UnliftIO.Exception as X (finally)
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
-import Data.Aeson
-  ( FromJSON
-  , Key
-  , KeyValue
-  , ToJSON (..)
-  , Value (..)
-  , eitherDecodeFileStrict'
-  )
+import Data.Aeson (Key, KeyValue, ToJSON (..), Value (..))
 import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.List (maximumBy, minimum, minimumBy, (!!))
-import UnliftIO.Exception (handleAny)
 
 maximumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
 maximumByMaybe f = \case
@@ -66,18 +51,6 @@ xs !? i
 
 infixl 9 !?
 
--- | Ignore an exception, warning about it
-warnIgnore :: Monoid a => (MonadUnliftIO m, MonadLogger m) => m a -> m a
-warnIgnore = warnIgnoreWith mempty
-
--- | Ignore an exception, warning about it and returning the given result
-warnIgnoreWith :: (MonadUnliftIO m, MonadLogger m) => a -> m a -> m a
-warnIgnoreWith a = handleAny (\ex -> a <$ logWarn (msg ex))
- where
-  msg :: Exception e => e -> Message
-  msg ex =
-    "Ignoring caught exception" :# ["exception" .= displayException ex]
-
 -- | Inverse of @'any'@
 none :: Foldable t => (a -> Bool) -> t a -> Bool
 none p = not . any p
@@ -89,10 +62,6 @@ exitCodeInt :: ExitCode -> Int
 exitCodeInt = \case
   ExitSuccess -> 0
   ExitFailure x -> x
-
-decodeJsonThrow :: (MonadIO m, FromJSON a) => FilePath -> m a
-decodeJsonThrow =
-  either throwString pure <=< liftIO . eitherDecodeFileStrict'
 
 objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
 objectToPairs a = case toJSON a of

@@ -1,17 +1,11 @@
 module Restyler.ErrorMetadata
-  ( ErrorMetadata
-  , errorMetadata
-  , errorMetadataStatsdTags
-  , errorMetadataDescription
-  , errorMetadataExitCode
-  , logErrorMetadata
-  , logErrorMetadataAndExit
+  ( withExitHandler
   ) where
 
 import Restyler.Prelude
 
 import Control.Monad.Logger.Aeson (SeriesElem)
-import Data.Aeson (Value (..), decodeStrict, object)
+import Data.Aeson (Value (..), decodeStrict)
 import Data.Aeson.KeyMap qualified as KeyMap
 import GitHub qualified
 import Network.HTTP.Client (HttpException (..), HttpExceptionContent (..))
@@ -30,159 +24,137 @@ import Restyler.Restyler.Run
   , TooManyChangedPaths (..)
   )
 
+withExitHandler :: (MonadUnliftIO m, MonadLogger m) => m a -> m ()
+withExitHandler f = do
+  ec <- (ExitSuccess <$ f) `catches` handlers
+  exitWith ec
+
+handlers :: (MonadIO m, MonadLogger m) => [Handler m ExitCode]
+handlers =
+  [ toHandler $ \case
+      ex@RepoDisabled {} ->
+        (warning ex)
+          { tag = "repo-disabled"
+          , description = "repo disabled"
+          , exitCode = ExitSuccess
+          }
+  , toHandler $ \case
+      ex@PlanUpgradeRequired {} ->
+        (warning ex)
+          { tag = "plan-upgrade-required"
+          , description = "plan upgrade required"
+          , exitCode = ExitFailure 3
+          }
+  , toHandler $ \case
+      ex@CloneTimeoutError {} ->
+        (unknown ex)
+          { tag = "clone-timeout"
+          , description = "clone timed out"
+          , exitCode = ExitFailure 5
+          }
+  , toHandler $ \case
+      ex@ConfigErrorInvalidYaml {} ->
+        (warning ex)
+          { tag = "invalid-config"
+          , description = "restyled.yaml is invalid"
+          , exitCode = ExitFailure 10
+          }
+      ex@ConfigErrorInvalidRestylers {} ->
+        (warning ex)
+          { tag = "invalid-config-restylers"
+          , description = "restyled.yaml is invalid"
+          , exitCode = ExitFailure 11
+          }
+      ex@ConfigErrorInvalidRestylersYaml {} ->
+        (unknown ex)
+          { tag = "invalid-restylers-yaml"
+          , description = "bad Restylers manifest"
+          , exitCode = ExitFailure 12
+          }
+  , toHandler $ \case
+      ex@RestylerExitFailure {} ->
+        (warning ex)
+          { tag = "restyler"
+          , description = "a Restyler errored"
+          , exitCode = ExitFailure 20
+          }
+  , toHandler $ \case
+      ex@RestylerOutOfMemory {} ->
+        (unknown ex)
+          { tag = "restyler-oom"
+          , description = "a Restyler has used too much memory"
+          , exitCode = ExitFailure 21
+          }
+  , toHandler $ \case
+      ex@RestylerCommandNotFound {} ->
+        (unknown ex)
+          { tag = "restyler-command-not-found"
+          , description = "a Restyler's command is invalid"
+          , exitCode = ExitFailure 22
+          }
+  , toHandler $ \case
+      ex@TooManyChangedPaths {} ->
+        (warning ex)
+          { tag = "too-many-changed-paths"
+          , description = "PR is too large"
+          , exitCode = ExitFailure 25
+          }
+  , toHandler $ \case
+      ex@(GitHub.HTTPError (HttpExceptionRequest req (StatusCodeException resp body))) ->
+        (github ex)
+          { message =
+              ( "GitHub request for "
+                  <> decodeUtf8 @Text (HTTP.path req)
+                  <> " responded "
+                  <> show @Text (statusCode $ getResponseStatus resp)
+              )
+                :# bodyToSeries body
+          }
+      ex -> github ex
+  , toHandler $ unknown @SomeException
+  ]
+
+github :: Exception ex => ex -> ErrorMetadata
+github ex =
+  (warning ex)
+    { tag = "github"
+    , description = "GitHub communication error"
+    , exitCode = ExitFailure 30
+    }
+
+warning :: Exception ex => ex -> ErrorMetadata
+warning ex = (unknown ex) {severity = "warning"}
+
+unknown :: Exception ex => ex -> ErrorMetadata
+unknown ex =
+  ErrorMetadata
+    { severity = "error"
+    , tag = "unknown"
+    , description = "unknown error"
+    , message = pack (displayException ex) :# []
+    , exitCode = ExitFailure 99
+    }
+
+toHandler
+  :: (MonadIO m, MonadLogger m, Exception e)
+  => (e -> ErrorMetadata)
+  -> Handler m ExitCode
+toHandler f = Handler $ \aex@AnnotatedException {exception} -> do
+  let md = f exception
+  logDebug $ displayAnnotatedException aex :# []
+  case md.severity of
+    "warning" -> logWarn md.message
+    _ -> logError md.message
+  pure md.exitCode
+
 data ErrorMetadata = ErrorMetadata
-  { exception :: SomeException
-  , severity :: Text
+  { severity :: Text
   , tag :: Text
   , description :: Text
-  , message :: Maybe Message
-  , exitCode :: Int
+  , message :: Message
+  , exitCode :: ExitCode
   }
   deriving stock (Generic)
-
-errorMetadata :: SomeException -> ErrorMetadata
-errorMetadata ex = fromMaybe (unknown ex) $ getFirst $ fold $ handlers ex
-
-errorMetadataStatsdTags :: ErrorMetadata -> [(Text, Text)]
-errorMetadataStatsdTags ErrorMetadata {severity, tag} =
-  [("severity", severity), ("error", tag)]
-
-errorMetadataDescription :: ErrorMetadata -> Text
-errorMetadataDescription ErrorMetadata {description} = description
-
-errorMetadataExitCode :: ErrorMetadata -> ExitCode
-errorMetadataExitCode ErrorMetadata {exitCode} = case exitCode of
-  0 -> ExitSuccess
-  n -> ExitFailure n
-
-handlers :: SomeException -> [First ErrorMetadata]
-handlers e =
-  [ fromException e & First <&> errorMetadata . unannotatedException
-  , fromException e & First <&> \case
-      RepoDisabled {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "repo-disabled"
-          , description = "repo disabled"
-          , message = Nothing
-          , exitCode = 0
-          }
-  , fromException e & First <&> \case
-      PlanUpgradeRequired {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "plan-upgrade-required"
-          , description = "plan upgrade required"
-          , message = Nothing
-          , exitCode = 3
-          }
-  , fromException e & First <&> \case
-      CloneTimeoutError {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "error"
-          , tag = "clone-timeout"
-          , description = "clone timed out"
-          , message = Nothing
-          , exitCode = 5
-          }
-  , fromException e & First <&> \case
-      ConfigErrorInvalidYaml {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "invalid-config"
-          , description = "restyled.yaml is invalid"
-          , message = Nothing
-          , exitCode = 10
-          }
-      ConfigErrorInvalidRestylers {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "invalid-config-restylers"
-          , description = "restyled.yaml is invalid"
-          , message = Nothing
-          , exitCode = 11
-          }
-      ConfigErrorInvalidRestylersYaml {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "error"
-          , tag = "invalid-restylers-yaml"
-          , description = "bad Restylers manifest"
-          , message = Nothing
-          , exitCode = 12
-          }
-  , fromException e & First <&> \case
-      RestylerExitFailure {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "restyler"
-          , description = "a Restyler errored"
-          , message = Nothing
-          , exitCode = 20
-          }
-  , fromException e & First <&> \case
-      RestylerOutOfMemory {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "error"
-          , tag = "restyler-oom"
-          , description = "a Restyler has used too much memory"
-          , message = Nothing
-          , exitCode = 21
-          }
-  , fromException e & First <&> \case
-      RestylerCommandNotFound {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "error"
-          , tag = "restyler-command-not-found"
-          , description = "a Restyler's command is invalid"
-          , message = Nothing
-          , exitCode = 22
-          }
-  , fromException e & First <&> \case
-      TooManyChangedPaths {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "too-many-changed-paths"
-          , description = "PR is too large"
-          , message = Nothing
-          , exitCode = 25
-          }
-  , fromException e & First <&> \case
-      GitHub.HTTPError (HttpExceptionRequest req (StatusCodeException resp body)) ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "github"
-          , description = "GitHub communication error"
-          , message =
-              Just
-                $ ( "GitHub request for "
-                      <> decodeUtf8 @Text (HTTP.path req)
-                      <> " responded "
-                      <> show @Text (statusCode $ getResponseStatus resp)
-                  )
-                :# bodyToSeries body
-          , exitCode = 30
-          }
-      _ ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "github"
-          , description = "GitHub communication error"
-          , message = Nothing
-          , exitCode = 30
-          }
-  ]
 
 bodyToSeries :: ByteString -> [SeriesElem]
 bodyToSeries body =
@@ -195,40 +167,3 @@ valueToSeries :: Value -> Maybe [SeriesElem]
 valueToSeries = \case
   Object km -> Just $ map (uncurry (.=)) $ KeyMap.toList km
   _ -> Nothing
-
-unknown :: SomeException -> ErrorMetadata
-unknown e =
-  ErrorMetadata
-    { exception = e
-    , severity = "critical"
-    , tag = "unknown"
-    , description = "internal error"
-    , message = Nothing
-    , exitCode = 99
-    }
-
-logErrorMetadata :: MonadLogger m => ErrorMetadata -> m ()
-logErrorMetadata ErrorMetadata {exception, severity, tag, description, message} = do
-  case message of
-    -- Legacy error handling where we're expecting to log the full exception
-    -- with some of the metadata fields
-    Nothing ->
-      logError
-        $ ("Exception:\n" <> pack (displayException exception))
-        :# [ "error"
-              .= object
-                [ "severity" .= severity
-                , "tag" .= tag
-                , "description" .= description
-                ]
-           ]
-    -- Modern handling where all loggable content is expected in our message
-    -- field, and we include the full exception in DEBUG in case we screw up
-    Just lm -> do
-      logDebug $ ("Exception:\n" <> pack (displayException exception)) :# []
-      logError lm
-
-logErrorMetadataAndExit :: (MonadIO m, MonadLogger m) => ErrorMetadata -> m a
-logErrorMetadataAndExit md = do
-  logErrorMetadata md
-  exitWith $ errorMetadataExitCode md

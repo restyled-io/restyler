@@ -8,6 +8,7 @@ module Restyler.JobEnv
 import Restyler.Prelude
 
 import Env qualified
+import Restyler.AnnotatedException (throw)
 import Restyler.GitHub.Api
 import Restyler.Job.PlanUpgradeRequired
 import Restyler.Job.RepoDisabled
@@ -46,5 +47,5 @@ jobEnvParser =
 assertJobEnv :: (MonadIO m, MonadReader env m, HasJobEnv env) => m ()
 assertJobEnv = do
   env <- asks getJobEnv
-  when env.repoDisabled $ throwIO RepoDisabled
-  for_ env.planRestriction $ throwIO . flip PlanUpgradeRequired env.planUpgradeUrl
+  when env.repoDisabled $ throw RepoDisabled
+  for_ env.planRestriction $ throw . flip PlanUpgradeRequired env.planUpgradeUrl

@@ -23,9 +23,9 @@ readFile :: MonadSystem m => FilePath -> m Text
 readFile = fmap (decodeUtf8With lenientDecode) . readFileBS
 
 class Monad m => MonadProcess m where
-  callProcess :: String -> [String] -> m ()
+  callProcess :: HasCallStack => String -> [String] -> m ()
   callProcessExitCode :: String -> [String] -> m ExitCode
-  readProcess :: String -> [String] -> m String
+  readProcess :: HasCallStack => String -> [String] -> m String
   readProcessExitCode :: String -> [String] -> m (ExitCode, String)
 
 class Monad m => MonadDownloadFile m where

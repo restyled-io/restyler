@@ -23,10 +23,14 @@ import Data.Vector (Vector)
 import Env qualified
 import GitHub (github)
 import GitHub qualified
+import Restyler.AnnotatedException (throw)
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
 import Restyler.Options.Repository
+
+-- TODO: our own exception type
+import System.IO.Error (userError)
 
 getPullRequest
   :: (MonadIO m, MonadGitHub m)
@@ -177,12 +181,12 @@ fromGitHubVector
   -> Either GitHub.Error (t a)
   -> m [b]
 fromGitHubVector f =
-  either throwString pure <=< either throwIO (pure . traverse f . toList)
+  either (throw . userError) pure <=< either throw (pure . traverse f . toList)
 
 fromGitHub
   :: MonadIO m => (a -> Either String b) -> Either GitHub.Error a -> m b
 fromGitHub f =
-  either throwString pure <=< either throwIO (pure . f)
+  either (throw . userError) pure <=< either throw (pure . f)
 
 -- | A thin seam over "GitHub"
 --

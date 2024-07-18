@@ -13,12 +13,12 @@ import Data.Text qualified as T
 import Restyler.App.Class
 
 class Monad m => MonadGit m where
-  gitPush :: String -> m ()
-  gitPushForce :: String -> m ()
-  gitDiffNameOnly :: Maybe String -> m [FilePath]
-  gitFormatPatch :: Maybe String -> m Text
-  gitCommitAll :: String -> m String
-  gitCheckout :: String -> m ()
+  gitPush :: HasCallStack => String -> m ()
+  gitPushForce :: HasCallStack => String -> m ()
+  gitDiffNameOnly :: HasCallStack => Maybe String -> m [FilePath]
+  gitFormatPatch :: HasCallStack => Maybe String -> m Text
+  gitCommitAll :: HasCallStack => String -> m String
+  gitCheckout :: HasCallStack => String -> m ()
 
 newtype ActualGit m a = ActualGit
   { unwrap :: m a

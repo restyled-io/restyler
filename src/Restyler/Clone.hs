@@ -5,6 +5,7 @@ module Restyler.Clone
 
 import Restyler.Prelude
 
+import Restyler.AnnotatedException (throw)
 import Restyler.App.Class (MonadProcess, MonadSystem)
 import Restyler.Git (gitCloneBranchByRef)
 import Restyler.GitHub.Api
@@ -57,6 +58,6 @@ wrapClone
   :: (MonadUnliftIO m, MonadReader env m, HasStatsClient env) => m a -> m ()
 wrapClone f = do
   mResult <- Statsd.wrap "restyler.clone" [] (30 * 60) f
-  when (isNothing mResult) $ throwIO timedOutError
+  when (isNothing mResult) $ throw timedOutError
  where
   timedOutError = CloneTimeoutError 30

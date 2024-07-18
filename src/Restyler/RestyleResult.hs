@@ -23,7 +23,11 @@ data RestyleResult pr
   | RestyleSuccessDifference Config pr [RestylerResult]
 
 runRestyle
-  :: Monad m => Config -> pr -> m [RestylerResult] -> m (RestyleResult pr)
+  :: (Monad m, HasCallStack)
+  => Config
+  -> pr
+  -> m [RestylerResult]
+  -> m (RestyleResult pr)
 runRestyle config pr run = do
   results <- run
   pure

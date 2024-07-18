@@ -43,6 +43,7 @@ import Test.QuickCheck as X
 import Blammo.Logging.Simple
 import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
+import Restyler.AnnotatedException (throw)
 import Restyler.Config
 import Restyler.Local.Options
 import Restyler.Options.HostDirectory
@@ -155,7 +156,7 @@ someRestyler name =
 
 loadDefaultConfig :: MonadIO m => m Config
 loadDefaultConfig = do
-  config <- either throwIO pure $ decodeThrow defaultConfigContent
+  config <- either throw pure $ decodeThrow defaultConfigContent
   resolveRestylers config testRestylers
 
 testRestylers :: [Restyler]

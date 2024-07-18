@@ -34,6 +34,7 @@ run
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasManifestOption env
+     , HasCallStack
      )
   => RepositoryOption
   -> Int

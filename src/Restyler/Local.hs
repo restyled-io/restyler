@@ -56,6 +56,7 @@ run
      , HasAuthor pr
      , HasBaseRef pr
      , HasLabelNames pr
+     , HasCallStack
      )
   => pr
   -> [FilePath]

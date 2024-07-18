@@ -35,6 +35,7 @@ import Restyler.RestyledPullRequest
 import Restyler.RestylerResult
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
+import UnliftIO.Exception (throwIO)
 
 run
   :: ( MonadMask m
@@ -62,7 +63,7 @@ run
 run (JobUrl jobUrl) pr = do
   assertJobEnv
 
-  handlingExceptions jobUrl $ do
+  withStatsAndCleanup jobUrl $ do
     clonePullRequest pr
 
     GHA.run pr.repo pr.number `with` \case
@@ -126,34 +127,34 @@ handleDifferences config jobUrl pullRequest results = do
  where
   mDetails = checkDangerousPullRequest pullRequest
 
-handlingExceptions
+withStatsAndCleanup
   :: (MonadUnliftIO m, MonadGitHub m, MonadReader env m, HasStatsClient env)
   => URL
   -> m a
   -> m a
-handlingExceptions jobUrl f = do
+withStatsAndCleanup jobUrl f = do
   start <- liftIO getCurrentTime
-  result <- tryAnnotated f
+  result <- tryAnnotated @SomeException f
   Statsd.increment "restyler.finished" []
   Statsd.histogramSince "restyler.duration" [] start
   case result of
     Left aex -> do
-      let
-        ex = unannotatedException aex
-        md = errorMetadata ex
-        mConfig = findAnnotation @Config aex
-        mPullRequest = findAnnotation @PullRequest aex
+      -- let
+      --   ex = unannotatedException aex
+      --   md = errorMetadata ex
+      --   mConfig = findAnnotation @Config aex
+      --   mPullRequest = findAnnotation @PullRequest aex
 
-      for_ mPullRequest $ \pullRequest -> do
-        cleanupRestyledPullRequest pullRequest
-        for_ mConfig $ \config -> do
-          setPullRequestRed config pullRequest jobUrl
-            $ "Error ("
-            <> errorMetadataDescription md
-            <> ")"
+      -- for_ mPullRequest $ \pullRequest -> do
+      --   cleanupRestyledPullRequest pullRequest
+      --   for_ mConfig $ \config -> do
+      --     setPullRequestRed config pullRequest jobUrl
+      --       $ "Error ("
+      --       <> errorMetadataDescription md
+      --       <> ")"
 
-      Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
-      throwIO ex
+      -- Statsd.increment "restyler.error" $ errorMetadataStatsdTags md
+      throwIO aex -- already annotated through as-is
     Right a -> a <$ Statsd.increment "restyler.success" []
 
 cleanupRestyledPullRequest :: MonadGitHub m => PullRequest -> m ()

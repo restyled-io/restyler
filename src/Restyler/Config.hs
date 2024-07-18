@@ -45,6 +45,7 @@ import Data.Yaml
   )
 import Data.Yaml qualified as Yaml
 import GitHub.Data (IssueLabel, User)
+import Restyler.AnnotatedException (throw)
 import Restyler.App.Class
 import Restyler.CommitTemplate
 import Restyler.Config.ChangedPaths
@@ -264,7 +265,7 @@ decodeThrow' path content =
   handleTo (ConfigErrorInvalidYaml path content) $ decodeThrow content
 
 decodeThrow :: (MonadIO m, FromJSON a) => ByteString -> m a
-decodeThrow = either throwIO pure . Yaml.decodeThrow
+decodeThrow = either throw pure . Yaml.decodeThrow
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
@@ -272,7 +273,7 @@ decodeThrow = either throwIO pure . Yaml.decodeThrow
 resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
   restylers <-
-    either (throwIO . ConfigErrorInvalidRestylers) pure
+    either (throw . ConfigErrorInvalidRestylers) pure
       $ overrideRestylers allRestylers
       $ unSketchy
       $ runIdentity cfRestylers
@@ -310,4 +311,4 @@ configPaths =
 
 handleTo
   :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
-handleTo f = handle (throwIO . f)
+handleTo f = handle (throw . f)

@@ -7,6 +7,7 @@ module Restyler.App
 
 import Restyler.Prelude
 
+import Blammo.Logging.Logger (flushLogger)
 import Conduit (runResourceT, sinkFile)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Network.HTTP.Simple hiding (Request)
@@ -84,12 +85,14 @@ instance (MonadUnliftIO m, HasLogger app) => MonadProcess (AppT app m) where
     -- - We generally accept secrets in DEBUG messages
     --
     logDebug $ "callProcess" :# ["command" .= cmd, "arguments" .= args]
+    flushLogger
     liftIO $ Process.callProcess cmd args
 
   callProcessExitCode cmd args = do
     logDebug
       $ "callProcessExitCode"
       :# ["command" .= cmd, "arguments" .= args]
+    flushLogger
     ec <- liftIO $ Process.withCreateProcess proc $ \_ _ _ p ->
       Process.waitForProcess p
     (if ec == ExitSuccess then logDebug else logWarn)
