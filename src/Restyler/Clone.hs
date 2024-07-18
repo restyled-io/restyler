@@ -6,8 +6,7 @@ module Restyler.Clone
 import Restyler.Prelude
 
 import Restyler.AnnotatedException (throw)
-import Restyler.App.Class (MonadProcess)
-import Restyler.Git (gitCloneBranchByRef)
+import Restyler.Git (MonadGit (..))
 import Restyler.GitHub.Api
 import Restyler.Options.PullRequest
 import Restyler.Options.Repository
@@ -17,7 +16,7 @@ import Restyler.Statsd qualified as Statsd
 clonePullRequest
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadProcess m
+     , MonadGit m
      , MonadReader env m
      , HasStatsClient env
      , HasGitHubToken env
@@ -27,19 +26,21 @@ clonePullRequest
 clonePullRequest pr = do
   logInfo "Cloning repository"
   token <- asks $ (.unwrap) . getGitHubToken
-  wrapClone
-    $ gitCloneBranchByRef
-      ("pull/" <> show pr.number <> "/head")
-      ("pull-" <> show pr.number)
-      ( unpack
-          $ "https://x-access-token:"
-          <> token
-          <> "@github.com/"
-          <> pr.repo.owner
-          <> "/"
-          <> pr.repo.repo
-          <> ".git"
-      )
+  wrapClone $ do
+    gitInit
+    gitRemoteAdd "origin"
+      $ unpack
+      $ "https://x-access-token:"
+      <> token
+      <> "@github.com/"
+      <> pr.repo.owner
+      <> "/"
+      <> pr.repo.repo
+      <> ".git"
+
+    let n = show pr.number
+    gitFetch "origin" $ "pull/" <> n <> "/head:pull-" <> n
+    gitSwitch $ "pull-" <> n
 
 newtype CloneTimeoutError = CloneTimeoutError
   { unwrap :: Int
