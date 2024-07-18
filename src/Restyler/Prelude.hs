@@ -26,12 +26,7 @@ import UnliftIO.Temporary as X (withSystemTempDirectory)
 import Data.Aeson (Key, KeyValue, ToJSON (..), Value (..))
 import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
-import Data.List (maximumBy, minimum, minimumBy, (!!))
-
-maximumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
-maximumByMaybe f = \case
-  [] -> Nothing
-  xs -> Just $ maximumBy f xs
+import Data.List (minimum, minimumBy, (!!))
 
 minimumMaybe :: Ord a => [a] -> Maybe a
 minimumMaybe = \case

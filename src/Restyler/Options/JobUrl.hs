@@ -8,7 +8,7 @@ import Restyler.Prelude
 import Options.Applicative
 
 newtype JobUrl = JobUrl
-  { unwrap :: URL -- TODO: URI and a real parse
+  { unwrap :: URL
   }
 
 optJobUrl :: Parser JobUrl

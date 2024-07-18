@@ -10,7 +10,9 @@ module Restyler.RestyledPullRequest
 
 import Restyler.Prelude
 
+import Data.Aeson (ToJSON)
 import Data.List.NonEmpty qualified as NE
+import Data.These
 import GitHub qualified
 import Restyler.Config
 import Restyler.Config.RequestReview
@@ -42,6 +44,8 @@ data RestyledPullRequestDetails = RestyledPullRequestDetails
   , reviewers :: Maybe (NonEmpty Text)
   , teamReviewers :: Maybe (NonEmpty Text)
   }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON)
 
 restyledPullRequestDetails
   :: Config
@@ -58,7 +62,7 @@ restyledPullRequestDetails config pr results =
     , title = "Restyle " <> pr.title
     , body =
         Content.pullRequestDescription
-          Nothing -- TODO: JobUrl
+          Nothing
           pr.number
           results
     , base = pr.head.ref
@@ -78,7 +82,7 @@ createRestyledPullRequest
 createRestyledPullRequest config pr results = do
   gitCheckout $ unpack details.head
   gitPushForce $ unpack details.head
-  logInfo "Creating Restyled PR"
+  logInfo $ "Creating Restyled PR" :# objectToPairs details
   restyledPullRequest <-
     Restyled
       <$> createPullRequest
@@ -97,23 +101,11 @@ createRestyledPullRequest config pr results = do
   --     (restyledPullRequestIssueId restyledPullRequest)
   --     labels
 
-  for_ details.reviewers $ \users -> do
-    logInfo $ "Requesting review of Restyled PR" :# ["reviewers" .= users]
-  -- runGitHub_
-  --   $ createReviewRequestR
-  --     (restyledPullRequestOwnerName restyledPullRequest)
-  --     (restyledPullRequestRepoName restyledPullRequest)
-  --     (restyledPullRequestNumber restyledPullRequest)
-  --     (requestOneReviewer user)
-
-  for_ details.teamReviewers $ \teams -> do
-    logInfo $ "Requesting team review of Restyled PR" :# ["reviewer" .= teams]
-  -- runGitHub_
-  --   $ createReviewRequestR
-  --     (restyledPullRequestOwnerName restyledPullRequest)
-  --     (restyledPullRequestRepoName restyledPullRequest)
-  --     (restyledPullRequestNumber restyledPullRequest)
-  --     (requestOneReviewer user)
+  case (details.reviewers, details.teamReviewers) of
+    (Nothing, Nothing) -> pure ()
+    (Nothing, Just teams) -> createReviewRequest pr $ That teams
+    (Just users, Nothing) -> createReviewRequest pr $ This users
+    (Just users, Just teams) -> createReviewRequest pr $ These users teams
 
   logInfo
     $ "Opened Restyled PR"

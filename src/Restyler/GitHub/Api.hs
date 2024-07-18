@@ -31,8 +31,6 @@ import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
 import Restyler.Options.Repository
-
--- TODO: our own exception type
 import System.IO.Error (userError)
 
 getPullRequest

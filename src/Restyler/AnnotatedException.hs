@@ -16,7 +16,6 @@ module Restyler.AnnotatedException
   , tryTo
 
     -- * Suppressing exception
-  , suppress
   , suppressWith
   , suppressWarn
   , suppressWarnWith
@@ -51,10 +50,6 @@ handleTo f action = do
 
 tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
 tryTo f = fmap (first $ f . exception) . tryAnnotated
-
--- | Suppress any exception and return '()'
-suppress :: MonadUnliftIO m => m () -> m ()
-suppress = suppressWith ()
 
 -- | Suppress any exception and return the given @a@
 suppressWith :: MonadUnliftIO m => a -> m a -> m a

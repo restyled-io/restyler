@@ -33,7 +33,6 @@ getIgnoredReason config author branch labels =
   ghUser = mkName (Proxy @User) author
   ghLabels = mkName (Proxy @IssueLabel) <$> labels
 
--- | TODO: get out of using GitHub types here
 ghGetIgnoredReason
   :: Foldable t
   => Config
