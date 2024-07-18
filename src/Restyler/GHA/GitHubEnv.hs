@@ -1,5 +1,5 @@
 -- | Environment variables available on GitHub Actions
-module Restyler.GitHubEnv
+module Restyler.GHA.GitHubEnv
   ( GitHubEnv (..)
   , githubEnvParser
   ) where

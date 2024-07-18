@@ -6,9 +6,9 @@ module Restyler.GHA.App
 import Restyler.Prelude
 
 import Env qualified
+import Restyler.GHA.GitHubEnv
 import Restyler.GHA.Output
 import Restyler.GitHub.Api
-import Restyler.GitHubEnv
 import Restyler.Local.Options
 import Restyler.Opt qualified as Opt
 import Restyler.Options.HostDirectory
