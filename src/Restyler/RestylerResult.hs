@@ -8,8 +8,8 @@ module Restyler.RestylerResult
 
 import Restyler.Prelude
 
-import Restyler.CommitTemplate
 import Restyler.Config
+import Restyler.Config.CommitTemplate
 import Restyler.Git
 import Restyler.Restyler
 

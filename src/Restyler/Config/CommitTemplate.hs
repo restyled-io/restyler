@@ -1,4 +1,4 @@
-module Restyler.CommitTemplate
+module Restyler.Config.CommitTemplate
   ( CommitTemplate (..)
   , CommitTemplateInputs (..)
   , renderCommitTemplate

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 06361a00abbcf084c4de2b181e0431aa3f39b0b260df3c9a69697d986c00115e
+-- hash: b33cc8a5235b82aaecebc91c65be00ee0d2e8d96c832e7961d7a9f90dfd92ef7
 
 name:           restyler
 version:        0.2.0.0
@@ -21,9 +21,9 @@ library
       Restyler.App.Class
       Restyler.CLI
       Restyler.Clone
-      Restyler.CommitTemplate
       Restyler.Config
       Restyler.Config.ChangedPaths
+      Restyler.Config.CommitTemplate
       Restyler.Config.ExpectedKeys
       Restyler.Config.Glob
       Restyler.Config.Image
@@ -230,7 +230,7 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Restyler.CommitTemplateSpec
+      Restyler.Config.CommitTemplateSpec
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec

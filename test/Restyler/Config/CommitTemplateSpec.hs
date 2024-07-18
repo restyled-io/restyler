@@ -1,11 +1,11 @@
-module Restyler.CommitTemplateSpec
+module Restyler.Config.CommitTemplateSpec
   ( spec
   )
 where
 
 import SpecHelper
 
-import Restyler.CommitTemplate
+import Restyler.Config.CommitTemplate
 
 spec :: Spec
 spec = do

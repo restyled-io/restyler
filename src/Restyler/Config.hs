@@ -47,8 +47,8 @@ import Data.Yaml qualified as Yaml
 import GitHub.Data (IssueLabel, User)
 import Restyler.AnnotatedException
 import Restyler.App.Class
-import Restyler.CommitTemplate
 import Restyler.Config.ChangedPaths
+import Restyler.Config.CommitTemplate
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Glob
 import Restyler.Config.RequestReview
