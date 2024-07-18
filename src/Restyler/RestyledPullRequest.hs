@@ -12,7 +12,10 @@ module Restyler.RestyledPullRequest
 
 import Restyler.Prelude
 
+import Data.List.NonEmpty qualified as NE
+import GitHub qualified
 import Restyler.Config
+import Restyler.Config.RequestReview
 import Restyler.Content qualified as Content
 import Restyler.Git
 import Restyler.GitHub.Api
@@ -47,7 +50,7 @@ restyledPullRequestDetails
   -> PullRequest
   -> [RestylerResult]
   -> RestyledPullRequestDetails
-restyledPullRequestDetails _config pr results =
+restyledPullRequestDetails config pr results =
   RestyledPullRequestDetails
     { repo =
         RepositoryOption
@@ -62,9 +65,10 @@ restyledPullRequestDetails _config pr results =
           results
     , base = pr.head.ref
     , head = "restyled/" <> pr.head.ref
-    , labels = Nothing -- TODO
-    , reviewers = Nothing -- TODO
-    , teamReviewers = Nothing -- TODO
+    , labels = NE.nonEmpty $ map GitHub.untagName $ toList $ cLabels config
+    , reviewers =
+        pure . GitHub.untagName <$> determineReviewer pr (cRequestReview config)
+    , teamReviewers = Nothing
     }
 
 createRestyledPullRequest

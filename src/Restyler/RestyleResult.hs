@@ -16,24 +16,20 @@ import Restyler.GitHub.PullRequest
 import Restyler.Ignore
 import Restyler.RestyledPullRequest
 import Restyler.RestylerResult
-import UnliftIO.Exception (handleAny)
 
 data RestyleResult pr
-  = RestyleFailedEarly SomeException
-  | RestyleFailed Config pr SomeException
-  | RestyleSkipped Config pr RestyleSkipped
+  = RestyleSkipped Config pr RestyleSkipped
   | RestyleSuccessNoDifference Config pr [RestylerResult]
   | RestyleSuccessDifference Config pr [RestylerResult]
 
 runRestyle
-  :: MonadUnliftIO m => Config -> pr -> m [RestylerResult] -> m (RestyleResult pr)
+  :: Monad m => Config -> pr -> m [RestylerResult] -> m (RestyleResult pr)
 runRestyle config pr run = do
-  handleAny (pure . RestyleFailed config pr) $ do
-    results <- run
-    pure
-      $ if any restylerCommittedChanges results
-        then RestyleSuccessDifference config pr results
-        else RestyleSuccessNoDifference config pr results
+  results <- run
+  pure
+    $ if any restylerCommittedChanges results
+      then RestyleSuccessDifference config pr results
+      else RestyleSuccessNoDifference config pr results
 
 data RestyleSkipped
   = RestyleNotEnabled

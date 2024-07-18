@@ -33,12 +33,13 @@ data PullRequest = PullRequest
   , head :: Commit
   , base :: Commit
   }
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving anyclass (ToJSON)
 
 data PullRequestState
   = PullRequestOpen
   | PullRequestClosed
+  deriving stock (Show)
 
 instance ToJSON PullRequestState where
   toJSON = toJSON . pullRequestStateToText
@@ -52,13 +53,13 @@ pullRequestStateToText = \case
 newtype User = User
   { login :: Text
   }
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving anyclass (ToJSON)
 
 newtype Label = Label
   { name :: Text
   }
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving anyclass (ToJSON)
 
 data Commit = Commit
@@ -66,7 +67,7 @@ data Commit = Commit
   , sha :: Text
   , repo :: Repo
   }
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving anyclass (ToJSON)
 
 data Repo = Repo
@@ -74,13 +75,13 @@ data Repo = Repo
   , owner :: Owner
   , private :: Bool
   }
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving anyclass (ToJSON)
 
 newtype Owner = Owner
   { login :: Text
   }
-  deriving stock (Generic)
+  deriving stock (Show, Generic)
   deriving anyclass (ToJSON)
 
 class HasHtmlUrl a where

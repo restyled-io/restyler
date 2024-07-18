@@ -55,6 +55,7 @@ library:
     - Glob
     - aeson
     - aeson-casing
+    - annotated-exception
     - barbies
     - bytestring
     - composition-extra

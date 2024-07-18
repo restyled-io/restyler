@@ -98,3 +98,8 @@ objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
 objectToPairs a = case toJSON a of
   Object km -> map (uncurry (.=)) $ KeyMap.toList km
   x -> ["value" .= x]
+
+with :: Monad m => m a -> (a -> m b) -> m a
+with act use = do
+  a <- act
+  a <$ use a

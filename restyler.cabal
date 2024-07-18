@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c8ad3c49f21862f7f8d7eba775413d610288374a659cf0dc78906b7d248c9a30
+-- hash: 44ca8134253e8d70419ce7b4f3134599158e2f1d93a13ac9c5ba7bd53a155463
 
 name:           restyler
 version:        0.2.0.0
@@ -17,6 +17,7 @@ library
       GHC.Generics.Selectors
       GitHub.Endpoints.PullRequests.ReviewRequests
       GitHub.Request.Display
+      Restyler.AnnotatedException
       Restyler.App
       Restyler.App.Class
       Restyler.CLI
@@ -115,6 +116,7 @@ library
     , Glob
     , aeson
     , aeson-casing
+    , annotated-exception
     , barbies
     , base
     , bytestring

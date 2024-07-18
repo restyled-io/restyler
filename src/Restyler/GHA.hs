@@ -4,6 +4,7 @@ module Restyler.GHA
 
 import Restyler.Prelude
 
+import Restyler.AnnotatedException
 import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
 import Restyler.GHA.Output
 import Restyler.Git (MonadGit)
@@ -17,7 +18,6 @@ import Restyler.Options.Manifest
 import Restyler.Options.Repository
 import Restyler.Restrictions
 import Restyler.RestyleResult
-import UnliftIO.Exception (handleAny)
 
 run
   :: ( MonadUnliftIO m
@@ -39,8 +39,8 @@ run
   -> Int
   -> m (RestyleResult PullRequest)
 run repo pr = do
-  handleAny (pure . RestyleFailedEarly) $ do
-    pullRequest <- getPullRequest repo pr
+  pullRequest <- getPullRequest repo pr
+  checkpoint (Annotation pullRequest) $ do
     logInfo $ "Handling PR" :# objectToPairs pullRequest
 
     paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr

@@ -18,6 +18,8 @@ RUN \
 RUN mkdir -p /src
 WORKDIR /src
 
+RUN stack update # cache cabal file updates in their own layer
+
 # Dependencies
 COPY stack.yaml package.yaml /src/
 RUN stack install --dependencies-only
