@@ -18,7 +18,7 @@ import Restyler.Git
 import Restyler.GitHub.Api
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
-import Restyler.JobEnv
+import Restyler.Job.AgentEnv
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.JobUrl
@@ -47,7 +47,7 @@ run
      , MonadDownloadFile m
      , MonadReader env m
      , HasStatsClient env
-     , HasJobEnv env
+     , HasAgentEnv env
      , HasGitHubToken env
      , HasGitHubOutput env
      , HasHostDirectoryOption env
@@ -60,7 +60,7 @@ run
   -> PullRequestOption
   -> m (RestyleResult PullRequest)
 run (JobUrl jobUrl) pr = do
-  assertJobEnv
+  assertAgentEnv
 
   withStatsAndCleanup jobUrl $ do
     clonePullRequest pr

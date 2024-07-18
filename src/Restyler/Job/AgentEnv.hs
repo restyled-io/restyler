@@ -1,8 +1,9 @@
-module Restyler.JobEnv
-  ( HasJobEnv (..)
-  , JobEnv (..)
-  , jobEnvParser
-  , assertJobEnv
+-- | The required ENV vars when run on a Restyled Agent
+module Restyler.Job.AgentEnv
+  ( HasAgentEnv (..)
+  , AgentEnv (..)
+  , agentEnvParser
+  , assertAgentEnv
   ) where
 
 import Restyler.Prelude
@@ -13,13 +14,13 @@ import Restyler.GitHub.Api
 import Restyler.Job.PlanUpgradeRequired
 import Restyler.Job.RepoDisabled
 
-class HasJobEnv a where
-  getJobEnv :: a -> JobEnv
+class HasAgentEnv a where
+  getAgentEnv :: a -> AgentEnv
 
-instance HasJobEnv JobEnv where
-  getJobEnv = id
+instance HasAgentEnv AgentEnv where
+  getAgentEnv = id
 
-data JobEnv = JobEnv
+data AgentEnv = AgentEnv
   { githubToken :: GitHubToken
   , repoDisabled :: Bool
   , planRestriction :: Maybe Text
@@ -28,12 +29,12 @@ data JobEnv = JobEnv
   , statsdPort :: Maybe Int
   }
 
-instance HasGitHubToken JobEnv where
+instance HasGitHubToken AgentEnv where
   getGitHubToken = (.githubToken)
 
-jobEnvParser :: Env.Parser Env.Error JobEnv
-jobEnvParser =
-  JobEnv
+agentEnvParser :: Env.Parser Env.Error AgentEnv
+agentEnvParser =
+  AgentEnv
     <$> Env.var
       (Env.str <=< Env.nonempty)
       "GITHUB_ACCESS_TOKEN"
@@ -44,8 +45,8 @@ jobEnvParser =
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
     <*> optional (Env.var Env.auto "STATSD_PORT" mempty)
 
-assertJobEnv :: (MonadIO m, MonadReader env m, HasJobEnv env) => m ()
-assertJobEnv = do
-  env <- asks getJobEnv
+assertAgentEnv :: (MonadIO m, MonadReader env m, HasAgentEnv env) => m ()
+assertAgentEnv = do
+  env <- asks getAgentEnv
   when env.repoDisabled $ throw RepoDisabled
   for_ env.planRestriction $ throw . flip PlanUpgradeRequired env.planUpgradeUrl

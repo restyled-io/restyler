@@ -8,7 +8,7 @@ import Restyler.Prelude
 import Env qualified
 import Restyler.GHA.Output
 import Restyler.GitHub.Api
-import Restyler.JobEnv
+import Restyler.Job.AgentEnv
 import Restyler.Local.Options
 import Restyler.Opt qualified as Opt
 import Restyler.Options.HostDirectory
@@ -25,7 +25,7 @@ import System.Directory qualified as Directory
 data App = App
   { logger :: Logger
   , options :: Options
-  , jobEnv :: JobEnv
+  , agentEnv :: AgentEnv
   , jobUrl :: JobUrl
   , pullRequest :: PullRequestOption
   , statsClient :: StatsClient
@@ -42,21 +42,21 @@ instance HasLogger App where
 instance HasOptions App where
   getOptions = (.options)
 
-instance HasJobEnv App where
-  getJobEnv = (.jobEnv)
+instance HasAgentEnv App where
+  getAgentEnv = (.agentEnv)
 
 instance HasGitHubToken App where
-  getGitHubToken = getGitHubToken . (.jobEnv)
+  getGitHubToken = getGitHubToken . (.agentEnv)
 
 instance HasStatsClient App where
   statsClientL = lens (.statsClient) $ \x y -> x {statsClient = y}
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do
-  (jobEnv, env) <-
+  (agentEnv, env) <-
     Env.parse id
       $ (,)
-      <$> jobEnvParser
+      <$> agentEnvParser
       <*> envParser
 
   (opt, jobUrl, pullRequest) <-
@@ -75,14 +75,14 @@ withApp f = do
       ]
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
-    withStatsClient jobEnv.statsdHost jobEnv.statsdPort statsdTags $ \statsClient -> do
+    withStatsClient agentEnv.statsdHost agentEnv.statsdPort statsdTags $ \statsClient -> do
       withSystemTempDirectory "restyler-" $ \tmp -> do
         Directory.withCurrentDirectory tmp $ do
           f
             $ App
               { logger
               , options
-              , jobEnv
+              , agentEnv
               , jobUrl
               , pullRequest
               , statsClient
