@@ -1,3 +1,6 @@
+-- TODO
+{-# LANGUAGE FieldSelectors #-}
+
 module Restyler.Restyler
   ( Restyler (..)
   , RestylerRunStyle (..)
@@ -121,13 +124,13 @@ getAllRestylersVersioned version = do
   case mManifest of
     Nothing -> do
       downloadRemoteFile restylers
-      decodeFileThrow $ rfPath restylers
+      decodeFileThrow $ restylers.path
     Just path -> decodeFileThrow path
  where
   restylers =
     RemoteFile
-      { rfUrl = URL $ pack $ restylersYamlUrl version
-      , rfPath = "/tmp/restylers-" <> version <> ".yaml"
+      { url = URL $ pack $ restylersYamlUrl version
+      , path = "/tmp/restylers-" <> version <> ".yaml"
       }
 
 restylersYamlUrl :: String -> String

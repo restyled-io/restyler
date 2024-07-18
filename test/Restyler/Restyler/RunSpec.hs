@@ -102,7 +102,7 @@ runChangedPaths paths f = do
   runRestylers_ updatedConfig paths
 
 setMaximum :: Natural -> ChangedPathsConfig -> ChangedPathsConfig
-setMaximum m cp = cp {cpcMaximum = m}
+setMaximum m cp = cp {maximum = m}
 
 setOutcomeSkip :: ChangedPathsConfig -> ChangedPathsConfig
-setOutcomeSkip cp = cp {cpcOutcome = MaximumChangedPathsOutcomeSkip}
+setOutcomeSkip cp = cp {outcome = MaximumChangedPathsOutcomeSkip}

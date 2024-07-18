@@ -1,3 +1,5 @@
+{-# LANGUAGE FieldSelectors #-}
+
 -- |
 --
 -- <https://developer.github.com/v3/pulls/review_requests>

@@ -40,10 +40,10 @@ import System.FilePath (addTrailingPathSeparator, isAbsolute, (</>))
 class HasFS env where
   fsL :: Lens' env FS
 
-newtype FS = FS {unFS :: IORef FS'}
+newtype FS = FS {unwrap :: IORef FS'}
 
 readFS' :: (MonadIO m, MonadReader env m, HasFS env) => m FS'
-readFS' = readIORef . unFS =<< view fsL
+readFS' = readIORef . (.unwrap) =<< view fsL
 
 modifyFS' :: (MonadIO m, MonadReader env m, HasFS env) => (FS' -> FS') -> m ()
 modifyFS' f = do
@@ -54,11 +54,11 @@ modifyFiles
   :: (MonadIO m, MonadReader env m, HasFS env)
   => (Map FilePath ReadableFile -> Map FilePath ReadableFile)
   -> m ()
-modifyFiles f = modifyFS' $ \fs -> fs {fsFiles = f $ fsFiles fs}
+modifyFiles f = modifyFS' $ \fs -> fs {files = f fs.files}
 
 data FS' = FS'
-  { fsCwd :: FilePath
-  , fsFiles :: Map FilePath ReadableFile
+  { cwd :: FilePath
+  , files :: Map FilePath ReadableFile
   }
 
 data ReadableFile
@@ -94,8 +94,8 @@ build cwd files =
   FS
     <$> newIORef
       FS'
-        { fsCwd = cwd
-        , fsFiles = Map.fromList $ map (second normalFile) files
+        { cwd
+        , files = Map.fromList $ map (second normalFile) files
         }
 
 readFileUtf8 :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Text
@@ -107,7 +107,7 @@ readFile
   -> m (Text, Directory.Permissions)
 readFile path' = do
   path <- getAbsolutePath path'
-  mContent <- Map.lookup path . fsFiles <$> readFS'
+  mContent <- Map.lookup path . (.files) <$> readFS'
 
   case mContent of
     -- We could throw the same error you get from a real read of a missing
@@ -148,17 +148,17 @@ writeFile path' content = do
   modifyFiles $ Map.insert path content
 
 getCurrentDirectory :: (MonadIO m, MonadReader env m, HasFS env) => m FilePath
-getCurrentDirectory = fsCwd <$> readFS'
+getCurrentDirectory = (.cwd) <$> readFS'
 
 setCurrentDirectory
   :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m ()
-setCurrentDirectory cwd = modifyFS' $ \fs -> fs {fsCwd = cwd}
+setCurrentDirectory cwd = modifyFS' $ \fs -> fs {cwd}
 
 doesPathExist
   :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 doesPathExist path' = do
   path <- getAbsolutePath path'
-  Map.member path . fsFiles <$> readFS'
+  Map.member path . (.files) <$> readFS'
 
 doesFileExist
   :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
@@ -182,7 +182,7 @@ isFileSymbolicLink
   :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
 isFileSymbolicLink path' = do
   path <- getAbsolutePath path'
-  maybe False check . Map.lookup path . fsFiles <$> readFS'
+  maybe False check . Map.lookup path . (.files) <$> readFS'
  where
   check = \case
     Symlink _ -> True
@@ -200,11 +200,11 @@ getAbsolutePath
 getAbsolutePath path
   | isAbsolute path = pure path
   | otherwise = do
-      FS' {..} <- readFS'
-      pure $ fsCwd </> path
+      FS' {cwd} <- readFS'
+      pure $ cwd </> path
 
 getPrefixed
   :: (MonadIO m, MonadReader env m, HasFS env) => String -> m [FilePath]
 getPrefixed prefix = do
-  paths <- Map.keys . fsFiles <$> readFS'
+  paths <- Map.keys . (.files) <$> readFS'
   pure $ filter (prefix `isPrefixOf`) paths

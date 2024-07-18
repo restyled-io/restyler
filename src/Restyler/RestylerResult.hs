@@ -22,8 +22,8 @@ data RestyleOutcome
   deriving anyclass (ToJSON)
 
 data RestylerResult = RestylerResult
-  { rrRestyler :: Restyler
-  , rrOutcome :: RestyleOutcome
+  { restyler :: Restyler
+  , outcome :: RestyleOutcome
   }
   deriving stock (Generic)
   deriving anyclass (ToJSON)
@@ -44,7 +44,7 @@ getRestylerResult config r = RestylerResult r <$> getRestyleOutcome config r
 
 -- | Does this @'RestylerResult'@ indicate changes were comitted?
 restylerCommittedChanges :: RestylerResult -> Bool
-restylerCommittedChanges = committedChanges . rrOutcome
+restylerCommittedChanges rr = committedChanges rr.outcome
  where
   committedChanges (ChangesCommitted _ _) = True
   committedChanges _ = False
@@ -61,6 +61,6 @@ getRestyleOutcome config restyler = do
     then pure NoChanges
     else do
       let
-        inputs = CommitTemplateInputs {ctiRestyler = restyler}
+        inputs = CommitTemplateInputs {restyler}
         commitMessage = renderCommitTemplate inputs $ cCommitTemplate config
       ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage

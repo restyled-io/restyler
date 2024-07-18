@@ -41,7 +41,7 @@ recommend using the Squash or Rebase strategies.
   -- this PR at all
   resultsList =
     unlines
-      $ map (("- " <>) . restylerListItem . rrRestyler)
+      $ map (("- " <>) . restylerListItem . (.restyler))
       $ filter restylerCommittedChanges results
 
   restylerListItem Restyler {..} = pack $ case rDocumentation of

@@ -31,6 +31,8 @@ default-extensions:
   - DerivingVia
   - DuplicateRecordFields
   - ImportQualifiedPost
+  - NamedFieldPuns
+  - NoFieldSelectors
   - OverloadedRecordDot
 
 ghc-options:

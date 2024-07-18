@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 44ca8134253e8d70419ce7b4f3134599158e2f1d93a13ac9c5ba7bd53a155463
+-- hash: 6d5aa2a2c24116ca665b0ca9e152a9f3cfd04751d0e110d52a3b845b080be5ba
 
 name:           restyler
 version:        0.2.0.0
@@ -109,6 +109,8 @@ library
       DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
+      NamedFieldPuns
+      NoFieldSelectors
       OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
@@ -190,6 +192,8 @@ executable restyle-gha
       DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
+      NamedFieldPuns
+      NoFieldSelectors
       OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
@@ -231,6 +235,8 @@ executable restyle-path
       DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
+      NamedFieldPuns
+      NoFieldSelectors
       OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
@@ -272,6 +278,8 @@ executable restyler
       DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
+      NamedFieldPuns
+      NoFieldSelectors
       OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
@@ -330,6 +338,8 @@ test-suite test
       DerivingVia
       DuplicateRecordFields
       ImportQualifiedPost
+      NamedFieldPuns
+      NoFieldSelectors
       OverloadedRecordDot
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:

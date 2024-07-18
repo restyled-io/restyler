@@ -16,7 +16,7 @@ import GitHub.Data (toPathPart)
 import System.FilePath.Glob hiding (match)
 import System.FilePath.Glob qualified as Glob
 
-newtype Glob a = Glob {unGlob :: String}
+newtype Glob a = Glob {unwrap :: String}
   deriving stock (Eq, Ord, Generic)
   deriving newtype (Show)
 
@@ -24,7 +24,7 @@ instance FromJSON (Glob a) where
   parseJSON = withText "Glob" $ pure . Glob . unpack
 
 instance ToJSON (Glob a) where
-  toJSON = String . pack . unGlob
+  toJSON = String . pack . (.unwrap)
 
 class GlobTarget a where
   forMatch :: a -> String

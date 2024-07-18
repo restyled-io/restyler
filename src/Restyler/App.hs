@@ -17,7 +17,7 @@ import System.Directory qualified as Directory
 import System.Process qualified as Process
 
 newtype AppT app m a = AppT
-  { unAppT :: ReaderT app m a
+  { unwrap :: ReaderT app m a
   }
   deriving newtype
     ( Functor
@@ -141,4 +141,4 @@ deriving via
     (MonadUnliftIO m, HasLogger app) => MonadGit (AppT app m)
 
 runAppT :: app -> AppT app m a -> m a
-runAppT app f = runReaderT (unAppT f) app
+runAppT app f = runReaderT f.unwrap app

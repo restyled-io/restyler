@@ -6,21 +6,13 @@ module Restyler.Config.ChangedPaths
 import Restyler.Prelude
 
 import Data.Aeson
-import Data.Aeson.Casing
-import Restyler.Config.ExpectedKeys
 
 data ChangedPathsConfig = ChangedPathsConfig
-  { cpcMaximum :: Natural
-  , cpcOutcome :: MaximumChangedPathsOutcome
+  { maximum :: Natural
+  , outcome :: MaximumChangedPathsOutcome
   }
   deriving stock (Eq, Show, Generic)
-
-instance FromJSON ChangedPathsConfig where
-  parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
-
-instance ToJSON ChangedPathsConfig where
-  toJSON = genericToJSON $ aesonPrefix snakeCase
-  toEncoding = genericToEncoding $ aesonPrefix snakeCase
+  deriving anyclass (FromJSON, ToJSON)
 
 data MaximumChangedPathsOutcome
   = MaximumChangedPathsOutcomeSkip

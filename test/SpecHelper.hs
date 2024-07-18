@@ -1,3 +1,6 @@
+-- TODO
+{-# LANGUAGE FieldSelectors #-}
+
 module SpecHelper
   ( someRestyler
 

@@ -43,14 +43,14 @@ clonePullRequest pr = do
       "."
 
 newtype CloneTimeoutError = CloneTimeoutError
-  { cloneTimeoutDurationMinutes :: Int
+  { unwrap :: Int
   }
   deriving stock (Show)
 
 instance Exception CloneTimeoutError where
   displayException ex =
     "Clone timed out after "
-      <> show @String (cloneTimeoutDurationMinutes ex)
+      <> show @String ex.unwrap
       <> " minutes"
 
 wrapClone

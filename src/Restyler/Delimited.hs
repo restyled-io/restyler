@@ -1,3 +1,7 @@
+-- TODO
+{-# LANGUAGE FieldSelectors #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Restyler.Delimited
   ( Delimiters (..)
   , restyleDelimited

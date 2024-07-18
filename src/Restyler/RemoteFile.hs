@@ -6,25 +6,17 @@ module Restyler.RemoteFile
 import Restyler.Prelude
 
 import Data.Aeson
-import Data.Aeson.Casing
-import Restyler.App.Class
-import Restyler.Config.ExpectedKeys
+import Restyler.App.Class (MonadDownloadFile (..))
 
 data RemoteFile = RemoteFile
-  { rfUrl :: URL
-  , rfPath :: FilePath
+  { url :: URL
+  , path :: FilePath
   }
   deriving stock (Eq, Show, Generic)
-
-instance FromJSON RemoteFile where
-  parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
-
-instance ToJSON RemoteFile where
-  toJSON = genericToJSON $ aesonPrefix snakeCase
-  toEncoding = genericToEncoding $ aesonPrefix snakeCase
+  deriving anyclass (FromJSON, ToJSON)
 
 downloadRemoteFile
   :: (MonadLogger m, MonadDownloadFile m) => RemoteFile -> m ()
-downloadRemoteFile RemoteFile {..} = do
-  logInfo $ "Fetching remote file" :# ["path" .= rfPath]
-  downloadFile (getUrl rfUrl) rfPath
+downloadRemoteFile rf = do
+  logInfo $ "Fetching remote file" :# objectToPairs rf
+  downloadFile (getUrl rf.url) rf.path

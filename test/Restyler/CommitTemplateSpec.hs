@@ -12,10 +12,7 @@ spec = do
   describe "renderCommitTemplate" $ do
     it "replaces variables" $ example $ do
       let
-        inputs =
-          CommitTemplateInputs
-            { ctiRestyler = someRestyler "special"
-            }
+        inputs = CommitTemplateInputs {restyler = someRestyler "special"}
         template = commitTemplate "Restyled by ${restyler.name}"
 
       renderCommitTemplate inputs template

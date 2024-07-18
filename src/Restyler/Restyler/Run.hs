@@ -141,10 +141,10 @@ runRestylersWith run config@Config {..} allPaths = do
 
   let
     lenPaths = genericLength paths
-    maxPaths = cpcMaximum cChangedPaths
+    maxPaths = cChangedPaths.maximum
 
   if lenPaths > maxPaths
-    then case cpcOutcome cChangedPaths of
+    then case cChangedPaths.outcome of
       MaximumChangedPathsOutcomeSkip -> do
         logWarn
           $ "Number of changed paths is greater than configured maximum"
