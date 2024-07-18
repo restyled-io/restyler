@@ -141,7 +141,7 @@ instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
 deriving via
   (ActualGit (AppT app m))
   instance
-    (MonadUnliftIO m, HasLogger app) => MonadGit (AppT app m)
+    MonadIO m => MonadGit (AppT app m)
 
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT f.unwrap app

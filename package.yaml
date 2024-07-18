@@ -75,6 +75,7 @@ library:
     - text
     - these
     - time
+    - typed-process
     - unliftio
     - unliftio-core
     - unordered-containers

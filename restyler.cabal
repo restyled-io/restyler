@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b33cc8a5235b82aaecebc91c65be00ee0d2e8d96c832e7961d7a9f90dfd92ef7
+-- hash: 5c001319180c5bfd59f98f9971d215cf80b7926bcf53aa063f4ef07d311855b9
 
 name:           restyler
 version:        0.2.0.0
@@ -134,6 +134,7 @@ library
     , text
     , these
     , time
+    , typed-process
     , unliftio
     , unliftio-core
     , unordered-containers
