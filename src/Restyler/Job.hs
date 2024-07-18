@@ -11,7 +11,7 @@ import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
 import Restyler.Clone
 import Restyler.Config
 import Restyler.DangerousPullRequest
-import Restyler.ErrorMetadata
+import Restyler.Error
 import Restyler.GHA qualified as GHA
 import Restyler.GHA.Output
 import Restyler.Git
@@ -35,7 +35,7 @@ import Restyler.RestyledPullRequest
 import Restyler.RestylerResult
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
-import UnliftIO.Exception (throwIO)
+import UnliftIO.Exception (handleAny, throwIO)
 
 run
   :: ( MonadMask m
@@ -143,21 +143,23 @@ withStatsAndCleanup jobUrl f = do
   Statsd.histogramSince "restyler.duration" [] start
   case result of
     Left aex -> do
-      md <- runErrorHandlers $ toException aex
+      err <- runErrorHandlers $ toException aex
 
       let
         mConfig = findAnnotation @Config aex
         mPullRequest = findAnnotation @PullRequest aex
 
       for_ mPullRequest $ \pullRequest -> do
-        cleanupRestyledPullRequest pullRequest
         for_ mConfig $ \config -> do
-          setPullRequestRed config pullRequest jobUrl
+          handleAny (const $ pure ())
+            $ setPullRequestRed config pullRequest jobUrl
             $ "Error ("
-            <> md.description
+            <> err.description
             <> ")"
 
-      Statsd.increment "restyler.error" [("severity", md.severity), ("error", md.tag)]
+      Statsd.increment
+        "restyler.error"
+        [("severity", err.severity), ("error", err.tag)]
       throwIO aex -- already annotated, throw as-is
     Right a -> a <$ Statsd.increment "restyler.success" []
 

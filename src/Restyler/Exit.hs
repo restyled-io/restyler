@@ -5,7 +5,7 @@ module Restyler.Exit
 import Restyler.Prelude
 
 import Restyler.AnnotatedException
-import Restyler.ErrorMetadata
+import Restyler.Error
 
 withExitHandler :: (MonadUnliftIO m, MonadLogger m) => m a -> m ()
 withExitHandler f = do
@@ -16,10 +16,10 @@ exitHandlers :: (MonadIO m, MonadLogger m) => [Handler m ExitCode]
 exitHandlers = map toExitHandler errorHandlers
 
 toExitHandler
-  :: (MonadIO m, MonadLogger m) => Handler m ErrorMetadata -> Handler m ExitCode
+  :: (MonadIO m, MonadLogger m) => Handler m Error -> Handler m ExitCode
 toExitHandler (Handler f) = Handler $ \ex -> do
-  md <- f ex
-  case md.severity of
-    "warning" -> logWarn md.message
-    _ -> logError md.message
-  pure md.exitCode
+  err <- f ex
+  case err.severity of
+    "warning" -> logWarn err.message
+    _ -> logError err.message
+  pure err.exitCode

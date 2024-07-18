@@ -1,5 +1,5 @@
-module Restyler.ErrorMetadata
-  ( ErrorMetadata (..)
+module Restyler.Error
+  ( Error (..)
   , runErrorHandlers
   , tryErrorHandlers
   , errorHandlers
@@ -31,14 +31,14 @@ import Restyler.Restyler.Run
 runErrorHandlers
   :: (MonadIO m, MonadLogger m)
   => SomeException
-  -> m ErrorMetadata
+  -> m Error
 runErrorHandlers e = fromMaybe (unknown e) <$> tryErrorHandlers e
 
 -- | Try our error handlers, returning 'Nothing' if none match
 tryErrorHandlers
   :: (MonadIO m, MonadLogger m)
   => SomeException
-  -> m (Maybe ErrorMetadata)
+  -> m (Maybe Error)
 tryErrorHandlers e = go errorHandlers
  where
   go [] = pure Nothing
@@ -46,7 +46,7 @@ tryErrorHandlers e = go errorHandlers
     | Just ex <- fromException e = Just <$> f ex
     | otherwise = go hs
 
-errorHandlers :: (MonadIO m, MonadLogger m) => [Handler m ErrorMetadata]
+errorHandlers :: (MonadIO m, MonadLogger m) => [Handler m Error]
 errorHandlers =
   [ errorHandler $ \case
       ex@RepoDisabled {} ->
@@ -133,13 +133,13 @@ errorHandlers =
 
 errorHandler
   :: (MonadIO m, MonadLogger m, Exception ex)
-  => (ex -> ErrorMetadata)
-  -> Handler m ErrorMetadata
+  => (ex -> Error)
+  -> Handler m Error
 errorHandler f = Handler $ \aex@AnnotatedException {exception} -> do
   let md = f exception
   md <$ logDebug (displayAnnotatedException aex :# [])
 
-data ErrorMetadata = ErrorMetadata
+data Error = Error
   { severity :: Text
   , tag :: Text
   , description :: Text
@@ -147,7 +147,7 @@ data ErrorMetadata = ErrorMetadata
   , exitCode :: ExitCode
   }
 
-github :: Exception ex => ex -> ErrorMetadata
+github :: Exception ex => ex -> Error
 github ex =
   (warning ex)
     { tag = "github"
@@ -155,12 +155,12 @@ github ex =
     , exitCode = ExitFailure 30
     }
 
-warning :: Exception ex => ex -> ErrorMetadata
+warning :: Exception ex => ex -> Error
 warning ex = (unknown ex) {severity = "warning"}
 
-unknown :: Exception ex => ex -> ErrorMetadata
+unknown :: Exception ex => ex -> Error
 unknown ex =
-  ErrorMetadata
+  Error
     { severity = "error"
     , tag = "unknown"
     , description = "unknown error"
