@@ -42,9 +42,5 @@ run repo pr = do
   pullRequest <- getPullRequest repo pr
   checkpoint (Annotation pullRequest) $ do
     logInfo $ "Handling PR" :# objectToPairs pullRequest
-
     paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
-    traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
-
-    result <- Local.run pullRequest paths
-    result <$ setRestylerResultOutputs result
+    Local.run pullRequest paths `with` setRestylerResultOutputs

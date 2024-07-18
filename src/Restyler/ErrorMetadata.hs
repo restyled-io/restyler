@@ -20,6 +20,7 @@ import Network.HTTP.Client (HttpException (..), HttpExceptionContent (..))
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Simple (getResponseStatus)
 import Network.HTTP.Types.Status (statusCode)
+import Restyler.AnnotatedException
 import Restyler.Clone (CloneTimeoutError (..))
 import Restyler.Config (ConfigError (..))
 import Restyler.Job.PlanUpgradeRequired (PlanUpgradeRequired (..))
@@ -58,7 +59,8 @@ errorMetadataExitCode ErrorMetadata {exitCode} = case exitCode of
 
 handlers :: SomeException -> [First ErrorMetadata]
 handlers e =
-  [ fromException e & First <&> \case
+  [ fromException e & First <&> errorMetadata . unannotatedException
+  , fromException e & First <&> \case
       RepoDisabled {} ->
         ErrorMetadata
           { exception = e

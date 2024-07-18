@@ -4,12 +4,15 @@ module Restyler.JobEnv
   ( HasJobEnv (..)
   , JobEnv (..)
   , jobEnvParser
+  , assertJobEnv
   ) where
 
 import Restyler.Prelude
 
 import Env qualified
 import Restyler.GitHub.Api
+import Restyler.Job.PlanUpgradeRequired
+import Restyler.Job.RepoDisabled
 
 class HasJobEnv a where
   getJobEnv :: a -> JobEnv
@@ -41,3 +44,9 @@ jobEnvParser =
     <*> optional (URL <$> Env.var (Env.str <=< Env.nonempty) "PLAN_UPGRADE_URL" mempty)
     <*> optional (Env.var Env.str "STATSD_HOST" mempty)
     <*> optional (Env.var Env.auto "STATSD_PORT" mempty)
+
+assertJobEnv :: (MonadIO m, MonadReader env m, HasJobEnv env) => m ()
+assertJobEnv = do
+  env <- asks getJobEnv
+  when env.repoDisabled $ throwIO RepoDisabled
+  for_ env.planRestriction $ throwIO . flip PlanUpgradeRequired env.planUpgradeUrl
