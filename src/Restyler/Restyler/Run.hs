@@ -239,10 +239,7 @@ runRestyler_ r paths = case rDelimiters r of
   Just ds -> restyleDelimited ds run paths
  where
   run ps = do
-    ec <- dockerPullRestyler r
-    case ec of
-      ExitSuccess -> pure ()
-      ExitFailure i -> throw $ RestylerPullFailure r i
+    dockerPullRestyler r
     traverse_ (dockerRunRestyler r) $ withProgress $ getDockerRunStyles r ps
 
 data WithProgress a = WithProgress
@@ -278,10 +275,13 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerPullRestyler
-  :: (MonadLogger m, MonadProcess m) => Restyler -> m ExitCode
-dockerPullRestyler Restyler {..} = do
+  :: (MonadIO m, MonadLogger m, MonadProcess m, HasCallStack) => Restyler -> m ()
+dockerPullRestyler r@Restyler {..} = do
   logInfo $ "Pulling Restyler" :# ["image" .= rImage]
-  callProcessExitCode "docker" ["pull", "--quiet", rImage]
+  ec <- callProcessExitCode "docker" ["pull", "--quiet", rImage]
+  case ec of
+    ExitSuccess -> pure ()
+    ExitFailure i -> throw $ RestylerPullFailure r i
 
 dockerRunRestyler
   :: ( MonadUnliftIO m
