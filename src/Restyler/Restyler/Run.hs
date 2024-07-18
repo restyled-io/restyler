@@ -5,6 +5,7 @@ module Restyler.Restyler.Run
   ( runRestylers
 
     -- * Errors
+  , RestylerPullFailure (..)
   , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
   , RestylerCommandNotFound (..)
@@ -39,6 +40,19 @@ import Restyler.RestylerResult
 import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
 import UnliftIO.Exception (handleAny, tryAny)
+
+data RestylerPullFailure = RestylerPullFailure Restyler Int
+  deriving stock (Show, Eq)
+
+instance Exception RestylerPullFailure where
+  displayException (RestylerPullFailure Restyler {..} ec) =
+    mconcat
+      [ "Unable to pull " <> rImage <> " (" <> show @String ec <> ")"
+      , "\n  Error information may be present in debug messages printed above"
+      , "\n"
+      , "\n  Help:"
+      , concatMap ("\n    " <>) rDocumentation
+      ]
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
   deriving stock (Show, Eq)
@@ -230,7 +244,10 @@ runRestyler_ r paths = case rDelimiters r of
   Just ds -> restyleDelimited ds run paths
  where
   run ps = do
-    dockerPullRestyler r
+    ec <- dockerPullRestyler r
+    case ec of
+      ExitSuccess -> pure ()
+      ExitFailure i -> throw $ RestylerPullFailure r i
     traverse_ (dockerRunRestyler r) $ withProgress $ getDockerRunStyles r ps
 
 data WithProgress a = WithProgress
@@ -266,10 +283,10 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerPullRestyler
-  :: (MonadLogger m, MonadProcess m, HasCallStack) => Restyler -> m ()
+  :: (MonadLogger m, MonadProcess m) => Restyler -> m ExitCode
 dockerPullRestyler Restyler {..} = do
   logInfo $ "Pulling Restyler" :# ["image" .= rImage]
-  callProcess "docker" ["pull", "--quiet", rImage]
+  callProcessExitCode "docker" ["pull", "--quiet", rImage]
 
 dockerRunRestyler
   :: ( MonadUnliftIO m

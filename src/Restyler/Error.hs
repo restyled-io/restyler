@@ -24,6 +24,7 @@ import Restyler.Restyler.Run
   ( RestylerCommandNotFound (..)
   , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
+  , RestylerPullFailure (..)
   , TooManyChangedPaths (..)
   )
 
@@ -108,6 +109,13 @@ errorHandlers =
           { tag = "restyler-command-not-found"
           , description = "a Restyler's command is invalid"
           , exitCode = ExitFailure 22
+          }
+  , errorHandler $ \case
+      ex@RestylerPullFailure {} ->
+        (warning ex)
+          { tag = "restyler-pull"
+          , description = "unable to pull image"
+          , exitCode = ExitFailure 23
           }
   , errorHandler $ \case
       ex@TooManyChangedPaths {} ->
