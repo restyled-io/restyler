@@ -185,7 +185,6 @@ withFilteredPaths restylers paths run = do
 
     run r filtered
 
--- | TODO: warnIgnoreWith
 addExecutableInterpreter
   :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
   => FilePath
