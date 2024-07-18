@@ -11,8 +11,6 @@ import Restyler.RestylerResult
 import Restyler.Wiki qualified as Wiki
 import Text.Shakespeare.Text (st)
 
--- brittany-disable-next-binding
-
 pullRequestDescription
   :: Maybe URL
   -- ^ Job URL, if we have it
