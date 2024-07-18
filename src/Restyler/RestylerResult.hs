@@ -8,7 +8,6 @@ module Restyler.RestylerResult
 
 import Restyler.Prelude
 
-import Data.Aeson (ToJSON)
 import Restyler.CommitTemplate
 import Restyler.Config
 import Restyler.Git

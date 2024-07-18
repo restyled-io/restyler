@@ -8,7 +8,6 @@ module Restyler.RestyleResult
 
 import Restyler.Prelude
 
-import Data.Aeson (ToJSON)
 import Data.Text qualified as T
 import Restyler.Config
 import Restyler.GHA.Output

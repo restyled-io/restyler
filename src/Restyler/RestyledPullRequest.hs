@@ -10,7 +10,6 @@ module Restyler.RestyledPullRequest
 
 import Restyler.Prelude
 
-import Data.Aeson (ToJSON)
 import Data.List.NonEmpty qualified as NE
 import Data.These
 import GitHub qualified

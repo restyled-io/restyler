@@ -5,7 +5,6 @@ module Restyler.Ignore
 
 import Restyler.Prelude
 
-import Data.Aeson (ToJSON)
 import GitHub.Data (IssueLabel, User)
 import Restyler.Config
 import Restyler.Config.Glob
