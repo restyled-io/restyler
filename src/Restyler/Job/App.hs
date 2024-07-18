@@ -1,6 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoFieldSelectors #-}
-
 module Restyler.Job.App
   ( App (..)
   , withApp

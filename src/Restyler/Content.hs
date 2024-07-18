@@ -44,9 +44,9 @@ recommend using the Squash or Rebase strategies.
       $ map (("- " <>) . restylerListItem . (.restyler))
       $ filter restylerCommittedChanges results
 
-  restylerListItem Restyler {..} = pack $ case rDocumentation of
-    (url : _) -> "[" <> rName <> "](" <> url <> ")"
-    _ -> rName
+  restylerListItem r = pack $ case rDocumentation r of
+    (url : _) -> "[" <> rName r <> "](" <> url <> ")"
+    _ -> rName r
 
   footer =
     [st|

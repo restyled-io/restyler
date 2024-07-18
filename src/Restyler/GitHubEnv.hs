@@ -1,5 +1,3 @@
-{-# LANGUAGE NoFieldSelectors #-}
-
 -- | Environment variables available on GitHub Actions
 module Restyler.GitHubEnv
   ( GitHubEnv (..)

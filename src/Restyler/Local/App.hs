@@ -1,6 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoFieldSelectors #-}
-
 module Restyler.Local.App
   ( App (..)
   , withApp

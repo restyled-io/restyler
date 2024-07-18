@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Restrictions
   ( HasRestrictions (..)

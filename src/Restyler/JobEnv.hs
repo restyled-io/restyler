@@ -1,5 +1,3 @@
-{-# LANGUAGE NoFieldSelectors #-}
-
 module Restyler.JobEnv
   ( HasJobEnv (..)
   , JobEnv (..)

@@ -41,9 +41,9 @@ ghGetIgnoredReason
   -> Text
   -> t (Name IssueLabel)
   -> Maybe IgnoredReason
-ghGetIgnoredReason Config {..} author branch labels =
+ghGetIgnoredReason c author branch labels =
   asum
-    [ IgnoredByAuthor author <$ guard (cIgnoreAuthors `matchAny` [author])
-    , IgnoredByBranch branch <$ guard (cIgnoreBranches `matchAny` [branch])
-    , IgnoredByLabels <$> cIgnoreLabels `matchFirst` labels
+    [ IgnoredByAuthor author <$ guard (cIgnoreAuthors c `matchAny` [author])
+    , IgnoredByBranch branch <$ guard (cIgnoreBranches c `matchAny` [branch])
+    , IgnoredByLabels <$> cIgnoreLabels c `matchFirst` labels
     ]

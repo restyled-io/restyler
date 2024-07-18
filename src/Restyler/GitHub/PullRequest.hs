@@ -1,6 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE NoFieldSelectors #-}
-
 module Restyler.GitHub.PullRequest
   ( PullRequest (..)
   , PullRequestState (..)

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6d5aa2a2c24116ca665b0ca9e152a9f3cfd04751d0e110d52a3b845b080be5ba
+-- hash: 1bc8cc09f6baa7d297ef9d591c2e22f0830aa0d07c9d042a7feb91064ce5189f
 
 name:           restyler
 version:        0.2.0.0
@@ -65,7 +65,6 @@ library
       Restyler.Options.PullRequest
       Restyler.Options.Repository
       Restyler.Prelude
-      Restyler.PullRequestSpec
       Restyler.ReadP
       Restyler.RemoteFile
       Restyler.Restrictions
@@ -82,36 +81,21 @@ library
   hs-source-dirs:
       src
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
       DerivingVia
       DuplicateRecordFields
-      ImportQualifiedPost
-      NamedFieldPuns
+      GADTs
+      LambdaCase
       NoFieldSelectors
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      NoPostfixOperators
       OverloadedRecordDot
+      OverloadedStrings
+      QuasiQuotes
+      TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Blammo
@@ -139,7 +123,6 @@ library
     , http-client
     , http-conduit
     , http-types
-    , megaparsec
     , microlens
     , microlens-mtl
     , monad-logger-aeson
@@ -156,7 +139,7 @@ library
     , validation
     , vector
     , yaml
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable restyle-gha
   main-is: main.hs
@@ -165,41 +148,26 @@ executable restyle-gha
   hs-source-dirs:
       restyle-gha
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
       DerivingVia
       DuplicateRecordFields
-      ImportQualifiedPost
-      NamedFieldPuns
+      GADTs
+      LambdaCase
       NoFieldSelectors
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      NoPostfixOperators
       OverloadedRecordDot
+      OverloadedStrings
+      QuasiQuotes
+      TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , restyler
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable restyle-path
   main-is: main.hs
@@ -208,41 +176,26 @@ executable restyle-path
   hs-source-dirs:
       restyle-path
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
       DerivingVia
       DuplicateRecordFields
-      ImportQualifiedPost
-      NamedFieldPuns
+      GADTs
+      LambdaCase
       NoFieldSelectors
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      NoPostfixOperators
       OverloadedRecordDot
+      OverloadedStrings
+      QuasiQuotes
+      TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , restyler
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable restyler
   main-is: main.hs
@@ -251,41 +204,26 @@ executable restyler
   hs-source-dirs:
       app
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
       DerivingVia
       DuplicateRecordFields
-      ImportQualifiedPost
-      NamedFieldPuns
+      GADTs
+      LambdaCase
       NoFieldSelectors
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      NoPostfixOperators
       OverloadedRecordDot
+      OverloadedStrings
+      QuasiQuotes
+      TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
     , restyler
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite test
   type: exitcode-stdio-1.0
@@ -299,7 +237,6 @@ test-suite test
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
       Restyler.Options.PullRequestSpec
-      Restyler.PullRequestSpecSpec
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
@@ -311,36 +248,21 @@ test-suite test
   hs-source-dirs:
       test
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      GADTs
-      GeneralizedNewtypeDeriving
-      LambdaCase
-      MultiParamTypeClasses
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
       DerivingVia
       DuplicateRecordFields
-      ImportQualifiedPost
-      NamedFieldPuns
+      GADTs
+      LambdaCase
       NoFieldSelectors
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      NoPostfixOperators
       OverloadedRecordDot
+      OverloadedStrings
+      QuasiQuotes
+      TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Blammo
@@ -352,7 +274,6 @@ test-suite test
     , envparse
     , extra
     , filepath
-    , github
     , hspec
     , hspec-core
     , hspec-expectations-lifted
@@ -363,4 +284,4 @@ test-suite test
     , text
     , unliftio
     , yaml
-  default-language: Haskell2010
+  default-language: GHC2021

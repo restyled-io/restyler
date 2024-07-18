@@ -1,5 +1,3 @@
-{-# LANGUAGE NoFieldSelectors #-}
-
 module Restyler.RestyledPullRequest
   ( Restyled (..)
   , findRestyledPullRequest

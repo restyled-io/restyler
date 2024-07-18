@@ -2,38 +2,24 @@ name: restyler
 version: 0.2.0.0
 license: MIT
 
+language: GHC2021
+
 default-extensions:
-  - BangPatterns
   - DataKinds
   - DeriveAnyClass
-  - DeriveFoldable
-  - DeriveFunctor
-  - DeriveGeneric
-  - DeriveLift
-  - DeriveTraversable
   - DerivingStrategies
-  - FlexibleContexts
-  - FlexibleInstances
-  - GADTs
-  - GeneralizedNewtypeDeriving
-  - LambdaCase
-  - MultiParamTypeClasses
-  - NoImplicitPrelude
-  - NoMonomorphismRestriction
-  - OverloadedStrings
-  - RankNTypes
-  - RecordWildCards
-  - ScopedTypeVariables
-  - StandaloneDeriving
-  - TypeApplications
-  - TypeFamilies
-
   - DerivingVia
   - DuplicateRecordFields
-  - ImportQualifiedPost
-  - NamedFieldPuns
+  - GADTs
+  - LambdaCase
   - NoFieldSelectors
+  - NoImplicitPrelude
+  - NoMonomorphismRestriction
+  - NoPostfixOperators
   - OverloadedRecordDot
+  - OverloadedStrings
+  - QuasiQuotes
+  - TypeFamilies
 
 ghc-options:
   - -fignore-optim-changes
@@ -78,7 +64,6 @@ library:
     - http-client
     - http-conduit
     - http-types
-    - megaparsec
     - microlens
     - microlens-mtl
     - monad-logger-aeson
@@ -141,7 +126,6 @@ tests:
       - envparse
       - extra
       - filepath
-      - github
       - hspec
       - hspec-core
       - hspec-expectations-lifted
