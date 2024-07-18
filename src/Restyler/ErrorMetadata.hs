@@ -27,12 +27,14 @@ import Restyler.Restyler.Run
   , TooManyChangedPaths (..)
   )
 
+-- | Try our error handlers, returning /unknown/ if none match
 runErrorHandlers
   :: (MonadIO m, MonadLogger m)
   => SomeException
   -> m ErrorMetadata
 runErrorHandlers e = fromMaybe (unknown e) <$> tryErrorHandlers e
 
+-- | Try our error handlers, returning 'Nothing' if none match
 tryErrorHandlers
   :: (MonadIO m, MonadLogger m)
   => SomeException
@@ -129,6 +131,22 @@ errorHandlers =
   , errorHandler $ unknown @SomeException
   ]
 
+errorHandler
+  :: (MonadIO m, MonadLogger m, Exception ex)
+  => (ex -> ErrorMetadata)
+  -> Handler m ErrorMetadata
+errorHandler f = Handler $ \aex@AnnotatedException {exception} -> do
+  let md = f exception
+  md <$ logDebug (displayAnnotatedException aex :# [])
+
+data ErrorMetadata = ErrorMetadata
+  { severity :: Text
+  , tag :: Text
+  , description :: Text
+  , message :: Message
+  , exitCode :: ExitCode
+  }
+
 github :: Exception ex => ex -> ErrorMetadata
 github ex =
   (warning ex)
@@ -149,23 +167,6 @@ unknown ex =
     , message = pack (displayException ex) :# []
     , exitCode = ExitFailure 99
     }
-
-errorHandler
-  :: (MonadIO m, MonadLogger m, Exception ex)
-  => (ex -> ErrorMetadata)
-  -> Handler m ErrorMetadata
-errorHandler f = Handler $ \aex@AnnotatedException {exception} -> do
-  let md = f exception
-  md <$ logDebug (displayAnnotatedException aex :# [])
-
-data ErrorMetadata = ErrorMetadata
-  { severity :: Text
-  , tag :: Text
-  , description :: Text
-  , message :: Message
-  , exitCode :: ExitCode
-  }
-  deriving stock (Generic)
 
 bodyToSeries :: ByteString -> [SeriesElem]
 bodyToSeries body =
