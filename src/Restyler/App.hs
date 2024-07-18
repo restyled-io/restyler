@@ -3,25 +3,16 @@
 module Restyler.App
   ( AppT
   , runAppT
-
-    -- * 'AppT's implementation, exposed for use outside of 'AppT'
-  , GitHubError (..)
-  , runGitHubInternal
   ) where
 
 import Restyler.Prelude
 
 import Conduit (runResourceT, sinkFile)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
-import GitHub.Auth
-import GitHub.Data.Definitions qualified as GitHub
-import GitHub.Request
-import GitHub.Request.Display
 import Network.HTTP.Simple hiding (Request)
 import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Git
-import Restyler.Options
 import System.Directory qualified as Directory
 import System.Process qualified as Process
 
@@ -148,36 +139,6 @@ deriving via
   (ActualGit (AppT app m))
   instance
     (MonadUnliftIO m, HasLogger app) => MonadGit (AppT app m)
-
-data GitHubError = GitHubError
-  { gheRequest :: DisplayGitHubRequest
-  , gheError :: GitHub.Error
-  }
-  deriving stock (Show)
-
-instance Exception GitHubError where
-  displayException GitHubError {..} =
-    "Error communication with GitHub:"
-      <> "\n  Request:"
-      <> show @String gheRequest
-      <> "\n  Exception:"
-      <> show @String gheError
-
-instance (MonadUnliftIO m, HasLogger app, HasOptions app) => MonadGitHub (AppT app m) where
-  runGitHub = runGitHubInternal
-
-runGitHubInternal
-  :: (MonadIO n, MonadLogger n, MonadReader env n, HasOptions env)
-  => ParseResponse m a
-  => GenRequest m k a
-  -> n a
-runGitHubInternal req = do
-  logDebug
-    $ "runGitHub"
-    :# ["request" .= show @Text (displayGitHubRequest req)]
-  auth <- OAuth . encodeUtf8 . oAccessToken <$> view optionsL
-  result <- liftIO $ github auth req
-  either (throwIO . GitHubError (displayGitHubRequest req)) pure result
 
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT (unAppT f) app

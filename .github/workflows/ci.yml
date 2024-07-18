@@ -87,10 +87,13 @@ jobs:
       - if: ${{ steps.restyler.outputs.differences == 'true' }}
         uses: peter-evans/create-pull-request@v6
         with:
-          branch: ${{ steps.restyler.outputs.restyled-branch-name }}
-          base: ${{ github.event.pull_request.head.ref }}
-          title: ${{ steps.restyler.outputs.restyled-pr-title }}
-          body: ${{ steps.restyler.outputs.restyled-pr-body }}
+          base: ${{ steps.restyler.outputs.restyled-base }}
+          branch: ${{ steps.restyler.outputs.restyled-head }}
+          title: ${{ steps.restyler.outputs.restyled-title }}
+          body: ${{ steps.restyler.outputs.restyled-body }}
+          labels: ${{ steps.restyler.outputs.restyled-labels }}
+          reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
+          team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
           delete-branch: true
 
   deploy:

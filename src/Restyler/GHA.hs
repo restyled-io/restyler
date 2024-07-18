@@ -47,4 +47,4 @@ run repo pr = do
     traverse_ (logDebug . ("Path" :#) . objectToPairs) paths
 
     result <- Local.run pullRequest paths
-    result <$ setRestylerResultOutputs pullRequest result
+    result <$ setRestylerResultOutputs result

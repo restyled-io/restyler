@@ -117,7 +117,7 @@ run (JobUrl jobUrl) pr = do
         (True, Nothing) -> do
           mRestyledPullRequest <- findRestyledPullRequest pullRequest
           getHtmlUrl <$> case mRestyledPullRequest of
-            Nothing -> createRestyledPullRequest pullRequest results
+            Nothing -> createRestyledPullRequest config pullRequest results
             Just rpr -> updateRestyledPullRequest pullRequest rpr results
 
       setPullRequestDifferences config pullRequest statusUrl
@@ -155,9 +155,6 @@ setPullRequestSkipped _config pullRequest url skipped =
     $ "Skipped ("
     <> renderSkipped skipped
     <> ")"
-
-renderSkipped :: RestyleSkipped -> Text
-renderSkipped = error "TODO"
 
 setPullRequestNoDifferences
   :: (MonadIO m, MonadGitHub m) => Config -> PullRequest -> URL -> m ()

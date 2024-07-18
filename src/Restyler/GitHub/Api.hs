@@ -7,6 +7,7 @@ module Restyler.GitHub.Api
     getPullRequest
   , getPullRequestFiles
   , setPullRequestStatus
+  , createPullRequest
 
     -- * "GitHub" dependency-injection
   , MonadGitHub (..)
@@ -84,6 +85,32 @@ setPullRequestStatus pr cstate url description = do
       , GitHub.newStatusTargetUrl = Just url
       , GitHub.newStatusDescription = Just description
       , GitHub.newStatusContext = Just "restyled"
+      }
+
+createPullRequest
+  :: (MonadIO m, MonadGitHub m)
+  => RepositoryOption
+  -> Text
+  -- ^ Title
+  -> Text
+  -- ^ Body
+  -> Text
+  -- ^ Base branch
+  -> Text
+  -- ^ Head branch
+  -> m PullRequest
+createPullRequest repo title body baseRef headRef = do
+  fromGitHub (Right . convertPullRequest [])
+    =<< ghCreatePullRequest ghOwner ghRepo create
+ where
+  ghOwner = GitHub.mkOwnerName repo.owner
+  ghRepo = GitHub.mkRepoName repo.repo
+  create =
+    GitHub.CreatePullRequest
+      { GitHub.createPullRequestTitle = title
+      , GitHub.createPullRequestBody = body
+      , GitHub.createPullRequestBase = baseRef
+      , GitHub.createPullRequestHead = headRef
       }
 
 convertLabel :: GitHub.IssueLabel -> Label
@@ -191,6 +218,12 @@ class Monad m => MonadGitHub m where
     -> GitHub.NewStatus
     -> m (Either GitHub.Error GitHub.Status)
 
+  ghCreatePullRequest
+    :: GitHub.Name GitHub.Owner
+    -> GitHub.Name GitHub.Repo
+    -> GitHub.CreatePullRequest
+    -> m (Either GitHub.Error GitHub.PullRequest)
+
 newtype GitHubToken = GitHubToken
   { unwrap :: Text
   }
@@ -233,6 +266,9 @@ instance (Monad m, MonadIO m, MonadReader env m, HasGitHubToken env) => MonadGit
 
   ghCreateStatus owner repo sha status =
     runGitHub $ GitHub.createStatusR owner repo sha status
+
+  ghCreatePullRequest owner repo create =
+    runGitHub $ GitHub.createPullRequestR owner repo create
 
 runGitHub
   :: ( MonadIO m

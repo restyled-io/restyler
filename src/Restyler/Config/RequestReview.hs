@@ -8,25 +8,27 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.Types (typeMismatch)
-import GitHub.Data (User, toPathPart)
+import GitHub qualified
 import Restyler.Config.ExpectedKeys
-import Restyler.PullRequest
+import Restyler.GitHub.PullRequest
 
 data RequestReviewFrom
   = RequestReviewFromNone
   | RequestReviewFromAuthor
   | RequestReviewFromOwner
-  | RequestReviewFrom (Name User)
+  | RequestReviewFrom (GitHub.Name GitHub.User)
   deriving stock (Eq, Show, Generic)
 
 instance FromJSON RequestReviewFrom where
   parseJSON = withText "RequestReviewFrom" $ pure . readRequestReviewFrom
 
 instance ToJSON RequestReviewFrom where
-  toJSON RequestReviewFromNone = String "none"
-  toJSON RequestReviewFromAuthor = String "author"
-  toJSON RequestReviewFromOwner = String "owner"
-  toJSON (RequestReviewFrom name) = String $ toPathPart name
+  toJSON =
+    String . \case
+      RequestReviewFromNone -> "none"
+      RequestReviewFromAuthor -> "author"
+      RequestReviewFromOwner -> "owner"
+      RequestReviewFrom name -> GitHub.toPathPart name
 
 readRequestReviewFrom :: Text -> RequestReviewFrom
 readRequestReviewFrom = \case
@@ -44,20 +46,14 @@ data RequestReviewConfig = RequestReviewConfig
 bothFrom :: RequestReviewFrom -> RequestReviewConfig
 bothFrom x = RequestReviewConfig {rrcOrigin = x, rrcForked = x}
 
--- brittany-disable-next-binding
-
 instance FromJSON RequestReviewConfig where
   parseJSON (String t) =
     pure $ bothFrom $ readRequestReviewFrom t
   parseJSON (Object o) = do
     validateObjectKeys ["origin", "forked"] o
     RequestReviewConfig
-      <$> o
-      .:? "origin"
-      .!= RequestReviewFromAuthor
-      <*> o
-      .:? "forked"
-      .!= RequestReviewFromNone
+      <$> (o .:? "origin" .!= RequestReviewFromAuthor)
+      <*> (o .:? "forked" .!= RequestReviewFromNone)
   parseJSON x =
     typeMismatch
       "Invalid type for RequestReview. Expected String or Object."
@@ -71,15 +67,15 @@ determineReviewer
   :: PullRequest
   -- ^ The Original PR
   -> RequestReviewConfig
-  -> Maybe (Name User)
+  -> Maybe (GitHub.Name GitHub.User)
 determineReviewer pr RequestReviewConfig {..} =
-  (`reviewerFor` pr) $ bool rrcOrigin rrcForked $ pullRequestIsFork pr
+  (`reviewerFor` pr) $ bool rrcOrigin rrcForked pullRequestIsFork
+ where
+  pullRequestIsFork = pr.head.repo.owner.login /= pr.base.repo.owner.login
 
-reviewerFor :: RequestReviewFrom -> PullRequest -> Maybe (Name User)
-reviewerFor RequestReviewFromNone = const Nothing
-reviewerFor RequestReviewFromAuthor = Just . pullRequestUserLogin
-reviewerFor RequestReviewFromOwner = Just . coerceName . pullRequestOwnerName
-reviewerFor (RequestReviewFrom name) = const $ Just name
-
-coerceName :: Name a -> Name b
-coerceName = mkName Proxy . untagName
+reviewerFor
+  :: RequestReviewFrom -> PullRequest -> Maybe (GitHub.Name GitHub.User)
+reviewerFor RequestReviewFromNone _ = Nothing
+reviewerFor RequestReviewFromAuthor pr = Just $ GitHub.mkName Proxy pr.user.login
+reviewerFor RequestReviewFromOwner pr = Just $ GitHub.mkName Proxy pr.base.repo.owner.login
+reviewerFor (RequestReviewFrom name) _ = Just name

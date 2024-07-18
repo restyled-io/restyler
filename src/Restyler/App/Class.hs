@@ -3,25 +3,9 @@ module Restyler.App.Class
   , MonadProcess (..)
   , MonadDownloadFile (..)
   , readFile
-
-    -- * GitHub
-  , MonadGitHub (..)
-  , runGitHubFirst
-  , runGitHub_
-
-    -- ** Higher-level actions
-  , getPullRequestLabelNames
   ) where
 
 import Restyler.Prelude
-
-import Data.Vector (Vector)
-import Data.Vector qualified as V
-import GitHub.Data (IssueLabel (..))
-import GitHub.Data.Request
-import GitHub.Endpoints.Issues.Labels (labelsOnIssueR)
-import GitHub.Request
-import Restyler.PullRequest
 
 class Monad m => MonadSystem m where
   getCurrentDirectory :: m FilePath
@@ -46,32 +30,3 @@ class Monad m => MonadProcess m where
 
 class Monad m => MonadDownloadFile m where
   downloadFile :: Text -> FilePath -> m ()
-
-class Monad n => MonadGitHub n where
-  runGitHub :: ParseResponse m a => GenRequest m k a -> n a
-
--- | Fetch the first page using @'runGitHub'@, return the first item
-runGitHubFirst
-  :: (MonadGitHub n, ParseResponse m (Vector a))
-  => (FetchCount -> GenRequest m k (Vector a))
-  -> n (Maybe a)
-runGitHubFirst f = (V.!? 0) <$> runGitHub (f 1)
-
--- | @'void' . 'runGitHub'@
-runGitHub_ :: (MonadGitHub n, ParseResponse m a) => GenRequest m k a -> n ()
-runGitHub_ = void . runGitHub
-
-getPullRequestLabelNames
-  :: (MonadUnliftIO m, MonadLogger m, MonadGitHub m)
-  => PullRequest
-  -> m (Vector (Name IssueLabel))
-getPullRequestLabelNames pullRequest = do
-  labels <-
-    warnIgnore
-      $ runGitHub
-      $ labelsOnIssueR
-        (pullRequestOwnerName pullRequest)
-        (pullRequestRepoName pullRequest)
-        (pullRequestIssueId pullRequest)
-        FetchAll
-  pure $ labelName <$> labels

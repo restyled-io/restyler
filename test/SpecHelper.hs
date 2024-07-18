@@ -42,9 +42,9 @@ import Blammo.Logging.Simple
 import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.Config
+import Restyler.Local.Options
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
-import Restyler.Options
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..))
@@ -58,18 +58,14 @@ data TestApp = TestApp
   , taFS :: FS
   , taProcessExitCodes :: ExitCode
   }
+  deriving (HasHostDirectoryOption, HasRestrictions) via (ThroughOptions TestApp)
+  deriving (HasImageCleanupOption) via (NoImageCleanupOption TestApp)
 
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
-instance HasHostDirectoryOption TestApp where
-  getHostDirectoryOption = getHostDirectoryOption . taOptions
-
-instance HasImageCleanupOption TestApp where
-  getImageCleanupOption = getImageCleanupOption . taOptions
-
-instance HasRestrictions TestApp where
-  getRestrictions = getRestrictions . taOptions
+instance HasOptions TestApp where
+  getOptions = taOptions
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
@@ -132,21 +128,9 @@ loadTestApp = do
 testOptions :: Options
 testOptions =
   Options
-    { oAccessToken = error "oAccessToken"
-    , oLogSettings = error "oLogSettings"
-    , oOwner = error "oOwner"
-    , oRepo = error "oRepo"
-    , oPullRequest = error "oPullRequest"
-    , oManifest = Nothing
-    , oJobUrl = error "oJobUrl"
-    , oHostDirectory = Nothing
-    , oRepoDisabled = False
-    , oPlanRestriction = Nothing
-    , oPlanUpgradeUrl = Nothing
-    , oRestrictions = fullRestrictions
-    , oStatsdHost = Nothing
-    , oStatsdPort = Nothing
-    , oImageCleanup = False
+    { logSettings = error "logSettings"
+    , restrictions = fullRestrictions
+    , hostDirectory = toHostDirectoryOption Nothing
     }
 
 testAppExample :: TestAppT a -> TestAppT a

@@ -4,8 +4,6 @@
 module Restyler.GitHub.PullRequest
   ( PullRequest (..)
   , PullRequestState (..)
-  , pullRequestStateFromText
-  , pullRequestStateToText
   , User (..)
   , Label (..)
   , Commit (..)
@@ -14,6 +12,7 @@ module Restyler.GitHub.PullRequest
 
     -- * Classy access
   , HasHtmlUrl (..)
+  , HasNumber (..)
   , HasPullRequestState (..)
   , HasAuthor (..)
   , HasBaseRef (..)
@@ -44,12 +43,6 @@ data PullRequestState
 instance ToJSON PullRequestState where
   toJSON = toJSON . pullRequestStateToText
   toEncoding = toEncoding . pullRequestStateToText
-
-pullRequestStateFromText :: Text -> Either String PullRequestState
-pullRequestStateFromText = \case
-  "open" -> Right PullRequestOpen
-  "closed" -> Right PullRequestClosed
-  x -> Left $ "Invalid state " <> show x <> ", must be open or closed"
 
 pullRequestStateToText :: PullRequestState -> Text
 pullRequestStateToText = \case
@@ -95,6 +88,12 @@ class HasHtmlUrl a where
 
 instance HasHtmlUrl PullRequest where
   getHtmlUrl pr = pr.html_url
+
+class HasNumber a where
+  getNumber :: a -> Int
+
+instance HasNumber PullRequest where
+  getNumber pr = pr.number
 
 class HasPullRequestState a where
   getPullRequestState :: a -> PullRequestState

@@ -19,12 +19,7 @@
 module Restyler.Config
   ( Config (..)
   , ConfigError (..)
-  , configPullRequestReviewer
   , loadConfig
-  , HasConfig (..)
-  , whenConfig
-  , whenConfigNonEmpty
-  , whenConfigJust
 
     -- * Exported for use in tests
   , ConfigSource (..)
@@ -40,7 +35,6 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.FileEmbed (embedFile)
 import Data.Functor.Barbie
-import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set
 import Data.Yaml
   ( ParseException (..)
@@ -59,7 +53,6 @@ import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
 import Restyler.Options.Manifest
-import Restyler.PullRequest
 import Restyler.RemoteFile
 import Restyler.Restyler
 import Restyler.Wiki qualified as Wiki
@@ -146,10 +139,6 @@ data Config = Config
   , cRestylers :: [Restyler]
   }
   deriving stock (Eq, Show, Generic)
-
--- | If so configured, return the @'User'@ from whom to request review
-configPullRequestReviewer :: PullRequest -> Config -> Maybe (Name User)
-configPullRequestReviewer pr = determineReviewer pr . cRequestReview
 
 instance ToJSON Config where
   toJSON = genericToJSON $ aesonPrefix snakeCase
@@ -305,29 +294,6 @@ resolveRestylers ConfigF {..} allRestylers = do
       , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
       , cRestylers = restylers
       }
-
-class HasConfig env where
-  configL :: Lens' env Config
-
-whenConfig
-  :: (MonadReader env m, HasConfig env) => (Config -> Bool) -> m () -> m ()
-whenConfig check act =
-  whenConfigJust (bool Nothing (Just ()) . check) (const act)
-
-whenConfigNonEmpty
-  :: (MonadReader env m, HasConfig env)
-  => (Config -> [a])
-  -> ([a] -> m ())
-  -> m ()
-whenConfigNonEmpty check act =
-  whenConfigJust (NE.nonEmpty . check) (act . NE.toList)
-
-whenConfigJust
-  :: (MonadReader env m, HasConfig env)
-  => (Config -> Maybe a)
-  -> (a -> m ())
-  -> m ()
-whenConfigJust check act = traverse_ act . check =<< view configL
 
 defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")

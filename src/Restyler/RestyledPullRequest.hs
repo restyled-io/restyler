@@ -1,29 +1,124 @@
+{-# LANGUAGE NoFieldSelectors #-}
+
 module Restyler.RestyledPullRequest
   ( Restyled (..)
   , findRestyledPullRequest
+  , closeRestyledPullRequest
+  , RestyledPullRequestDetails (..)
+  , restyledPullRequestDetails
   , createRestyledPullRequest
   , updateRestyledPullRequest
-  , closeRestyledPullRequest
   ) where
 
 import Restyler.Prelude
 
+import Restyler.Config
+import Restyler.Content qualified as Content
+import Restyler.Git
+import Restyler.GitHub.Api
 import Restyler.GitHub.PullRequest
+import Restyler.Options.Repository
 import Restyler.RestylerResult
 
 newtype Restyled pr = Restyled
   { unwrap :: pr
   }
-  deriving newtype (HasHtmlUrl)
+  deriving newtype (HasHtmlUrl, HasNumber)
 
 findRestyledPullRequest :: PullRequest -> m (Maybe (Restyled PullRequest))
 findRestyledPullRequest = error "TODO"
 
+closeRestyledPullRequest :: Restyled PullRequest -> m ()
+closeRestyledPullRequest = error "TODO"
+
+data RestyledPullRequestDetails = RestyledPullRequestDetails
+  { repo :: RepositoryOption
+  , title :: Text
+  , body :: Text
+  , base :: Text
+  , head :: Text
+  , labels :: Maybe (NonEmpty Text)
+  , reviewers :: Maybe (NonEmpty Text)
+  , teamReviewers :: Maybe (NonEmpty Text)
+  }
+
+restyledPullRequestDetails
+  :: Config
+  -> PullRequest
+  -> [RestylerResult]
+  -> RestyledPullRequestDetails
+restyledPullRequestDetails _config pr results =
+  RestyledPullRequestDetails
+    { repo =
+        RepositoryOption
+          { owner = pr.base.repo.owner.login
+          , repo = pr.base.repo.name
+          }
+    , title = "Restyle " <> pr.title
+    , body =
+        Content.pullRequestDescription
+          Nothing -- TODO: JobUrl
+          pr.number
+          results
+    , base = pr.head.ref
+    , head = "restyled/" <> pr.head.ref
+    , labels = Nothing -- TODO
+    , reviewers = Nothing -- TODO
+    , teamReviewers = Nothing -- TODO
+    }
+
 createRestyledPullRequest
-  :: PullRequest
+  :: (MonadIO m, MonadLogger m, MonadGit m, MonadGitHub m)
+  => Config
+  -> PullRequest
   -> [RestylerResult]
   -> m (Restyled PullRequest)
-createRestyledPullRequest = error "TODO"
+createRestyledPullRequest config pr results = do
+  gitCheckout $ unpack details.head
+  gitPushForce $ unpack details.head
+  logInfo "Creating Restyled PR"
+  restyledPullRequest <-
+    Restyled
+      <$> createPullRequest
+        details.repo
+        details.title
+        details.body
+        details.base
+        details.head
+
+  for_ details.labels $ \labels -> do
+    logInfo $ "Adding labels to Restyled PR" :# ["labels" .= labels]
+  -- runGitHub_
+  --   $ addLabelsToIssueR
+  --     (restyledPullRequestOwnerName restyledPullRequest)
+  --     (restyledPullRequestRepoName restyledPullRequest)
+  --     (restyledPullRequestIssueId restyledPullRequest)
+  --     labels
+
+  for_ details.reviewers $ \users -> do
+    logInfo $ "Requesting review of Restyled PR" :# ["reviewers" .= users]
+  -- runGitHub_
+  --   $ createReviewRequestR
+  --     (restyledPullRequestOwnerName restyledPullRequest)
+  --     (restyledPullRequestRepoName restyledPullRequest)
+  --     (restyledPullRequestNumber restyledPullRequest)
+  --     (requestOneReviewer user)
+
+  for_ details.teamReviewers $ \teams -> do
+    logInfo $ "Requesting team review of Restyled PR" :# ["reviewer" .= teams]
+  -- runGitHub_
+  --   $ createReviewRequestR
+  --     (restyledPullRequestOwnerName restyledPullRequest)
+  --     (restyledPullRequestRepoName restyledPullRequest)
+  --     (restyledPullRequestNumber restyledPullRequest)
+  --     (requestOneReviewer user)
+
+  logInfo
+    $ "Opened Restyled PR"
+    :# ["number" .= getNumber restyledPullRequest]
+  pure restyledPullRequest
+ where
+  details = restyledPullRequestDetails config pr results
 
 updateRestyledPullRequest
   :: PullRequest
@@ -31,89 +126,6 @@ updateRestyledPullRequest
   -> [RestylerResult]
   -> m (Restyled PullRequest)
 updateRestyledPullRequest = error "TODO"
-
-closeRestyledPullRequest :: Restyled PullRequest -> m ()
-closeRestyledPullRequest = error "TODO"
-
--- import Data.Set qualified as Set
--- import Data.Text qualified as T
--- import GitHub.Endpoints.GitData.References (deleteReferenceR)
--- import GitHub.Endpoints.Issues.Labels (addLabelsToIssueR)
--- import GitHub.Endpoints.PullRequests
---   ( CreatePullRequest (..)
---   , EditPullRequest (..)
---   , Issue
---   , IssueNumber
---   , IssueState (..)
---   , Owner
---   , Repo
---   , SimplePullRequest (..)
---   , SimpleUser (..)
---   , createPullRequestR
---   , optionsHead
---   , pullRequestsForR
---   , toPathPart
---   , unIssueNumber
---   , updatePullRequestR
---   )
--- import GitHub.Endpoints.PullRequests.ReviewRequests
---   ( createReviewRequestR
---   , requestOneReviewer
---   )
--- import Restyler.App.Class (MonadGitHub, runGitHub, runGitHubFirst, runGitHub_)
--- import Restyler.Config
--- import Restyler.Content qualified as Content
--- import Restyler.Git (MonadGit (..))
--- import Restyler.Options
--- import Restyler.PullRequest
--- import Restyler.RestylerResult
-
--- data RestyledPullRequest = RestyledPullRequest
---   { restyledPullRequestOwnerName :: Name Owner
---   , restyledPullRequestRepoName :: Name Repo
---   , restyledPullRequestNumber :: IssueNumber
---   , restyledPullRequestState :: IssueState
---   , restyledPullRequestHeadRef :: Text
---   , restyledPullRequestHtmlUrl :: URL
---   }
-
--- restyledPullRequestIssueId :: RestyledPullRequest -> Id Issue
--- restyledPullRequestIssueId =
---   mkId Proxy . unIssueNumber . restyledPullRequestNumber
-
--- existingRestyledPullRequest
---   :: PullRequest
---   -- ^ Original PR
---   -> Text
---   -- ^ Head ref used to find the Restyled PR
---   -> SimplePullRequest
---   -- ^ Found Restyled PR
---   -> RestyledPullRequest
--- existingRestyledPullRequest pullRequest ref simplePullRequest =
---   RestyledPullRequest
---     { restyledPullRequestOwnerName = pullRequestOwnerName pullRequest
---     , restyledPullRequestRepoName = pullRequestRepoName pullRequest
---     , restyledPullRequestNumber = simplePullRequestNumber simplePullRequest
---     , restyledPullRequestState = simplePullRequestState simplePullRequest
---     , restyledPullRequestHeadRef = ref
---     , restyledPullRequestHtmlUrl =
---         simplePullRequestHtmlUrl
---           simplePullRequest
---     }
-
--- createdRestyledPullRequest
---   :: PullRequest
---   -- ^ Created Restyled PR
---   -> RestyledPullRequest
--- createdRestyledPullRequest restyledPullRequest =
---   RestyledPullRequest
---     { restyledPullRequestOwnerName = pullRequestOwnerName restyledPullRequest
---     , restyledPullRequestRepoName = pullRequestRepoName restyledPullRequest
---     , restyledPullRequestNumber = pullRequestNumber restyledPullRequest
---     , restyledPullRequestState = pullRequestState restyledPullRequest
---     , restyledPullRequestHeadRef = pullRequestHeadRef restyledPullRequest
---     , restyledPullRequestHtmlUrl = pullRequestHtmlUrl restyledPullRequest
---     }
 
 -- findRestyledPullRequest
 --   :: MonadGitHub m => PullRequest -> m (Maybe RestyledPullRequest)
@@ -133,68 +145,6 @@ closeRestyledPullRequest = error "TODO"
 --       . untagName
 --       . simpleUserLogin
 --       . simplePullRequestUser
-
--- createRestyledPullRequest
---   :: ( MonadLogger m
---      , MonadGit m
---      , MonadGitHub m
---      , MonadReader env m
---      , HasOptions env
---      , HasConfig env
---      )
---   => PullRequest
---   -> [RestylerResult]
---   -> m RestyledPullRequest
--- createRestyledPullRequest pullRequest results = do
---   gitCheckout $ unpack $ pullRequestRestyledHeadRef pullRequest
---   gitPushForce $ unpack $ pullRequestRestyledHeadRef pullRequest
-
---   mJobUrl <- oJobUrl <$> view optionsL
-
---   let
---     restyledTitle = "Restyle " <> pullRequestTitle pullRequest
---     restyledBody =
---       Content.pullRequestDescription
---         mJobUrl
---         (unIssueNumber $ pullRequestNumber pullRequest)
---         results
-
---   logInfo "Creating Restyled PR"
---   restyledPullRequest <-
---     fmap createdRestyledPullRequest
---       $ runGitHub
---       $ createPullRequestR
---         (pullRequestOwnerName pullRequest)
---         (pullRequestRepoName pullRequest)
---         CreatePullRequest
---           { createPullRequestTitle = restyledTitle
---           , createPullRequestBody = restyledBody
---           , createPullRequestBase = pullRequestRestyledBaseRef pullRequest
---           , createPullRequestHead = pullRequestRestyledHeadRef pullRequest
---           }
-
---   whenConfigNonEmpty (Set.toList . cLabels) $ \labels -> do
---     logInfo $ "Adding labels to Restyled PR" :# ["labels" .= labels]
---     runGitHub_
---       $ addLabelsToIssueR
---         (restyledPullRequestOwnerName restyledPullRequest)
---         (restyledPullRequestRepoName restyledPullRequest)
---         (restyledPullRequestIssueId restyledPullRequest)
---         labels
-
---   whenConfigJust (configPullRequestReviewer pullRequest) $ \user -> do
---     logInfo $ "Requesting review of Restyled PR" :# ["reviewer" .= user]
---     runGitHub_
---       $ createReviewRequestR
---         (restyledPullRequestOwnerName restyledPullRequest)
---         (restyledPullRequestRepoName restyledPullRequest)
---         (restyledPullRequestNumber restyledPullRequest)
---         (requestOneReviewer user)
-
---   logInfo
---     $ "Opened Restyled PR"
---     :# ["number" .= restyledPullRequestNumber restyledPullRequest]
---   pure restyledPullRequest
 
 -- updateRestyledPullRequest
 --   :: ( MonadLogger m

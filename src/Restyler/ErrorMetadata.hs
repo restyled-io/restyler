@@ -5,7 +5,6 @@ module Restyler.ErrorMetadata
   , errorMetadata
   , errorMetadataStatsdTags
   , errorMetadataDescription
-  , errorMetadataMessage
   , errorMetadataExitCode
   , logErrorMetadata
   , logErrorMetadataAndExit
@@ -21,7 +20,6 @@ import Network.HTTP.Client (HttpException (..), HttpExceptionContent (..))
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Simple (getResponseStatus)
 import Network.HTTP.Types.Status (statusCode)
-import Restyler.App (GitHubError (..))
 import Restyler.Clone (CloneTimeoutError (..))
 import Restyler.Config (ConfigError (..))
 import Restyler.Job.PlanUpgradeRequired (PlanUpgradeRequired (..))
@@ -52,10 +50,6 @@ errorMetadataStatsdTags ErrorMetadata {severity, tag} =
 
 errorMetadataDescription :: ErrorMetadata -> Text
 errorMetadataDescription ErrorMetadata {description} = description
-
-errorMetadataMessage :: ErrorMetadata -> Message
-errorMetadataMessage ErrorMetadata {description, message} =
-  fromMaybe (description :# []) message
 
 errorMetadataExitCode :: ErrorMetadata -> ExitCode
 errorMetadataExitCode ErrorMetadata {exitCode} = case exitCode of
@@ -161,16 +155,6 @@ handlers e =
           , description = "PR is too large"
           , message = Nothing
           , exitCode = 25
-          }
-  , fromException e & First <&> \case
-      GitHubError {} ->
-        ErrorMetadata
-          { exception = e
-          , severity = "warning"
-          , tag = "github"
-          , description = "GitHub communication error"
-          , message = Nothing
-          , exitCode = 30
           }
   , fromException e & First <&> \case
       GitHub.HTTPError (HttpExceptionRequest req (StatusCodeException resp body)) ->
