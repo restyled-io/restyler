@@ -311,6 +311,9 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
       | pTotal > 1 = " (" <> pack (show pIndex) <> " of " <> pack (show pTotal) <> ")"
       | otherwise = ""
 
+    logRunningOn paths =
+      logInfo $ ("Running " <> pack rName <> " on " <> paths <> progressSuffix) :# []
+
     -- Our integration tests run every restyler we support in a space-restricted
     -- environment. This switch triggers removal of each image after running it,
     -- to avoid out-of-space errors.
@@ -319,15 +322,16 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
         then f `finally` suppressWarn (dockerImageRm rImage)
         else f
 
-  logInfo $ ("Running " <> pack rName <> progressSuffix) :# []
-
   ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
+      logRunningOn $ pack path
       (ec, out) <- dockerRunStdout [prefix path]
       ec <$ writeFile path (fixNewline out)
     DockerRunPathsOverwrite sep paths -> do
+      logRunningOn $ show (length paths) <> " path(s)"
       dockerRun $ args <> ["--" | sep] <> map prefix paths
     DockerRunPathOverwrite sep path -> do
+      logRunningOn $ pack path
       dockerRun $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
