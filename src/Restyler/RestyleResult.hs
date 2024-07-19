@@ -49,20 +49,19 @@ setRestylerResultOutputs =
   appendGitHubOutputs . \case
     RestyleSuccessDifference config pr results ->
       let details = restyledPullRequestDetails config pr results
-      in  ["restyled-head=" <> details.head]
-    -- in  [ "differences=true"
-    --     , "restyled-base=" <> details.base
-    --     , "restyled-head=" <> details.head
-    --     , "restyled-title=" <> details.title
-    --     , "restyled-body<<EOM\n" <> details.body <> "\nEOM"
-    --     , "restyled-labels=" <> mcsv details.labels
-    --     , "restyled-reviewers=" <> mcsv details.reviewers
-    --     , "restyled-team-reviewers=" <> mcsv details.teamReviewers
-    --     ]
+      in  [ "differences=true"
+          , "restyled-base=" <> details.base
+          , "restyled-head=" <> details.head
+          , "restyled-title=" <> details.title
+          , "restyled-body<<EOM\n" <> details.body <> "\nEOM"
+          , "restyled-labels=" <> mcsv details.labels
+          , "restyled-reviewers=" <> mcsv details.reviewers
+          , "restyled-team-reviewers=" <> mcsv details.teamReviewers
+          ]
     _ -> ["differences=false"]
  where
-  _mcsv :: Maybe (NonEmpty Text) -> Text
-  _mcsv = maybe "" (T.intercalate "," . toList)
+  mcsv :: Maybe (NonEmpty Text) -> Text
+  mcsv = maybe "" (T.intercalate "," . toList)
 
 renderSkipped :: RestyleSkipped -> Text
 renderSkipped = \case

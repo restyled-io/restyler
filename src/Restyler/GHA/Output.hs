@@ -39,15 +39,7 @@ appendGitHubOutput x = do
   gho <- asks getGitHubOutput
   case gho of
     GitHubOutputNull -> pure ()
-    GitHubOutput path -> do
-      putStr $ unpack $ ensureNewline x
-      putStr $ "echo \"" <> unpack x <> "\" >>$GITHUB_OUTPUT"
-      liftIO $ appendFileText path $ ensureNewline x
-
-ensureNewline :: Text -> Text
-ensureNewline t
-  | Just (_, '\n') <- T.unsnoc t = t
-  | otherwise = T.snoc t '\n'
+    GitHubOutput path -> liftIO $ appendFileText path $ T.snoc x '\n'
 
 newtype NullGitHubOutput a = NullGitHubOutput a
 
