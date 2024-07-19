@@ -53,9 +53,7 @@ setRestylerResultOutputs =
           , "restyled-base=" <> details.base
           , "restyled-head=" <> details.head
           , "restyled-title=" <> details.title
-          , "restyled-body<<EOM"
-          , details.body
-          , "EOM"
+          , "restyled-body<<EOM\n" <> details.body <> "\nEOM"
           , "restyled-labels=" <> mcsv details.labels
           , "restyled-reviewers=" <> mcsv details.reviewers
           , "restyled-team-reviewers=" <> mcsv details.teamReviewers

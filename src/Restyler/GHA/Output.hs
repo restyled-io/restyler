@@ -40,9 +40,6 @@ appendGitHubOutput x = do
   case gho of
     GitHubOutputNull -> pure ()
     GitHubOutput path -> do
-      putStrLn "GITHUB_OUTPUT"
-      putStr $ unpack $ ensureNewline x
-      putStrLn "/GITHUB_OUTPUT"
       liftIO $ appendFileText path $ ensureNewline x
 
 ensureNewline :: Text -> Text
