@@ -76,7 +76,7 @@ jobs:
       # BEGIN actions/setup
       - run: |
           mkdir -p /tmp/binaries
-          echo "/tmp/binaries" >>"$GITHUB_ENV"
+          echo "/tmp/binaries" >>"$GITHUB_PATH"
       - uses: actions/download-artifact@v4
         with:
           name: binaries
