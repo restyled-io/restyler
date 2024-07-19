@@ -1,12 +1,13 @@
 enabled: false # TEMPORARY
 restylers_version: dev
 restylers:
-  - hlint
-  - fourmolu
-  - stylish-haskell:
-      enabled: false
-  - prettier:
-      include:
-        - "**/*.yaml"
-        - "**/*.yml"
-  - "*"
+  - whitespace
+  # - hlint
+  # - fourmolu
+  # - stylish-haskell:
+  #     enabled: false
+  # - prettier:
+  #     include:
+  #       - "**/*.yaml"
+  #       - "**/*.yml"
+  # - "*"
