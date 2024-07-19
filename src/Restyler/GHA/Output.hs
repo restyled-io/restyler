@@ -11,6 +11,7 @@ module Restyler.GHA.Output
 
 import Restyler.Prelude
 
+import Data.Text qualified as T
 import Env qualified
 
 data GitHubOutput = GitHubOutputNull | GitHubOutput FilePath
@@ -40,9 +41,14 @@ appendGitHubOutput x = do
     GitHubOutputNull -> pure ()
     GitHubOutput path -> do
       putStrLn "GITHUB_OUTPUT"
-      putStr $ unpack x
+      putStr $ unpack $ ensureNewline x
       putStrLn "/GITHUB_OUTPUT"
-      liftIO $ appendFileText path x
+      liftIO $ appendFileText path $ ensureNewline x
+
+ensureNewline :: Text -> Text
+ensureNewline t
+  | Just (_, '\n') <- T.unsnoc t = t
+  | otherwise = T.snoc t '\n'
 
 newtype NullGitHubOutput a = NullGitHubOutput a
 
