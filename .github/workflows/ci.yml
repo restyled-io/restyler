@@ -65,7 +65,7 @@ jobs:
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
 
-  action:
+  restyled:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -74,11 +74,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       # BEGIN actions/setup
+      - run: |
+          mkdir -p /tmp/binaries
+          echo "/tmp/binaries" >>"$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
           name: binaries
-          path: ./tmp
-      - run: chmod +x ./tmp/restyle-gha
+          path: /tmp/binaries
+      - run: chmod +x /tmp/binaries/restyle-gha
       # END actions/setup
 
       - uses: ./actions/run
