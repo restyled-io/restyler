@@ -70,9 +70,10 @@ run pr paths = do
             (getBaseRef pr)
             (getLabelNames pr)
 
-    case (cEnabled config, getPullRequestState pr) of
-      (False, _) ->
-        pure $ RestyleSkipped config pr RestyleNotEnabled
+    case (True, getPullRequestState pr) of
+      -- TODO
+      -- (False, _) ->
+      --   pure $ RestyleSkipped config pr RestyleNotEnabled
       (True, PullRequestClosed) ->
         pure $ RestyleSkipped config pr RestylePullRequestClosed
       (True, PullRequestOpen)

@@ -1,3 +1,4 @@
+enabled: false # TEMPORARY
 restylers_version: dev
 restylers:
   - hlint
