@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Restyler.Docker
   ( MonadDocker (..)
 
@@ -8,6 +10,7 @@ module Restyler.Docker
 
 import Restyler.Prelude
 
+import Blammo.Logging.Logger (flushLogger)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
 import System.Process.Typed
@@ -29,32 +32,43 @@ newtype ActualDocker m a = ActualDocker
     , MonadIO
     , MonadUnliftIO
     , MonadLogger
+    , MonadReader env
     )
 
-instance (MonadUnliftIO m, MonadLogger m) => MonadDocker (ActualDocker m) where
+instance
+  (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env)
+  => MonadDocker (ActualDocker m)
+  where
   dockerPull image = runDocker ["pull", "--quiet", image]
   dockerRun args = runDocker $ ["run", "--rm"] <> args
   dockerRunStdout args = runDockerStdout $ ["run", "--rm"] <> args
   dockerImageRm image = runDocker_ ["rm", "--force", image]
 
 runDocker
-  :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m ExitCode
+  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
+  => [String]
+  -> m ExitCode
 runDocker args = checkpointCallStack $ do
   logDebug $ ("exec docker " <> unwords (map pack args)) :# []
+  flushLogger
   runProcess $ proc "docker" args
 
 runDocker_
-  :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m ()
+  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
+  => [String]
+  -> m ()
 runDocker_ args = checkpointCallStack $ do
   logDebug $ ("exec docker " <> unwords (map pack args)) :# []
+  flushLogger
   runProcess_ $ proc "docker" args
 
 runDockerStdout
-  :: (MonadUnliftIO m, MonadLogger m, HasCallStack)
+  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
   => [String]
   -> m (ExitCode, Text)
 runDockerStdout args = checkpointCallStack $ do
   logDebug $ ("exec docker " <> unwords (map pack args)) :# []
+  flushLogger
   second (fixNewline . decodeUtf8) <$> readProcessStdout (proc "docker" args)
 
 fixNewline :: Text -> Text

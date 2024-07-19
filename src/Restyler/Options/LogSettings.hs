@@ -27,13 +27,26 @@ envLogSettingsOption :: Env.Parser Env.Error LogSettingsOption
 envLogSettingsOption = toLogSettingsOption <$> LogSettingsEnv.parser
 
 optLogSettingsOption :: Parser LogSettingsOption
-optLogSettingsOption = mconcat <$> sequenceA [optDebug, optColor]
+optLogSettingsOption = mconcat <$> sequenceA [optDebug, optTrace, optColor]
 
 optDebug :: Parser LogSettingsOption
-optDebug = flag mempty setDebug $ long "debug" <> help "Enable debug logging"
+optDebug = optLogLevel "debug" LevelDebug
+
+optTrace :: Parser LogSettingsOption
+optTrace = optLogLevel "trace" $ LevelOther "trace"
+
+optLogLevel :: String -> LogLevel -> Parser LogSettingsOption
+optLogLevel name level =
+  flag mempty setLogLevels
+    $ long name
+    <> help ("Enable " <> name <> " logging")
  where
-  setDebug = LogSettingsOption $ Dual . Endo $ setLogSettingsLevels debug
-  debug = newLogLevels LevelDebug []
+  setLogLevels =
+    LogSettingsOption
+      $ Dual
+      . Endo
+      $ setLogSettingsLevels
+      $ newLogLevels level []
 
 optColor :: Parser LogSettingsOption
 optColor =

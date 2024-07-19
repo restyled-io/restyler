@@ -14,6 +14,7 @@ import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Docker
 import Restyler.Git
+import Restyler.GitHub.Api
 import System.Directory qualified as Directory
 
 newtype AppT app m a = AppT
@@ -36,50 +37,56 @@ newtype AppT app m a = AppT
 
 instance (MonadUnliftIO m, HasLogger app) => MonadSystem (AppT app m) where
   getCurrentDirectory = do
-    logDebug "getCurrentDirectory"
+    logTrace "getCurrentDirectory"
     liftIO Directory.getCurrentDirectory
 
   setCurrentDirectory path = do
-    logDebug $ "setCurrentDirectory" :# ["path" .= path]
+    logTrace $ "setCurrentDirectory" :# ["path" .= path]
     liftIO $ Directory.setCurrentDirectory path
 
   doesFileExist path = do
-    logDebug $ "doesFileExist" :# ["path" .= path]
+    logTrace $ "doesFileExist" :# ["path" .= path]
     liftIO $ Directory.doesFileExist path
 
   doesDirectoryExist path = do
-    logDebug $ "doesDirectoryExist" :# ["path" .= path]
+    logTrace $ "doesDirectoryExist" :# ["path" .= path]
     liftIO $ Directory.doesDirectoryExist path
 
   isFileExecutable path = do
-    logDebug $ "isFileExecutable" :# ["path" .= path]
+    logTrace $ "isFileExecutable" :# ["path" .= path]
     liftIO $ Directory.executable <$> Directory.getPermissions path
 
   isFileSymbolicLink path = do
-    logDebug $ "isFileSymbolicLink" :# ["path" .= path]
+    logTrace $ "isFileSymbolicLink" :# ["path" .= path]
     liftIO $ Directory.pathIsSymbolicLink path
 
   listDirectory path = do
-    logDebug $ "listDirectory" :# ["path" .= path]
+    logTrace $ "listDirectory" :# ["path" .= path]
     liftIO $ Directory.listDirectory path
 
   readFileBS path = do
-    logDebug $ "readFileBS" :# ["path" .= path]
+    logTrace $ "readFileBS" :# ["path" .= path]
     liftIO $ Prelude.readFileBS path
 
   writeFile path content = do
-    logDebug $ "writeFile" :# ["path" .= path]
+    logTrace $ "writeFile" :# ["path" .= path]
     liftIO $ Prelude.writeFile path $ unpack content
 
   removeFile path = do
-    logDebug $ "removeFile" :# ["path" .= path]
+    logTrace $ "removeFile" :# ["path" .= path]
     liftIO $ Directory.removeFile path
 
-instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
+instance (MonadUnliftIO m, HasLogger app) => MonadDownloadFile (AppT app m) where
   downloadFile url path = do
+    logDebug $ "downloadFile" :# ["url" .= url]
     liftIO $ do
       request <- parseRequestThrow $ unpack url
       runResourceT $ httpSink request $ \_ -> sinkFile path
+
+deriving via
+  (ActualGitHub (AppT app m))
+  instance
+    (MonadUnliftIO m, HasLogger app, HasGitHubToken app) => MonadGitHub (AppT app m)
 
 deriving via
   (ActualGit (AppT app m))

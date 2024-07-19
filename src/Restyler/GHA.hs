@@ -25,10 +25,10 @@ run
      , MonadLogger m
      , MonadDownloadFile m
      , MonadSystem m
+     , MonadGitHub m
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasGitHubToken env
      , HasGitHubOutput env
      , HasRestrictions env
      , HasHostDirectoryOption env

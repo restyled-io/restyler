@@ -24,4 +24,4 @@ main withApp run = do
         case result of
           RestyleSkipped _ _ reason -> logInfo $ "Restyle skipped" :# ["reason" .= reason]
           RestyleSuccessNoDifference {} -> logInfo "No differences"
-          RestyleSuccessDifference {} -> logInfo "Differences found"
+          RestyleSuccessDifference {} -> logWarn "Differences found"

@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Restyler.Git
   ( MonadGit (..)
 
@@ -8,6 +10,7 @@ module Restyler.Git
 
 import Restyler.Prelude
 
+import Blammo.Logging.Logger (flushLogger)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
 import System.Process.Typed
@@ -35,9 +38,13 @@ newtype ActualGit m a = ActualGit
     , MonadIO
     , MonadUnliftIO
     , MonadLogger
+    , MonadReader env
     )
 
-instance (MonadUnliftIO m, MonadLogger m) => MonadGit (ActualGit m) where
+instance
+  (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env)
+  => MonadGit (ActualGit m)
+  where
   gitPush branch = runGit_ ["push", "origin", branch]
   gitPushForce branch = runGit_ ["push", "--force", "origin", branch]
   gitDiffNameOnly mRef = readGitLines $ ["diff", "--name-only"] <> maybeToList mRef
@@ -51,22 +58,54 @@ instance (MonadUnliftIO m, MonadLogger m) => MonadGit (ActualGit m) where
   gitFetch name refspec = runGit_ ["fetch", "--quiet", "--depth", "1", name, refspec]
   gitSwitch branch = runGit_ ["checkout", "--no-progress", branch]
 
-runGit_ :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m ()
+runGit_
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => [String]
+  -> m ()
 runGit_ args = checkpointCallStack $ do
   logDebug $ ("exec git " <> unwords (map pack args)) :# []
+  flushLogger
   runProcess_ $ proc "git" args
 
-readGit :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m Text
+readGit
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => [String]
+  -> m Text
 readGit args = checkpointCallStack $ do
   logDebug $ ("exec git " <> unwords (map pack args)) :# []
+  flushLogger
   decodeUtf8 <$> readProcessStdout_ (proc "git" args)
 
 readGitChomp
-  :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m String
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => [String]
+  -> m String
 readGitChomp = fmap (unpack . T.dropWhileEnd isSpace) . readGit
 
 readGitLines
-  :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m [String]
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => [String]
+  -> m [String]
 readGitLines = fmap (map unpack . lines) . readGit
 
 -- | An instance where all operations no-op or return empty strings

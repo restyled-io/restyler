@@ -43,6 +43,7 @@ run
      , MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
+     , MonadGitHub m
      , MonadGit m
      , MonadDocker m
      , MonadDownloadFile m
@@ -101,7 +102,7 @@ logGitPatch jobUrl pullRequest = do
   logInfo ""
 
 handleDifferences
-  :: (MonadIO m, MonadLogger m, MonadGit m, MonadReader env m, HasGitHubToken env)
+  :: (MonadIO m, MonadLogger m, MonadGitHub m, MonadGit m)
   => Config
   -> URL
   -> PullRequest

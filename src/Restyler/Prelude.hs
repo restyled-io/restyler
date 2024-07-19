@@ -31,6 +31,9 @@ import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.List (minimum, minimumBy, (!!))
 
+logTrace :: (MonadLogger m, HasCallStack) => Message -> m ()
+logTrace = logOther $ LevelOther "trace"
+
 minimumMaybe :: Ord a => [a] -> Maybe a
 minimumMaybe = \case
   [] -> Nothing

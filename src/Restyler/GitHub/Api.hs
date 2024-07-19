@@ -24,7 +24,7 @@ import Env qualified
 import GitHub (github)
 import GitHub qualified
 import GitHub.Endpoints.PullRequests.ReviewRequests qualified as GitHub
-import Restyler.AnnotatedException (throw)
+import Restyler.AnnotatedException (checkpointCallStack, throw)
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
@@ -228,38 +228,44 @@ fromGitHub f =
 -- implemented on top of this, not within.
 class Monad m => MonadGitHub m where
   ghLabelsOnIssue
-    :: GitHub.Name GitHub.Owner
+    :: HasCallStack
+    => GitHub.Name GitHub.Owner
     -> GitHub.Name GitHub.Repo
     -> GitHub.Id GitHub.Issue
     -> m (Either GitHub.Error (Vector GitHub.IssueLabel))
 
   ghPullRequest
-    :: GitHub.Name GitHub.Owner
+    :: HasCallStack
+    => GitHub.Name GitHub.Owner
     -> GitHub.Name GitHub.Repo
     -> GitHub.IssueNumber
     -> m (Either GitHub.Error GitHub.PullRequest)
 
   ghPullRequestFiles
-    :: GitHub.Name GitHub.Owner
+    :: HasCallStack
+    => GitHub.Name GitHub.Owner
     -> GitHub.Name GitHub.Repo
     -> GitHub.IssueNumber
     -> m (Either GitHub.Error (Vector GitHub.File))
 
   ghCreateStatus
-    :: GitHub.Name GitHub.Owner
+    :: HasCallStack
+    => GitHub.Name GitHub.Owner
     -> GitHub.Name GitHub.Repo
     -> GitHub.Name GitHub.Commit
     -> GitHub.NewStatus
     -> m (Either GitHub.Error GitHub.Status)
 
   ghCreatePullRequest
-    :: GitHub.Name GitHub.Owner
+    :: HasCallStack
+    => GitHub.Name GitHub.Owner
     -> GitHub.Name GitHub.Repo
     -> GitHub.CreatePullRequest
     -> m (Either GitHub.Error GitHub.PullRequest)
 
   ghCreateReviewRequest
-    :: GitHub.Name GitHub.Owner
+    :: HasCallStack
+    => GitHub.Name GitHub.Owner
     -> GitHub.Name GitHub.Repo
     -> GitHub.IssueNumber
     -> GitHub.RequestReview
@@ -293,25 +299,50 @@ newtype ActualGitHub m a = ActualGitHub
     , Monad
     , MonadReader env
     , MonadIO
+    , MonadUnliftIO
+    , MonadLogger
     )
 
-instance (Monad m, MonadIO m, MonadReader env m, HasGitHubToken env) => MonadGitHub m where
-  ghLabelsOnIssue owner repo number =
+instance
+  (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasGitHubToken env)
+  => MonadGitHub (ActualGitHub m)
+  where
+  ghLabelsOnIssue owner repo number = checkpointCallStack $ do
+    logDebug
+      $ "GitHub.labelsOnIssueR"
+      :# ["owner" .= owner, "repo" .= repo, "number" .= number]
     runGitHub $ GitHub.labelsOnIssueR owner repo number GitHub.FetchAll
 
-  ghPullRequest owner repo number =
+  ghPullRequest owner repo number = checkpointCallStack $ do
+    logDebug
+      $ "GitHub.pullRequestR"
+      :# ["owner" .= owner, "repo" .= repo, "number" .= number]
     runGitHub $ GitHub.pullRequestR owner repo number
 
-  ghPullRequestFiles owner repo number =
+  ghPullRequestFiles owner repo number = checkpointCallStack $ do
+    logDebug
+      $ "GitHub.pullRequestFilesR"
+      :# ["owner" .= owner, "repo" .= repo, "number" .= number]
     runGitHub $ GitHub.pullRequestFilesR owner repo number GitHub.FetchAll
 
-  ghCreateStatus owner repo sha status =
+  ghCreateStatus owner repo sha status = checkpointCallStack $ do
+    logDebug
+      $ "GitHub.createStatusR"
+      :# [ "owner" .= owner
+         , "repo" .= repo
+         , "sha" .= sha
+         , "status" .= GitHub.newStatusState status
+         ]
     runGitHub $ GitHub.createStatusR owner repo sha status
 
-  ghCreatePullRequest owner repo create =
+  ghCreatePullRequest owner repo create = checkpointCallStack $ do
+    logDebug $ "GitHub.createPullRequest" :# ["owner" .= owner, "repo" .= repo]
     runGitHub $ GitHub.createPullRequestR owner repo create
 
-  ghCreateReviewRequest owner repo number req =
+  ghCreateReviewRequest owner repo number req = checkpointCallStack $ do
+    logDebug
+      $ "GitHub.createReviewRequest"
+      :# ["owner" .= owner, "repo" .= repo, "number" .= number]
     runGitHub $ GitHub.createReviewRequestR owner repo number req
 
 runGitHub
