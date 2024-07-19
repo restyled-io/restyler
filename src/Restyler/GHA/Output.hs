@@ -2,6 +2,7 @@ module Restyler.GHA.Output
   ( GitHubOutput
   , envGitHubOutput
   , HasGitHubOutput (..)
+  , appendGitHubOutputs
   , appendGitHubOutput
 
     -- * @DerivingVia@
@@ -22,6 +23,12 @@ class HasGitHubOutput a where
 
 envGitHubOutput :: Env.Parser Env.Error GitHubOutput
 envGitHubOutput = Env.var Env.nonempty "GITHUB_OUTPUT" mempty
+
+appendGitHubOutputs
+  :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
+  => [Text]
+  -> m ()
+appendGitHubOutputs = traverse_ appendGitHubOutput
 
 appendGitHubOutput
   :: (MonadIO m, MonadReader env m, HasGitHubOutput env)

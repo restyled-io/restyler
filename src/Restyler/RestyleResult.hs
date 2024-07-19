@@ -45,26 +45,20 @@ setRestylerResultOutputs
   :: (MonadIO m, MonadReader env m, HasGitHubOutput env)
   => RestyleResult PullRequest
   -> m ()
-setRestylerResultOutputs = \case
-  RestyleSuccessDifference config pr results -> do
-    let
-      details = restyledPullRequestDetails config pr results
-      contents =
-        unlines
-          [ "differences=true"
+setRestylerResultOutputs =
+  appendGitHubOutputs . \case
+    RestyleSuccessDifference config pr results ->
+      let details = restyledPullRequestDetails config pr results
+      in  [ "differences=true"
           , "restyled-base=" <> details.base
           , "restyled-head=" <> details.head
           , "restyled-title=" <> details.title
-          , "restyled-body<<EOM"
-          , details.body
-          , "EOM"
+          , "restyled-body<<EOM\n" <> details.body <> "\nEOM"
           , "restyled-labels=" <> mcsv details.labels
           , "restyled-reviewers=" <> mcsv details.reviewers
           , "restyled-team-reviewers=" <> mcsv details.teamReviewers
           ]
-    putStrLn $ unpack contents -- TODO
-    appendGitHubOutput contents
-  _ -> appendGitHubOutput "differences=false"
+    _ -> ["differences=false"]
  where
   mcsv :: Maybe (NonEmpty Text) -> Text
   mcsv = maybe "" (T.intercalate "," . toList)
