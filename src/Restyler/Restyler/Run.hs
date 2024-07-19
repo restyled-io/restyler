@@ -274,9 +274,8 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerPullRestyler
-  :: (MonadIO m, MonadLogger m, MonadDocker m, HasCallStack) => Restyler -> m ()
+  :: (MonadIO m, MonadDocker m, HasCallStack) => Restyler -> m ()
 dockerPullRestyler r@Restyler {..} = do
-  logInfo $ "Pulling Restyler" :# ["image" .= rImage]
   ec <- dockerPull rImage
   case ec of
     ExitSuccess -> pure ()
@@ -307,20 +306,20 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
-    progress :: Text
-    progress = pack (show pIndex) <> " of " <> pack (show pTotal)
+    progressSuffix :: Text
+    progressSuffix
+      | pTotal > 1 = " (" <> pack (show pIndex) <> " of " <> pack (show pTotal) <> ")"
+      | otherwise = ""
 
     -- Our integration tests run every restyler we support in a space-restricted
     -- environment. This switch triggers removal of each image after running it,
     -- to avoid out-of-space errors.
-    withImageCleanup f = if imageCleanup then f `finally` cleanupImage else f
+    withImageCleanup f =
+      if imageCleanup
+        then f `finally` suppressWarn (dockerImageRm rImage)
+        else f
 
-  logInfo
-    $ "Restyling"
-    :# [ "restyler" .= rName
-       , "run" .= progress
-       , "style" .= rRunStyle
-       ]
+  logInfo $ ("Running " <> pack rName <> progressSuffix) :# []
 
   ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
@@ -340,11 +339,6 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   prefix p
     | "./" `isPrefixOf` p = p
     | otherwise = "./" <> p
-
-  cleanupImage = do
-    suppressWarn $ do
-      logInfo $ "Removing Restyler image" :# ["image" .= rImage]
-      dockerImageRm rImage
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
