@@ -101,7 +101,7 @@ logGitPatch jobUrl pullRequest = do
   logInfo ""
 
 handleDifferences
-  :: (MonadIO m, MonadLogger m, MonadGitHub m, MonadGit m)
+  :: (MonadUnliftIO m, MonadLogger m, MonadGitHub m, MonadGit m)
   => Config
   -> URL
   -> PullRequest
@@ -180,11 +180,11 @@ cleanupRestyledPullRequest pullRequest = do
   traverse_ closeRestyledPullRequest mRestyledPullRequest
 
 setPullRequestGreen
-  :: (MonadIO m, MonadGitHub m) => Config -> PullRequest -> URL -> Text -> m ()
+  :: (MonadUnliftIO m, MonadGitHub m) => Config -> PullRequest -> URL -> Text -> m ()
 setPullRequestGreen _config pullRequest =
   setPullRequestStatus pullRequest CommitStatusSuccess
 
 setPullRequestRed
-  :: (MonadIO m, MonadGitHub m) => Config -> PullRequest -> URL -> Text -> m ()
+  :: (MonadUnliftIO m, MonadGitHub m) => Config -> PullRequest -> URL -> Text -> m ()
 setPullRequestRed _config pullRequest =
   setPullRequestStatus pullRequest CommitStatusError

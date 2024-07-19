@@ -16,15 +16,22 @@ module Restyler.GitHub.Api
   , envGitHubToken
   , HasGitHubToken (..)
   , ActualGitHub (..)
+  , GitHubError (..)
   ) where
 
 import Restyler.Prelude
 
+import Data.Aeson (Value, decodeStrict)
+import Data.Aeson.Encode.Pretty (encodePretty)
 import Env qualified
 import GitHub (github)
 import GitHub qualified
 import GitHub.Endpoints.PullRequests.ReviewRequests qualified as GitHub
-import Restyler.AnnotatedException (checkpointCallStack, throw)
+import Network.HTTP.Client (HttpException (..), HttpExceptionContent (..))
+import Network.HTTP.Client qualified as HTTP
+import Network.HTTP.Simple (getResponseStatus)
+import Network.HTTP.Types.Status (Status, statusCode)
+import Restyler.AnnotatedException (checkpointCallStack, handleTo, throw)
 import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
@@ -32,7 +39,7 @@ import Restyler.Options.Repository
 import System.IO.Error (userError)
 
 getPullRequest
-  :: (MonadIO m, MonadGitHub m)
+  :: (MonadUnliftIO m, MonadGitHub m)
   => RepositoryOption
   -> Int
   -> m PullRequest
@@ -50,7 +57,7 @@ getPullRequest repo pr = do
   ghIssueId = GitHub.mkId Proxy pr
 
 getPullRequestFiles
-  :: (MonadIO m, MonadGitHub m)
+  :: (MonadUnliftIO m, MonadGitHub m)
   => RepositoryOption
   -> Int
   -> m [PullRequestFile]
@@ -63,7 +70,7 @@ getPullRequestFiles repo pr = do
   ghNumber = GitHub.IssueNumber pr
 
 setPullRequestStatus
-  :: (MonadIO m, MonadGitHub m)
+  :: (MonadUnliftIO m, MonadGitHub m)
   => PullRequest
   -> CommitStatusState
   -> URL
@@ -89,7 +96,7 @@ setPullRequestStatus pr cstate url description = do
       }
 
 createPullRequest
-  :: (MonadIO m, MonadGitHub m)
+  :: (MonadUnliftIO m, MonadGitHub m)
   => RepositoryOption
   -> Text
   -- ^ Title
@@ -115,7 +122,7 @@ createPullRequest repo title body baseRef headRef = do
       }
 
 createReviewRequest
-  :: (MonadIO m, MonadGitHub m)
+  :: (MonadUnliftIO m, MonadGitHub m)
   => PullRequest
   -> These (NonEmpty Text) (NonEmpty Text)
   -- ^ User names, Team names, or both
@@ -208,7 +215,7 @@ convertFile gh = do
   pure PullRequestFile {filename = unpack $ GitHub.fileFilename gh, status}
 
 fromGitHubVector
-  :: (MonadIO m, Foldable t)
+  :: (MonadUnliftIO m, Foldable t)
   => (a -> Either String b)
   -> Either GitHub.Error (t a)
   -> m [b]
@@ -216,7 +223,7 @@ fromGitHubVector f =
   either (throw . userError) pure <=< either throw (pure . traverse f . toList)
 
 fromGitHub
-  :: MonadIO m => (a -> Either String b) -> Either GitHub.Error a -> m b
+  :: MonadUnliftIO m => (a -> Either String b) -> Either GitHub.Error a -> m b
 fromGitHub f =
   either (throw . userError) pure <=< either throw (pure . f)
 
@@ -346,13 +353,39 @@ instance
     runGitHub $ GitHub.createReviewRequestR owner repo number req
 
 runGitHub
-  :: ( MonadIO m
+  :: ( MonadUnliftIO m
      , MonadReader env m
      , HasGitHubToken env
      , GitHub.GitHubRW req (IO b)
      )
   => req
   -> m b
-runGitHub req = do
+runGitHub req = handleTo toGitHubError $ do
   auth <- asks $ githubTokenGitHubAuth . getGitHubToken
   liftIO $ github auth req
+
+data GitHubError
+  = GitHubHTTPError GitHub.Error ByteString Status ByteString
+  | GitHubError GitHub.Error
+  deriving stock (Show)
+
+instance Exception GitHubError where
+  displayException = \case
+    GitHubHTTPError _ path status body ->
+      unpack
+        $ "GitHub request for "
+        <> decodeUtf8 @Text path
+        <> " responded "
+        <> show @Text (statusCode status)
+        <> "\n"
+        <> decodeUtf8 (tryEncodePretty body)
+    GitHubError ex -> displayException ex
+
+toGitHubError :: GitHub.Error -> GitHubError
+toGitHubError = \case
+  ex@(GitHub.HTTPError (HttpExceptionRequest req (StatusCodeException resp body))) ->
+    GitHubHTTPError ex (HTTP.path req) (getResponseStatus resp) body
+  ex -> GitHubError ex
+
+tryEncodePretty :: ByteString -> ByteString
+tryEncodePretty bs = maybe bs (toStrict . encodePretty @Value) $ decodeStrict bs

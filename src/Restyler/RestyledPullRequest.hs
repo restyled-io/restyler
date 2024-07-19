@@ -71,7 +71,7 @@ restyledPullRequestDetails config pr results =
     }
 
 createRestyledPullRequest
-  :: (MonadIO m, MonadLogger m, MonadGit m, MonadGitHub m)
+  :: (MonadUnliftIO m, MonadLogger m, MonadGit m, MonadGitHub m)
   => Config
   -> PullRequest
   -> [RestylerResult]

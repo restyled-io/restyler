@@ -43,6 +43,7 @@ library:
     - Glob
     - aeson
     - aeson-casing
+    - aeson-pretty
     - annotated-exception
     - barbies
     - bytestring
@@ -66,7 +67,6 @@ library:
     - http-types
     - microlens
     - microlens-mtl
-    - monad-logger-aeson
     - optparse-applicative
     - relude
     - semigroups
