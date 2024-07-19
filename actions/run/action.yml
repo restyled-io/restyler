@@ -2,55 +2,43 @@ name: Restyler
 author: pbrisbin
 
 inputs:
-  binary:
-    description: "Restyler binary to run"
-    required: true
   log-level:
-    description: "Set restyler LOG_LEVEL"
+    description: "LOG_LEVEL"
     default: "info"
   github-token:
-    description: "GitHub token for fetching PR details"
+    description: "GITHUB_TOKEN"
     default: ${{ github.token }}
+  create-pull-request:
+    description: "Create/update a Restyled PR?"
+    default: true
+  fail-if-differences-found:
+    description: "Fail if differences are found?"
+    default: true
+  committer-name:
+    description: "Name used for Restyled commits"
+    default: "Restyled.io"
+  committer-email:
+    description: "Email used for Restyled commits"
+    default: "commits@restyled.io"
 
 outputs:
   differences:
-    description: ""
+    description: "'true' if restyling produced differences"
     value: ${{ steps.restyler.outputs.differences }}
-  restyled-base:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-base }}
-  restyled-head:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-head }}
-  restyled-title:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-title }}
-  restyled-body:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-body }}
-  restyled-labels:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-labels }}
-  restyled-reviewers:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-reviewers }}
-  restyled-team-reviewers:
-    description: ""
-    value: ${{ steps.restyler.outputs.restyled-team-reviewers }}
-  pull-request-number:
-    description: ""
+  restyled-pr-number:
+    description: "Number of the Restyled PR, if it exists"
     value: ${{ steps.create-pull-request.outputs.pull-request-number }}
-  pull-request-url:
-    description: ""
+  restyled-pr-url:
+    description: "URL to the Restyled PR, if it exists"
     value: ${{ steps.create-pull-request.outputs.pull-request-url }}
-  pull-request-operation:
-    description: ""
+  restyled-pr-operation:
+    description: "Operation performed with the Restyled PR: created, updated, or closed"
     value: ${{ steps.create-pull-request.outputs.pull-request-operation }}
-  pull-request-head-sha:
-    description: ""
+  restyled-pr-head-sha:
+    description: "Head SHA of the Restyled PR, if it exists"
     value: ${{ steps.create-pull-request.outputs.pull-request-head-sha }}
-  pull-request-branch:
-    description: ""
+  restyled-pr-branch:
+    description: "Branch of the Restyled PR, if it exists"
     value: ${{ steps.create-pull-request.outputs.pull-request-branch }}
 
 runs:
@@ -59,11 +47,8 @@ runs:
     - id: restyler
       shell: bash
       run: |
-        $RESTYLER_BINARY --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
+        restyle-gha --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
       env:
-        # For passing to run
-        RESTYLER_BINARY: ${{ inputs.binary }}
-
         # For env-based options
         GITHUB_TOKEN: ${{ github.token }}
         LOG_BREAKPOINT: 200
@@ -72,7 +57,9 @@ runs:
         RESTYLER_NO_CAP_DROP_ALL: x
 
     - id: create-pull-request
-      if: ${{ steps.restyler.outputs.differences == 'true' }}
+      if: |
+        inputs.create-pull-request &&
+        steps.restyler.outputs.differences == 'true'
       uses: peter-evans/create-pull-request@v6
       with:
         token: ${{ inputs.github-token }}
@@ -85,12 +72,14 @@ runs:
         team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
         delete-branch: true
 
-      GIT_AUTHOR_EMAIL: commits@restyled.io
-      GIT_AUTHOR_NAME: Restyled.io
-      GIT_COMMITTER_EMAIL: commits@restyled.io
-      GIT_COMMITTER_NAME: Restyled.io
+      GIT_AUTHOR_EMAIL: ${{ inputs.committer-email }}
+      GIT_AUTHOR_NAME: ${{ inputs.committer-name }}
+      GIT_COMMITTER_EMAIL: ${{ inputs.committer-email }}
+      GIT_COMMITTER_NAME: ${{ inputs.committer-name }}
 
-    - if: ${{ steps.restyler.outputs.differences == 'true' }}
+    - if: |
+        inputs.fail-if-differences-found == 'true' &&
+        steps.restyler.outputs.differences == 'true'
       run: |
         echo "Restyling produced differences" >&2
         exit 1

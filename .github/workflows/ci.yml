@@ -82,8 +82,6 @@ jobs:
       # END actions/setup
 
       - uses: ./actions/run
-        with:
-          binary: ./tmp/restyle-gha
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
