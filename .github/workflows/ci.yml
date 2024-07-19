@@ -81,34 +81,9 @@ jobs:
       - run: chmod +x ./tmp/restyle-gha
       # END actions/setup
 
-      - id: restyler
-        uses: ./actions/run
+      - uses: ./actions/run
         with:
           binary: ./tmp/restyle-gha
-
-      - run: |
-          cat <<'EOM'
-          if: ${{ steps.restyler.outputs.differences == 'true' }}
-          base: ${{ github.event.pull_request.head.ref }}
-          branch: ${{ steps.restyler.outputs.restyled-head }}
-          title: ${{ steps.restyler.outputs.restyled-title }}
-          body: ${{ steps.restyler.outputs.restyled-body }}
-          labels: ${{ steps.restyler.outputs.restyled-labels }}
-          reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
-          team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
-          EOM
-
-      - if: ${{ steps.restyler.outputs.differences == 'true' }}
-        uses: peter-evans/create-pull-request@v6
-        with:
-          base: ${{ github.event.pull_request.head.ref }}
-          branch: ${{ steps.restyler.outputs.restyled-head }}
-          title: ${{ steps.restyler.outputs.restyled-title }}
-          body: ${{ steps.restyler.outputs.restyled-body }}
-          labels: ${{ steps.restyler.outputs.restyled-labels }}
-          reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
-          team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
-          delete-branch: true
 
   deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
