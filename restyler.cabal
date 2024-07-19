@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 55ec8729d0331efc03de8f0c79bc85fac9045b7d9bee99025f8e0db4194a4435
+-- hash: 1bfe79844bd458fcd0e725052e0fe9c1aa3bdf155e9b4421248ff671d8ee37b6
 
 name:           restyler
 version:        0.2.0.0
@@ -29,6 +29,7 @@ library
       Restyler.Config.Image
       Restyler.Config.Include
       Restyler.Config.Interpreter
+      Restyler.Config.RemoteFile
       Restyler.Config.RequestReview
       Restyler.Config.Restyler
       Restyler.Config.SketchyList
@@ -67,7 +68,6 @@ library
       Restyler.Options.Repository
       Restyler.Prelude
       Restyler.ReadP
-      Restyler.RemoteFile
       Restyler.Restrictions
       Restyler.RestyledPullRequest
       Restyler.Restyler

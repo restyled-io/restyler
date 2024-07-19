@@ -19,9 +19,9 @@ import Data.Yaml (decodeFileThrow)
 import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.RemoteFile
 import Restyler.Delimited
 import Restyler.Options.Manifest
-import Restyler.RemoteFile
 
 data Restyler = Restyler
   { rEnabled :: Bool
@@ -111,7 +111,6 @@ instance ToJSON RestylerRunStyle where
 
 getAllRestylersVersioned
   :: ( MonadIO m
-     , MonadLogger m
      , MonadDownloadFile m
      , MonadReader env m
      , HasManifestOption env
@@ -122,7 +121,7 @@ getAllRestylersVersioned version = do
   mManifest <- getManifest
   case mManifest of
     Nothing -> do
-      downloadRemoteFile restylers
+      downloadFile restylers.url restylers.path
       decodeFileThrow $ restylers.path
     Just path -> decodeFileThrow path
  where

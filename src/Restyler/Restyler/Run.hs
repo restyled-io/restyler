@@ -29,12 +29,12 @@ import Restyler.Config.ChangedPaths
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.RemoteFile
 import Restyler.Delimited
 import Restyler.Docker
 import Restyler.Git
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
-import Restyler.RemoteFile (downloadRemoteFile)
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
@@ -135,7 +135,7 @@ runRestylers config@Config {..} allPaths = do
       MaximumChangedPathsOutcomeError ->
         throw $ TooManyChangedPaths lenPaths maxPaths
     else do
-      traverse_ downloadRemoteFile cRemoteFiles
+      for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
       withFilteredPaths restylers paths $ runRestyler config
  where
   included path = none (`match` path) cExclude

@@ -6,7 +6,6 @@ module Restyler.Config.CommitTemplate
 
 import Restyler.Prelude
 
-import Data.Aeson
 import Data.Text qualified as T
 import Restyler.Restyler
 

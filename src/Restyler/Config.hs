@@ -51,12 +51,12 @@ import Restyler.Config.ChangedPaths
 import Restyler.Config.CommitTemplate
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Glob
+import Restyler.Config.RemoteFile
 import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
 import Restyler.Options.Manifest
-import Restyler.RemoteFile
 import Restyler.Restyler
 import Restyler.Wiki qualified as Wiki
 import Restyler.Yaml.Errata (formatInvalidYaml)
@@ -200,7 +200,6 @@ formatYamlException path bs = \case
 -- of restylers data, and apply the configured choices and overrides.
 loadConfig
   :: ( MonadUnliftIO m
-     , MonadLogger m
      , MonadSystem m
      , MonadDownloadFile m
      , MonadReader env m

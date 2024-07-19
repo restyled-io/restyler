@@ -9,7 +9,7 @@ import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Control.Monad.IO.Unlift as X (MonadUnliftIO (..))
-import Data.Aeson as X (ToJSON)
+import Data.Aeson as X (FromJSON, ToJSON)
 import Data.Bitraversable as X (bimapM)
 import Data.Char as X (isSpace)
 import Data.Functor.Syntax as X ((<$$>))

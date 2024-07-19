@@ -68,9 +68,18 @@ runGit_
   => [String]
   -> m ()
 runGit_ args = checkpointCallStack $ do
-  logDebug $ ("exec git " <> unwords (map pack args)) :# []
+  logDebug $ ("exec git " <> unwords (map (sanitizeToken . pack) args)) :# []
   flushLogger
   runProcess_ $ proc "git" args
+
+-- | Best-effort sanitize of arguments that contain a GitHub token
+--
+-- If this doesn't work, it's fine. The logging is as DEBUG and there is more
+-- robust sanitization wherever these logs will appear (restyled.io or GHA).
+sanitizeToken :: Text -> Text
+sanitizeToken original = fromMaybe original $ do
+  rest <- T.stripPrefix "https://x-access-token:" original
+  pure $ "https://" <> T.drop 1 (T.dropWhile (/= '@') rest)
 
 readGit
   :: ( MonadUnliftIO m

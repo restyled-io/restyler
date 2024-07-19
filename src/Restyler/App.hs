@@ -80,7 +80,7 @@ instance (MonadUnliftIO m, HasLogger app) => MonadDownloadFile (AppT app m) wher
   downloadFile url path = do
     logDebug $ "downloadFile" :# ["url" .= url]
     liftIO $ do
-      request <- parseRequestThrow $ unpack url
+      request <- parseRequestThrow $ unpack $ getUrl url
       runResourceT $ httpSink request $ \_ -> sinkFile path
 
 deriving via

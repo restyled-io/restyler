@@ -42,6 +42,15 @@ run
 run repo pr = do
   pullRequest <- getPullRequest repo pr
   checkpoint (Annotation pullRequest) $ do
-    logInfo $ "Handling PR" :# objectToPairs pullRequest
+    logInfo
+      $ "Handling PR"
+      :# [ "owner" .= pullRequest.base.repo.owner.login
+         , "repo" .= pullRequest.base.repo.name
+         , "number" .= pullRequest.number
+         , "state" .= pullRequest.state
+         , "title" .= pullRequest.title
+         , "base" .= pullRequest.base.ref
+         , "head" .= pullRequest.head.ref
+         ]
     paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
     Local.run pullRequest paths `with` setRestylerResultOutputs
