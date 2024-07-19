@@ -68,7 +68,6 @@ library:
     - microlens-mtl
     - monad-logger-aeson
     - optparse-applicative
-    - process
     - relude
     - semigroups
     - shakespeare

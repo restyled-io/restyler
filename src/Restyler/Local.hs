@@ -9,10 +9,10 @@ import Restyler.Prelude
 import Restyler.AnnotatedException
 import Restyler.App.Class
   ( MonadDownloadFile (..)
-  , MonadProcess (..)
   , MonadSystem (..)
   )
 import Restyler.Config
+import Restyler.Docker (MonadDocker)
 import Restyler.Git (MonadGit)
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
@@ -44,8 +44,8 @@ run
      , MonadLogger m
      , MonadDownloadFile m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadReader env m
      , HasRestrictions env
      , HasHostDirectoryOption env

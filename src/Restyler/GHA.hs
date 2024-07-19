@@ -5,7 +5,8 @@ module Restyler.GHA
 import Restyler.Prelude
 
 import Restyler.AnnotatedException
-import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
+import Restyler.App.Class (MonadDownloadFile, MonadSystem)
+import Restyler.Docker (MonadDocker)
 import Restyler.GHA.Output
 import Restyler.Git (MonadGit)
 import Restyler.GitHub.Api
@@ -24,8 +25,8 @@ run
      , MonadLogger m
      , MonadDownloadFile m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadReader env m
      , HasGitHubToken env
      , HasGitHubOutput env

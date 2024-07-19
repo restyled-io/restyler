@@ -7,6 +7,7 @@ import SpecHelper
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
+import Restyler.Docker
 import Restyler.Git
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -86,9 +87,9 @@ runChangedPaths
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
      , MonadDownloadFile m
      , MonadGit m
+     , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env

@@ -7,15 +7,14 @@ module Restyler.App
 
 import Restyler.Prelude
 
-import Blammo.Logging.Logger (flushLogger)
 import Conduit (runResourceT, sinkFile)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Network.HTTP.Simple hiding (Request)
 import Relude qualified as Prelude
 import Restyler.App.Class
+import Restyler.Docker
 import Restyler.Git
 import System.Directory qualified as Directory
-import System.Process qualified as Process
 
 newtype AppT app m a = AppT
   { unwrap :: ReaderT app m a
@@ -76,62 +75,6 @@ instance (MonadUnliftIO m, HasLogger app) => MonadSystem (AppT app m) where
     logDebug $ "removeFile" :# ["path" .= path]
     liftIO $ Directory.removeFile path
 
-instance (MonadUnliftIO m, HasLogger app) => MonadProcess (AppT app m) where
-  callProcess cmd args = do
-    -- N.B. this includes access tokens in log messages when used for
-    -- git-clone. That's acceptable because:
-    --
-    -- - These tokens are ephemeral (5 minutes)
-    -- - We generally accept secrets in DEBUG messages
-    --
-    logDebug $ "callProcess" :# ["command" .= cmd, "arguments" .= args]
-    flushLogger
-    liftIO $ Process.callProcess cmd args
-
-  callProcessExitCode cmd args = do
-    logDebug
-      $ "callProcessExitCode"
-      :# ["command" .= cmd, "arguments" .= args]
-    flushLogger
-    ec <- liftIO $ Process.withCreateProcess proc $ \_ _ _ p ->
-      Process.waitForProcess p
-    (if ec == ExitSuccess then logDebug else logWarn)
-      $ "callProcessExitCode"
-      :# [ "command" .= cmd
-         , "arguments" .= args
-         , "exitCode" .= exitCodeInt ec
-         ]
-    pure ec
-   where
-    proc = (Process.proc cmd args) {Process.delegate_ctlc = True}
-
-  readProcess cmd args = do
-    logDebug
-      $ "readProcess"
-      :# ["command" .= cmd, "arguments" .= args]
-    output <- liftIO $ Process.readProcess cmd args ""
-    logDebug
-      $ "readProcess"
-      :# [ "command" .= cmd
-         , "arguments" .= args
-         , "output" .= output
-         ]
-    pure output
-
-  readProcessExitCode cmd args = do
-    logDebug
-      $ "readProcess"
-      :# ["command" .= cmd, "arguments" .= args]
-    (ec, output, err) <- liftIO $ Process.readProcessWithExitCode cmd args ""
-    (if ec == ExitSuccess then logDebug else logWarn)
-      $ "readProcessExitCode"
-      :# [ "command" .= cmd
-         , "arguments" .= args
-         , "output" .= output
-         , "errorOutput" .= err
-         ]
-    pure (ec, output)
-
 instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
   downloadFile url path = do
     liftIO $ do
@@ -141,7 +84,12 @@ instance MonadUnliftIO m => MonadDownloadFile (AppT app m) where
 deriving via
   (ActualGit (AppT app m))
   instance
-    MonadIO m => MonadGit (AppT app m)
+    (MonadUnliftIO m, HasLogger app) => MonadGit (AppT app m)
+
+deriving via
+  (ActualDocker (AppT app m))
+  instance
+    (MonadUnliftIO m, HasLogger app) => MonadDocker (AppT app m)
 
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT f.unwrap app

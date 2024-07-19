@@ -46,6 +46,7 @@ import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException
 import Restyler.Config
+import Restyler.Docker
 import Restyler.Git
 import Restyler.Local.Options
 import Restyler.Options.HostDirectory
@@ -88,6 +89,7 @@ newtype TestAppT a = TestAppT
     , MonadReader TestApp
     )
   deriving (MonadGit) via (NullGit TestAppT)
+  deriving (MonadDocker) via (NullDocker TestAppT)
 
 instance MonadSystem TestAppT where
   getCurrentDirectory = FS.getCurrentDirectory
@@ -100,12 +102,6 @@ instance MonadSystem TestAppT where
   readFileBS = FS.readFileBinary
   writeFile = FS.writeFileUtf8
   removeFile = FS.removeFile
-
-instance MonadProcess TestAppT where
-  callProcess _cmd _args = pure ()
-  callProcessExitCode _cmd _args = asks taProcessExitCodes
-  readProcess _cmd _args = pure ""
-  readProcessExitCode _cmd _args = pure (ExitSuccess, "")
 
 instance MonadDownloadFile TestAppT where
   downloadFile _url _path = pure ()

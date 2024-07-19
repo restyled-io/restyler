@@ -4,6 +4,7 @@ module Restyler.AnnotatedException
     -- * Re-exports
   , Annotation (..)
   , checkpoint
+  , checkpointCallStack
   , AnnotatedException (..)
   , throw
   , tryAnnotated

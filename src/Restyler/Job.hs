@@ -7,10 +7,11 @@ import Restyler.Prelude
 import Data.Text qualified as T
 import Data.Time (getCurrentTime)
 import Restyler.AnnotatedException
-import Restyler.App.Class (MonadDownloadFile, MonadProcess, MonadSystem)
+import Restyler.App.Class (MonadDownloadFile, MonadSystem)
 import Restyler.Clone
 import Restyler.Config
 import Restyler.DangerousPullRequest
+import Restyler.Docker (MonadDocker)
 import Restyler.Error
 import Restyler.GHA qualified as GHA
 import Restyler.GHA.Output
@@ -42,8 +43,8 @@ run
      , MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
      , HasStatsClient env

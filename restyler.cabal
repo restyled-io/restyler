@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5c001319180c5bfd59f98f9971d215cf80b7926bcf53aa063f4ef07d311855b9
+-- hash: 55ec8729d0331efc03de8f0c79bc85fac9045b7d9bee99025f8e0db4194a4435
 
 name:           restyler
 version:        0.2.0.0
@@ -36,6 +36,7 @@ library
       Restyler.Content
       Restyler.DangerousPullRequest
       Restyler.Delimited
+      Restyler.Docker
       Restyler.Error
       Restyler.Exit
       Restyler.GHA
@@ -127,7 +128,6 @@ library
     , microlens-mtl
     , monad-logger-aeson
     , optparse-applicative
-    , process
     , relude
     , semigroups
     , shakespeare

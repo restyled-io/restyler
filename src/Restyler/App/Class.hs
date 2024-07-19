@@ -1,6 +1,5 @@
 module Restyler.App.Class
   ( MonadSystem (..)
-  , MonadProcess (..)
   , MonadDownloadFile (..)
   , readFile
   ) where
@@ -21,12 +20,6 @@ class Monad m => MonadSystem m where
 
 readFile :: MonadSystem m => FilePath -> m Text
 readFile = fmap (decodeUtf8With lenientDecode) . readFileBS
-
-class Monad m => MonadProcess m where
-  callProcess :: HasCallStack => String -> [String] -> m ()
-  callProcessExitCode :: String -> [String] -> m ExitCode
-  readProcess :: HasCallStack => String -> [String] -> m String
-  readProcessExitCode :: String -> [String] -> m (ExitCode, String)
 
 class Monad m => MonadDownloadFile m where
   downloadFile :: Text -> FilePath -> m ()

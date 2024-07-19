@@ -30,6 +30,7 @@ import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
+import Restyler.Docker
 import Restyler.Git
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -105,8 +106,8 @@ runRestylers
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
      , HasHostDirectoryOption env
@@ -201,8 +202,8 @@ runRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
@@ -213,17 +214,18 @@ runRestyler
   -> Restyler
   -> [FilePath]
   -> m RestylerResult
-runRestyler _ r [] = pure $ noPathsRestylerResult r
-runRestyler config r paths = do
-  runRestyler_ r paths
-  getRestylerResult config r
+runRestyler config r = \case
+  [] -> pure $ noPathsRestylerResult r
+  paths -> do
+    runRestyler_ r paths
+    getRestylerResult config r
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
+     , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
@@ -275,10 +277,10 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerPullRestyler
-  :: (MonadIO m, MonadLogger m, MonadProcess m, HasCallStack) => Restyler -> m ()
+  :: (MonadIO m, MonadLogger m, MonadDocker m, HasCallStack) => Restyler -> m ()
 dockerPullRestyler r@Restyler {..} = do
   logInfo $ "Pulling Restyler" :# ["image" .= rImage]
-  ec <- callProcessExitCode "docker" ["pull", "--quiet", rImage]
+  ec <- dockerPull rImage
   case ec of
     ExitSuccess -> pure ()
     ExitFailure i -> throw $ RestylerPullFailure r i
@@ -287,7 +289,7 @@ dockerRunRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
+     , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
@@ -304,8 +306,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
 
   let
     args =
-      ["run", "--rm"]
-        <> restrictionOptions restrictions
+      restrictionOptions restrictions
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
@@ -326,12 +327,12 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
 
   ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
-      (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])
-      ec <$ writeFile path (fixNewline $ pack out)
+      (ec, out) <- dockerRunStdout [prefix path]
+      ec <$ writeFile path (fixNewline out)
     DockerRunPathsOverwrite sep paths -> do
-      callProcessExitCode "docker" $ args <> ["--" | sep] <> map prefix paths
+      dockerRun $ args <> ["--" | sep] <> map prefix paths
     DockerRunPathOverwrite sep path -> do
-      callProcessExitCode "docker" $ args <> ["--" | sep] <> [prefix path]
+      dockerRun $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
     ExitSuccess -> pure ()
@@ -345,7 +346,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
 
   cleanupImage = do
     suppressWarn $ do
-      callProcess "docker" ["image", "rm", "--force", rImage]
+      dockerImageRm rImage
       logInfo "Removed Restyler image"
 
 fixNewline :: Text -> Text

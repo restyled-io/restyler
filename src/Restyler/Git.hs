@@ -9,6 +9,7 @@ module Restyler.Git
 import Restyler.Prelude
 
 import Data.Text qualified as T
+import Restyler.AnnotatedException
 import System.Process.Typed
 
 class Monad m => MonadGit m where
@@ -23,6 +24,7 @@ class Monad m => MonadGit m where
   gitFetch :: HasCallStack => String -> String -> m ()
   gitSwitch :: HasCallStack => String -> m ()
 
+-- | An instance that invokes the real @git@
 newtype ActualGit m a = ActualGit
   { unwrap :: m a
   }
@@ -31,34 +33,43 @@ newtype ActualGit m a = ActualGit
     , Applicative
     , Monad
     , MonadIO
+    , MonadUnliftIO
+    , MonadLogger
     )
 
-instance MonadIO m => MonadGit (ActualGit m) where
-  gitPush branch = callGit ["push", "origin", branch]
-  gitPushForce branch = callGit ["push", "--force", "origin", branch]
+instance (MonadUnliftIO m, MonadLogger m) => MonadGit (ActualGit m) where
+  gitPush branch = runGit_ ["push", "origin", branch]
+  gitPushForce branch = runGit_ ["push", "--force", "origin", branch]
   gitDiffNameOnly mRef = readGitLines $ ["diff", "--name-only"] <> maybeToList mRef
   gitFormatPatch mRef = readGit $ ["format-patch", "--stdout"] <> maybeToList mRef
   gitCommitAll msg = do
     runProcess_ $ proc "git" ["commit", "-a", "--message", msg]
     readGitChomp ["rev-parse", "HEAD"]
-  gitCheckout branch = callGit ["checkout", "--no-progress", "-b", branch]
-  gitInit = callGit ["init", "--quiet", "."]
-  gitRemoteAdd name url = callGit ["remote", "add", name, url]
-  gitFetch name refspec = callGit ["fetch", "--quiet", "--depth", "1", name, refspec]
-  gitSwitch branch = callGit ["checkout", "--no-progress", branch]
+  gitCheckout branch = runGit_ ["checkout", "--no-progress", "-b", branch]
+  gitInit = runGit_ ["init", "--quiet", "."]
+  gitRemoteAdd name url = runGit_ ["remote", "add", name, url]
+  gitFetch name refspec = runGit_ ["fetch", "--quiet", "--depth", "1", name, refspec]
+  gitSwitch branch = runGit_ ["checkout", "--no-progress", branch]
 
-callGit :: MonadIO m => [String] -> m ()
-callGit = runProcess_ . proc "git"
+runGit_ :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m ()
+runGit_ args = checkpointCallStack $ do
+  logDebug $ ("exec git " <> unwords (map pack args)) :# []
+  runProcess_ $ proc "git" args
 
-readGit :: MonadIO m => [String] -> m Text
-readGit = fmap decodeUtf8 . readProcessStdout_ . proc "git"
+readGit :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m Text
+readGit args = checkpointCallStack $ do
+  logDebug $ ("exec git " <> unwords (map pack args)) :# []
+  decodeUtf8 <$> readProcessStdout_ (proc "git" args)
 
-readGitChomp :: MonadIO m => [String] -> m String
+readGitChomp
+  :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m String
 readGitChomp = fmap (unpack . T.dropWhileEnd isSpace) . readGit
 
-readGitLines :: MonadIO m => [String] -> m [String]
+readGitLines
+  :: (MonadUnliftIO m, MonadLogger m, HasCallStack) => [String] -> m [String]
 readGitLines = fmap (map unpack . lines) . readGit
 
+-- | An instance where all operations no-op or return empty strings
 newtype NullGit m a = NullGit
   { unwrap :: m a
   }
