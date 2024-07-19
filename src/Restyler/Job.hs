@@ -144,8 +144,7 @@ withStatsAndCleanup jobUrl action = do
     result <$ recordDoneStats start (Right ())
  where
   cleanup start aex = do
-    err <- runErrorHandlers aex
-    recordDoneStats start $ Left err
+    recordDoneStats start $ Left aex
 
     let
       mConfig = findAnnotation @Config aex
@@ -154,24 +153,18 @@ withStatsAndCleanup jobUrl action = do
     for_ mPullRequest $ \pullRequest -> do
       for_ mConfig $ \config -> do
         suppressWarn
-          $ setPullRequestRed config pullRequest jobUrl
-          $ "Error ("
-          <> err.description
-          <> ")"
+          $ setPullRequestRed config pullRequest jobUrl "Restyled has errored"
 
 recordDoneStats
   :: (MonadIO m, MonadReader env m, HasStatsClient env)
   => UTCTime
-  -> Either Error ()
+  -> Either e ()
   -> m ()
-recordDoneStats start eerr = do
+recordDoneStats start result = do
   Statsd.increment "restyler.finished" []
   Statsd.histogramSince "restyler.duration" [] start
-  case eerr of
-    Left err ->
-      Statsd.increment
-        "restyler.error"
-        [("severity", err.severity), ("error", err.tag)]
+  case result of
+    Left _ex -> Statsd.increment "restyler.error" []
     Right () -> Statsd.increment "restyler.success" []
 
 cleanupRestyledPullRequest :: MonadGitHub m => PullRequest -> m ()

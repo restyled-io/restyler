@@ -6,7 +6,6 @@ import Restyler.Prelude
 
 import Restyler.AnnotatedException
 import Restyler.App (AppT, runAppT)
-import Restyler.Error
 import Restyler.RestyleResult
 
 main
@@ -33,5 +32,4 @@ main withApp run = do
 
 exitHandler :: MonadLogger m => AnnotatedException SomeException -> m ExitCode
 exitHandler aex = do
-  err <- runErrorHandlers aex
-  err.exitCode <$ logError (displayAnnotatedException aex :# [])
+  ExitFailure 1 <$ logError (displayAnnotatedException aex :# [])
