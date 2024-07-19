@@ -346,8 +346,8 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
 
   cleanupImage = do
     suppressWarn $ do
+      logInfo $ "Removing Restyler image" :# ["image" .= rImage]
       dockerImageRm rImage
-      logInfo "Removed Restyler image"
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
