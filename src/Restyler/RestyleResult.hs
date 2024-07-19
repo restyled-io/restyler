@@ -61,8 +61,8 @@ setRestylerResultOutputs =
     --     ]
     _ -> ["differences=false"]
  where
-  mcsv :: Maybe (NonEmpty Text) -> Text
-  mcsv = maybe "" (T.intercalate "," . toList)
+  _mcsv :: Maybe (NonEmpty Text) -> Text
+  _mcsv = maybe "" (T.intercalate "," . toList)
 
 renderSkipped :: RestyleSkipped -> Text
 renderSkipped = \case
