@@ -70,6 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       # BEGIN actions/setup
       - uses: actions/download-artifact@v4
@@ -87,7 +89,7 @@ jobs:
       - if: ${{ steps.restyler.outputs.differences == 'true' }}
         uses: peter-evans/create-pull-request@v6
         with:
-          base: ${{ steps.restyler.outputs.restyled-base }}
+          base: ${{ github.event.pull_request.head.ref }}
           branch: ${{ steps.restyler.outputs.restyled-head }}
           title: ${{ steps.restyler.outputs.restyled-title }}
           body: ${{ steps.restyler.outputs.restyled-body }}
