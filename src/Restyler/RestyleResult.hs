@@ -49,7 +49,7 @@ setRestylerResultOutputs =
   appendGitHubOutputs . \case
     RestyleSuccessDifference config pr results ->
       let details = restyledPullRequestDetails config pr results
-      in  ["restyled-base=" <> details.base]
+      in  ["restyled-head=" <> details.head]
     -- in  [ "differences=true"
     --     , "restyled-base=" <> details.base
     --     , "restyled-head=" <> details.head
