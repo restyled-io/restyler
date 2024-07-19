@@ -98,5 +98,5 @@ deriving via
   instance
     (MonadUnliftIO m, HasLogger app) => MonadDocker (AppT app m)
 
-runAppT :: app -> AppT app m a -> m a
+runAppT :: HasCallStack => app -> (HasCallStack => AppT app m a) -> m a
 runAppT app f = runReaderT f.unwrap app

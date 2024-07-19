@@ -5,7 +5,7 @@ module Restyler.Job
 import Restyler.Prelude
 
 import Data.Text qualified as T
-import Data.Time (getCurrentTime)
+import Data.Time (UTCTime, getCurrentTime)
 import Restyler.AnnotatedException
 import Restyler.App.Class (MonadDownloadFile, MonadSystem)
 import Restyler.Clone
@@ -36,7 +36,6 @@ import Restyler.RestyledPullRequest
 import Restyler.RestylerResult
 import Restyler.Statsd (HasStatsClient)
 import Restyler.Statsd qualified as Statsd
-import UnliftIO.Exception (throwIO)
 
 run
   :: ( MonadMask m
@@ -138,32 +137,42 @@ withStatsAndCleanup
   => URL
   -> m a
   -> m a
-withStatsAndCleanup jobUrl f = do
+withStatsAndCleanup jobUrl action = do
   start <- liftIO getCurrentTime
-  result <- tryAnnotated @SomeException f
+  flip (withAnnotatedException @SomeException) (cleanup start) $ do
+    result <- action
+    result <$ recordDoneStats start (Right ())
+ where
+  cleanup start aex = do
+    err <- runErrorHandlers aex
+    recordDoneStats start $ Left err
+
+    let
+      mConfig = findAnnotation @Config aex
+      mPullRequest = findAnnotation @PullRequest aex
+
+    for_ mPullRequest $ \pullRequest -> do
+      for_ mConfig $ \config -> do
+        suppressWarn
+          $ setPullRequestRed config pullRequest jobUrl
+          $ "Error ("
+          <> err.description
+          <> ")"
+
+recordDoneStats
+  :: (MonadIO m, MonadReader env m, HasStatsClient env)
+  => UTCTime
+  -> Either Error ()
+  -> m ()
+recordDoneStats start eerr = do
   Statsd.increment "restyler.finished" []
   Statsd.histogramSince "restyler.duration" [] start
-  case result of
-    Left aex -> do
-      err <- runErrorHandlers $ toException aex
-
-      let
-        mConfig = findAnnotation @Config aex
-        mPullRequest = findAnnotation @PullRequest aex
-
-      for_ mPullRequest $ \pullRequest -> do
-        for_ mConfig $ \config -> do
-          suppressWarn
-            $ setPullRequestRed config pullRequest jobUrl
-            $ "Error ("
-            <> err.description
-            <> ")"
-
+  case eerr of
+    Left err ->
       Statsd.increment
         "restyler.error"
         [("severity", err.severity), ("error", err.tag)]
-      throwIO aex -- already annotated, throw as-is
-    Right a -> a <$ Statsd.increment "restyler.success" []
+    Right () -> Statsd.increment "restyler.success" []
 
 cleanupRestyledPullRequest :: MonadGitHub m => PullRequest -> m ()
 cleanupRestyledPullRequest pullRequest = do

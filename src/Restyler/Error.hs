@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
+
 module Restyler.Error
   ( Error (..)
   , runErrorHandlers
@@ -29,25 +31,23 @@ import Restyler.Restyler.Run
   )
 
 -- | Try our error handlers, returning /unknown/ if none match
-runErrorHandlers
-  :: (MonadIO m, MonadLogger m)
-  => SomeException
-  -> m Error
-runErrorHandlers e = fromMaybe (unknown e) <$> tryErrorHandlers e
+runErrorHandlers :: Applicative m => AnnotatedException SomeException -> m Error
+runErrorHandlers aex = fromMaybe (unknown e) <$> tryErrorHandlers aex
+ where
+  e = toException aex
 
 -- | Try our error handlers, returning 'Nothing' if none match
 tryErrorHandlers
-  :: (MonadIO m, MonadLogger m)
-  => SomeException
-  -> m (Maybe Error)
-tryErrorHandlers e = go errorHandlers
+  :: Applicative m => AnnotatedException SomeException -> m (Maybe Error)
+tryErrorHandlers aex = go errorHandlers
  where
+  e = toException aex
   go [] = pure Nothing
   go (Handler f : hs)
     | Just ex <- fromException e = Just <$> f ex
     | otherwise = go hs
 
-errorHandlers :: (MonadIO m, MonadLogger m) => [Handler m Error]
+errorHandlers :: Applicative m => [Handler m Error]
 errorHandlers =
   [ errorHandler $ \ex@RepoDisabled {} ->
       (warning ex)
@@ -132,15 +132,16 @@ errorHandlers =
   ]
 
 errorHandler
-  :: (MonadIO m, MonadLogger m, Exception ex)
-  => (ex -> Error)
-  -> Handler m Error
-errorHandler f = Handler $ \aex@AnnotatedException {exception} -> do
-  let md = f exception
-  md <$ logDebug (displayAnnotatedException aex :# [])
+  :: (Applicative m, Exception ex) => (ex -> Error) -> Handler m Error
+errorHandler f = Handler $ \aex@AnnotatedException {exception} ->
+  pure $ setException (hide aex) $ f exception
+ where
+  setException :: AnnotatedException SomeException -> Error -> Error
+  setException aex err = err {exception = Just aex}
 
 data Error = Error
-  { severity :: Text
+  { exception :: Maybe (AnnotatedException SomeException)
+  , severity :: Text
   , tag :: Text
   , description :: Text
   , message :: Message
@@ -161,7 +162,8 @@ warning ex = (unknown ex) {severity = "warning"}
 unknown :: Exception ex => ex -> Error
 unknown ex =
   Error
-    { severity = "error"
+    { exception = Nothing
+    , severity = "error"
     , tag = "unknown"
     , description = "unknown error"
     , message = pack (displayException ex) :# []

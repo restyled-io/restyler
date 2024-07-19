@@ -4,22 +4,38 @@ module Restyler.Exit
 
 import Restyler.Prelude
 
+import Blammo.Logging.Logger (flushLogger)
+import Data.Text.IO qualified as T
 import Restyler.AnnotatedException
 import Restyler.Error
 
-withExitHandler :: (MonadUnliftIO m, MonadLogger m) => m a -> m ()
-withExitHandler f = do
-  ec <- (ExitSuccess <$ f) `catches` exitHandlers
-  exitWith ec
+withExitHandler
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => m a
+  -> m a
+withExitHandler = (`catch` exitHandler)
 
-exitHandlers :: (MonadIO m, MonadLogger m) => [Handler m ExitCode]
-exitHandlers = map toExitHandler errorHandlers
+exitHandler
+  :: ( MonadIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => AnnotatedException SomeException
+  -> m a
+exitHandler aex = do
+  err <- runErrorHandlers aex
 
-toExitHandler
-  :: (MonadIO m, MonadLogger m) => Handler m Error -> Handler m ExitCode
-toExitHandler (Handler f) = Handler $ \ex -> do
-  err <- f ex
   case err.severity of
     "warning" -> logWarn err.message
     _ -> logError err.message
-  pure err.exitCode
+
+  flushLogger
+  liftIO $ T.hPutStrLn stderr $ displayAnnotatedException aex
+  exitWith err.exitCode
