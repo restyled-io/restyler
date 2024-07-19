@@ -1,0 +1,24 @@
+name: Setup the Restyler CLI
+author: pbrisbin
+
+inputs: {}
+outputs: {}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        mkdir -p /tmp/binaries
+        echo "/tmp/binaries" >>"$GITHUB_PATH"
+
+    # TODO: right now we're just testing by downloading a build binary from our
+    # own CI flow. Eventually this should be downloading an artifact from
+    # Releases.
+    - uses: actions/download-artifact@v4
+      with:
+        name: binaries
+        path: /tmp/binaries
+
+    - shell: bash
+      run: chmod +x /tmp/binaries/restyle-gha
