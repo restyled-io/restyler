@@ -38,7 +38,11 @@ appendGitHubOutput x = do
   gho <- asks getGitHubOutput
   case gho of
     GitHubOutputNull -> pure ()
-    GitHubOutput path -> liftIO $ appendFileText path x
+    GitHubOutput path -> do
+      putStrLn "GITHUB_OUTPUT"
+      putStr $ unpack x
+      putStrLn "/GITHUB_OUTPUT"
+      liftIO $ appendFileText path x
 
 newtype NullGitHubOutput a = NullGitHubOutput a
 
