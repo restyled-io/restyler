@@ -78,6 +78,7 @@ runs:
     - if: |
         inputs.fail-if-differences-found == 'true' &&
         steps.restyler.outputs.differences == 'true'
+      shell: bash
       run: |
         echo "Restyling produced differences" >&2
         exit 1
