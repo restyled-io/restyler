@@ -44,7 +44,7 @@ optParser :: Parser Options
 optParser =
   Options
     <$> optLogSettingsOption
-    <*> optRestrictions
+    <*> pure mempty -- Restrictions are ENV-only
     <*> optHostDirectoryOption
 
 class HasOptions a where

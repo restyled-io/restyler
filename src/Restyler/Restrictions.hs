@@ -6,7 +6,6 @@ module Restyler.Restrictions
   , Restrictions (..)
   , restrictionOptions
   , envRestrictions
-  , optRestrictions
   , fullRestrictions
 
     -- * Bytes
@@ -21,7 +20,6 @@ import Restyler.Prelude
 import Data.Char qualified as Char
 import Data.Semigroup.Generic
 import Env qualified
-import Options.Applicative
 
 class HasRestrictions a where
   getRestrictions :: a -> Restrictions
@@ -96,55 +94,6 @@ envOverrides =
         (bimap Env.UnreadError Just . r)
         name
         (Env.def Nothing <> Env.help h)
-
-optRestrictions :: Parser Restrictions
-optRestrictions =
-  (<>)
-    <$> flag
-      fullRestrictions
-      noRestrictions
-      (long "unrestricted" <> help "Run restylers without CPU or Memory restrictions")
-    <*> optOverrides
-
-optOverrides :: Parser Restrictions
-optOverrides =
-  Restrictions
-    <$> ( fmap not
-            <$> lastSwitch
-              "no-net-none"
-              "Run restylers without --net=none"
-        )
-    <*> ( fmap not
-            <$> lastSwitch
-              "no-cap-drop-all"
-              "Run restylers without --cap-drop=all"
-        )
-    <*> lastReader
-      readNat
-      "cpu-shares"
-      "Run restylers with --cpu-shares=<number>"
-    <*> lastReader
-      readBytes
-      "memory"
-      "Run restylers with --memory=<number>[b|k|m|g]"
- where
-  lastSwitch
-    :: String
-    -> String
-    -> Parser (Last Bool)
-  lastSwitch name h =
-    Last <$> flag Nothing (Just True) (long name <> help h)
-
-  lastReader
-    :: (String -> Either String a)
-    -> String
-    -> String
-    -> Parser (Last a)
-  lastReader r name h =
-    Last
-      <$> option
-        (eitherReader $ second Just . r)
-        (long ("restrict-" <> name) <> help h <> value Nothing)
 
 fullRestrictions :: Restrictions
 fullRestrictions =
