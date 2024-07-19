@@ -16,15 +16,27 @@ outputs:
   differences:
     description: ""
     value: ${{ steps.restyler.outputs.differences }}
-  restyled-branch-name:
+  restyled-base:
     description: ""
-    value: ${{ steps.restyler.outputs.restyled-branch-name }}
-  restyled-pr-title:
+    value: ${{ steps.restyler.outputs.restyled-base }}
+  restyled-head:
     description: ""
-    value: ${{ steps.restyler.outputs.restyled-pr-title }}
-  restyled-pr-body:
+    value: ${{ steps.restyler.outputs.restyled-head }}
+  restyled-title:
     description: ""
-    value: ${{ steps.restyler.outputs.restyled-pr-body }}
+    value: ${{ steps.restyler.outputs.restyled-title }}
+  restyled-body:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-body }}
+  restyled-labels:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-labels }}
+  restyled-reviewers:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-reviewers }}
+  restyled-team-reviewers:
+    description: ""
+    value: ${{ steps.restyler.outputs.restyled-team-reviewers }}
 
 runs:
   using: composite
