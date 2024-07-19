@@ -48,7 +48,7 @@ instance Exception RestylerPullFailure where
   displayException (RestylerPullFailure Restyler {..} ec) =
     mconcat
       [ "Unable to pull: " <> rImage <> " (exit " <> show @String ec <> ")"
-      , "\n  The source of the error may be visible in debug messages above"
+      , "\nThe source of the error may be visible in debug messages above"
       ]
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
@@ -58,10 +58,10 @@ instance Exception RestylerExitFailure where
   displayException (RestylerExitFailure Restyler {..} ec) =
     mconcat
       [ "Restyler " <> rName <> " exited non-zero (" <> show @String ec <> ")"
-      , "\n  Error information may be present in debug messages printed above"
+      , "\nError information may be present in debug messages printed above"
       , "\n"
-      , "\n  Help:"
-      , concatMap ("\n    " <>) rDocumentation
+      , "\nHelp:"
+      , concatMap ("\n  " <>) rDocumentation
       ]
 
 newtype RestylerOutOfMemory = RestylerOutOfMemory Restyler
@@ -121,9 +121,6 @@ runRestylers
 runRestylers config@Config {..} allPaths = do
   paths <- findFiles $ filter included allPaths
 
-  logDebug $ "" :# ["restylers" .= map rName restylers]
-  logDebug $ "" :# ["paths" .= paths]
-
   let
     lenPaths = genericLength paths
     maxPaths = cChangedPaths.maximum
@@ -170,7 +167,7 @@ withFilteredPaths restylers paths run = do
             else rInclude r
         included = includePath includes path
 
-      logDebug
+      logTrace
         $ "Matching paths"
         :# [ "name" .= rName r
            , "path" .= path
