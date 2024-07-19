@@ -47,20 +47,23 @@ setRestylerResultOutputs
   -> m ()
 setRestylerResultOutputs = \case
   RestyleSuccessDifference config pr results -> do
-    let details = restyledPullRequestDetails config pr results
-    appendGitHubOutput
-      $ unlines
-        [ "differences=true"
-        , "restyled-base=" <> details.base
-        , "restyled-head=" <> details.head
-        , "restyled-title=" <> details.title
-        , "restyled-body<<EOM"
-        , details.body
-        , "EOM"
-        , "restyled-labels=" <> mcsv details.labels
-        , "restyled-reviewers=" <> mcsv details.reviewers
-        , "restyled-team-reviewers=" <> mcsv details.teamReviewers
-        ]
+    let
+      details = restyledPullRequestDetails config pr results
+      contents =
+        unlines
+          [ "differences=true"
+          , "restyled-base=" <> details.base
+          , "restyled-head=" <> details.head
+          , "restyled-title=" <> details.title
+          , "restyled-body<<EOM"
+          , details.body
+          , "EOM"
+          , "restyled-labels=" <> mcsv details.labels
+          , "restyled-reviewers=" <> mcsv details.reviewers
+          , "restyled-team-reviewers=" <> mcsv details.teamReviewers
+          ]
+    putStrLn $ unpack contents -- TODO
+    appendGitHubOutput contents
   _ -> appendGitHubOutput "differences=false"
  where
   mcsv :: Maybe (NonEmpty Text) -> Text
