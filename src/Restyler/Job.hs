@@ -12,7 +12,6 @@ import Restyler.Clone
 import Restyler.Config
 import Restyler.DangerousPullRequest
 import Restyler.Docker (MonadDocker)
-import Restyler.Error
 import Restyler.GHA qualified as GHA
 import Restyler.GHA.Output
 import Restyler.Git
