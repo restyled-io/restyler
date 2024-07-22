@@ -29,10 +29,10 @@ jobs:
         with:
           ghc-version: ${{ steps.stack.outputs.compiler-version }}
       - run: |
-          mkdir -p dist
-          cp -v ${{ steps.stack.outputs.local-install-root }}/bin/* dist/
-          suffix=$(uname -s)-$(uname -m)
-          tar czf "restyler-$suffix.tar.gz" dist
+          dist=restyler-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
+          mkdir -p "$dist"
+          cp -v ${{ steps.stack.outputs.local-install-root }}/bin/* "$dist"
+          tar czf "$dist.tar.gz" "$dist"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-binaries
@@ -130,6 +130,5 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           generate_release_notes: true
-          draft: true
           files: "*-binaries/restyler-*.tar.gz"
           fail_on_unmatched_files: true
