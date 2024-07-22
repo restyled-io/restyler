@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 96216864b988d5fa1f4bb2ecf7696ed5aa593345d8a946552299187955a0e9fe
+-- hash: 8590878289ab72ae1d036e2be076c5254562a6d920c33640a3a6addb9382cb57
 
 name:           restyler
-version:        0.2.0.0
+version:        0.2.1.0
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
