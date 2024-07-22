@@ -48,7 +48,6 @@ jobs:
         with:
           fail-on: warning
 
-
   image:
     runs-on: ubuntu-latest
     steps:
