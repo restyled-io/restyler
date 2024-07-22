@@ -21,7 +21,7 @@ will be authored by your user.
 ## Development
 
 ```console
-make
+just
 ```
 
 Requires [stack](https://docs.haskellstack.org/en/stable/README/).
@@ -29,7 +29,7 @@ Requires [stack](https://docs.haskellstack.org/en/stable/README/).
 ## Tests
 
 ```console
-make test
+just test
 ```
 
 ### Integration
@@ -37,7 +37,7 @@ make test
 End-to-end test that restyles an example Pull Request:
 
 ```console
-make test.integration
+just test-integration
 ```
 
 ## `restyle-path`
