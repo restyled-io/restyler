@@ -29,10 +29,13 @@ event=$(mktemp)
 } >"$event"
 
 exec act \
-  -P ubuntu-latest=catthehacker/ubuntu:act-latest \
-  --env HOST_DIRECTORY \
+  --bind \
   --env GITHUB_REPOSITORY="$repo" \
-  --secret GITHUB_TOKEN="$GITHUB_ACCESS_TOKEN" \
-  --workflows /opt/workflows \
+  --env HOST_DIRECTORY \
   --eventpath "$event" \
-  --bind
+  --json \
+  --platform ubuntu-latest=catthehacker/ubuntu:act-latest \
+  --quiet \
+  --rm \
+  --secret GITHUB_TOKEN="$GITHUB_ACCESS_TOKEN" \
+  --workflows /opt/workflows
