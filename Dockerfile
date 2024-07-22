@@ -1,58 +1,3 @@
-FROM fpco/stack-build-small:lts-22.28 AS builder
-LABEL maintainer="Pat Brisbin <pbrisbin@gmail.com>"
-ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
-RUN \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    autoconf \
-    automake \
-    autotools-dev \
-    ca-certificates \
-    curl \
-    gcc \
-    locales \
-    pkg-config \
-    netbase && \
-  locale-gen en_US.UTF-8 && \
-  rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /src
-WORKDIR /src
-
-RUN stack update # cache cabal file updates in their own layer
-
-# Dependencies
-COPY stack.yaml package.yaml /src/
-RUN stack install --dependencies-only
-
-# App
-COPY app /src/app
-COPY src /src/src
-COPY config /src/config
-COPY restyle-gha /src/restyle-gha
-COPY restyle-path /src/restyle-path
-RUN stack install
-
-# Docker client
-ENV DOCKER_ARCHIVE docker-17.03.1-ce.tgz
-ENV DOCKER_SRC_URL https://get.docker.com/builds/Linux/x86_64/$DOCKER_ARCHIVE
-RUN \
-  curl -fsSLO "$DOCKER_SRC_URL" && \
-  tar --strip-components=1 -xvzf "$DOCKER_ARCHIVE" -C /usr/local/bin
-
-# Install newer jo than apt has
-ENV JO_VERSION 1.6
-ENV JO_ARCHIVE jo-$JO_VERSION.tar.gz
-ENV JO_SRC_URL https://github.com/jpmens/jo/releases/download/$JO_VERSION/$JO_ARCHIVE
-RUN \
-  cd /tmp && \
-  curl -fsSLO "$JO_SRC_URL" && \
-  tar xvzf "$JO_ARCHIVE" && \
-  cd /tmp/jo-"$JO_VERSION" && \
-  autoreconf -i && \
-  ./configure && \
-  make check && \
-  make install
-
 FROM ubuntu:24.04
 LABEL maintainer="Pat Brisbin <pbrisbin@gmail.com>"
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
@@ -67,21 +12,22 @@ RUN \
   locale-gen en_US.UTF-8 && \
   rm -rf /var/lib/apt/lists/*
 
-# Build stage files
-COPY --from=builder /root/.local/bin/restyler /bin/restyler
-COPY --from=builder /root/.local/bin/restyle-gha /bin/restyle-gha
-COPY --from=builder /root/.local/bin/restyle-path /bin/restyle-path
-COPY --from=builder /usr/local/bin/docker /usr/local/bin/docker
-COPY --from=builder /usr/local/bin/jo /usr/local/bin/jo
+# Act
+RUN \
+  curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
 
-ENV GIT_AUTHOR_NAME=Restyled.io
-ENV GIT_AUTHOR_EMAIL=commits@restyled.io
-ENV GIT_COMMITTER_NAME=Restyled.io
-ENV GIT_COMMITTER_EMAIL=commits@restyled.io
+# GH
+RUN \
+  cd /tmp && \
+  curl -sSf https://github.com/cli/cli/releases/download/v2.53.0/gh_2.53.0_linux_amd64.tar.gz | tar xvf - && \
+  cp -v gh_*/bin/gh /usr/local && \
+  rm -rf gh_*
 
-VOLUME /code
-WORKDIR /code
+RUN mkdir -p /tmp/restyled/.github/workflows
+WORKDIR /tmp/restyled
+ENV HOST_DIRECTORY=/tmp/restyled
 
+COPY agent-workflow.yml /tmp/restyled/.github/workflows/default.yml
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]

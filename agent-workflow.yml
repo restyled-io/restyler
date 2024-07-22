@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - run: |
+         curl -L -O https://github.com/restyled-io/restyler/releases/download/v0.3.0.0/restyle-gha
+         chmod +x restyle-gha
+         sudo mv -v restyle-gha /usr/local/bin
+
+      - id: restyler
+        run: restyle-gha --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GIT_AUTHOR_EMAIL: commits@restyled.io
+          GIT_AUTHOR_NAME: Restyled.io
+          GIT_COMMITTER_EMAIL: commits@restyled.io
+          GIT_COMMITTER_NAME: Restyled.io
+          LOG_COLOR: always
+          LOG_LEVEL: debug
+          RESTYLER_NO_CAP_DROP_ALL: x
+
+      - id: create-pull-request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ github.token }}
+          base: ${{ steps.restyler.outputs.restyled-base }}
+          branch: ${{ steps.restyler.outputs.restyled-head }}
+          title: ${{ steps.restyler.outputs.restyled-title }}
+          body: ${{ steps.restyler.outputs.restyled-body }}
+          labels: ${{ steps.restyler.outputs.restyled-labels }}
+          reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
+          team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
+          delete-branch: true
+
+      # # If no differences
+      # - run: |
+      #     gh api '/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.ref }}' \
+      #       -f context=restyled \
+      #       -f target_url=${{ create-pull-request.pull-request-url }} \
+      #       -f state=success \
+      #       -f description="no differences"
+
+      # # If differences
+      # - run: |
+      #     gh api '/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.ref }}' \
+      #       -f context=restyled \
+      #       -f target_url=${{ create-pull-request.pull-request-url }} \
+      #       -f state=failure \
+      #       -f description="Restyling found differences"
+
+      # - if: ${{ failure() }}
+      #   run: |
+      #     gh api '/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.ref }}' \
+      #       -f context=restyled \
+      #       -f target_url=${{ inputs.job-url }} \
+      #       -f state=error \
+      #       -f description="Restyler errored"
