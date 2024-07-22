@@ -129,12 +129,12 @@ library
     , yaml
   default-language: GHC2021
 
-executable restyle-gha
-  main-is: main.hs
+executable restyle
+  main-is: Main.hs
   other-modules:
       Paths_restyler
   hs-source-dirs:
-      restyle-gha
+      app
   default-extensions:
       DataKinds
       DeriveAnyClass
@@ -157,12 +157,12 @@ executable restyle-gha
     , restyler
   default-language: GHC2021
 
-executable restyle-path
-  main-is: main.hs
+executable restyle-gha
+  main-is: Main.hs
   other-modules:
       Paths_restyler
   hs-source-dirs:
-      restyle-path
+      gha
   default-extensions:
       DataKinds
       DeriveAnyClass
