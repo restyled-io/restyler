@@ -4,9 +4,6 @@ module Restyler.GitHub.Api
   ( -- * Domain-specific constructs
     getPullRequest
   , getPullRequestFiles
-  , setPullRequestStatus
-  , createPullRequest
-  , createReviewRequest
 
     -- * "GitHub" dependency-injection
   , MonadGitHub (..)
@@ -26,13 +23,11 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Env qualified
 import GitHub (github)
 import GitHub qualified
-import GitHub.Endpoints.PullRequests.ReviewRequests qualified as GitHub
 import Network.HTTP.Client (HttpException (..), HttpExceptionContent (..))
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Simple (getResponseStatus)
 import Network.HTTP.Types.Status (Status, statusCode)
 import Restyler.AnnotatedException (checkpointCallStack, handleTo, throw)
-import Restyler.GitHub.Commit.Status
 import Restyler.GitHub.PullRequest
 import Restyler.GitHub.PullRequest.File
 import Restyler.Options.Repository
@@ -68,91 +63,6 @@ getPullRequestFiles repo pr = do
   ghOwner = GitHub.mkOwnerName repo.owner
   ghRepo = GitHub.mkRepoName repo.repo
   ghNumber = GitHub.IssueNumber pr
-
-setPullRequestStatus
-  :: (MonadUnliftIO m, MonadGitHub m)
-  => PullRequest
-  -> CommitStatusState
-  -> URL
-  -> Text
-  -> m ()
-setPullRequestStatus pr cstate url description = do
-  fromGitHub (const $ Right ())
-    =<< ghCreateStatus ghOwner ghRepo ghSha ghStatus
- where
-  ghOwner = GitHub.mkOwnerName pr.base.repo.owner.login
-  ghRepo = GitHub.mkRepoName pr.base.repo.name
-  ghSha = mkName Proxy $ pr.head.sha
-  ghStatus =
-    GitHub.NewStatus
-      { GitHub.newStatusState = case cstate of
-          CommitStatusPending -> GitHub.StatusPending
-          CommitStatusSuccess -> GitHub.StatusSuccess
-          CommitStatusError -> GitHub.StatusError
-          CommitStatusFailure -> GitHub.StatusFailure
-      , GitHub.newStatusTargetUrl = Just url
-      , GitHub.newStatusDescription = Just description
-      , GitHub.newStatusContext = Just "restyled"
-      }
-
-createPullRequest
-  :: (MonadUnliftIO m, MonadGitHub m)
-  => RepositoryOption
-  -> Text
-  -- ^ Title
-  -> Text
-  -- ^ Body
-  -> Text
-  -- ^ Base branch
-  -> Text
-  -- ^ Head branch
-  -> m PullRequest
-createPullRequest repo title body baseRef headRef = do
-  fromGitHub (Right . convertPullRequest [])
-    =<< ghCreatePullRequest ghOwner ghRepo create
- where
-  ghOwner = GitHub.mkOwnerName repo.owner
-  ghRepo = GitHub.mkRepoName repo.repo
-  create =
-    GitHub.CreatePullRequest
-      { GitHub.createPullRequestTitle = title
-      , GitHub.createPullRequestBody = body
-      , GitHub.createPullRequestBase = baseRef
-      , GitHub.createPullRequestHead = headRef
-      }
-
-createReviewRequest
-  :: (MonadUnliftIO m, MonadGitHub m)
-  => PullRequest
-  -> These (NonEmpty Text) (NonEmpty Text)
-  -- ^ User names, Team names, or both
-  -> m ()
-createReviewRequest pr =
-  fromGitHub (const $ Right ())
-    <=< ghCreateReviewRequest ghOwner ghRepo ghNumber
-    . toRequest
- where
-  ghOwner = GitHub.mkOwnerName pr.base.repo.owner.login
-  ghRepo = GitHub.mkRepoName pr.base.repo.name
-  ghNumber = GitHub.IssueNumber pr.number
-
-  toRequest :: These (NonEmpty Text) (NonEmpty Text) -> GitHub.RequestReview
-  toRequest = \case
-    This users ->
-      GitHub.RequestReview
-        { GitHub.requestReviewReviewers = map (mkName Proxy) $ toList users
-        , GitHub.requestReviewTeamReviewers = []
-        }
-    That teams ->
-      GitHub.RequestReview
-        { GitHub.requestReviewReviewers = []
-        , GitHub.requestReviewTeamReviewers = map (mkName Proxy) $ toList teams
-        }
-    These users teams ->
-      GitHub.RequestReview
-        { GitHub.requestReviewReviewers = map (mkName Proxy) $ toList users
-        , GitHub.requestReviewTeamReviewers = map (mkName Proxy) $ toList teams
-        }
 
 convertLabel :: GitHub.IssueLabel -> Label
 convertLabel gh = Label {name = GitHub.untagName $ GitHub.labelName gh}
@@ -255,29 +165,6 @@ class Monad m => MonadGitHub m where
     -> GitHub.IssueNumber
     -> m (Either GitHub.Error (Vector GitHub.File))
 
-  ghCreateStatus
-    :: HasCallStack
-    => GitHub.Name GitHub.Owner
-    -> GitHub.Name GitHub.Repo
-    -> GitHub.Name GitHub.Commit
-    -> GitHub.NewStatus
-    -> m (Either GitHub.Error GitHub.Status)
-
-  ghCreatePullRequest
-    :: HasCallStack
-    => GitHub.Name GitHub.Owner
-    -> GitHub.Name GitHub.Repo
-    -> GitHub.CreatePullRequest
-    -> m (Either GitHub.Error GitHub.PullRequest)
-
-  ghCreateReviewRequest
-    :: HasCallStack
-    => GitHub.Name GitHub.Owner
-    -> GitHub.Name GitHub.Repo
-    -> GitHub.IssueNumber
-    -> GitHub.RequestReview
-    -> m (Either GitHub.Error GitHub.ReviewRequest)
-
 newtype GitHubToken = GitHubToken
   { unwrap :: Text
   }
@@ -331,26 +218,6 @@ instance
       $ "GitHub.pullRequestFilesR"
       :# ["owner" .= owner, "repo" .= repo, "number" .= number]
     runGitHub $ GitHub.pullRequestFilesR owner repo number GitHub.FetchAll
-
-  ghCreateStatus owner repo sha status = checkpointCallStack $ do
-    logDebug
-      $ "GitHub.createStatusR"
-      :# [ "owner" .= owner
-         , "repo" .= repo
-         , "sha" .= sha
-         , "status" .= GitHub.newStatusState status
-         ]
-    runGitHub $ GitHub.createStatusR owner repo sha status
-
-  ghCreatePullRequest owner repo create = checkpointCallStack $ do
-    logDebug $ "GitHub.createPullRequest" :# ["owner" .= owner, "repo" .= repo]
-    runGitHub $ GitHub.createPullRequestR owner repo create
-
-  ghCreateReviewRequest owner repo number req = checkpointCallStack $ do
-    logDebug
-      $ "GitHub.createReviewRequest"
-      :# ["owner" .= owner, "repo" .= repo, "number" .= number]
-    runGitHub $ GitHub.createReviewRequestR owner repo number req
 
 runGitHub
   :: ( MonadUnliftIO m

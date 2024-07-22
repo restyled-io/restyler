@@ -18,7 +18,6 @@ library
       Restyler.App
       Restyler.App.Class
       Restyler.CLI
-      Restyler.Clone
       Restyler.Config
       Restyler.Config.ChangedPaths
       Restyler.Config.CommitTemplate
@@ -33,20 +32,19 @@ library
       Restyler.Config.SketchyList
       Restyler.Config.Statuses
       Restyler.Content
-      Restyler.DangerousPullRequest
       Restyler.Delimited
       Restyler.Docker
       Restyler.GHA
       Restyler.GHA.App
       Restyler.GHA.GitHubEnv
       Restyler.GHA.Output
+      Restyler.GHA.Outputs
       Restyler.Git
       Restyler.GitHub.Api
       Restyler.GitHub.Commit.Status
       Restyler.GitHub.PullRequest
       Restyler.GitHub.PullRequest.File
       Restyler.Ignore
-      Restyler.Job
       Restyler.Job.AgentEnv
       Restyler.Job.App
       Restyler.Job.PlanUpgradeRequired
@@ -65,7 +63,6 @@ library
       Restyler.Prelude
       Restyler.ReadP
       Restyler.Restrictions
-      Restyler.RestyledPullRequest
       Restyler.Restyler
       Restyler.Restyler.Run
       Restyler.RestyleResult

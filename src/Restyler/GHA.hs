@@ -4,7 +4,6 @@ module Restyler.GHA
 
 import Restyler.Prelude
 
-import Restyler.AnnotatedException
 import Restyler.App.Class (MonadDownloadFile, MonadSystem)
 import Restyler.Docker (MonadDocker)
 import Restyler.GHA.Output
@@ -41,16 +40,15 @@ run
   -> m (RestyleResult PullRequest)
 run repo pr = do
   pullRequest <- getPullRequest repo pr
-  checkpoint (Annotation pullRequest) $ do
-    logInfo
-      $ "Handling PR"
-      :# [ "owner" .= pullRequest.base.repo.owner.login
-         , "repo" .= pullRequest.base.repo.name
-         , "number" .= pullRequest.number
-         , "state" .= pullRequest.state
-         , "title" .= pullRequest.title
-         , "base" .= pullRequest.base.ref
-         , "head" .= pullRequest.head.ref
-         ]
-    paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
-    Local.run pullRequest paths `with` setRestylerResultOutputs
+  logInfo
+    $ "Handling PR"
+    :# [ "owner" .= pullRequest.base.repo.owner.login
+       , "repo" .= pullRequest.base.repo.name
+       , "number" .= pullRequest.number
+       , "state" .= pullRequest.state
+       , "title" .= pullRequest.title
+       , "base" .= pullRequest.base.ref
+       , "head" .= pullRequest.head.ref
+       ]
+  paths <- mapMaybe pullRequestFileToChangedPath <$> getPullRequestFiles repo pr
+  Local.run pullRequest paths `with` setRestylerResultOutputs

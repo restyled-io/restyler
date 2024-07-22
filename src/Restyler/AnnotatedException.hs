@@ -1,10 +1,5 @@
 module Restyler.AnnotatedException
-  ( findAnnotation
-
-    -- * Re-exports
-  , Annotation (..)
-  , checkpoint
-  , checkpointCallStack
+  ( checkpointCallStack
   , AnnotatedException (..)
   , throw
   , tryAnnotated
@@ -15,7 +10,6 @@ module Restyler.AnnotatedException
   , displayAnnotatedException
 
     -- * Annotated-safe handling
-  , withAnnotatedException
   , handleTo
   , tryTo
 
@@ -28,28 +22,6 @@ module Restyler.AnnotatedException
 import Restyler.Prelude
 
 import Control.Exception.Annotated.UnliftIO
-import Data.Annotation (tryAnnotations)
-import UnliftIO.Exception qualified as Exception
-
-findAnnotation :: forall a e. Typeable a => AnnotatedException e -> Maybe a
-findAnnotation = fmap head . nonEmpty . fst . tryAnnotations . annotations
-
--- | Catch exceptions (annotated or not) call the given function and rethrow
---
--- NB. This always throws annotated, even if the original exception was not.
-withAnnotatedException
-  :: forall ex m a b
-   . (MonadUnliftIO m, Exception ex)
-  => m a
-  -> (AnnotatedException ex -> m b)
-  -> m a
-withAnnotatedException f use = do
-  r <- tryAnnotated f
-  case r of
-    Left ex -> do
-      void $ use ex
-      Exception.throwIO ex
-    Right a -> pure a
 
 displayAnnotatedException :: Exception e => AnnotatedException e -> Text
 displayAnnotatedException aex@AnnotatedException {exception} =
