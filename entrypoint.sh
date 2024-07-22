@@ -33,7 +33,6 @@ exec act \
   --env GITHUB_REPOSITORY="$repo" \
   --env HOST_DIRECTORY \
   --eventpath "$event" \
-  --json \
   --platform ubuntu-latest=catthehacker/ubuntu:act-latest \
   --quiet \
   --rm \

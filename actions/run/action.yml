@@ -46,8 +46,7 @@ runs:
   steps:
     - id: restyler
       shell: bash
-      run: |
-        restyle-gha --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
+      run: restyle-gha --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
       env:
         GITHUB_TOKEN: ${{ github.token }}
         GIT_AUTHOR_EMAIL: ${{ inputs.committer-email }}

@@ -11,9 +11,10 @@ runs:
   using: composite
   steps:
     - shell: bash
+      working-directory: /tmp
       run: |
-         curl -sSf -O -L "https://github.com/restyled-io/restyler/releases/download/$INPUTS_VERSION/restyle-gha"
-         chmod +x restyle-gha
-         sudo mv -v restyle-gha /usr/local/bin
+        curl -sSf -O -L "https://github.com/restyled-io/restyler/releases/download/$INPUTS_VERSION/restyle-gha"
+        chmod +x restyle-gha
+        sudo mv -v restyle-gha /usr/local/bin
       env:
         INPUTS_VERSION: ${{ inputs.version }}
