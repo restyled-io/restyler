@@ -12,7 +12,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
       - uses: restyled-io/restyler/actions/setup@pb/action
       - id: restyler
-      - uses: restyled-io/restyler/actions/run@pb/action
+        uses: restyled-io/restyler/actions/run@pb/action
         with:
           log-format: json
           committer-email: "commits@restyled.io"
