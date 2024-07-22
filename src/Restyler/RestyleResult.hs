@@ -3,7 +3,6 @@ module Restyler.RestyleResult
   , RestyleSkipped (..)
   , runRestyle
   , setRestylerResultOutputs
-  , renderSkipped
   ) where
 
 import Restyler.Prelude
@@ -48,7 +47,7 @@ setRestylerResultOutputs
 setRestylerResultOutputs =
   appendGitHubOutputs . \case
     RestyleSuccessDifference config pr results ->
-      let outputs = RestylerOutputs config pr results
+      let outputs = restylerOutputs config pr results
       in  [ "differences=true"
           , "restyled-base=" <> outputs.base
           , "restyled-head=" <> outputs.head
@@ -62,12 +61,3 @@ setRestylerResultOutputs =
  where
   mcsv :: Maybe (NonEmpty Text) -> Text
   mcsv = maybe "" (T.intercalate "," . toList)
-
-renderSkipped :: RestyleSkipped -> Text
-renderSkipped = \case
-  RestyleNotEnabled -> "not enabled"
-  RestylePullRequestClosed -> "PR closed"
-  RestyleIgnored reason -> case reason of
-    IgnoredByAuthor {} -> "ignore author"
-    IgnoredByBranch {} -> "ignore branch"
-    IgnoredByLabels {} -> "ignore labels"
