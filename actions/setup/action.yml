@@ -12,12 +12,7 @@ runs:
   steps:
     - shell: bash
       run: |
-         curl \
-          --fail \
-          --location \
-          --remote-name \
-          --show-error \
-          --silent \
+         curl --fail --location --remote-name --show-error --silent \
           "https://github.com/restyled-io/restyler/releases/download/$INPUTS_VERSION/restyle-gha"
          chmod +x restyle-gha
          sudo mv -v restyle-gha /usr/local/bin
