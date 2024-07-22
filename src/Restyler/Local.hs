@@ -18,6 +18,7 @@ import Restyler.Ignore
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
+import Restyler.Options.NoCommit
 import Restyler.Restrictions
 import Restyler.RestyleResult
 import Restyler.Restyler.Run
@@ -46,10 +47,11 @@ run
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasRestrictions env
      , HasHostDirectoryOption env
-     , HasManifestOption env
      , HasImageCleanupOption env
+     , HasManifestOption env
+     , HasNoCommitOption env
+     , HasRestrictions env
      , HasPullRequestState pr
      , HasAuthor pr
      , HasBaseRef pr

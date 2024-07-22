@@ -15,6 +15,7 @@ import Restyler.Local qualified as Local
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
+import Restyler.Options.NoCommit
 import Restyler.Options.Repository
 import Restyler.Restrictions
 import Restyler.RestyleResult
@@ -29,10 +30,11 @@ run
      , MonadDocker m
      , MonadReader env m
      , HasGitHubOutput env
-     , HasRestrictions env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasManifestOption env
+     , HasNoCommitOption env
+     , HasRestrictions env
      , HasCallStack
      )
   => RepositoryOption
