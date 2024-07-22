@@ -98,6 +98,15 @@ jobs:
           files: "*-binaries/restyler-*.tar.gz"
           fail_on_unmatched_files: true
 
+  test-install:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./install
+      - run: restyle --help
+      - run: restyle-gha --help
+
   test-actions-setup:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
