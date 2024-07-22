@@ -1,15 +1,11 @@
 FROM ubuntu:24.04
 LABEL maintainer="Pat Brisbin <pbrisbin@gmail.com>"
-ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
 RUN \
   apt-get update && \
   apt-get install -y --no-install-recommends \
     ca-certificates \
-    gcc \
-    git \
-    locales \
-    netbase && \
-  locale-gen en_US.UTF-8 && \
+    curl && \
   rm -rf /var/lib/apt/lists/*
 
 # Act
@@ -19,15 +15,16 @@ RUN \
 # GH
 RUN \
   cd /tmp && \
-  curl -sSf https://github.com/cli/cli/releases/download/v2.53.0/gh_2.53.0_linux_amd64.tar.gz | tar xvf - && \
-  cp -v gh_*/bin/gh /usr/local && \
+  curl -L -sSf https://github.com/cli/cli/releases/download/v2.53.0/gh_2.53.0_linux_amd64.tar.gz | tar xzvf - && \
+  cp -v gh_*/bin/gh /usr/local/bin && \
   rm -rf gh_*
 
-RUN mkdir -p /tmp/restyled/.github/workflows
+RUN mkdir -p /tmp/restyled
 WORKDIR /tmp/restyled
 ENV HOST_DIRECTORY=/tmp/restyled
 
-COPY agent-workflow.yml /tmp/restyled/.github/workflows/default.yml
+RUN mkdir -p /opt/workflows
+COPY agent-workflow.yml /opt/workflows/
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]

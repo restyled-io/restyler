@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export GH_TOKEN=$GITHUB_ACCESS_TOKEN
+
 repo=
 number=
 
@@ -9,11 +11,6 @@ while [[ -n "$1" ]]; do
     repo=${BASH_REMATCH[1]}/${BASH_REMATCH[2]}
     number=${BASH_REMATCH[3]}
     break
-  fi
-
-  if [[ "$1" == '--job-url' ]]; then
-    shift
-    job_url=$1
   fi
 
   shift
@@ -32,9 +29,10 @@ event=$(mktemp)
 } >"$event"
 
 exec act \
-  --env HOST_DIRECTORY="$PWD" \
-  --env JOB_URL="$job_url" \
+  -P ubuntu-latest=catthehacker/ubuntu:act-latest \
+  --env HOST_DIRECTORY \
   --env GITHUB_REPOSITORY="$repo" \
   --secret GITHUB_TOKEN="$GITHUB_ACCESS_TOKEN" \
+  --workflows /opt/workflows \
   --eventpath "$event" \
   --bind
