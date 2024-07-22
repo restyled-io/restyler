@@ -58,4 +58,3 @@ runs:
         LOG_COLOR: ${{ inputs.log-color }}
         LOG_FORMAT: ${{ inputs.log-format }}
         LOG_LEVEL: ${{ inputs.log-level }}
-        RESTYLER_NO_CAP_DROP_ALL: x
