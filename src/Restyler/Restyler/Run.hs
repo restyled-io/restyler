@@ -332,7 +332,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
       logRunningOn [path]
-      (ec, out) <- dockerRunStdout [prefix path]
+      (ec, out) <- dockerRunStdout $ args <> [prefix path]
       ec <$ writeFile path (fixNewline out)
     DockerRunPathsOverwrite sep paths -> do
       logRunningOn paths
