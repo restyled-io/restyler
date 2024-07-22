@@ -28,7 +28,7 @@ event=$(mktemp)
   echo '}'
 } >"$event"
 
-exec act \
+act \
   --bind \
   --env GITHUB_REPOSITORY="$repo" \
   --env HOST_DIRECTORY \
@@ -37,4 +37,4 @@ exec act \
   --quiet \
   --rm \
   --secret GITHUB_TOKEN="$GITHUB_ACCESS_TOKEN" \
-  --workflows /opt/workflows
+  --workflows /opt/workflows | sed 's%^\[[^]]*] %%'

@@ -15,7 +15,6 @@ jobs:
         uses: ./actions/run
       - uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ inputs.github-token }}
           base: ${{ steps.restyler.outputs.restyled-base }}
           branch: ${{ steps.restyler.outputs.restyled-head }}
           title: ${{ steps.restyler.outputs.restyled-title }}
