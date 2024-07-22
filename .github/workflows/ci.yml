@@ -11,7 +11,16 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux]
+
+        include:
+          - os: linux
+            runner: ubuntu-latest
+
+    runs-on: ${{ matrix.runner }}
+
     steps:
       - uses: actions/checkout@v4
       - id: stack
@@ -19,6 +28,16 @@ jobs:
       - uses: freckle/weeder-action@v2
         with:
           ghc-version: ${{ steps.stack.outputs.compiler-version }}
+      - run: |
+          mkdir -p dist
+          cp -v ${{ steps.stack.outputs.local-install-root }}/bin/* dist/
+          suffix=$(uname -s)-$(uname -m)
+          tar czf "restyler-$suffix.tar.gz" dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-binaries
+          path: "restyler-*.tar.gz"
+          if-no-files-found: error
 
   lint:
     runs-on: ubuntu-latest
@@ -93,3 +112,24 @@ jobs:
           job-status: ${{ job.status }}
           pushover-api-token: ${{ secrets.PUSHOVER_API_TOKEN }}
           pushover-user-key: ${{ secrets.PUSHOVER_USER_KEY }}
+
+  release:
+    # TESTING
+    # if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - id: tag
+        uses: freckle/haskell-tag-action@v1
+      - if: steps.tag.outputs.tag
+        uses: actions/download-artifact@v4
+      - if: steps.tag.outputs.tag
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          draft: true
+          files: "*-binaries/restyler-*.tar.gz"
+          fail_on_unmatched_files: true
