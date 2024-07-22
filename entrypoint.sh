@@ -34,7 +34,5 @@ act \
   --env HOST_DIRECTORY \
   --eventpath "$event" \
   --platform ubuntu-latest=catthehacker/ubuntu:act-latest \
-  --quiet \
-  --rm \
   --secret GITHUB_TOKEN="$GITHUB_ACCESS_TOKEN" \
-  --workflows /opt/workflows | sed 's%^\[[^]]*] %%'
+  --workflows /opt/workflows
