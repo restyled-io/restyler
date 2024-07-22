@@ -5,6 +5,10 @@ module Restyler.GHA.Outputs
 
 import Restyler.Prelude
 
+import GitHub qualified
+import Restyler.Config
+import Restyler.Config.RequestReview
+import Restyler.Content qualified as Content
 import Restyler.GitHub.PullRequest
 import Restyler.Options.Repository
 import Restyler.RestylerResult
@@ -28,7 +32,7 @@ restylerOutputs
   -> [RestylerResult]
   -> RestylerOutputs
 restylerOutputs config pr results =
-  RestyledPullRequestDetails
+  RestylerOutputs
     { repo =
         RepositoryOption
           { owner = pr.base.repo.owner.login

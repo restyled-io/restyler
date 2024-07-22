@@ -50,7 +50,6 @@ library:
     - composition-extra
     - conduit
     - containers
-    - datadog
     - directory
     - edit-distance
     - envparse
@@ -72,8 +71,6 @@ library:
     - semigroups
     - shakespeare
     - text
-    - these
-    - time
     - typed-process
     - unliftio
     - unliftio-core

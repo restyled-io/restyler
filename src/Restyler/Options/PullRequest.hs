@@ -2,7 +2,6 @@ module Restyler.Options.PullRequest
   ( PullRequestOption (..)
   , readPullRequest
   , optPullRequest
-  , optPullRequestArg
   ) where
 
 import Restyler.Prelude
@@ -32,10 +31,4 @@ optPullRequest =
   option (eitherReader readPullRequest)
     $ long "pr"
     <> metavar "OWNER/REPO#NUMBER"
-    <> help "Pull Request to restyle"
-
-optPullRequestArg :: Parser PullRequestOption
-optPullRequestArg =
-  argument (eitherReader readPullRequest)
-    $ metavar "OWNER/REPO#NUMBER"
     <> help "Pull Request to restyle"

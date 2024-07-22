@@ -13,7 +13,6 @@ build-type:     Simple
 library
   exposed-modules:
       GHC.Generics.Selectors
-      GitHub.Endpoints.PullRequests.ReviewRequests
       Restyler.AnnotatedException
       Restyler.App
       Restyler.App.Class
@@ -45,8 +44,6 @@ library
       Restyler.GitHub.PullRequest
       Restyler.GitHub.PullRequest.File
       Restyler.Ignore
-      Restyler.Job.AgentEnv
-      Restyler.Job.App
       Restyler.Job.PlanUpgradeRequired
       Restyler.Job.RepoDisabled
       Restyler.Local
@@ -55,7 +52,6 @@ library
       Restyler.Opt
       Restyler.Options.HostDirectory
       Restyler.Options.ImageCleanup
-      Restyler.Options.JobUrl
       Restyler.Options.LogSettings
       Restyler.Options.Manifest
       Restyler.Options.PullRequest
@@ -67,7 +63,6 @@ library
       Restyler.Restyler.Run
       Restyler.RestyleResult
       Restyler.RestylerResult
-      Restyler.Statsd
       Restyler.Wiki
       Restyler.Yaml.Errata
   other-modules:
@@ -104,7 +99,6 @@ library
     , composition-extra
     , conduit
     , containers
-    , datadog
     , directory
     , edit-distance
     , envparse
@@ -125,8 +119,6 @@ library
     , semigroups
     , shakespeare
     , text
-    , these
-    , time
     , typed-process
     , unliftio
     , unliftio-core
