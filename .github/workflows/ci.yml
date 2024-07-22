@@ -48,19 +48,6 @@ jobs:
         with:
           fail-on: warning
 
-  test-action:
-    if: ${{ github.event_name == 'pull_request' }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        name: linux-binaries
-      - run: |
-          tar xzf linux-binaries/restyler-*.tar.gz
-          mv -v restyler-*/restyle-gha /usr/local/bin
-          rm -rf linux-binaries
-      - uses: actions/checkout@v4
-      - uses: ./actions/run
 
   image:
     runs-on: ubuntu-latest
@@ -111,3 +98,17 @@ jobs:
           generate_release_notes: true
           files: "*-binaries/restyler-*.tar.gz"
           fail_on_unmatched_files: true
+
+  test-actions-run:
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        name: linux-binaries
+      - run: |
+          tar xzf linux-binaries/restyler-*.tar.gz
+          mv -v restyler-*/restyle-gha /usr/local/bin
+          rm -rf linux-binaries
+      - uses: actions/checkout@v4
+      - uses: ./actions/run
