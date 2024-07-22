@@ -78,41 +78,6 @@ jobs:
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
 
-  deploy:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-
-    needs: [build, image]
-
-    steps:
-      - name: setup
-        run: |
-          cat > ~/.netrc <<EOF
-          machine api.heroku.com
-              login $HEROKU_EMAIL
-              password $HEROKU_API_KEY
-          machine git.heroku.com
-              login $HEROKU_EMAIL
-              password $HEROKU_API_KEY
-          EOF
-        env:
-          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-
-      - name: deploy
-        run: |
-          read -r tag <<'EOM'
-          ${{ needs.image.outputs.tags }}
-          EOM
-          heroku config:set --app restyled-io "RESTYLER_IMAGE=$tag"
-
-      - uses: desiderati/github-action-pushover@v1
-        if: ${{ always() }}
-        with:
-          job-status: ${{ job.status }}
-          pushover-api-token: ${{ secrets.PUSHOVER_API_TOKEN }}
-          pushover-user-key: ${{ secrets.PUSHOVER_USER_KEY }}
-
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
