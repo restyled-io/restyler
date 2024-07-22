@@ -10,6 +10,7 @@ inputs:
     default: always
   log-format:
     description: "LOG_FORMAT"
+    default: tty
   log-level:
     description: "LOG_LEVEL"
     default: "info"
