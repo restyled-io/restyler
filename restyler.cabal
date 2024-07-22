@@ -195,34 +195,6 @@ executable restyle-path
     , restyler
   default-language: GHC2021
 
-executable restyler
-  main-is: main.hs
-  other-modules:
-      Paths_restyler
-  hs-source-dirs:
-      app
-  default-extensions:
-      DataKinds
-      DeriveAnyClass
-      DerivingStrategies
-      DerivingVia
-      DuplicateRecordFields
-      GADTs
-      LambdaCase
-      NoFieldSelectors
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      NoPostfixOperators
-      OverloadedRecordDot
-      OverloadedStrings
-      QuasiQuotes
-      TypeFamilies
-  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base
-    , restyler
-  default-language: GHC2021
-
 test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs

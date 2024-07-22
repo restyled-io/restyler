@@ -83,16 +83,6 @@ library:
     - yaml
 
 executables:
-  restyler:
-    main: main.hs
-    source-dirs: app
-    ghc-options:
-      - -Wall
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - restyler
   restyle-path:
     main: main.hs
     source-dirs: restyle-path
