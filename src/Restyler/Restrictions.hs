@@ -26,7 +26,6 @@ class HasRestrictions a where
 
 data Restrictions = Restrictions
   { netNone :: Last Bool
-  , capDropAll :: Last Bool
   , cpuShares :: Last Natural
   , memory :: Last Bytes
   }
@@ -38,7 +37,6 @@ restrictionOptions Restrictions {..} =
   concat
     $ catMaybes
       [ (\b -> if b then ["--net", "none"] else []) <$> getLast netNone
-      , (\b -> if b then ["--cap-drop", "all"] else []) <$> getLast capDropAll
       , (\n -> ["--cpu-shares", show n]) <$> getLast cpuShares
       , (\bs -> ["--memory", bytesOption bs]) <$> getLast memory
       ]
@@ -57,24 +55,9 @@ envOverrides :: Env.Parser Env.Error Restrictions
 envOverrides =
   Env.prefixed "RESTYLER_"
     $ Restrictions
-    <$> ( fmap not
-            <$> lastSwitch
-              "NO_NET_NONE"
-              "Run restylers without --net=none"
-        )
-    <*> ( fmap not
-            <$> lastSwitch
-              "NO_CAP_DROP_ALL"
-              "Run restylers without --cap-drop=all"
-        )
-    <*> lastReader
-      readNat
-      "CPU_SHARES"
-      "Run restylers with --cpu-shares=<number>"
-    <*> lastReader
-      readBytes
-      "MEMORY"
-      "Run restylers with --memory=<number>[b|k|m|g]"
+    <$> (fmap not <$> lastSwitch "NO_NET_NONE" "Run restylers without --net=none")
+    <*> lastReader readNat "CPU_SHARES" "Run restylers with --cpu-shares=<number>"
+    <*> lastReader readBytes "MEMORY" "Run restylers with --memory=<number>[b|k|m|g]"
  where
   lastSwitch
     :: String
@@ -99,7 +82,6 @@ fullRestrictions :: Restrictions
 fullRestrictions =
   Restrictions
     { netNone = Last $ Just True
-    , capDropAll = Last $ Just True
     , cpuShares = Last $ Just defaultCpuShares
     , memory = Last $ Just defaultMemory
     }
@@ -114,7 +96,6 @@ noRestrictions :: Restrictions
 noRestrictions =
   Restrictions
     { netNone = Last $ Just False
-    , capDropAll = Last $ Just False
     , cpuShares = Last Nothing
     , memory = Last Nothing
     }

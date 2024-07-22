@@ -12,18 +12,16 @@ import Prelude qualified
 spec :: Spec
 spec = do
   describe "restrictionOptions" $ do
-    it "always adds --net=none and --cap-drop=all" $ do
+    it "always adds --net=none" $ do
       let opts =
             restrictionOptions
               $ Restrictions
                 { netNone = Last $ Just True
-                , capDropAll = Last $ Just True
                 , cpuShares = Last Nothing
                 , memory = Last Nothing
                 }
 
       opts `shouldContain` ["--net", "none"]
-      opts `shouldContain` ["--cap-drop", "all"]
 
     it "always has default cpu-shares and memory" $ do
       let opts = restrictionOptions fullRestrictions
@@ -36,7 +34,6 @@ spec = do
             restrictionOptions
               $ Restrictions
                 { netNone = Last $ Just True
-                , capDropAll = Last $ Just True
                 , cpuShares = Last $ Just 256
                 , memory = Last $ Just $ Bytes 1 $ Just G
                 }
@@ -59,7 +56,6 @@ spec = do
           `shouldBe` Right
             Restrictions
               { netNone = Last $ Just False
-              , capDropAll = Last $ Just False
               , cpuShares = Last Nothing
               , memory = Last Nothing
               }
@@ -68,8 +64,7 @@ spec = do
       let
         env :: [(String, String)]
         env =
-          [ ("RESTYLER_NO_CAP_DROP_ALL", "x")
-          , ("RESTYLER_CPU_SHARES", "256")
+          [ ("RESTYLER_CPU_SHARES", "256")
           , ("RESTYLER_MEMORY", "1024m")
           ]
 
@@ -77,7 +72,6 @@ spec = do
         `shouldBe` Right
           Restrictions
             { netNone = Last $ Just True
-            , capDropAll = Last $ Just False
             , cpuShares = Last $ Just 256
             , memory = Last $ Just $ Bytes 1024 $ Just M
             }
@@ -91,7 +85,6 @@ spec = do
         `shouldBe` Right
           Restrictions
             { netNone = Last $ Just False
-            , capDropAll = Last $ Just False
             , cpuShares = Last Nothing
             , memory = Last $ Just $ Bytes 256 $ Just B
             }
