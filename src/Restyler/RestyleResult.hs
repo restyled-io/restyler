@@ -11,9 +11,9 @@ import Restyler.Prelude
 import Data.Text qualified as T
 import Restyler.Config
 import Restyler.GHA.Output
+import Restyler.GHA.Outputs
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
-import Restyler.RestyledPullRequest
 import Restyler.RestylerResult
 
 data RestyleResult pr
@@ -48,15 +48,15 @@ setRestylerResultOutputs
 setRestylerResultOutputs =
   appendGitHubOutputs . \case
     RestyleSuccessDifference config pr results ->
-      let details = restyledPullRequestDetails config pr results
+      let outputs = RestylerOutputs config pr results
       in  [ "differences=true"
-          , "restyled-base=" <> details.base
-          , "restyled-head=" <> details.head
-          , "restyled-title=" <> details.title
-          , "restyled-body<<EOM\n" <> details.body <> "\nEOM"
-          , "restyled-labels=" <> mcsv details.labels
-          , "restyled-reviewers=" <> mcsv details.reviewers
-          , "restyled-team-reviewers=" <> mcsv details.teamReviewers
+          , "restyled-base=" <> outputs.base
+          , "restyled-head=" <> outputs.head
+          , "restyled-title=" <> outputs.title
+          , "restyled-body<<EOM\n" <> outputs.body <> "\nEOM"
+          , "restyled-labels=" <> mcsv outputs.labels
+          , "restyled-reviewers=" <> mcsv outputs.reviewers
+          , "restyled-team-reviewers=" <> mcsv outputs.teamReviewers
           ]
     _ -> ["differences=false"]
  where

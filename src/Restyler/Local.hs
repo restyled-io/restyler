@@ -6,7 +6,6 @@ module Restyler.Local
 
 import Restyler.Prelude
 
-import Restyler.AnnotatedException
 import Restyler.App.Class
   ( MonadDownloadFile (..)
   , MonadSystem (..)
@@ -62,21 +61,20 @@ run
   -> m (RestyleResult pr)
 run pr paths = do
   config <- loadConfig
-  checkpoint (Annotation config) $ do
-    let mIgnoredReason =
-          getIgnoredReason
-            config
-            (getAuthor pr)
-            (getBaseRef pr)
-            (getLabelNames pr)
 
-    case (True, getPullRequestState pr) of
-      -- TODO
-      -- (False, _) ->
-      --   pure $ RestyleSkipped config pr RestyleNotEnabled
-      (True, PullRequestClosed) ->
-        pure $ RestyleSkipped config pr RestylePullRequestClosed
-      (True, PullRequestOpen)
-        | Just reason <- mIgnoredReason ->
-            pure $ RestyleSkipped config pr $ RestyleIgnored reason
-      (True, PullRequestOpen) -> runRestyle config pr $ runRestylers config paths
+  let mIgnoredReason =
+        getIgnoredReason
+          config
+          (getAuthor pr)
+          (getBaseRef pr)
+          (getLabelNames pr)
+
+  case (cEnabled config, getPullRequestState pr) of
+    (False, _) ->
+      pure $ RestyleSkipped config pr RestyleNotEnabled
+    (True, PullRequestClosed) ->
+      pure $ RestyleSkipped config pr RestylePullRequestClosed
+    (True, PullRequestOpen)
+      | Just reason <- mIgnoredReason ->
+          pure $ RestyleSkipped config pr $ RestyleIgnored reason
+    (True, PullRequestOpen) -> runRestyle config pr $ runRestylers config paths
