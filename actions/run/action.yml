@@ -8,38 +8,30 @@ inputs:
   github-token:
     description: "GITHUB_TOKEN"
     default: ${{ github.token }}
-  create-pull-request:
-    description: "Create/update a Restyled PR?"
-    default: true
-  fail-if-differences-found:
-    description: "Fail if differences are found?"
-    default: true
-  committer-name:
-    description: "Name used for Restyled commits"
-    default: "Restyled.io"
   committer-email:
     description: "Email used for Restyled commits"
     default: "commits@restyled.io"
+  committer-name:
+    description: "Name used for Restyled commits"
+    default: "Restyled.io"
 
 outputs:
   differences:
-    description: "'true' if restyling produced differences"
     value: ${{ steps.restyler.outputs.differences }}
-  restyled-pr-number:
-    description: "Number of the Restyled PR, if it exists"
-    value: ${{ steps.create-pull-request.outputs.pull-request-number }}
-  restyled-pr-url:
-    description: "URL to the Restyled PR, if it exists"
-    value: ${{ steps.create-pull-request.outputs.pull-request-url }}
-  restyled-pr-operation:
-    description: "Operation performed with the Restyled PR: created, updated, or closed"
-    value: ${{ steps.create-pull-request.outputs.pull-request-operation }}
-  restyled-pr-head-sha:
-    description: "Head SHA of the Restyled PR, if it exists"
-    value: ${{ steps.create-pull-request.outputs.pull-request-head-sha }}
-  restyled-pr-branch:
-    description: "Branch of the Restyled PR, if it exists"
-    value: ${{ steps.create-pull-request.outputs.pull-request-branch }}
+  restyled-base:
+    value: ${{ steps.restyler.outputs.restyled-base }}
+  restyled-head:
+    value: ${{ steps.restyler.outputs.restyled-head }}
+  restyled-title:
+    value: ${{ steps.restyler.outputs.restyled-title }}
+  restyled-body:
+    value: ${{ steps.restyler.outputs.restyled-body }}
+  restyled-labels:
+    value: ${{ steps.restyler.outputs.restyled-labels }}
+  restyled-reviewers:
+    value: ${{ steps.restyler.outputs.restyled-reviewers }}
+  restyled-team-reviewers:
+    value: ${{ steps.restyler.outputs.restyled-team-reviewers }}
 
 runs:
   using: composite
@@ -58,27 +50,3 @@ runs:
         LOG_COLOR: always
         LOG_LEVEL: ${{ inputs.log-level }}
         RESTYLER_NO_CAP_DROP_ALL: x
-
-    - id: create-pull-request
-      if: |
-        inputs.create-pull-request &&
-        steps.restyler.outputs.differences == 'true'
-      uses: peter-evans/create-pull-request@v6
-      with:
-        token: ${{ inputs.github-token }}
-        base: ${{ steps.restyler.outputs.restyled-base }}
-        branch: ${{ steps.restyler.outputs.restyled-head }}
-        title: ${{ steps.restyler.outputs.restyled-title }}
-        body: ${{ steps.restyler.outputs.restyled-body }}
-        labels: ${{ steps.restyler.outputs.restyled-labels }}
-        reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
-        team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
-        delete-branch: true
-
-    - if: |
-        inputs.fail-if-differences-found == 'true' &&
-        steps.restyler.outputs.differences == 'true'
-      shell: bash
-      run: |
-        echo "Restyling produced differences" >&2
-        exit 1

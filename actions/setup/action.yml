@@ -1,7 +1,10 @@
 name: Setup the Restyler CLI
 author: pbrisbin
 
-inputs: {}
+inputs:
+  version:
+    default: "v0.3.0.0"
+
 outputs: {}
 
 runs:
@@ -9,16 +12,14 @@ runs:
   steps:
     - shell: bash
       run: |
-        mkdir -p /tmp/binaries
-        echo "/tmp/binaries" >>"$GITHUB_PATH"
-
-    # TODO: right now we're just testing by downloading a build binary from our
-    # own CI flow. Eventually this should be downloading an artifact from
-    # Releases.
-    - uses: actions/download-artifact@v4
-      with:
-        name: binaries
-        path: /tmp/binaries
-
-    - shell: bash
-      run: chmod +x /tmp/binaries/restyle-gha
+         curl \
+          --fail \
+          --location \
+          --remote-name \
+          --show-error \
+          --silent \
+          "https://github.com/restyled-io/restyler/releases/download/$INPUTS_VERSION/restyle-gha"
+         chmod +x restyle-gha
+         sudo mv -v restyle-gha /usr/local/bin
+      env:
+        INPUTS_VERSION: ${{ inputs.version }}
