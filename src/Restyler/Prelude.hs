@@ -3,43 +3,36 @@ module Restyler.Prelude
   , module Restyler.Prelude
   ) where
 
-import Relude as X hiding (exitSuccess, readFile, readFileBS, writeFile)
+import Relude as X hiding (All (..), readFile, readFileBS, writeFile)
 
 import Blammo.Logging as X
 import Control.Error.Util as X (hush, note)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Control.Monad.IO.Unlift as X (MonadUnliftIO (..))
+import Data.Aeson as X (FromJSON, ToJSON)
 import Data.Bitraversable as X (bimapM)
 import Data.Char as X (isSpace)
 import Data.Functor.Syntax as X ((<$$>))
 import Data.Text as X (pack, unpack)
+import Data.These as X (These (..))
 import Data.Traversable as X (for)
+import Data.Vector as X (Vector)
 import GitHub.Data as X (Id, Name, URL (..), getUrl, mkId, mkName, untagName)
-import Lens.Micro as X (Lens', lens, (.~), (^.), (^?))
+import Lens.Micro as X (Lens', lens, to, (.~), (^.), (^?))
 import Lens.Micro.Mtl as X (view)
 import System.Exit as X (ExitCode (..))
 import UnliftIO.Async as X (race)
 import UnliftIO.Concurrent as X (threadDelay)
-import UnliftIO.Exception as X
-  ( Handler (..)
-  , IOException
-  , finally
-  , onException
-  , throwIO
-  , throwString
-  )
+import UnliftIO.Exception as X (finally)
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
-import Data.Aeson (Key)
+import Data.Aeson (Key, KeyValue, ToJSON (..), Value (..))
 import Data.Aeson.KeyMap (KeyMap)
-import qualified Data.Aeson.KeyMap as KeyMap
-import Data.List (maximumBy, minimum, minimumBy, (!!))
-import UnliftIO.Exception (handleAny)
+import Data.Aeson.KeyMap qualified as KeyMap
+import Data.List (minimum, minimumBy, (!!))
 
-maximumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
-maximumByMaybe f = \case
-  [] -> Nothing
-  xs -> Just $ maximumBy f xs
+logTrace :: (MonadLogger m, HasCallStack) => Message -> m ()
+logTrace = logOther $ LevelOther "trace"
 
 minimumMaybe :: Ord a => [a] -> Maybe a
 minimumMaybe = \case
@@ -59,18 +52,6 @@ xs !? i
 
 infixl 9 !?
 
--- | Ignore an exception, warning about it
-warnIgnore :: Monoid a => (MonadUnliftIO m, MonadLogger m) => m a -> m a
-warnIgnore = warnIgnoreWith mempty
-
--- | Ignore an exception, warning about it and returning the given result
-warnIgnoreWith :: (MonadUnliftIO m, MonadLogger m) => a -> m a -> m a
-warnIgnoreWith a = handleAny (\ex -> a <$ logWarn (msg ex))
- where
-  msg :: Exception e => e -> Message
-  msg ex =
-    "Ignoring caught exception" :# ["exception" .= displayException ex]
-
 -- | Inverse of @'any'@
 none :: Foldable t => (a -> Bool) -> t a -> Bool
 none p = not . any p
@@ -82,3 +63,13 @@ exitCodeInt :: ExitCode -> Int
 exitCodeInt = \case
   ExitSuccess -> 0
   ExitFailure x -> x
+
+objectToPairs :: (ToJSON a, KeyValue kv) => a -> [kv]
+objectToPairs a = case toJSON a of
+  Object km -> map (uncurry (.=)) $ KeyMap.toList km
+  x -> ["value" .= x]
+
+with :: Monad m => m a -> (a -> m b) -> m a
+with act use = do
+  a <- act
+  a <$ use a

@@ -1,3 +1,5 @@
+{-# LANGUAGE FieldSelectors #-}
+
 module SpecHelper
   ( someRestyler
 
@@ -39,15 +41,21 @@ import Test.Hspec.Expectations.Lifted as X
 import Test.QuickCheck as X
 
 import Blammo.Logging.Simple
+import Data.Typeable (typeOf)
 import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
+import Restyler.AnnotatedException
 import Restyler.Config
-import Restyler.Options
+import Restyler.Docker
+import Restyler.Git
+import Restyler.Local.Options
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..))
-import qualified Restyler.Test.FS as FS
-import qualified Test.Hspec as Hspec
+import Restyler.Test.FS qualified as FS
+import Test.Hspec qualified as Hspec
 import Test.Hspec.Core.Spec (Example (..))
 
 data TestApp = TestApp
@@ -56,12 +64,14 @@ data TestApp = TestApp
   , taFS :: FS
   , taProcessExitCodes :: ExitCode
   }
+  deriving (HasHostDirectoryOption, HasRestrictions) via (ThroughOptions TestApp)
+  deriving (HasImageCleanupOption) via (NoImageCleanupOption TestApp)
 
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
 instance HasOptions TestApp where
-  optionsL = lens taOptions $ \x y -> x {taOptions = y}
+  getOptions = taOptions
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
@@ -78,6 +88,8 @@ newtype TestAppT a = TestAppT
     , MonadLogger
     , MonadReader TestApp
     )
+  deriving (MonadGit) via (NullGit TestAppT)
+  deriving (MonadDocker) via (NullDocker TestAppT)
 
 instance MonadSystem TestAppT where
   getCurrentDirectory = FS.getCurrentDirectory
@@ -90,12 +102,6 @@ instance MonadSystem TestAppT where
   readFileBS = FS.readFileBinary
   writeFile = FS.writeFileUtf8
   removeFile = FS.removeFile
-
-instance MonadProcess TestAppT where
-  callProcess _cmd _args = pure ()
-  callProcessExitCode _cmd _args = asks taProcessExitCodes
-  readProcess _cmd _args = pure ""
-  readProcessExitCode _cmd _args = pure (ExitSuccess, "")
 
 instance MonadDownloadFile TestAppT where
   downloadFile _url _path = pure ()
@@ -124,21 +130,9 @@ loadTestApp = do
 testOptions :: Options
 testOptions =
   Options
-    { oAccessToken = error "oAccessToken"
-    , oLogSettings = error "oLogSettings"
-    , oOwner = error "oOwner"
-    , oRepo = error "oRepo"
-    , oPullRequest = error "oPullRequest"
-    , oManifest = Nothing
-    , oJobUrl = error "oJobUrl"
-    , oHostDirectory = Nothing
-    , oRepoDisabled = False
-    , oPlanRestriction = Nothing
-    , oPlanUpgradeUrl = Nothing
-    , oRestrictions = fullRestrictions
-    , oStatsdHost = Nothing
-    , oStatsdPort = Nothing
-    , oImageCleanup = False
+    { logSettings = error "logSettings"
+    , restrictions = fullRestrictions
+    , hostDirectory = toHostDirectoryOption Nothing
     }
 
 testAppExample :: TestAppT a -> TestAppT a
@@ -161,7 +155,7 @@ someRestyler name =
 
 loadDefaultConfig :: MonadIO m => m Config
 loadDefaultConfig = do
-  config <- either throwIO pure $ decodeThrow defaultConfigContent
+  config <- either throw pure $ decodeThrow defaultConfigContent
   resolveRestylers config testRestylers
 
 testRestylers :: [Restyler]
@@ -192,7 +186,39 @@ testRestylers =
 pendingWith :: (HasCallStack, MonadIO m) => String -> m ()
 pendingWith = liftIO . Hspec.pendingWith
 
+-- | 'shouldThrow' but in 'MonadUnliftIO' and handling annotations
 shouldThrow
-  :: (HasCallStack, MonadUnliftIO m, Exception e) => m a -> Selector e -> m ()
-shouldThrow f matcher = withRunInIO $ \runInIO -> do
-  runInIO f `Hspec.shouldThrow` matcher
+  :: (MonadUnliftIO m, Exception e, HasCallStack) => m a -> Selector e -> m ()
+action `shouldThrow` p = do
+  r <- tryAnnotated action
+  case r of
+    Right _ ->
+      expectationFailure
+        $ "did not get expected exception: "
+        <> exceptionType
+    Left aex@(AnnotatedException {exception}) ->
+      case fromException exception of
+        Nothing ->
+          expectationFailure
+            $ "Did not get expected exception type"
+            <> "\n  Expected type: "
+            <> exceptionType
+            <> "\n       Received: "
+            <> unpack (displayAnnotatedException aex)
+        Just ex ->
+          (`expectTrue` p ex)
+            $ "predicate failed on expected exception: "
+            <> exceptionType
+            <> "\n"
+            <> show ex
+ where
+  -- a string representation of the expected exception's type
+  exceptionType = (show . typeOf . instanceOf) p
+   where
+    instanceOf :: Selector a -> a
+    instanceOf _ = error "Test.Hspec.Expectations.shouldThrow: broken Typeable instance"
+
+infix 1 `shouldThrow`
+
+expectTrue :: (MonadIO m, HasCallStack) => String -> Bool -> m ()
+expectTrue msg b = unless b (expectationFailure msg)

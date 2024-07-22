@@ -4,7 +4,7 @@ module Restyler.WikiSpec
 
 import Restyler.Prelude
 
-import qualified Restyler.Wiki as Wiki
+import Restyler.Wiki qualified as Wiki
 import Test.Hspec
 
 spec :: Spec

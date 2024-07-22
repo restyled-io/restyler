@@ -1,3 +1,6 @@
+{-# LANGUAGE FieldSelectors #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Restyler.Delimited
   ( Delimiters (..)
   , restyleDelimited
@@ -14,7 +17,7 @@ import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Casing
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
 import UnliftIO.Exception (bracket)

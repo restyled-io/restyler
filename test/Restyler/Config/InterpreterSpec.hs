@@ -5,7 +5,7 @@ where
 
 import SpecHelper
 
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Restyler.Config.Interpreter
 
 spec :: Spec

@@ -5,7 +5,7 @@ module Restyler.Wiki
 
 import Restyler.Prelude
 
-import qualified Data.Text as T
+import Data.Text qualified as T
 
 commonError :: Text -> Text
 commonError = page . ("Common Errors: " <>)

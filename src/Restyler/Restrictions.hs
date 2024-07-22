@@ -1,7 +1,9 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Restrictions
-  ( Restrictions (..)
+  ( HasRestrictions (..)
+  , Restrictions (..)
   , restrictionOptions
   , envRestrictions
   , fullRestrictions
@@ -15,9 +17,12 @@ module Restyler.Restrictions
 
 import Restyler.Prelude
 
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Semigroup.Generic
-import qualified Env
+import Env qualified
+
+class HasRestrictions a where
+  getRestrictions :: a -> Restrictions
 
 data Restrictions = Restrictions
   { netNone :: Last Bool
@@ -26,7 +31,7 @@ data Restrictions = Restrictions
   , memory :: Last Bytes
   }
   deriving stock (Generic, Eq, Show)
-  deriving (Semigroup) via GenericSemigroupMonoid Restrictions
+  deriving (Semigroup, Monoid) via GenericSemigroupMonoid Restrictions
 
 restrictionOptions :: Restrictions -> [String]
 restrictionOptions Restrictions {..} =
@@ -46,10 +51,10 @@ envRestrictions =
       noRestrictions
       "UNRESTRICTED"
       (Env.help "Run restylers without CPU or Memory restrictions")
-    <*> parseOverrides
+    <*> envOverrides
 
-parseOverrides :: Env.Parser Env.Error Restrictions
-parseOverrides =
+envOverrides :: Env.Parser Env.Error Restrictions
+envOverrides =
   Env.prefixed "RESTYLER_"
     $ Restrictions
     <$> ( fmap not
