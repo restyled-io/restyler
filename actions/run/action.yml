@@ -2,6 +2,14 @@ name: Restyler
 author: pbrisbin
 
 inputs:
+  log-breakpoint:
+    description: "LOG_BREAKPOINT"
+    default: 200
+  log-color:
+    description: "LOG_COLOR"
+    default: always
+  log-format:
+    description: "LOG_FORMAT"
   log-level:
     description: "LOG_LEVEL"
     default: "info"
@@ -46,7 +54,8 @@ runs:
         GIT_AUTHOR_NAME: ${{ inputs.committer-name }}
         GIT_COMMITTER_EMAIL: ${{ inputs.committer-email }}
         GIT_COMMITTER_NAME: ${{ inputs.committer-name }}
-        LOG_BREAKPOINT: 200
-        LOG_COLOR: always
+        LOG_BREAKPOINT: ${{ inputs.log-breakpoint }}
+        LOG_COLOR: ${{ inputs.log-color }}
+        LOG_FORMAT: ${{ inputs.log-format }}
         LOG_LEVEL: ${{ inputs.log-level }}
         RESTYLER_NO_CAP_DROP_ALL: x
