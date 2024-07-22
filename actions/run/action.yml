@@ -1,0 +1,61 @@
+name: Restyler
+author: pbrisbin
+
+inputs:
+  log-breakpoint:
+    description: "LOG_BREAKPOINT"
+    default: 200
+  log-color:
+    description: "LOG_COLOR"
+    default: always
+  log-format:
+    description: "LOG_FORMAT"
+    default: tty
+  log-level:
+    description: "LOG_LEVEL"
+    default: "info"
+  github-token:
+    description: "GITHUB_TOKEN"
+    default: ${{ github.token }}
+  committer-email:
+    description: "Email used for Restyled commits"
+    default: "commits@restyled.io"
+  committer-name:
+    description: "Name used for Restyled commits"
+    default: "Restyled.io"
+
+outputs:
+  differences:
+    value: ${{ steps.restyler.outputs.differences }}
+  restyled-base:
+    value: ${{ steps.restyler.outputs.restyled-base }}
+  restyled-head:
+    value: ${{ steps.restyler.outputs.restyled-head }}
+  restyled-title:
+    value: ${{ steps.restyler.outputs.restyled-title }}
+  restyled-body:
+    value: ${{ steps.restyler.outputs.restyled-body }}
+  restyled-labels:
+    value: ${{ steps.restyler.outputs.restyled-labels }}
+  restyled-reviewers:
+    value: ${{ steps.restyler.outputs.restyled-reviewers }}
+  restyled-team-reviewers:
+    value: ${{ steps.restyler.outputs.restyled-team-reviewers }}
+
+runs:
+  using: composite
+  steps:
+    - id: restyler
+      shell: bash
+      run: restyle-gha --pr '${{github.repository }}#${{ github.event.pull_request.number }}'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GIT_AUTHOR_EMAIL: ${{ inputs.committer-email }}
+        GIT_AUTHOR_NAME: ${{ inputs.committer-name }}
+        GIT_COMMITTER_EMAIL: ${{ inputs.committer-email }}
+        GIT_COMMITTER_NAME: ${{ inputs.committer-name }}
+        LOG_BREAKPOINT: ${{ inputs.log-breakpoint }}
+        LOG_COLOR: ${{ inputs.log-color }}
+        LOG_FORMAT: ${{ inputs.log-format }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+        RESTYLER_NO_CAP_DROP_ALL: x
