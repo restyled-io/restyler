@@ -1,3 +1,5 @@
+{-# LANGUAGE FieldSelectors #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
@@ -19,12 +21,7 @@
 module Restyler.Config
   ( Config (..)
   , ConfigError (..)
-  , configPullRequestReviewer
   , loadConfig
-  , HasConfig (..)
-  , whenConfig
-  , whenConfigNonEmpty
-  , whenConfigJust
 
     -- * Exported for use in tests
   , ConfigSource (..)
@@ -40,31 +37,29 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.FileEmbed (embedFile)
 import Data.Functor.Barbie
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Yaml
   ( ParseException (..)
   , YamlException (..)
   , prettyPrintParseException
   )
-import qualified Data.Yaml as Yaml
+import Data.Yaml qualified as Yaml
 import GitHub.Data (IssueLabel, User)
+import Restyler.AnnotatedException
 import Restyler.App.Class
-import Restyler.CommitTemplate
 import Restyler.Config.ChangedPaths
+import Restyler.Config.CommitTemplate
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Glob
+import Restyler.Config.RemoteFile
 import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
-import Restyler.Options
-import Restyler.PullRequest
-import Restyler.RemoteFile
+import Restyler.Options.Manifest
 import Restyler.Restyler
-import qualified Restyler.Wiki as Wiki
+import Restyler.Wiki qualified as Wiki
 import Restyler.Yaml.Errata (formatInvalidYaml)
-import UnliftIO.Exception (handle)
 
 -- | A polymorphic representation of @'Config'@
 --
@@ -144,15 +139,8 @@ data Config = Config
   , cIgnoreBranches :: [Glob Text]
   , cIgnoreLabels :: [Glob (Name IssueLabel)]
   , cRestylers :: [Restyler]
-  -- ^ TODO: @'NonEmpty'@
-  --
-  -- It's true, but what's the benefit?
   }
   deriving stock (Eq, Show, Generic)
-
--- | If so configured, return the @'User'@ from whom to request review
-configPullRequestReviewer :: PullRequest -> Config -> Maybe (Name User)
-configPullRequestReviewer pr = determineReviewer pr . cRequestReview
 
 instance ToJSON Config where
   toJSON = genericToJSON $ aesonPrefix snakeCase
@@ -212,11 +200,10 @@ formatYamlException path bs = \case
 -- of restylers data, and apply the configured choices and overrides.
 loadConfig
   :: ( MonadUnliftIO m
-     , MonadLogger m
      , MonadSystem m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
+     , HasManifestOption env
      )
   => m Config
 loadConfig =
@@ -276,7 +263,7 @@ decodeThrow' path content =
   handleTo (ConfigErrorInvalidYaml path content) $ decodeThrow content
 
 decodeThrow :: (MonadIO m, FromJSON a) => ByteString -> m a
-decodeThrow = either throwIO pure . Yaml.decodeThrow
+decodeThrow = either throw pure . Yaml.decodeThrow
 
 -- | Populate @'cRestylers'@ using the versioned restylers data
 --
@@ -284,7 +271,7 @@ decodeThrow = either throwIO pure . Yaml.decodeThrow
 resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
 resolveRestylers ConfigF {..} allRestylers = do
   restylers <-
-    either (throwIO . ConfigErrorInvalidRestylers) pure
+    either (throw . ConfigErrorInvalidRestylers) pure
       $ overrideRestylers allRestylers
       $ unSketchy
       $ runIdentity cfRestylers
@@ -309,29 +296,6 @@ resolveRestylers ConfigF {..} allRestylers = do
       , cRestylers = restylers
       }
 
-class HasConfig env where
-  configL :: Lens' env Config
-
-whenConfig
-  :: (MonadReader env m, HasConfig env) => (Config -> Bool) -> m () -> m ()
-whenConfig check act =
-  whenConfigJust (bool Nothing (Just ()) . check) (const act)
-
-whenConfigNonEmpty
-  :: (MonadReader env m, HasConfig env)
-  => (Config -> [a])
-  -> ([a] -> m ())
-  -> m ()
-whenConfigNonEmpty check act =
-  whenConfigJust (NE.nonEmpty . check) (act . NE.toList)
-
-whenConfigJust
-  :: (MonadReader env m, HasConfig env)
-  => (Config -> Maybe a)
-  -> (a -> m ())
-  -> m ()
-whenConfigJust check act = traverse_ act . check =<< view configL
-
 defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")
 
@@ -342,7 +306,3 @@ configPaths =
   , ".github/restyled.yaml"
   , ".github/restyled.yml"
   ]
-
-handleTo
-  :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
-handleTo f = handle (throwIO . f)

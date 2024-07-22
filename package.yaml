@@ -2,30 +2,23 @@ name: restyler
 version: 0.2.1.0
 license: MIT
 
+language: GHC2021
+
 default-extensions:
-  - BangPatterns
   - DataKinds
   - DeriveAnyClass
-  - DeriveFoldable
-  - DeriveFunctor
-  - DeriveGeneric
-  - DeriveLift
-  - DeriveTraversable
   - DerivingStrategies
-  - FlexibleContexts
-  - FlexibleInstances
+  - DerivingVia
+  - DuplicateRecordFields
   - GADTs
-  - GeneralizedNewtypeDeriving
   - LambdaCase
-  - MultiParamTypeClasses
+  - NoFieldSelectors
   - NoImplicitPrelude
   - NoMonomorphismRestriction
+  - NoPostfixOperators
+  - OverloadedRecordDot
   - OverloadedStrings
-  - RankNTypes
-  - RecordWildCards
-  - ScopedTypeVariables
-  - StandaloneDeriving
-  - TypeApplications
+  - QuasiQuotes
   - TypeFamilies
 
 ghc-options:
@@ -50,6 +43,8 @@ library:
     - Glob
     - aeson
     - aeson-casing
+    - aeson-pretty
+    - annotated-exception
     - barbies
     - bytestring
     - composition-extra
@@ -67,18 +62,19 @@ library:
     - file-embed
     - filepath
     - github
-    - http-client-tls
+    - http-client
     - http-conduit
-    - megaparsec
+    - http-types
     - microlens
     - microlens-mtl
     - optparse-applicative
-    - process
     - relude
     - semigroups
     - shakespeare
     - text
+    - these
     - time
+    - typed-process
     - unliftio
     - unliftio-core
     - unordered-containers
@@ -96,7 +92,6 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - github
       - restyler
   restyle-path:
     main: main.hs
@@ -107,8 +102,16 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - Blammo
-      - envparse
+      - restyler
+  restyle-gha:
+    main: main.hs
+    source-dirs: restyle-gha
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
       - restyler
 
 tests:
@@ -124,7 +127,6 @@ tests:
       - envparse
       - extra
       - filepath
-      - github
       - hspec
       - hspec-core
       - hspec-expectations-lifted
@@ -133,5 +135,4 @@ tests:
       - restyler
       - shakespeare
       - text
-      - unliftio
       - yaml

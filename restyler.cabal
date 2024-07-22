@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 8590878289ab72ae1d036e2be076c5254562a6d920c33640a3a6addb9382cb57
 
 name:           restyler
 version:        0.2.1.0
@@ -16,40 +14,62 @@ library
   exposed-modules:
       GHC.Generics.Selectors
       GitHub.Endpoints.PullRequests.ReviewRequests
-      GitHub.Request.Display
+      Restyler.AnnotatedException
       Restyler.App
       Restyler.App.Class
-      Restyler.CommitTemplate
+      Restyler.CLI
+      Restyler.Clone
       Restyler.Config
       Restyler.Config.ChangedPaths
+      Restyler.Config.CommitTemplate
       Restyler.Config.ExpectedKeys
       Restyler.Config.Glob
       Restyler.Config.Image
       Restyler.Config.Include
       Restyler.Config.Interpreter
+      Restyler.Config.RemoteFile
       Restyler.Config.RequestReview
       Restyler.Config.Restyler
       Restyler.Config.SketchyList
       Restyler.Config.Statuses
       Restyler.Content
+      Restyler.DangerousPullRequest
       Restyler.Delimited
-      Restyler.ErrorMetadata
-      Restyler.Exit
+      Restyler.Docker
+      Restyler.GHA
+      Restyler.GHA.App
+      Restyler.GHA.GitHubEnv
+      Restyler.GHA.Output
       Restyler.Git
+      Restyler.GitHub.Api
+      Restyler.GitHub.Commit.Status
+      Restyler.GitHub.PullRequest
+      Restyler.GitHub.PullRequest.File
       Restyler.Ignore
-      Restyler.Main
-      Restyler.Options
+      Restyler.Job
+      Restyler.Job.AgentEnv
+      Restyler.Job.App
+      Restyler.Job.PlanUpgradeRequired
+      Restyler.Job.RepoDisabled
+      Restyler.Local
+      Restyler.Local.App
+      Restyler.Local.Options
+      Restyler.Opt
+      Restyler.Options.HostDirectory
+      Restyler.Options.ImageCleanup
+      Restyler.Options.JobUrl
+      Restyler.Options.LogSettings
+      Restyler.Options.Manifest
+      Restyler.Options.PullRequest
+      Restyler.Options.Repository
       Restyler.Prelude
-      Restyler.PullRequest
-      Restyler.PullRequest.Status
-      Restyler.PullRequestSpec
-      Restyler.RemoteFile
+      Restyler.ReadP
       Restyler.Restrictions
       Restyler.RestyledPullRequest
       Restyler.Restyler
       Restyler.Restyler.Run
+      Restyler.RestyleResult
       Restyler.RestylerResult
-      Restyler.Setup
       Restyler.Statsd
       Restyler.Wiki
       Restyler.Yaml.Errata
@@ -58,29 +78,20 @@ library
   hs-source-dirs:
       src
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
+      DerivingVia
+      DuplicateRecordFields
       GADTs
-      GeneralizedNewtypeDeriving
       LambdaCase
-      MultiParamTypeClasses
+      NoFieldSelectors
       NoImplicitPrelude
       NoMonomorphismRestriction
+      NoPostfixOperators
+      OverloadedRecordDot
       OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
+      QuasiQuotes
       TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
@@ -88,6 +99,8 @@ library
     , Glob
     , aeson
     , aeson-casing
+    , aeson-pretty
+    , annotated-exception
     , barbies
     , base
     , bytestring
@@ -105,25 +118,54 @@ library
     , file-embed
     , filepath
     , github
-    , http-client-tls
+    , http-client
     , http-conduit
-    , megaparsec
+    , http-types
     , microlens
     , microlens-mtl
     , optparse-applicative
-    , process
     , relude
     , semigroups
     , shakespeare
     , text
+    , these
     , time
+    , typed-process
     , unliftio
     , unliftio-core
     , unordered-containers
     , validation
     , vector
     , yaml
-  default-language: Haskell2010
+  default-language: GHC2021
+
+executable restyle-gha
+  main-is: main.hs
+  other-modules:
+      Paths_restyler
+  hs-source-dirs:
+      restyle-gha
+  default-extensions:
+      DataKinds
+      DeriveAnyClass
+      DerivingStrategies
+      DerivingVia
+      DuplicateRecordFields
+      GADTs
+      LambdaCase
+      NoFieldSelectors
+      NoImplicitPrelude
+      NoMonomorphismRestriction
+      NoPostfixOperators
+      OverloadedRecordDot
+      OverloadedStrings
+      QuasiQuotes
+      TypeFamilies
+  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , restyler
+  default-language: GHC2021
 
 executable restyle-path
   main-is: main.hs
@@ -132,37 +174,26 @@ executable restyle-path
   hs-source-dirs:
       restyle-path
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
+      DerivingVia
+      DuplicateRecordFields
       GADTs
-      GeneralizedNewtypeDeriving
       LambdaCase
-      MultiParamTypeClasses
+      NoFieldSelectors
       NoImplicitPrelude
       NoMonomorphismRestriction
+      NoPostfixOperators
+      OverloadedRecordDot
       OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
+      QuasiQuotes
       TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Blammo
-    , base
-    , envparse
+      base
     , restyler
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable restyler
   main-is: main.hs
@@ -171,49 +202,39 @@ executable restyler
   hs-source-dirs:
       app
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
+      DerivingVia
+      DuplicateRecordFields
       GADTs
-      GeneralizedNewtypeDeriving
       LambdaCase
-      MultiParamTypeClasses
+      NoFieldSelectors
       NoImplicitPrelude
       NoMonomorphismRestriction
+      NoPostfixOperators
+      OverloadedRecordDot
       OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
+      QuasiQuotes
       TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base
-    , github
     , restyler
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Restyler.CommitTemplateSpec
+      Restyler.Config.CommitTemplateSpec
       Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
       Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
-      Restyler.PullRequestSpecSpec
+      Restyler.Options.PullRequestSpec
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
@@ -225,29 +246,20 @@ test-suite test
   hs-source-dirs:
       test
   default-extensions:
-      BangPatterns
       DataKinds
       DeriveAnyClass
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
+      DerivingVia
+      DuplicateRecordFields
       GADTs
-      GeneralizedNewtypeDeriving
       LambdaCase
-      MultiParamTypeClasses
+      NoFieldSelectors
       NoImplicitPrelude
       NoMonomorphismRestriction
+      NoPostfixOperators
+      OverloadedRecordDot
       OverloadedStrings
-      RankNTypes
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
+      QuasiQuotes
       TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
@@ -260,7 +272,6 @@ test-suite test
     , envparse
     , extra
     , filepath
-    , github
     , hspec
     , hspec-core
     , hspec-expectations-lifted
@@ -269,6 +280,5 @@ test-suite test
     , restyler
     , shakespeare
     , text
-    , unliftio
     , yaml
-  default-language: Haskell2010
+  default-language: GHC2021

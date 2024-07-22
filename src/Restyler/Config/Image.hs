@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restyler.Config.Image
   ( Image
@@ -11,7 +12,7 @@ import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import Data.Semigroup (First (..))
 import Data.Semigroup.Generic
-import qualified Data.Text as T
+import Data.Text qualified as T
 
 data ImageFields = ImageFields
   { registry :: Maybe (First Text)

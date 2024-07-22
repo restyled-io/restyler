@@ -1,3 +1,6 @@
+{-# LANGUAGE FieldSelectors #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Restyler.Config.Restyler
   ( RestylerOverride
   , overrideRestylers
@@ -7,12 +10,12 @@ import Restyler.Prelude
 
 import Data.Aeson hiding (Result (..))
 import Data.Aeson.Casing
-import qualified Data.Aeson.Key as Key
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap (KeyMap)
-import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Aeson.Types (Parser, modifyFailure)
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Text as T
+import Data.HashMap.Strict qualified as HashMap
+import Data.Text qualified as T
 import Data.Validation
 import Restyler.Config.ExpectedKeys
 import Restyler.Config.Image

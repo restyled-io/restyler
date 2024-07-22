@@ -6,8 +6,8 @@ module Restyler.Config.Interpreter
 import Restyler.Prelude
 
 import Data.Aeson
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Text as T
+import Data.Text qualified as T
+import Restyler.ReadP
 import System.FilePath (takeFileName)
 
 data Interpreter
@@ -19,7 +19,7 @@ data Interpreter
   deriving stock (Eq, Show)
 
 instance FromJSON Interpreter where
-  parseJSON = withText "Interpreter" $ pure . intepreterFromText
+  parseJSON = withText "Interpreter" $ pure . interpreterFromText
 
 instance ToJSON Interpreter where
   -- N.B. this may not always work, but it works for now
@@ -27,25 +27,29 @@ instance ToJSON Interpreter where
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
-  line <- head <$> NE.nonEmpty (lines contents)
+  line <- head <$> nonEmpty (lines contents)
   parseInterpreter . unpack $ T.strip line
 
--- | TODO: Megaparsec?
 parseInterpreter :: String -> Maybe Interpreter
-parseInterpreter ('#' : '!' : rest) =
-  intepreterFromText <$> case words (pack rest) of
-    [exec] -> pure $ pack $ takeFileName $ unpack exec
-    ["/usr/bin/env", arg] -> pure arg
-    _ -> Nothing
-parseInterpreter _ = Nothing
+parseInterpreter =
+  either (const Nothing) (Just . interpreterFromText . pack) . parseReadP go
+ where
+  go :: ReadP String
+  go = do
+    void $ string "#!"
+    benv <|> exec
 
-intepreterFromText :: Text -> Interpreter
-intepreterFromText "sh" = Sh
-intepreterFromText "bash" = Bash
-intepreterFromText "python" = Python
-intepreterFromText "python2" = Python
-intepreterFromText "python2.7" = Python
-intepreterFromText "python3" = Python
-intepreterFromText "python3.6" = Python
-intepreterFromText "ruby" = Ruby
-intepreterFromText x = Other x
+  benv = string "/usr/bin/env " *> word
+  exec = takeFileName <$> word
+
+interpreterFromText :: Text -> Interpreter
+interpreterFromText = \case
+  "sh" -> Sh
+  "bash" -> Bash
+  "python" -> Python
+  "python2" -> Python
+  "python2.7" -> Python
+  "python3" -> Python
+  "python3.6" -> Python
+  "ruby" -> Ruby
+  x -> Other x

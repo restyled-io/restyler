@@ -1,10 +1,11 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
 module Restyler.Restyler.Run
   ( runRestylers
-  , runRestylers_
 
     -- * Errors
+  , RestylerPullFailure (..)
   , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
   , RestylerCommandNotFound (..)
@@ -20,23 +21,35 @@ module Restyler.Restyler.Run
 import Restyler.Prelude
 
 import Data.List (nub)
-import qualified Data.Text as T
+import Data.Text qualified as T
+import Restyler.AnnotatedException
 import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.ChangedPaths
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.RemoteFile
 import Restyler.Delimited
+import Restyler.Docker
 import Restyler.Git
-import Restyler.Options
-import Restyler.RemoteFile (downloadRemoteFile)
+import Restyler.Options.HostDirectory
+import Restyler.Options.ImageCleanup
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
-import qualified Restyler.Wiki as Wiki
+import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
-import UnliftIO.Exception (tryAny)
+
+data RestylerPullFailure = RestylerPullFailure Restyler Int
+  deriving stock (Show, Eq)
+
+instance Exception RestylerPullFailure where
+  displayException (RestylerPullFailure Restyler {..} ec) =
+    mconcat
+      [ "Unable to pull: " <> rImage <> " (exit " <> show @String ec <> ")"
+      , "\nThe source of the error may be visible in debug logging"
+      ]
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
   deriving stock (Show, Eq)
@@ -45,10 +58,10 @@ instance Exception RestylerExitFailure where
   displayException (RestylerExitFailure Restyler {..} ec) =
     mconcat
       [ "Restyler " <> rName <> " exited non-zero (" <> show @String ec <> ")"
-      , "\n  Error information may be present in debug messages printed above"
+      , "\nError information may be present in debug messages printed above"
       , "\n"
-      , "\n  Help:"
-      , concatMap ("\n    " <>) rDocumentation
+      , "\nHelp:"
+      , concatMap ("\n  " <>) rDocumentation
       ]
 
 newtype RestylerOutOfMemory = RestylerOutOfMemory Restyler
@@ -93,61 +106,37 @@ runRestylers
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasConfig env
-     , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
+     , HasCallStack
      )
   => Config
   -> [FilePath]
   -> m [RestylerResult]
-runRestylers = runRestylersWith runRestyler
-
--- | @'runRestylers'@, but without committing or reporting results
-runRestylers_
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadSystem m
-     , MonadProcess m
-     , MonadDownloadFile m
-     , MonadReader env m
-     , HasOptions env
-     )
-  => Config
-  -> [FilePath]
-  -> m ()
-runRestylers_ config = void . runRestylersWith runRestyler_ config
-
-runRestylersWith
-  :: (MonadUnliftIO m, MonadLogger m, MonadSystem m, MonadDownloadFile m)
-  => (Restyler -> [FilePath] -> m a)
-  -> Config
-  -> [FilePath]
-  -> m [a]
-runRestylersWith run Config {..} allPaths = do
+runRestylers config@Config {..} allPaths = do
   paths <- findFiles $ filter included allPaths
-
-  logDebug $ "" :# ["restylers" .= map rName restylers]
-  logDebug $ "" :# ["paths" .= paths]
 
   let
     lenPaths = genericLength paths
-    maxPaths = cpcMaximum cChangedPaths
+    maxPaths = cChangedPaths.maximum
 
   if lenPaths > maxPaths
-    then case cpcOutcome cChangedPaths of
+    then case cChangedPaths.outcome of
       MaximumChangedPathsOutcomeSkip -> do
         logWarn
           $ "Number of changed paths is greater than configured maximum"
           :# ["paths" .= lenPaths, "maximum" .= maxPaths]
         pure []
       MaximumChangedPathsOutcomeError ->
-        throwIO $ TooManyChangedPaths lenPaths maxPaths
+        throw $ TooManyChangedPaths lenPaths maxPaths
     else do
-      traverse_ downloadRemoteFile cRemoteFiles
-      withFilteredPaths restylers paths run
+      for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
+      withFilteredPaths restylers paths $ runRestyler config
  where
   included path = none (`match` path) cExclude
   restylers = filter rEnabled cRestylers
@@ -158,7 +147,7 @@ runRestylersWith run Config {..} allPaths = do
 -- processed through global @exclude@ already. This is extracted for specific
 -- testing of Restyler @include@ and @intepreter@ configuration handling.
 withFilteredPaths
-  :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
+  :: (MonadUnliftIO m, MonadLogger m, MonadSystem m, HasCallStack)
   => [Restyler]
   -> [FilePath]
   -> (Restyler -> [FilePath] -> m a)
@@ -178,7 +167,7 @@ withFilteredPaths restylers paths run = do
             else rInclude r
         included = includePath includes path
 
-      logDebug
+      logTrace
         $ "Matching paths"
         :# [ "name" .= rName r
            , "path" .= path
@@ -197,7 +186,7 @@ addExecutableInterpreter
   :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
   => FilePath
   -> m (FilePath, Maybe Interpreter)
-addExecutableInterpreter path = warnIgnoreWith (path, Nothing) $ do
+addExecutableInterpreter path = suppressWith (path, Nothing) $ do
   isExec <- isFileExecutable path
 
   (path,)
@@ -210,28 +199,35 @@ runRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
      , MonadGit m
+     , MonadDocker m
      , MonadReader env m
-     , HasConfig env
-     , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
+     , HasCallStack
      )
-  => Restyler
+  => Config
+  -> Restyler
   -> [FilePath]
   -> m RestylerResult
-runRestyler r [] = pure $ noPathsRestylerResult r
-runRestyler r paths = do
-  runRestyler_ r paths
-  getRestylerResult r
+runRestyler config r = \case
+  [] -> pure $ noPathsRestylerResult r
+  paths -> do
+    runRestyler_ r paths
+    getRestylerResult config r
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
+     , MonadDocker m
      , MonadReader env m
-     , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
+     , HasCallStack
      )
   => Restyler
   -> [FilePath]
@@ -241,7 +237,9 @@ runRestyler_ r paths = case rDelimiters r of
   Nothing -> run paths
   Just ds -> restyleDelimited ds run paths
  where
-  run = traverse_ (dockerRunRestyler r) . withProgress . getDockerRunStyles r
+  run ps = do
+    dockerPullRestyler r
+    traverse_ (dockerRunRestyler r) $ withProgress $ getDockerRunStyles r ps
 
 data WithProgress a = WithProgress
   { pItem :: a
@@ -275,85 +273,86 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwrite -> map (DockerRunPathOverwrite False) paths
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
+dockerPullRestyler
+  :: (MonadIO m, MonadDocker m, HasCallStack) => Restyler -> m ()
+dockerPullRestyler r@Restyler {..} = do
+  ec <- dockerPull rImage
+  case ec of
+    ExitSuccess -> pure ()
+    ExitFailure i -> throw $ RestylerPullFailure r i
+
 dockerRunRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadSystem m
-     , MonadProcess m
+     , MonadDocker m
      , MonadReader env m
-     , HasOptions env
+     , HasHostDirectoryOption env
+     , HasImageCleanupOption env
+     , HasRestrictions env
+     , HasCallStack
      )
   => Restyler
   -> WithProgress DockerRunStyle
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
-  imageCleanup <- oImageCleanup <$> view optionsL
-  restrictions <- oRestrictions <$> view optionsL
+  imageCleanup <- getImageCleanup
+  restrictions <- asks getRestrictions
 
   let
     args =
-      ["run", "--rm"]
-        <> restrictionOptions restrictions
+      restrictionOptions restrictions
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
-    progress :: Text
-    progress = pack (show pIndex) <> " of " <> pack (show pTotal)
+    progressSuffix :: Text
+    progressSuffix
+      | pTotal > 1 = " (" <> pack (show pIndex) <> " of " <> pack (show pTotal) <> ")"
+      | otherwise = ""
 
     -- Our integration tests run every restyler we support in a space-restricted
     -- environment. This switch triggers removal of each image after running it,
     -- to avoid out-of-space errors.
-    withImageCleanup f = if imageCleanup then f `finally` cleanupImage else f
+    withImageCleanup f =
+      if imageCleanup
+        then f `finally` suppressWarn (dockerImageRm rImage)
+        else f
 
-  logInfo
-    $ "Restyling"
-    :# [ "restyler" .= rName
-       , "run" .= progress
-       , "style" .= rRunStyle
-       ]
+    logRunningOn =
+      logInfo
+        . (:# [])
+        . (("Running " <> pack rName <> " on ") <>)
+        . (<> progressSuffix)
+        . \case
+          [] -> "no paths" -- "impossible"
+          [path] -> pack path
+          paths -> show (length paths) <> " paths"
 
   ec <- withImageCleanup $ case pItem of
     DockerRunPathToStdout path -> do
-      (ec, out) <- readProcessExitCode "docker" (args <> [prefix path])
-      ec <$ writeFile path (fixNewline $ pack out)
+      logRunningOn [path]
+      (ec, out) <- dockerRunStdout $ args <> [prefix path]
+      ec <$ writeFile path (fixNewline out)
     DockerRunPathsOverwrite sep paths -> do
-      callProcessExitCode "docker" $ args <> ["--" | sep] <> map prefix paths
+      logRunningOn paths
+      dockerRun $ args <> ["--" | sep] <> map prefix paths
     DockerRunPathOverwrite sep path -> do
-      callProcessExitCode "docker" $ args <> ["--" | sep] <> [prefix path]
+      logRunningOn [path]
+      dockerRun $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
     ExitSuccess -> pure ()
-    ExitFailure 137 -> throwIO $ RestylerOutOfMemory r
-    ExitFailure 127 -> throwIO $ RestylerCommandNotFound r
-    ExitFailure i -> throwIO $ RestylerExitFailure r i
+    ExitFailure 137 -> throw $ RestylerOutOfMemory r
+    ExitFailure 127 -> throw $ RestylerCommandNotFound r
+    ExitFailure i -> throw $ RestylerExitFailure r i
  where
   prefix p
     | "./" `isPrefixOf` p = p
     | otherwise = "./" <> p
 
-  cleanupImage = do
-    eec <- tryAny $ callProcessExitCode "docker" ["image", "rm", "--force", rImage]
-    case eec of
-      Left ex ->
-        logWarn
-          $ "Exception removing Restyler image"
-          :# ["exception" .= displayException ex]
-      Right ExitSuccess ->
-        logInfo "Removed Restyler image"
-      Right (ExitFailure i) ->
-        logWarn
-          $ "Error removing Restyler image"
-          :# ["status" .= i]
-
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
-
-getHostDirectory
-  :: (MonadSystem m, MonadReader env m, HasOptions env) => m FilePath
-getHostDirectory = do
-  mHostDirectory <- oHostDirectory <$> view optionsL
-  maybe getCurrentDirectory pure mHostDirectory
 
 -- | Expand directory arguments and filter to only existing paths
 --

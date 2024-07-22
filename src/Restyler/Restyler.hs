@@ -1,3 +1,5 @@
+{-# LANGUAGE FieldSelectors #-}
+
 module Restyler.Restyler
   ( Restyler (..)
   , RestylerRunStyle (..)
@@ -12,14 +14,14 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Aeson.KeyMap (KeyMap)
-import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
 import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.RemoteFile
 import Restyler.Delimited
-import Restyler.Options
-import Restyler.RemoteFile
+import Restyler.Options.Manifest
 
 data Restyler = Restyler
   { rEnabled :: Bool
@@ -109,25 +111,24 @@ instance ToJSON RestylerRunStyle where
 
 getAllRestylersVersioned
   :: ( MonadIO m
-     , MonadLogger m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOptions env
+     , HasManifestOption env
      )
   => String
   -> m [Restyler]
 getAllRestylersVersioned version = do
-  mManifest <- oManifest <$> view optionsL
+  mManifest <- getManifest
   case mManifest of
     Nothing -> do
-      downloadRemoteFile restylers
-      decodeFileThrow $ rfPath restylers
+      downloadFile restylers.url restylers.path
+      decodeFileThrow $ restylers.path
     Just path -> decodeFileThrow path
  where
   restylers =
     RemoteFile
-      { rfUrl = URL $ pack $ restylersYamlUrl version
-      , rfPath = "/tmp/restylers-" <> version <> ".yaml"
+      { url = URL $ pack $ restylersYamlUrl version
+      , path = "/tmp/restylers-" <> version <> ".yaml"
       }
 
 restylersYamlUrl :: String -> String

@@ -6,14 +6,13 @@ module Restyler.ConfigSpec
 
 import SpecHelper
 
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Yaml (prettyPrintParseException)
+import Restyler.AnnotatedException
 import Restyler.Config
 import Restyler.Config.Include
 import Restyler.Restyler
 import Text.Shakespeare.Text (st)
-import UnliftIO.Exception (try)
 
 spec :: Spec
 spec = withTestApp $ do
@@ -358,9 +357,6 @@ spec = withTestApp $ do
 
     fmap cEnabled result `shouldBe` Right False
 
-tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
-tryTo f = fmap (first f) . try
-
 hasError :: Text -> Either Text a -> Bool
 hasError msg (Left err) = msg `T.isInfixOf` err
 hasError _ _ = False
@@ -368,15 +364,14 @@ hasError _ _ = False
 -- | Load a @'Text'@ as configuration
 loadTestConfig
   :: (MonadUnliftIO m, MonadSystem m) => Text -> m (Either Text Config)
-loadTestConfig content = do
-  tryTo showConfigError
-    $ loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
-    $ const
-    $ pure testRestylers
+loadTestConfig = tryTo showConfigError . assertTestConfig
 
 -- | Load a @'Text'@ as configuration, fail on errors
 assertTestConfig :: (MonadUnliftIO m, MonadSystem m) => Text -> m Config
-assertTestConfig = either (throwString . unpack) pure <=< loadTestConfig
+assertTestConfig content =
+  loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
+    $ const
+    $ pure testRestylers
 
 -- | Load a @'Text'@ config and assert on a property of a loaded Restyler
 assertLoadsRestyler
@@ -400,7 +395,7 @@ assertLoadsRestyler f yaml expected = do
         config <- eConfig
         restylers <-
           note "No Restylers loaded"
-            $ NE.nonEmpty
+            $ nonEmpty
             $ cRestylers config
         pure $ f $ head restylers
 

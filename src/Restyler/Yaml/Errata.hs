@@ -4,8 +4,8 @@ module Restyler.Yaml.Errata
 
 import Restyler.Prelude
 
-import qualified Data.ByteString.Char8 as BS8
-import qualified Data.Text.Lazy as TL
+import Data.ByteString.Char8 qualified as BS8
+import Data.Text.Lazy qualified as TL
 import Data.Yaml (YamlMark (..))
 import Errata
 import Errata.Styles

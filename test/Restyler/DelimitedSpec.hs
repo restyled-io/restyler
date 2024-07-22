@@ -4,7 +4,7 @@ module Restyler.DelimitedSpec
 
 import SpecHelper
 
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Restyler.Delimited
 
 spec :: Spec

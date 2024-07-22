@@ -4,10 +4,10 @@ module Restyler.RestrictionsSpec
 
 import Restyler.Prelude
 
-import qualified Env
+import Env qualified
 import Restyler.Restrictions
 import Test.Hspec
-import qualified Prelude
+import Prelude qualified
 
 spec :: Spec
 spec = do
