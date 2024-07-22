@@ -4,19 +4,26 @@ The restyling process, as a CLI.
 
 ## Usage
 
-```console
-docker run --rm \
-  --env "GITHUB_ACCESS_TOKEN=<access-token>" \
-  --volume /tmp:tmp \
-  --volume /var/run/docker.sock:/var/run/docker.sock \
-  restyled/restyler "<owner>/<name>#<number>"
+### GitHub Actions
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    ref: ${{ github.event.pull_request.head.ref }}
+- uses: restyled-io/restyler/actions/setup@v1
+- uses: restyled-io/restyler/actions/run@v1
 ```
 
-**NOTE**: The Access Token you use will determine some of the resulting
-behavior. In production, we use a token provisioned for an installed instance of
-our GitHub App, which ensures the restyled PRs and comments appear as authored
-by our App. If you use a Personal Access Token, the restyled PRs and comments
-will be authored by your user.
+### Locally
+
+```console
+curl --proto '=https' --tlsv1.2 -sSf \
+  https://raw.githubusercontent.com/restyled-io/restyler/main/install | sudo sh
+```
+
+```console
+restyle --help
+```
 
 ## Development
 
@@ -39,10 +46,6 @@ End-to-end test that restyles an example Pull Request:
 ```console
 just test-integration
 ```
-
-## `restyle-path`
-
-See [bin/restyle-path](./bin/restyle-path).
 
 ## LICENSE
 
