@@ -11,6 +11,7 @@ import Restyler.Prelude
 import Restyler.Config
 import Restyler.Config.CommitTemplate
 import Restyler.Git
+import Restyler.Options.NoCommit
 import Restyler.Restyler
 
 data RestyleOutcome
@@ -35,7 +36,7 @@ noPathsRestylerResult r = RestylerResult r NoPaths
 --
 -- N.B. This will create commits if appropriate.
 getRestylerResult
-  :: MonadGit m
+  :: (MonadGit m, MonadReader env m, HasNoCommitOption env)
   => Config
   -> Restyler
   -> m RestylerResult
@@ -49,17 +50,22 @@ restylerCommittedChanges rr = committedChanges rr.outcome
   committedChanges _ = False
 
 getRestyleOutcome
-  :: MonadGit m
+  :: (MonadGit m, MonadReader env m, HasNoCommitOption env)
   => Config
   -> Restyler
   -> m RestyleOutcome
 getRestyleOutcome config restyler = do
+  noCommit <- getNoCommit
   changedPaths <- gitDiffNameOnly Nothing
 
   if null changedPaths
     then pure NoChanges
     else do
-      let
-        inputs = CommitTemplateInputs {restyler}
-        commitMessage = renderCommitTemplate inputs $ cCommitTemplate config
-      ChangesCommitted changedPaths . pack <$> gitCommitAll commitMessage
+      sha <-
+        if noCommit
+          then pure "<commit skipped>"
+          else gitCommitAll commitMessage
+      pure $ ChangesCommitted changedPaths $ pack sha
+ where
+  inputs = CommitTemplateInputs {restyler}
+  commitMessage = renderCommitTemplate inputs $ cCommitTemplate config

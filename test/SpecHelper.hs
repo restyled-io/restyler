@@ -51,6 +51,7 @@ import Restyler.Git
 import Restyler.Local.Options
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
+import Restyler.Options.NoCommit
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..))
@@ -72,6 +73,9 @@ instance HasLogger TestApp where
 
 instance HasOptions TestApp where
   getOptions = taOptions
+
+instance HasNoCommitOption TestApp where
+  getNoCommitOption = const $ NoCommitOption $ Any False
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
@@ -133,6 +137,7 @@ testOptions =
     { logSettings = error "logSettings"
     , restrictions = fullRestrictions
     , hostDirectory = toHostDirectoryOption Nothing
+    , noCommit = NoCommitOption $ Any False
     }
 
 testAppExample :: TestAppT a -> TestAppT a

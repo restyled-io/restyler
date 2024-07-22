@@ -17,12 +17,14 @@ import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
+import Restyler.Options.NoCommit
 import Restyler.Restrictions
 
 data Options = Options
   { logSettings :: LogSettingsOption
   , restrictions :: Restrictions
   , hostDirectory :: HostDirectoryOption
+  , noCommit :: NoCommitOption
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
@@ -33,12 +35,16 @@ instance HasRestrictions Options where
 instance HasHostDirectoryOption Options where
   getHostDirectoryOption = (.hostDirectory)
 
+instance HasNoCommitOption Options where
+  getNoCommitOption = (.noCommit)
+
 envParser :: Env.Parser Env.Error Options
 envParser =
   Options
     <$> envLogSettingsOption
     <*> envRestrictions
     <*> envHostDirectoryOption
+    <*> envNoCommit
 
 optParser :: Parser Options
 optParser =
@@ -46,6 +52,7 @@ optParser =
     <$> optLogSettingsOption
     <*> pure mempty -- Restrictions are ENV-only
     <*> optHostDirectoryOption
+    <*> optNoCommit
 
 class HasOptions a where
   getOptions :: a -> Options
@@ -65,3 +72,6 @@ instance HasOptions a => HasRestrictions (ThroughOptions a) where
 
 instance HasOptions a => HasHostDirectoryOption (ThroughOptions a) where
   getHostDirectoryOption = getHostDirectoryOption . getOptions
+
+instance HasOptions a => HasNoCommitOption (ThroughOptions a) where
+  getNoCommitOption = getNoCommitOption . getOptions

@@ -35,6 +35,7 @@ import Restyler.Docker
 import Restyler.Git
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
+import Restyler.Options.NoCommit
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
@@ -112,6 +113,7 @@ runRestylers
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
+     , HasNoCommitOption env
      , HasRestrictions env
      , HasCallStack
      )
@@ -204,6 +206,7 @@ runRestyler
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
+     , HasNoCommitOption env
      , HasRestrictions env
      , HasCallStack
      )
