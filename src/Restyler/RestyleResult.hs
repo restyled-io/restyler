@@ -11,6 +11,7 @@ import Data.Text qualified as T
 import Restyler.Config
 import Restyler.GHA.Output
 import Restyler.GHA.Outputs
+import Restyler.Git
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
 import Restyler.RestylerResult
@@ -18,20 +19,21 @@ import Restyler.RestylerResult
 data RestyleResult pr
   = RestyleSkipped Config pr RestyleSkipped
   | RestyleSuccessNoDifference Config pr [RestylerResult]
-  | RestyleSuccessDifference Config pr [RestylerResult]
+  | RestyleSuccessDifference Config pr [RestylerResult] Text
 
 runRestyle
-  :: (Monad m, HasCallStack)
+  :: (MonadGit m, HasHeadSha pr, HasCallStack)
   => Config
   -> pr
   -> (HasCallStack => m [RestylerResult])
   -> m (RestyleResult pr)
 runRestyle config pr run = do
   results <- run
-  pure
-    $ if any restylerCommittedChanges results
-      then RestyleSuccessDifference config pr results
-      else RestyleSuccessNoDifference config pr results
+  if any restylerCommittedChanges results
+    then do
+      patch <- gitFormatPatch $ Just $ unpack $ getHeadSha pr
+      pure $ RestyleSuccessDifference config pr results patch
+    else pure $ RestyleSuccessNoDifference config pr results
 
 data RestyleSkipped
   = RestyleNotEnabled
@@ -59,9 +61,10 @@ setRestylerResultOutputs =
           , "restyled-base=" <> outputs.base
           , "restyled-head=" <> outputs.head
           ]
-    RestyleSuccessDifference config pr results ->
+    RestyleSuccessDifference config pr results patch ->
       let outputs = restylerOutputs config pr results
       in  [ "differences=true"
+          , "git-patch<<EOM\n" <> patch <> "\nEOM"
           , "restyled-base=" <> outputs.base
           , "restyled-head=" <> outputs.head
           , "restyled-title=" <> outputs.title

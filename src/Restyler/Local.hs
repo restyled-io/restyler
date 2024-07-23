@@ -36,6 +36,9 @@ instance HasAuthor NullPullRequest where
 instance HasBaseRef NullPullRequest where
   getBaseRef = const "UNKNOWN"
 
+instance HasHeadSha NullPullRequest where
+  getHeadSha = const "UNKNOWN"
+
 instance HasLabelNames NullPullRequest where
   getLabelNames = const []
 
@@ -55,6 +58,7 @@ run
      , HasPullRequestState pr
      , HasAuthor pr
      , HasBaseRef pr
+     , HasHeadSha pr
      , HasLabelNames pr
      , HasCallStack
      )

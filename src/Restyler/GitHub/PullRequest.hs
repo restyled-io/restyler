@@ -13,6 +13,7 @@ module Restyler.GitHub.PullRequest
   , HasPullRequestState (..)
   , HasAuthor (..)
   , HasBaseRef (..)
+  , HasHeadSha (..)
   , HasLabelNames (..)
   ) where
 
@@ -110,6 +111,12 @@ class HasBaseRef a where
 
 instance HasBaseRef PullRequest where
   getBaseRef pr = pr.base.ref
+
+class HasHeadSha a where
+  getHeadSha :: a -> Text
+
+instance HasHeadSha PullRequest where
+  getHeadSha pr = pr.head.sha
 
 class HasLabelNames a where
   getLabelNames :: a -> [Text]
