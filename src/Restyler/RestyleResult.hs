@@ -46,6 +46,18 @@ setRestylerResultOutputs
   -> m ()
 setRestylerResultOutputs =
   appendGitHubOutputs . \case
+    RestyleSkipped config pr _ ->
+      let outputs = restylerOutputs config pr []
+      in  [ "differences=false"
+          , "restyled-base=" <> outputs.base
+          , "restyled-head=" <> outputs.head
+          ]
+    RestyleSuccessNoDifference config pr _ ->
+      let outputs = restylerOutputs config pr []
+      in  [ "differences=false"
+          , "restyled-base=" <> outputs.base
+          , "restyled-head=" <> outputs.head
+          ]
     RestyleSuccessDifference config pr results ->
       let outputs = restylerOutputs config pr results
       in  [ "differences=true"
@@ -57,7 +69,6 @@ setRestylerResultOutputs =
           , "restyled-reviewers=" <> mcsv outputs.reviewers
           , "restyled-team-reviewers=" <> mcsv outputs.teamReviewers
           ]
-    _ -> ["differences=false"]
  where
   mcsv :: Maybe (NonEmpty Text) -> Text
   mcsv = maybe "" (T.intercalate "," . toList)
