@@ -1,25 +1,43 @@
-#!/bin/sh
-: "${RESTYLER_CANCEL_SIGNAL:=""}"
+#!/usr/bin/env bash
+set -euo pipefail
 
-if [ -z "$RESTYLER_CANCEL_SIGNAL" ]; then
-  exec /bin/restyler "$@"
-fi
+repo=
+number=
 
-: "${RESTYLER_CANCEL_SIGNAL:=QUIT}"
-
-for signal in $(kill -l); do
-  if [ "$signal" != "$RESTYLER_CANCEL_SIGNAL" ]; then
-    # Best-effort forward all signals we don't handle
-    trap 'kill -'"$signal"' "$restyler_pid" 2>/dev/null' "$signal"
+while [[ -n "$1" ]]; do
+  if [[ "$1" =~ ([^/]+)/([^/]+)#([0-9]+) ]]; then
+    repo=${BASH_REMATCH[1]}/${BASH_REMATCH[2]}
+    number=${BASH_REMATCH[3]}
+    break
   fi
+
+  shift
 done
 
-trap 'echo "Build canceled."; exit 0' "$RESTYLER_CANCEL_SIGNAL"
-
-if [ -n "$DEBUG" ] && [ -z "$LOG_LEVEL" ]; then
-  export LOG_LEVEL=debug
+if [[ -z "$repo" ]] || [[ -z "$number" ]]; then
+  echo "Unable to parse OWNER/REPO#NUMBER argument: $*" >&2
+  exit 64
 fi
 
-/bin/restyler "$@" &
-restyler_pid=$!
-wait "$restyler_pid"
+cwd=$(mktemp -d "restyler-XXXXXX")
+event=$(mktemp)
+
+export GH_TOKEN=$GITHUB_ACCESS_TOKEN
+export HOST_DIRECTORY="$cwd"
+
+{
+  echo '{"pull_request":'
+  gh api "repos/$repo/pulls/$number"
+  echo '}'
+} >"$event"
+
+cd "$cwd"
+
+act \
+  --bind \
+  --env GITHUB_REPOSITORY="$repo" \
+  --env HOST_DIRECTORY \
+  --eventpath "$event" \
+  --platform ubuntu-latest=catthehacker/ubuntu:act-latest \
+  --secret GITHUB_TOKEN="$GITHUB_ACCESS_TOKEN" \
+  --workflows /opt/workflows
