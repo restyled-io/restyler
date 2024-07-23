@@ -106,6 +106,10 @@ jobs:
       - run: ./install
       - run: restyle --help
       - run: restyle-gha --help
+        env:
+          # TODO: don't parse for required ENV until after options, so that just
+          # using --help doesn't raise an exception
+          GITHUB_TOKEN: x
 
   test-actions-setup:
     if: ${{ github.event_name == 'pull_request' }}
@@ -115,6 +119,10 @@ jobs:
       - uses: ./actions/setup
       - run: restyle --help
       - run: restyle-gha --help
+        env:
+          # TODO: don't parse for required ENV until after options, so that just
+          # using --help doesn't raise an exception
+          GITHUB_TOKEN: x
 
   test-actions-run:
     if: ${{ github.event_name == 'pull_request' }}
