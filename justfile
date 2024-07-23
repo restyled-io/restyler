@@ -31,9 +31,15 @@ lint:
 watch:
   stack build --fast --pedantic --test --file-watch
 
+image_tag := "gha-v0-rc" # not ready to update :edge yet
+
 # Build the Docker image
 image:
-  docker build --tag restyled/restyler:edge docker
+  docker build --tag restyled/restyler:{{image_tag}} docker
+
+# Push the Docker image
+image-push: image
+  docker push restyled/restyler:{{image_tag}}
 
 test_integration_command := "restyled"
 test_integration_options := "stable"
@@ -47,7 +53,7 @@ test_integration_options := "stable"
 [doc('Run integration tests against our demo real PR')]
 test-integration: image
   AWS_PROFILE=restyled-ci {{test_integration_command}} promote \
-    --image restyled/restyler:edge {{test_integration_options}}
+    --image restyled/restyler:{{image_tag}} {{test_integration_options}}
 
 # aws := "aws --profile restyled-ci"
 
