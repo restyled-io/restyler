@@ -41,6 +41,8 @@ outputs:
     value: ${{ steps.restyler.outputs.restyled-reviewers }}
   restyled-team-reviewers:
     value: ${{ steps.restyler.outputs.restyled-team-reviewers }}
+  skipped:
+    value: ${{ steps.restyler.outputs.skipped }}
 
 runs:
   using: composite

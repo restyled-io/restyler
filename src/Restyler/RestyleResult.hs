@@ -51,6 +51,7 @@ setRestylerResultOutputs =
       in  [ "differences=false"
           , "restyled-base=" <> outputs.base
           , "restyled-head=" <> outputs.head
+          , "skipped=true"
           ]
     RestyleSuccessNoDifference config pr _ ->
       let outputs = restylerOutputs config pr []
