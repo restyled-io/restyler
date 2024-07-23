@@ -16,7 +16,7 @@ pullRequestDescription
   -- ^ Job URL, if we have it
   -> Int
   -- ^ Original PR Number
-  -> [RestylerResult]
+  -> NonEmpty RestylerResult
   -> Text
 pullRequestDescription mJobUrl n results =
   [st|
@@ -37,12 +37,11 @@ recommend using the Squash or Rebase strategies.
     Nothing -> "made fixes"
     Just jobUrl -> "[made fixes](" <> getUrl jobUrl <> ")"
 
-  -- N.B. Assumes something committed changes, otherwise we'd not be opening
-  -- this PR at all
   resultsList =
     unlines
       $ map (("- " <>) . restylerListItem . (.restyler))
-      $ filter restylerCommittedChanges results
+      $ filter restylerCommittedChanges
+      $ toList results
 
   restylerListItem r = pack $ case rDocumentation r of
     (url : _) -> "[" <> rName r <> "](" <> url <> ")"
