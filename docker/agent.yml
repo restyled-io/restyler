@@ -14,6 +14,7 @@ jobs:
       - id: restyler
         uses: restyled-io/restyler/actions/run@main
         with:
+          log-format: json
           committer-email: "commits@restyled.io"
           committer-name: "Restyled.io"
       - id: create-pull-request
