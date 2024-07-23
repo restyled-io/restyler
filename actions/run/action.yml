@@ -27,6 +27,8 @@ inputs:
 outputs:
   differences:
     value: ${{ steps.restyler.outputs.differences }}
+  git-patch:
+    value: ${{ steps.restyler.outputs.git-patch }}
   restyled-base:
     value: ${{ steps.restyler.outputs.restyled-base }}
   restyled-head:
