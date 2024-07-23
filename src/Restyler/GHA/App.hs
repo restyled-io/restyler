@@ -45,19 +45,24 @@ instance HasGitHubOutput App where
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do
-  (githubEnv, env) <-
-    Env.parse id
-      $ (,)
-      <$> githubEnvParser
-      <*> envParser
-
   (opt, pullRequest) <-
-    Opt.parse "Restyle on GitHub Actions"
-      $ (,)
-      <$> optParser
-      <*> optPullRequest
+    Opt.parse "Restyle on GitHub Actions" (Env.helpDoc envp) optp
+
+  -- parse ENV second since it may throw, and we'd not want that to happen on an
+  -- option like --help.
+  (githubEnv, env) <- Env.parse id envp
 
   let options = env <> opt
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     f $ App {logger, options, githubEnv, pullRequest}
+ where
+  envp =
+    (,)
+      <$> githubEnvParser
+      <*> envParser
+
+  optp =
+    (,)
+      <$> optParser
+      <*> optPullRequest

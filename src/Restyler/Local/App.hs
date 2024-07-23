@@ -35,14 +35,17 @@ instance HasLogger App where
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do
+  (opt, paths) <- Opt.parse "Restyle local files" (Env.helpDoc envParser) optp
+
   env <- Env.parse id envParser
-  (opt, paths) <-
-    Opt.parse "Restyle local files"
-      $ (,)
-      <$> optParser
-      <*> some1 (Opt.argument Opt.str $ Opt.metavar "PATH")
 
   let options = env <> opt
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
     f $ App {logger, options, paths}
+ where
+  optp :: Opt.Parser (Options, NonEmpty FilePath)
+  optp =
+    (,)
+      <$> optParser
+      <*> some1 (Opt.argument Opt.str $ Opt.metavar "PATH")
