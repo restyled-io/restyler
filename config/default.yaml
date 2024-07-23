@@ -23,7 +23,7 @@ commit_template: |
 
 pull_requests: true
 
-comments: false
+comments: true
 
 statuses:
   skipped: true
