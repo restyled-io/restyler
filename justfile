@@ -33,7 +33,7 @@ watch:
 
 # Build the Docker image
 image:
-  docker build --tag restyled/restyler:edge .
+  docker build --tag restyled/restyler:edge docker
 
 test_integration_command := "restyled"
 test_integration_options := "stable"
