@@ -39,11 +39,7 @@ restylerOutputs config pr results =
           , repo = pr.base.repo.name
           }
     , title = "Restyle " <> pr.title
-    , body =
-        Content.pullRequestDescription
-          Nothing
-          pr.number
-          results
+    , body = maybe "" toBody $ nonEmpty results
     , base = pr.head.ref
     , head = "restyled/" <> pr.head.ref
     , labels = nonEmpty $ map GitHub.untagName $ toList $ cLabels config
@@ -51,3 +47,5 @@ restylerOutputs config pr results =
         pure . GitHub.untagName <$> determineReviewer pr (cRequestReview config)
     , teamReviewers = Nothing
     }
+ where
+  toBody = Content.pullRequestDescription Nothing pr.number
