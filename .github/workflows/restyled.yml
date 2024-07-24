@@ -10,9 +10,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-      - uses: restyled-io/restyler/actions/setup@main
+      - uses: restyled-io/actions/setup@v1
       - id: restyler
-        uses: restyled-io/restyler/actions/run@main
+        uses: restyled-io/actions/run@v1
       - uses: peter-evans/create-pull-request@v6
         with:
           base: ${{ steps.restyler.outputs.restyled-base }}
