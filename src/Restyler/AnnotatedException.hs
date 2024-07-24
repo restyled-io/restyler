@@ -26,9 +26,7 @@ import Control.Exception.Annotated.UnliftIO
 displayAnnotatedException :: Exception e => AnnotatedException e -> Text
 displayAnnotatedException aex@AnnotatedException {exception} =
   unlines
-    [ "Annotated Exception"
-    , ""
-    , pack $ displayException exception
+    [ pack $ displayException exception
     , ""
     , maybe "" (pack . prettyCallStack) $ annotatedExceptionCallStack aex
     ]
