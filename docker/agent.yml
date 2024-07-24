@@ -17,14 +17,36 @@ jobs:
         working-directory: /tmp
 
       - run: |
-          # Set PR status pending
-          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
-            -f state=pending \
-            -f context=restyled
+          # Add support scripts
+          cat > ./set-pr-status <<'EOM'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          args=(-f context=restyled -f "state=$1")
+
+          if (( $# >= 2 )); then
+            args+=(-f "description=$2")
+          fi
+
+          if (( $# == 3 )); then
+            args+=(-f "target_url=$3")
+          fi
+
+          endpoint='repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}'
+
+          export GH_TOKEN=${{ github.token }}
+          exec gh api "$endpoint" "${args[@]}"
+          EOM
+
+          chmod +x set-pr-status
+          sudo mv -v set-pr-status /usr/local/bin
+
+      - run: set-pr-status pending
 
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+
       - uses: restyled-io/restyler/actions/setup@main
       - id: restyler
         uses: restyled-io/restyler/actions/run@main
@@ -32,7 +54,9 @@ jobs:
           log-format: json
           committer-email: "commits@restyled.io"
           committer-name: "Restyled.io"
+
       - id: create-pull-request
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ github.token }}
@@ -45,45 +69,20 @@ jobs:
           team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
           delete-branch: true
 
-      # Skipped
       - if: |
           steps.restyler.outputs.differences == 'false' &&
           steps.restyler.outputs.skipped == 'true'
-        run: |
-          # Set PR status success
-          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
-            -f state=success \
-            -f description="Restyling skipped" \
-            -f context=restyled
+        run: set-pr-status success "Restyling skipped"
 
-      # No differences
       - if: |
           steps.restyler.outputs.differences != 'true' &&
           steps.restyler.outputs.skipped != 'true'
-        run: |
-          # Set PR status success
-          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
-            -f state=success \
-            -f description="No differences" \
-            -f context=restyled
+        run: set-pr-status success "No differences"
 
-      # Differences
       - if: |
           steps.restyler.outputs.differences == 'true' &&
           steps.restyler.outputs.skipped != 'true'
-        run: |
-          # Set PR status failure
-          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
-            -f state=failure \
-            -f target_url=${{ steps.create-pull-request.outputs.pull-request-url }} \
-            -f description="Restyled found differences" \
-            -f context=restyled
+        run: set-pr-status failure "Restyled found differences" '${{ steps.create-pull-request.outputs.pull-request-url }}'
 
-      # Error
       - if: ${{ failure() }}
-        run: |
-          # Set PR status error
-          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
-            -f state=error \
-            -f description="Restyled errored" \
-            -f context=restyled
+        run: set-pr-status error "Restyled errored"
