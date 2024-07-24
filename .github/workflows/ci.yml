@@ -128,4 +128,6 @@ jobs:
           mv -v restyler-*/restyle-gha /usr/local/bin
           rm -rf linux-binaries
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: ./actions/run
