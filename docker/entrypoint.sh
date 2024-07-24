@@ -22,7 +22,7 @@ fi
 cwd=$(mktemp -d "restyler-XXXXXX")
 event=$(mktemp)
 
-export GH_TOKEN=$GITHUB_ACCESS_TOKEN
+export GH_TOKEN="$GITHUB_ACCESS_TOKEN"
 export HOST_DIRECTORY="$cwd"
 
 {
