@@ -10,8 +10,8 @@ The restyling process, as a CLI.
 - uses: actions/checkout@v4
   with:
     ref: ${{ github.event.pull_request.head.ref }}
-- uses: restyled-io/restyler/actions/setup@v1
-- uses: restyled-io/restyler/actions/run@v1
+- uses: restyled-io/actions/setup@v1
+- uses: restyled-io/actions/run@v1
 ```
 
 ### Locally
