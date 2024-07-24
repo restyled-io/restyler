@@ -31,7 +31,7 @@ lint:
 watch:
   stack build --fast --pedantic --test --file-watch
 
-image_tag := "gha-v0-rc" # not ready to update :edge yet
+image_tag := "gha-rc1" # not ready to update :edge yet
 
 # Build the Docker image
 image:
