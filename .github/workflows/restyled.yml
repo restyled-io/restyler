@@ -23,7 +23,7 @@ jobs:
           reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
           team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
           delete-branch: true
-      - if: ${{ steps.restyler.differences == 'true' }}
+      - if: ${{ steps.restyler.outputs.differences == 'true' }}
         name: Print Restyled differences
         run: |
           echo "Restyled found differences:"
