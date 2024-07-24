@@ -28,6 +28,6 @@ jobs:
         run: |
           echo "Restyled found differences:"
           cat <<'EOM'
-          ${{ steps.restyler.git-patch }}
+          ${{ steps.restyler.outputs.git-patch }}
           EOM
           exit 1
