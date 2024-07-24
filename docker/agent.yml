@@ -6,7 +6,22 @@ on:
 jobs:
   restyled:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
+      - run: |
+          # Install gh
+          cd /tmp
+          curl -L -sSf https://github.com/cli/cli/releases/download/v2.53.0/gh_2.53.0_linux_amd64.tar.gz | tar xzvf -
+          sudo cp -v gh_*/bin/gh /usr/local/bin
+        working-directory: /tmp
+
+      - run: |
+          # Set PR status pending
+          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
+            -f state=pending \
+            -f context=restyled
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
@@ -30,4 +45,45 @@ jobs:
           team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
           delete-branch: true
 
-      # TODO: set "restyled" PR status
+      # Skipped
+      - if: |
+          steps.restyler.outputs.differences == 'false' &&
+          steps.restyler.outputs.skipped == 'true'
+        run: |
+          # Set PR status success
+          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
+            -f state=success \
+            -f description="Restyling skipped" \
+            -f context=restyled
+
+      # No differences
+      - if: |
+          steps.restyler.outputs.differences != 'true' &&
+          steps.restyler.outputs.skipped != 'true'
+        run: |
+          # Set PR status success
+          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
+            -f state=success \
+            -f description="No differences" \
+            -f context=restyled
+
+      # Differences
+      - if: |
+          steps.restyler.outputs.differences == 'true' &&
+          steps.restyler.outputs.skipped != 'true'
+        run: |
+          # Set PR status failure
+          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
+            -f state=failure \
+            -f target_url=${{ steps.create-pull-request.outputs.pull-request-url }} \
+            -f description="Restyled found differences" \
+            -f context=restyled
+
+      # Error
+      - if: ${{ failure() }}
+        run: |
+          # Set PR status error
+          gh api 'repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}' \
+            -f state=error \
+            -f description="Restyled errored" \
+            -f context=restyled
