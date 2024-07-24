@@ -31,30 +31,6 @@ lint:
 watch:
   stack build --fast --pedantic --test --file-watch
 
-image_tag := "gha-v0-rc" # not ready to update :edge yet
-
-# Build the Docker image
-image:
-  docker build --tag restyled/restyler:{{image_tag}} docker
-
-# Push the Docker image
-image-push: image
-  docker push restyled/restyler:{{image_tag}}
-
-test_integration_command := "restyled"
-test_integration_options := "stable"
-
-# Example for using local SDK, etc:
-
-#   just test-integration \
-#     test_integration_command='stack --stack-yaml ../sdk/stack.yaml exec --' \
-#     test_integration_options='--debug dev'
-#
-[doc('Run integration tests against our demo real PR')]
-test-integration: image
-  AWS_PROFILE=restyled-ci {{test_integration_command}} promote \
-    --image restyled/restyler:{{image_tag}} {{test_integration_options}}
-
 # aws := "aws --profile restyled-ci"
 
 # doc_bucket := `
