@@ -50,7 +50,7 @@ jobs:
 
   prerelease:
     # Comment this to update a pre-release from your PR
-    # if: ${{ false }}
+    if: ${{ false }}
     env:
       RC_TAG: v0.4.0.0-rc
 
