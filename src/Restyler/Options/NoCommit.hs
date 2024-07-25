@@ -2,8 +2,8 @@ module Restyler.Options.NoCommit
   ( NoCommitOption (..)
   , HasNoCommitOption (..)
   , getNoCommit
-  , envNoCommit
-  , optNoCommit
+  , envNoCommitOption
+  , optNoCommitOption
   ) where
 
 import Restyler.Prelude
@@ -22,12 +22,12 @@ class HasNoCommitOption a where
 getNoCommit :: (MonadReader env m, HasNoCommitOption env) => m Bool
 getNoCommit = asks $ getAny . (.unwrap) . getNoCommitOption
 
-envNoCommit :: Env.Parser Env.Error NoCommitOption
-envNoCommit =
+envNoCommitOption :: Env.Parser Env.Error NoCommitOption
+envNoCommitOption =
   NoCommitOption . Any <$> Env.switch "NO_COMMIT" (Env.help optionHelp)
 
-optNoCommit :: Parser NoCommitOption
-optNoCommit =
+optNoCommitOption :: Parser NoCommitOption
+optNoCommitOption =
   NoCommitOption . Any <$> switch (long "no-commit" <> help optionHelp)
 
 optionHelp :: String
