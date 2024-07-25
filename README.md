@@ -8,6 +8,7 @@ The restyling process, as a CLI.
 curl --proto '=https' --tlsv1.2 -sSf \
   https://raw.githubusercontent.com/restyled-io/restyler/main/install | sudo sh
 ```
+
 ## Usage
 
 ```console
