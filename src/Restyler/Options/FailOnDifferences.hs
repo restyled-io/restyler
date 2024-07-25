@@ -2,8 +2,8 @@ module Restyler.Options.FailOnDifferences
   ( FailOnDifferencesOption (..)
   , HasFailOnDifferencesOption (..)
   , getFailOnDifferences
-  , envFailOnDifferences
-  , optFailOnDifferences
+  , envFailOnDifferencesOption
+  , optFailOnDifferencesOption
   ) where
 
 import Restyler.Prelude
@@ -23,14 +23,14 @@ getFailOnDifferences
   :: (MonadReader env m, HasFailOnDifferencesOption env) => m Bool
 getFailOnDifferences = asks $ getAny . (.unwrap) . getFailOnDifferencesOption
 
-envFailOnDifferences :: Env.Parser Env.Error FailOnDifferencesOption
-envFailOnDifferences =
+envFailOnDifferencesOption :: Env.Parser Env.Error FailOnDifferencesOption
+envFailOnDifferencesOption =
   FailOnDifferencesOption
     . Any
     <$> Env.switch "FAIL_ON_DIFFERENCES" (Env.help optionHelp)
 
-optFailOnDifferences :: Parser FailOnDifferencesOption
-optFailOnDifferences =
+optFailOnDifferencesOption :: Parser FailOnDifferencesOption
+optFailOnDifferencesOption =
   FailOnDifferencesOption
     . Any
     <$> switch (long "fail-on-differences" <> help optionHelp)
