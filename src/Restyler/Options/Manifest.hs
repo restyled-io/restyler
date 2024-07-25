@@ -32,7 +32,14 @@ optManifestOption :: Parser ManifestOption
 optManifestOption =
   ManifestOption
     . Last
-    <$> optional (option str (long "manifest" <> help optionHelp))
+    <$> optional
+      ( option
+          str
+          ( long "manifest"
+              <> metavar "FILE"
+              <> help optionHelp
+          )
+      )
 
 optionHelp :: String
 optionHelp = "Restylers manifest to use"
