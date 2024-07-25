@@ -12,7 +12,7 @@ import Restyler.RestyleResult
 main
   :: (HasLogger app, HasFailOnDifferencesOption app)
   => (forall a. (app -> IO a) -> IO a)
-  -> AppT app IO (RestyleResult pr)
+  -> AppT app IO RestyleResult
   -> IO ()
 main withApp run = do
   hSetBuffering stdout LineBuffering
@@ -23,12 +23,12 @@ main withApp run = do
     result <- run
 
     case result of
-      RestyleSkipped _ _ reason -> do
+      RestyleSkipped reason -> do
         logInfo $ "Restyle skipped" :# ["reason" .= reason]
         pure ExitSuccess
-      RestyleSuccessNoDifference {} -> do
+      RestyleSuccessNoDifference -> do
         ExitSuccess <$ logInfo "No differences"
-      RestyleSuccessDifference {} -> do
+      RestyleSuccessDifference _ -> do
         failOnDifferences <- getFailOnDifferences
 
         if failOnDifferences

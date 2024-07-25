@@ -20,6 +20,7 @@ import Restyler.Restrictions
 data App = App
   { logger :: Logger
   , options :: Options
+  , pullRequestJson :: Maybe FilePath
   , paths :: NonEmpty FilePath
   }
   deriving (HasFailOnDifferencesOption) via (ThroughOptions App)
@@ -37,17 +38,19 @@ instance HasLogger App where
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do
-  (opt, paths) <- Opt.parse "Restyle local files" (Env.helpDoc envParser) optp
+  (opt, pullRequestJson, paths) <-
+    Opt.parse "Restyle local files" (Env.helpDoc envParser) optp
 
   env <- Env.parse id envParser
 
   let options = env <> opt
 
   withLogger (resolveLogSettings options.logSettings) $ \logger -> do
-    f $ App {logger, options, paths}
+    f $ App {logger, options, pullRequestJson, paths}
  where
-  optp :: Opt.Parser (Options, NonEmpty FilePath)
+  optp :: Opt.Parser (Options, Maybe FilePath, NonEmpty FilePath)
   optp =
-    (,)
+    (,,)
       <$> optParser
+      <*> optional (Opt.option Opt.str $ Opt.long "pull-request-json" <> Opt.hidden)
       <*> some1 (Opt.argument Opt.str $ Opt.metavar "PATH")

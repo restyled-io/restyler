@@ -44,7 +44,6 @@ import Data.Yaml
   , prettyPrintParseException
   )
 import Data.Yaml qualified as Yaml
-import GitHub.Data (IssueLabel, User)
 import Restyler.AnnotatedException
 import Restyler.App.Class
 import Restyler.Config.ChangedPaths
@@ -86,9 +85,9 @@ data ConfigF f = ConfigF
   , cfComments :: f Bool
   , cfStatuses :: f Statuses
   , cfRequestReview :: f RequestReviewConfig
-  , cfLabels :: f (SketchyList (Name IssueLabel))
-  , cfIgnoreAuthors :: f (SketchyList (Glob (Name User)))
-  , cfIgnoreLabels :: f (SketchyList (Glob (Name IssueLabel)))
+  , cfLabels :: f (SketchyList Text)
+  , cfIgnoreAuthors :: f (SketchyList (Glob Text))
+  , cfIgnoreLabels :: f (SketchyList (Glob Text))
   , cfIgnoreBranches :: f (SketchyList (Glob Text))
   , cfRestylersVersion :: f String
   , cfRestylers :: f (SketchyList RestylerOverride)
@@ -134,10 +133,10 @@ data Config = Config
   , cComments :: Bool
   , cStatuses :: Statuses
   , cRequestReview :: RequestReviewConfig
-  , cLabels :: Set (Name IssueLabel)
-  , cIgnoreAuthors :: [Glob (Name User)]
+  , cLabels :: Set Text
+  , cIgnoreAuthors :: [Glob Text]
   , cIgnoreBranches :: [Glob Text]
-  , cIgnoreLabels :: [Glob (Name IssueLabel)]
+  , cIgnoreLabels :: [Glob Text]
   , cRestylers :: [Restyler]
   }
   deriving stock (Eq, Show, Generic)

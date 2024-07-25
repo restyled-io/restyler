@@ -22,4 +22,4 @@ readFile :: MonadSystem m => FilePath -> m Text
 readFile = fmap (decodeUtf8With lenientDecode) . readFileBS
 
 class Monad m => MonadDownloadFile m where
-  downloadFile :: URL -> FilePath -> m ()
+  downloadFile :: String -> FilePath -> m ()

@@ -127,7 +127,7 @@ getAllRestylersVersioned version = do
  where
   restylers =
     RemoteFile
-      { url = URL $ pack $ restylersYamlUrl version
+      { url = restylersYamlUrl version
       , path = "/tmp/restylers-" <> version <> ".yaml"
       }
 
