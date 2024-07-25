@@ -2,28 +2,50 @@
 
 The restyling process, as a CLI.
 
-## Usage
-
-### GitHub Actions
-
-```yaml
-- uses: actions/checkout@v4
-  with:
-    ref: ${{ github.event.pull_request.head.ref }}
-- uses: restyled-io/actions/setup@v1
-- uses: restyled-io/actions/run@v1
-```
-
-### Locally
+## Installation
 
 ```console
 curl --proto '=https' --tlsv1.2 -sSf \
   https://raw.githubusercontent.com/restyled-io/restyler/main/install | sudo sh
 ```
 
+## Usage
+
 ```console
-restyle --help
+Usage: restyle [--debug] [--trace] [--color WHEN] [--host-directory DIRECTORY]
+               [--no-commit] [--fail-on-differences] PATH [PATH]
+
+  Restyle local files
+
+Available options:
+  --debug                  Enable debug logging
+  --trace                  Enable trace logging
+  --color WHEN             When to use color: always|never|auto
+  --host-directory DIRECTORY
+                           Working directory on host, if dockerized
+  --no-commit              Don't make commits for restyle changes
+  --fail-on-differences    Exit non-zero if differences were found
+  -h,--help                Show this help text
+
+Available environment variables:
+  FAIL_ON_DIFFERENCES    Exit non-zero if differences were
+                         found
+  HOST_DIRECTORY         Working directory on host, if
+                         dockerized
+  NO_COMMIT              Don't make commits for restyle
+                         changes
+  RESTYLER_CPU_SHARES    Run restylers with
+                         --cpu-shares=<number>
+  RESTYLER_MEMORY        Run restylers with
+                         --memory=<number>[b|k|m|g]
+  RESTYLER_NO_NET_NONE   Run restylers without --net=none
+  UNRESTRICTED           Run restylers without CPU or
+                         Memory restrictions
 ```
+
+### GitHub Actions
+
+See https://github.com/restyled-io/actions#readme.
 
 ## Development
 
@@ -37,14 +59,6 @@ Requires [stack](https://docs.haskellstack.org/en/stable/README/).
 
 ```console
 just test
-```
-
-### Integration
-
-End-to-end test that restyles an example Pull Request:
-
-```console
-just test-integration
 ```
 
 ## LICENSE
