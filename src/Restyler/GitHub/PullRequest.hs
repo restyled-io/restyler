@@ -19,10 +19,10 @@ module Restyler.GitHub.PullRequest
 
 import Restyler.Prelude
 
-import Data.Aeson (ToJSON (..))
+import Data.Aeson (FromJSON (..), ToJSON (..), withText)
 
 data PullRequest = PullRequest
-  { html_url :: URL
+  { html_url :: String
   , number :: Int
   , title :: Text
   , user :: User
@@ -32,12 +32,18 @@ data PullRequest = PullRequest
   , base :: Commit
   }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 data PullRequestState
   = PullRequestOpen
   | PullRequestClosed
   deriving stock (Show)
+
+instance FromJSON PullRequestState where
+  parseJSON =
+    withText "PullRequestState"
+      $ either fail pure
+      . pullRequestStateFromText
 
 instance ToJSON PullRequestState where
   toJSON = toJSON . pullRequestStateToText
@@ -48,17 +54,23 @@ pullRequestStateToText = \case
   PullRequestOpen -> "open"
   PullRequestClosed -> "closed"
 
+pullRequestStateFromText :: Text -> Either String PullRequestState
+pullRequestStateFromText = \case
+  "open" -> Right PullRequestOpen
+  "closed" -> Right PullRequestClosed
+  x -> Left $ "Unexpected PullRequestState: " <> show x
+
 newtype User = User
   { login :: Text
   }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 newtype Label = Label
   { name :: Text
   }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 data Commit = Commit
   { ref :: Text
@@ -66,7 +78,7 @@ data Commit = Commit
   , repo :: Repo
   }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 data Repo = Repo
   { name :: Text
@@ -74,16 +86,16 @@ data Repo = Repo
   , private :: Bool
   }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 newtype Owner = Owner
   { login :: Text
   }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 class HasHtmlUrl a where
-  getHtmlUrl :: a -> URL
+  getHtmlUrl :: a -> String
 
 instance HasHtmlUrl PullRequest where
   getHtmlUrl pr = pr.html_url

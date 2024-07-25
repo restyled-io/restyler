@@ -22,6 +22,7 @@ import Restyler.Options.NoCommit
 import Restyler.Restrictions
 import Restyler.RestyleResult
 import Restyler.Restyler.Run
+import Restyler.RestylerResult
 
 -- | A 'PullRequest'-like object designed to never match the state or ignore
 -- checks we do here when running against a real PR.
@@ -58,13 +59,12 @@ run
      , HasPullRequestState pr
      , HasAuthor pr
      , HasBaseRef pr
-     , HasHeadSha pr
      , HasLabelNames pr
      , HasCallStack
      )
   => pr
   -> [FilePath]
-  -> m (RestyleResult pr)
+  -> m RestyleResult
 run pr paths = do
   config <- loadConfig
 
@@ -77,10 +77,15 @@ run pr paths = do
 
   case (cEnabled config, getPullRequestState pr) of
     (False, _) ->
-      pure $ RestyleSkipped config pr RestyleNotEnabled
+      pure $ RestyleSkipped RestyleNotEnabled
     (True, PullRequestClosed) ->
-      pure $ RestyleSkipped config pr RestylePullRequestClosed
+      pure $ RestyleSkipped RestylePullRequestClosed
     (True, PullRequestOpen)
       | Just reason <- mIgnoredReason ->
-          pure $ RestyleSkipped config pr $ RestyleIgnored reason
-    (True, PullRequestOpen) -> runRestyle config pr $ runRestylers config paths
+          pure $ RestyleSkipped $ RestyleIgnored reason
+    (True, PullRequestOpen) -> do
+      results <- runRestylers config paths
+      pure
+        $ if any restylerCommittedChanges results
+          then RestyleSuccessDifference results
+          else RestyleSuccessNoDifference

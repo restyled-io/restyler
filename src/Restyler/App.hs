@@ -14,7 +14,6 @@ import Relude qualified as Prelude
 import Restyler.App.Class
 import Restyler.Docker
 import Restyler.Git
-import Restyler.GitHub.Api
 import System.Directory qualified as Directory
 
 newtype AppT app m a = AppT
@@ -80,13 +79,8 @@ instance (MonadUnliftIO m, HasLogger app) => MonadDownloadFile (AppT app m) wher
   downloadFile url path = do
     logDebug $ "downloadFile" :# ["url" .= url]
     liftIO $ do
-      request <- parseRequestThrow $ unpack $ getUrl url
+      request <- parseRequestThrow url
       runResourceT $ httpSink request $ \_ -> sinkFile path
-
-deriving via
-  (ActualGitHub (AppT app m))
-  instance
-    (MonadUnliftIO m, HasLogger app, HasGitHubToken app) => MonadGitHub (AppT app m)
 
 deriving via
   (ActualGit (AppT app m))

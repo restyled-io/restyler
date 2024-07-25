@@ -16,7 +16,6 @@ import Data.Functor.Syntax as X ((<$$>))
 import Data.Text as X (pack, unpack)
 import Data.Traversable as X (for)
 import Data.Vector as X (Vector)
-import GitHub.Data as X (Id, Name, URL (..), getUrl, mkId, mkName, untagName)
 import Lens.Micro as X (Lens', lens, to, (.~), (^.), (^?))
 import Lens.Micro.Mtl as X (view)
 import System.Exit as X (ExitCode (..))
@@ -57,8 +56,3 @@ none p = not . any p
 
 insertIfMissing :: Key -> v -> KeyMap v -> KeyMap v
 insertIfMissing k v m = KeyMap.unionWith const m $ KeyMap.singleton k v
-
-with :: Monad m => m a -> (a -> m b) -> m a
-with act use = do
-  a <- act
-  a <$ use a

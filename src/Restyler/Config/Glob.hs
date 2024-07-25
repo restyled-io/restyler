@@ -12,7 +12,6 @@ module Restyler.Config.Glob
 import Restyler.Prelude
 
 import Data.Aeson
-import GitHub.Data (toPathPart)
 import System.FilePath.Glob hiding (match)
 import System.FilePath.Glob qualified as Glob
 
@@ -36,15 +35,6 @@ instance GlobTarget FilePath where
 
 instance GlobTarget Text where
   forMatch = unpack
-  getCompOptions =
-    compDefault
-      { characterClasses = False
-      , characterRanges = False
-      , numberRanges = False
-      }
-
-instance GlobTarget (Name a) where
-  forMatch = forMatch . toPathPart
   getCompOptions =
     compDefault
       { characterClasses = False

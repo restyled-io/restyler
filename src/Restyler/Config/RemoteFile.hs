@@ -5,7 +5,7 @@ module Restyler.Config.RemoteFile
 import Restyler.Prelude
 
 data RemoteFile = RemoteFile
-  { url :: URL
+  { url :: String
   , path :: FilePath
   }
   deriving stock (Eq, Show, Generic)

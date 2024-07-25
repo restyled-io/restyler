@@ -30,18 +30,10 @@ library
       Restyler.Config.Restyler
       Restyler.Config.SketchyList
       Restyler.Config.Statuses
-      Restyler.Content
       Restyler.Delimited
       Restyler.Docker
-      Restyler.GHA
-      Restyler.GHA.App
-      Restyler.GHA.GitHubEnv
-      Restyler.GHA.Output
       Restyler.Git
-      Restyler.GitHub.Api
-      Restyler.GitHub.Commit.Status
       Restyler.GitHub.PullRequest
-      Restyler.GitHub.PullRequest.File
       Restyler.Ignore
       Restyler.Local
       Restyler.Local.App
@@ -53,7 +45,6 @@ library
       Restyler.Options.LogSettings
       Restyler.Options.Manifest
       Restyler.Options.NoCommit
-      Restyler.Options.PullRequest
       Restyler.Options.Repository
       Restyler.Prelude
       Restyler.ReadP
@@ -90,7 +81,6 @@ library
     , Glob
     , aeson
     , aeson-casing
-    , aeson-pretty
     , annotated-exception
     , barbies
     , base
@@ -107,16 +97,12 @@ library
     , extra
     , file-embed
     , filepath
-    , github
-    , http-client
     , http-conduit
-    , http-types
     , microlens
     , microlens-mtl
     , optparse-applicative
     , relude
     , semigroups
-    , shakespeare
     , text
     , typed-process
     , unliftio
@@ -151,35 +137,8 @@ executable restyle
       TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base
-    , restyler
-  default-language: GHC2021
-
-executable restyle-gha
-  main-is: Main.hs
-  other-modules:
-      Paths_restyler
-  hs-source-dirs:
-      gha
-  default-extensions:
-      DataKinds
-      DeriveAnyClass
-      DerivingStrategies
-      DerivingVia
-      DuplicateRecordFields
-      GADTs
-      LambdaCase
-      NoFieldSelectors
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      NoPostfixOperators
-      OverloadedRecordDot
-      OverloadedStrings
-      QuasiQuotes
-      TypeFamilies
-  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base
+      aeson
+    , base
     , restyler
   default-language: GHC2021
 
@@ -194,7 +153,6 @@ test-suite test
       Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
-      Restyler.Options.PullRequestSpec
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
