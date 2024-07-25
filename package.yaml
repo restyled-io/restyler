@@ -89,16 +89,7 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - restyler
-  restyle-gha:
-    main: Main.hs
-    source-dirs: gha
-    ghc-options:
-      - -Wall
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
+      - aeson
       - restyler
 
 tests:

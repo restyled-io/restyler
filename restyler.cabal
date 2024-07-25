@@ -33,7 +33,6 @@ library
       Restyler.Content
       Restyler.Delimited
       Restyler.Docker
-      Restyler.GHA
       Restyler.GHA.App
       Restyler.GHA.GitHubEnv
       Restyler.GHA.Output
@@ -151,35 +150,8 @@ executable restyle
       TypeFamilies
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base
-    , restyler
-  default-language: GHC2021
-
-executable restyle-gha
-  main-is: Main.hs
-  other-modules:
-      Paths_restyler
-  hs-source-dirs:
-      gha
-  default-extensions:
-      DataKinds
-      DeriveAnyClass
-      DerivingStrategies
-      DerivingVia
-      DuplicateRecordFields
-      GADTs
-      LambdaCase
-      NoFieldSelectors
-      NoImplicitPrelude
-      NoMonomorphismRestriction
-      NoPostfixOperators
-      OverloadedRecordDot
-      OverloadedStrings
-      QuasiQuotes
-      TypeFamilies
-  ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base
+      aeson
+    , base
     , restyler
   default-language: GHC2021
 
