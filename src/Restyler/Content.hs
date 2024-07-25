@@ -12,43 +12,21 @@ import Restyler.Wiki qualified as Wiki
 import Text.Shakespeare.Text (st)
 
 pullRequestDescription
-  :: Maybe URL
-  -- ^ Job URL, if we have it
-  -> Int
+  :: Int
   -- ^ Original PR Number
   -> NonEmpty RestylerResult
   -> Text
-pullRequestDescription mJobUrl n results =
+pullRequestDescription n results =
   [st|
 Automated style fixes for ##{n}, created by [Restyled][].
 
-The following restylers #{madeFixes}:
+The following restylers made fixes:
 
 #{resultsList}
 
 To incorporate these changes, merge this Pull Request into the original. We
 recommend using the Squash or Rebase strategies.
 
-#{footer}
-|]
- where
-  -- Link the "made fixes" line to the Job log, if we can
-  madeFixes = case mJobUrl of
-    Nothing -> "made fixes"
-    Just jobUrl -> "[made fixes](" <> getUrl jobUrl <> ")"
-
-  resultsList =
-    unlines
-      $ map (("- " <>) . restylerListItem . (.restyler))
-      $ filter restylerCommittedChanges
-      $ toList results
-
-  restylerListItem r = pack $ case rDocumentation r of
-    (url : _) -> "[" <> rName r <> "](" <> url <> ")"
-    _ -> rName r
-
-  footer =
-    [st|
 **NOTE**: As work continues on the original Pull Request, this process will
 re-run and update (force-push) this Pull Request with updated style fixes as
 necessary. If the style is fixed manually at any point (i.e. this process finds
@@ -59,3 +37,13 @@ Sorry if this was unexpected. To disable it, see our [documentation][].
 [restyled]: https://restyled.io
 [documentation]: #{Wiki.page "Disabling Restyled"}
 |]
+ where
+  resultsList =
+    unlines
+      $ map (("- " <>) . restylerListItem . (.restyler))
+      $ filter restylerCommittedChanges
+      $ toList results
+
+  restylerListItem r = pack $ case rDocumentation r of
+    (url : _) -> "[" <> rName r <> "](" <> url <> ")"
+    _ -> rName r
