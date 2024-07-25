@@ -25,19 +25,25 @@ data Options = Options
   { logSettings :: LogSettingsOption
   , failOnDifferences :: FailOnDifferencesOption
   , hostDirectory :: HostDirectoryOption
+  , imageCleanup :: ImageCleanupOption
+  , manifest :: ManifestOption
   , noCommit :: NoCommitOption
   , restrictions :: Restrictions
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
-  deriving (HasManifestOption) via (NoManifestOption Options)
-  deriving (HasImageCleanupOption) via (NoImageCleanupOption Options)
 
 instance HasFailOnDifferencesOption Options where
   getFailOnDifferencesOption = (.failOnDifferences)
 
 instance HasHostDirectoryOption Options where
   getHostDirectoryOption = (.hostDirectory)
+
+instance HasImageCleanupOption Options where
+  getImageCleanupOption = (.imageCleanup)
+
+instance HasManifestOption Options where
+  getManifestOption = (.manifest)
 
 instance HasNoCommitOption Options where
   getNoCommitOption = (.noCommit)
@@ -49,18 +55,22 @@ envParser :: Env.Parser Env.Error Options
 envParser =
   Options
     <$> envLogSettingsOption
-    <*> envFailOnDifferences
+    <*> envFailOnDifferencesOption
     <*> envHostDirectoryOption
-    <*> envNoCommit
+    <*> envImageCleanupOption
+    <*> envManifestOption
+    <*> envNoCommitOption
     <*> envRestrictions
 
 optParser :: Parser Options
 optParser =
   Options
     <$> optLogSettingsOption
-    <*> optFailOnDifferences
+    <*> optFailOnDifferencesOption
     <*> optHostDirectoryOption
-    <*> optNoCommit
+    <*> optImageCleanupOption
+    <*> optManifestOption
+    <*> optNoCommitOption
     <*> pure mempty -- Restrictions are ENV-only
 
 class HasOptions a where

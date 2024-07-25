@@ -2,30 +2,37 @@ module Restyler.Options.Manifest
   ( ManifestOption (..)
   , HasManifestOption (..)
   , getManifest
-  , toManifestOption
-  , NoManifestOption (..)
+  , envManifestOption
+  , optManifestOption
   ) where
 
 import Restyler.Prelude
 
-newtype ManifestOption = ManifestOption (Last FilePath)
+import Env qualified
+import Options.Applicative
+
+newtype ManifestOption = ManifestOption
+  { unwrap :: Last FilePath
+  }
   deriving newtype (Semigroup, Monoid)
 
 class HasManifestOption a where
   getManifestOption :: a -> ManifestOption
 
 getManifest :: (MonadReader env m, HasManifestOption env) => m (Maybe FilePath)
-getManifest = asks $ unManifestOption . getManifestOption
+getManifest = asks $ getLast . (.unwrap) . getManifestOption
 
-toManifestOption :: Maybe FilePath -> ManifestOption
-toManifestOption = ManifestOption . Last
+envManifestOption :: Env.Parser Env.Error ManifestOption
+envManifestOption =
+  ManifestOption
+    . Last
+    <$> optional (Env.var Env.nonempty "MANIFEST" (Env.help optionHelp))
 
-unManifestOption :: ManifestOption -> Maybe FilePath
-unManifestOption (ManifestOption x) = getLast x
+optManifestOption :: Parser ManifestOption
+optManifestOption =
+  ManifestOption
+    . Last
+    <$> optional (option str (long "manifest" <> help optionHelp))
 
-newtype NoManifestOption a = NoManifestOption
-  { unwrap :: a
-  }
-
-instance HasManifestOption (NoManifestOption a) where
-  getManifestOption = const $ toManifestOption Nothing
+optionHelp :: String
+optionHelp = "Restylers manifest to use"

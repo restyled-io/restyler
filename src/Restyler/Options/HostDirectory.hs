@@ -2,7 +2,6 @@ module Restyler.Options.HostDirectory
   ( HostDirectoryOption (..)
   , HasHostDirectoryOption (..)
   , getHostDirectory
-  , toHostDirectoryOption
   , envHostDirectoryOption
   , optHostDirectoryOption
   ) where
@@ -13,7 +12,9 @@ import Env qualified
 import Options.Applicative
 import Restyler.App.Class (MonadSystem (..))
 
-newtype HostDirectoryOption = HostDirectoryOption (Last FilePath)
+newtype HostDirectoryOption = HostDirectoryOption
+  { unwrap :: Last FilePath
+  }
   deriving newtype (Semigroup, Monoid)
 
 class HasHostDirectoryOption env where
@@ -26,23 +27,19 @@ getHostDirectory
      )
   => m FilePath
 getHostDirectory = do
-  mHostDirectory <- asks $ unHostDirectoryOption . getHostDirectoryOption
+  mHostDirectory <- asks $ getLast . (.unwrap) . getHostDirectoryOption
   maybe getCurrentDirectory pure mHostDirectory
-
-toHostDirectoryOption :: Maybe FilePath -> HostDirectoryOption
-toHostDirectoryOption = HostDirectoryOption . Last
-
-unHostDirectoryOption :: HostDirectoryOption -> Maybe FilePath
-unHostDirectoryOption (HostDirectoryOption x) = getLast x
 
 envHostDirectoryOption :: Env.Parser Env.Error HostDirectoryOption
 envHostDirectoryOption =
-  toHostDirectoryOption
+  HostDirectoryOption
+    . Last
     <$> optional (Env.var Env.nonempty "HOST_DIRECTORY" $ Env.help optionHelp)
 
 optHostDirectoryOption :: Parser HostDirectoryOption
 optHostDirectoryOption =
-  toHostDirectoryOption
+  HostDirectoryOption
+    . Last
     <$> optional
       (option str $ long "host-directory" <> metavar "DIRECTORY" <> help optionHelp)
 
