@@ -8,9 +8,11 @@ module Restyler.RestyleResult
 import Restyler.Prelude
 
 import Data.Text qualified as T
+import GitHub qualified
 import Restyler.Config
+import Restyler.Config.RequestReview
+import Restyler.Content (pullRequestDescription)
 import Restyler.GHA.Output
-import Restyler.GHA.Outputs
 import Restyler.Git
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
@@ -48,31 +50,50 @@ setRestylerResultOutputs
   -> m ()
 setRestylerResultOutputs =
   appendGitHubOutputs . \case
-    RestyleSkipped config pr _ ->
-      let outputs = restylerOutputs config pr []
-      in  [ "differences=false"
-          , "restyled-base=" <> outputs.base
-          , "restyled-head=" <> outputs.head
-          , "skipped=true"
-          ]
-    RestyleSuccessNoDifference config pr _ ->
-      let outputs = restylerOutputs config pr []
-      in  [ "differences=false"
-          , "restyled-base=" <> outputs.base
-          , "restyled-head=" <> outputs.head
-          ]
+    RestyleSkipped _ pr _ ->
+      [ "differences=false"
+      , "restyled-base=" <> pr.head.ref
+      , "restyled-head=restyled/" <> pr.head.ref
+      , "skipped=true"
+      ]
+    RestyleSuccessNoDifference _ pr _ ->
+      [ "differences=false"
+      , "restyled-base=" <> pr.head.ref
+      , "restyled-head=restyled/" <> pr.head.ref
+      ]
     RestyleSuccessDifference config pr results patch ->
-      let outputs = restylerOutputs config pr results
-      in  [ "differences=true"
-          , "git-patch<<EOM\n" <> patch <> "\nEOM"
-          , "restyled-base=" <> outputs.base
-          , "restyled-head=" <> outputs.head
-          , "restyled-title=" <> outputs.title
-          , "restyled-body<<EOM\n" <> outputs.body <> "\nEOM"
-          , "restyled-labels=" <> mcsv outputs.labels
-          , "restyled-reviewers=" <> mcsv outputs.reviewers
-          , "restyled-team-reviewers=" <> mcsv outputs.teamReviewers
-          ]
+      -- NB. The EOMs are safe because: (1) git-patch is always guaranteed a
+      -- column of whitespace, so if it itself contains EOM, that'd be " EOM"
+      -- and (2) we control the body content and wouldn't put an "EOM" there.
+      let
+        body =
+          maybe
+            ""
+            (pullRequestDescription pr.number)
+            $ nonEmpty
+            $ filter restylerCommittedChanges results
+
+        labels =
+          nonEmpty
+            $ map GitHub.untagName
+            $ toList
+            $ cLabels config
+
+        reviewers =
+          fmap (pure . GitHub.untagName)
+            $ determineReviewer pr
+            $ cRequestReview config
+      in
+        [ "differences=true"
+        , "git-patch<<EOM\n" <> patch <> "\nEOM"
+        , "restyled-base=" <> pr.head.ref
+        , "restyled-head=restyled/" <> pr.head.ref
+        , "restyled-title=Restyle " <> pr.title
+        , "restyled-body<<EOM\n" <> body <> "\nEOM"
+        , "restyled-labels=" <> mcsv labels
+        , "restyled-reviewers=" <> mcsv reviewers
+        , "restyled-team-reviewers=" -- TODO
+        ]
  where
   mcsv :: Maybe (NonEmpty Text) -> Text
   mcsv = maybe "" (T.intercalate "," . toList)

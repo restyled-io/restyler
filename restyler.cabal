@@ -37,7 +37,6 @@ library
       Restyler.GHA.App
       Restyler.GHA.GitHubEnv
       Restyler.GHA.Output
-      Restyler.GHA.Outputs
       Restyler.Git
       Restyler.GitHub.Api
       Restyler.GitHub.Commit.Status
