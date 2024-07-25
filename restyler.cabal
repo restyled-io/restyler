@@ -43,8 +43,6 @@ library
       Restyler.GitHub.PullRequest
       Restyler.GitHub.PullRequest.File
       Restyler.Ignore
-      Restyler.Job.PlanUpgradeRequired
-      Restyler.Job.RepoDisabled
       Restyler.Local
       Restyler.Local.App
       Restyler.Local.Options
