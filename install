@@ -47,6 +47,7 @@ if [ -z "$tag" ]; then
   tag=$(curl -sSf https://api.github.com/repos/restyled-io/restyler/releases |
     grep -o '"tag_name": ".*"' |
     sed 's/^.*: "//; s/"$//' |
+    grep -v -- '-rc$' |
     head -n 1)
 fi
 
