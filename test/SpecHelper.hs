@@ -49,6 +49,7 @@ import Restyler.Config
 import Restyler.Docker
 import Restyler.Git
 import Restyler.Local.Options
+import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.NoCommit
@@ -138,6 +139,7 @@ testOptions =
     , restrictions = fullRestrictions
     , hostDirectory = toHostDirectoryOption Nothing
     , noCommit = NoCommitOption $ Any False
+    , failOnDifferences = FailOnDifferencesOption $ Any False
     }
 
 testAppExample :: TestAppT a -> TestAppT a

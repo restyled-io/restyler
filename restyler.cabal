@@ -47,6 +47,7 @@ library
       Restyler.Local.App
       Restyler.Local.Options
       Restyler.Opt
+      Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory
       Restyler.Options.ImageCleanup
       Restyler.Options.LogSettings

@@ -13,6 +13,7 @@ import Restyler.Prelude
 import Data.Semigroup.Generic
 import Env qualified
 import Options.Applicative
+import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
@@ -25,6 +26,7 @@ data Options = Options
   , restrictions :: Restrictions
   , hostDirectory :: HostDirectoryOption
   , noCommit :: NoCommitOption
+  , failOnDifferences :: FailOnDifferencesOption
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
@@ -38,6 +40,9 @@ instance HasHostDirectoryOption Options where
 instance HasNoCommitOption Options where
   getNoCommitOption = (.noCommit)
 
+instance HasFailOnDifferencesOption Options where
+  getFailOnDifferencesOption = (.failOnDifferences)
+
 envParser :: Env.Parser Env.Error Options
 envParser =
   Options
@@ -45,6 +50,7 @@ envParser =
     <*> envRestrictions
     <*> envHostDirectoryOption
     <*> envNoCommit
+    <*> envFailOnDifferences
 
 optParser :: Parser Options
 optParser =
@@ -53,6 +59,7 @@ optParser =
     <*> pure mempty -- Restrictions are ENV-only
     <*> optHostDirectoryOption
     <*> optNoCommit
+    <*> optFailOnDifferences
 
 class HasOptions a where
   getOptions :: a -> Options
@@ -75,3 +82,6 @@ instance HasOptions a => HasHostDirectoryOption (ThroughOptions a) where
 
 instance HasOptions a => HasNoCommitOption (ThroughOptions a) where
   getNoCommitOption = getNoCommitOption . getOptions
+
+instance HasOptions a => HasFailOnDifferencesOption (ThroughOptions a) where
+  getFailOnDifferencesOption = getFailOnDifferencesOption . getOptions
