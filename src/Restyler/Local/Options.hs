@@ -23,16 +23,18 @@ import Restyler.Restrictions
 
 data Options = Options
   { logSettings :: LogSettingsOption
-  , restrictions :: Restrictions
+  , failOnDifferences :: FailOnDifferencesOption
   , hostDirectory :: HostDirectoryOption
   , noCommit :: NoCommitOption
-  , failOnDifferences :: FailOnDifferencesOption
+  , restrictions :: Restrictions
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
+  deriving (HasManifestOption) via (NoManifestOption Options)
+  deriving (HasImageCleanupOption) via (NoImageCleanupOption Options)
 
-instance HasRestrictions Options where
-  getRestrictions = (.restrictions)
+instance HasFailOnDifferencesOption Options where
+  getFailOnDifferencesOption = (.failOnDifferences)
 
 instance HasHostDirectoryOption Options where
   getHostDirectoryOption = (.hostDirectory)
@@ -40,26 +42,26 @@ instance HasHostDirectoryOption Options where
 instance HasNoCommitOption Options where
   getNoCommitOption = (.noCommit)
 
-instance HasFailOnDifferencesOption Options where
-  getFailOnDifferencesOption = (.failOnDifferences)
+instance HasRestrictions Options where
+  getRestrictions = (.restrictions)
 
 envParser :: Env.Parser Env.Error Options
 envParser =
   Options
     <$> envLogSettingsOption
-    <*> envRestrictions
+    <*> envFailOnDifferences
     <*> envHostDirectoryOption
     <*> envNoCommit
-    <*> envFailOnDifferences
+    <*> envRestrictions
 
 optParser :: Parser Options
 optParser =
   Options
     <$> optLogSettingsOption
-    <*> pure mempty -- Restrictions are ENV-only
+    <*> optFailOnDifferences
     <*> optHostDirectoryOption
     <*> optNoCommit
-    <*> optFailOnDifferences
+    <*> pure mempty -- Restrictions are ENV-only
 
 class HasOptions a where
   getOptions :: a -> Options
@@ -71,17 +73,21 @@ newtype ThroughOptions a = ThroughOptions
   { unwrap :: a
   }
   deriving newtype (HasOptions)
-  deriving (HasManifestOption) via (NoManifestOption (ThroughOptions a))
-  deriving (HasImageCleanupOption) via (NoImageCleanupOption (ThroughOptions a))
 
-instance HasOptions a => HasRestrictions (ThroughOptions a) where
-  getRestrictions = getRestrictions . getOptions
+instance HasOptions a => HasFailOnDifferencesOption (ThroughOptions a) where
+  getFailOnDifferencesOption = getFailOnDifferencesOption . getOptions
 
 instance HasOptions a => HasHostDirectoryOption (ThroughOptions a) where
   getHostDirectoryOption = getHostDirectoryOption . getOptions
 
+instance HasOptions a => HasImageCleanupOption (ThroughOptions a) where
+  getImageCleanupOption = getImageCleanupOption . getOptions
+
+instance HasOptions a => HasManifestOption (ThroughOptions a) where
+  getManifestOption = getManifestOption . getOptions
+
 instance HasOptions a => HasNoCommitOption (ThroughOptions a) where
   getNoCommitOption = getNoCommitOption . getOptions
 
-instance HasOptions a => HasFailOnDifferencesOption (ThroughOptions a) where
-  getFailOnDifferencesOption = getFailOnDifferencesOption . getOptions
+instance HasOptions a => HasRestrictions (ThroughOptions a) where
+  getRestrictions = getRestrictions . getOptions
