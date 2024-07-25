@@ -48,4 +48,4 @@ restylerOutputs config pr results =
     , teamReviewers = Nothing
     }
  where
-  toBody = Content.pullRequestDescription Nothing pr.number
+  toBody = Content.pullRequestDescription pr.number
