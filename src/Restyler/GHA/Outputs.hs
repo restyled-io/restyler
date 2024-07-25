@@ -39,7 +39,10 @@ restylerOutputs config pr results =
           , repo = pr.base.repo.name
           }
     , title = "Restyle " <> pr.title
-    , body = maybe "" toBody $ nonEmpty results
+    , body =
+        maybe "" toBody
+          $ nonEmpty
+          $ filter restylerCommittedChanges results
     , base = pr.head.ref
     , head = "restyled/" <> pr.head.ref
     , labels = nonEmpty $ map GitHub.untagName $ toList $ cLabels config

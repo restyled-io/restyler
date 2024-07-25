@@ -15,6 +15,7 @@ pullRequestDescription
   :: Int
   -- ^ Original PR Number
   -> NonEmpty RestylerResult
+  -- ^ Expected to already be filtered to changes
   -> Text
 pullRequestDescription n results =
   [st|
@@ -41,7 +42,6 @@ Sorry if this was unexpected. To disable it, see our [documentation][].
   resultsList =
     unlines
       $ map (("- " <>) . restylerListItem . (.restyler))
-      $ filter restylerCommittedChanges
       $ toList results
 
   restylerListItem r = pack $ case rDocumentation r of
