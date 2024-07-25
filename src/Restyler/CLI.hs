@@ -6,10 +6,11 @@ import Restyler.Prelude
 
 import Restyler.AnnotatedException
 import Restyler.App (AppT, runAppT)
+import Restyler.Options.FailOnDifferences
 import Restyler.RestyleResult
 
 main
-  :: HasLogger app
+  :: (HasLogger app, HasFailOnDifferencesOption app)
   => (forall a. (app -> IO a) -> IO a)
   -> AppT app IO (RestyleResult pr)
   -> IO ()
@@ -21,14 +22,18 @@ main withApp run = do
   go = do
     result <- run
 
-    let
-      message :: Message
-      message = case result of
-        RestyleSkipped _ _ reason -> "Restyle skipped" :# ["reason" .= reason]
-        RestyleSuccessNoDifference {} -> "No differences"
-        RestyleSuccessDifference {} -> "Differences found"
+    case result of
+      RestyleSkipped _ _ reason -> do
+        logInfo $ "Restyle skipped" :# ["reason" .= reason]
+        pure ExitSuccess
+      RestyleSuccessNoDifference {} -> do
+        ExitSuccess <$ logInfo "No differences"
+      RestyleSuccessDifference {} -> do
+        failOnDifferences <- getFailOnDifferences
 
-    ExitSuccess <$ logInfo message
+        if failOnDifferences
+          then ExitFailure 1 <$ logError "Differences found"
+          else ExitSuccess <$ logWarn "Differences found"
 
 exitHandler :: MonadLogger m => AnnotatedException SomeException -> m ExitCode
 exitHandler aex = do

@@ -9,6 +9,7 @@ import Data.List.NonEmpty (some1)
 import Env qualified
 import Restyler.Local.Options
 import Restyler.Opt qualified as Opt
+import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
@@ -21,6 +22,7 @@ data App = App
   , options :: Options
   , paths :: NonEmpty FilePath
   }
+  deriving (HasFailOnDifferencesOption) via (ThroughOptions App)
   deriving (HasHostDirectoryOption) via (ThroughOptions App)
   deriving (HasImageCleanupOption) via (ThroughOptions App)
   deriving (HasManifestOption) via (ThroughOptions App)
