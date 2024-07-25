@@ -5,14 +5,6 @@ module Restyler.RestyleResult
 
 import Restyler.Prelude
 
-import Data.Text qualified as T
-import GitHub qualified
-import Restyler.Config
-import Restyler.Config.RequestReview
-import Restyler.Content (pullRequestDescription)
-import Restyler.GHA.Output
-import Restyler.Git
-import Restyler.GitHub.PullRequest
 import Restyler.Ignore
 import Restyler.RestylerResult
 
