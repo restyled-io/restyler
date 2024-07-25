@@ -10,18 +10,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-      - uses: restyled-io/actions/setup@v1
+      - uses: restyled-io/actions/setup@v2
       - id: restyler
-        uses: restyled-io/actions/run@v1
+        uses: restyled-io/actions/run@v2
       - uses: peter-evans/create-pull-request@v6
         with:
           base: ${{ steps.restyler.outputs.restyled-base }}
           branch: ${{ steps.restyler.outputs.restyled-head }}
           title: ${{ steps.restyler.outputs.restyled-title }}
           body: ${{ steps.restyler.outputs.restyled-body }}
-          labels: ${{ steps.restyler.outputs.restyled-labels }}
-          reviewers: ${{ steps.restyler.outputs.restyled-reviewers }}
-          team-reviewers: ${{ steps.restyler.outputs.restyled-team-reviewers }}
+          labels: restyled
+          reviewers: ${{ github.event.pull_request.user.login }}
           delete-branch: true
       - if: ${{ steps.restyler.outputs.differences == 'true' }}
         name: Print Restyled differences
