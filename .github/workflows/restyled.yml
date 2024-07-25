@@ -13,7 +13,10 @@ jobs:
       - uses: restyled-io/actions/setup@v2
       - id: restyler
         uses: restyled-io/actions/run@v2
-      - uses: peter-evans/create-pull-request@v6
+        with:
+          fail-on-differences: true
+      - if: ${{ !cancelled && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: peter-evans/create-pull-request@v6
         with:
           base: ${{ steps.restyler.outputs.restyled-base }}
           branch: ${{ steps.restyler.outputs.restyled-head }}
@@ -22,11 +25,3 @@ jobs:
           labels: restyled
           reviewers: ${{ github.event.pull_request.user.login }}
           delete-branch: true
-      - if: ${{ steps.restyler.outputs.differences == 'true' }}
-        name: Print Restyled differences
-        run: |
-          echo "Restyled found differences:"
-          cat <<'EOM'
-          ${{ steps.restyler.outputs.git-patch }}
-          EOM
-          exit 1
