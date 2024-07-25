@@ -2,32 +2,33 @@ module Restyler.Options.ImageCleanup
   ( ImageCleanupOption (..)
   , HasImageCleanupOption (..)
   , getImageCleanup
-  , toImageCleanupOption
-  , NoImageCleanupOption (..)
+  , envImageCleanupOption
+  , optImageCleanupOption
   ) where
 
-import Restyler.Prelude hiding (Last (..))
+import Restyler.Prelude
 
-import Data.Semigroup (Last (..))
+import Env qualified
+import Options.Applicative
 
-newtype ImageCleanupOption = ImageCleanupOption (Last Bool)
-  deriving newtype (Semigroup)
+newtype ImageCleanupOption = ImageCleanupOption
+  { unwrap :: Any
+  }
+  deriving newtype (Semigroup, Monoid)
 
 class HasImageCleanupOption a where
   getImageCleanupOption :: a -> ImageCleanupOption
 
 getImageCleanup :: (MonadReader env m, HasImageCleanupOption env) => m Bool
-getImageCleanup = asks $ unImageCleanupOption . getImageCleanupOption
+getImageCleanup = asks $ getAny . (.unwrap) . getImageCleanupOption
 
-toImageCleanupOption :: Bool -> ImageCleanupOption
-toImageCleanupOption = ImageCleanupOption . Last
+envImageCleanupOption :: Env.Parser Env.Error ImageCleanupOption
+envImageCleanupOption =
+  ImageCleanupOption . Any <$> Env.switch "IMAGE_CLEANUP" (Env.help optionHelp)
 
-unImageCleanupOption :: ImageCleanupOption -> Bool
-unImageCleanupOption (ImageCleanupOption x) = getLast x
+optImageCleanupOption :: Parser ImageCleanupOption
+optImageCleanupOption =
+  ImageCleanupOption . Any <$> switch (long "image-cleanup" <> help optionHelp)
 
-newtype NoImageCleanupOption a = NoImageCleanupOption
-  { unwrap :: a
-  }
-
-instance HasImageCleanupOption (NoImageCleanupOption a) where
-  getImageCleanupOption = const $ toImageCleanupOption False
+optionHelp :: String
+optionHelp = "Remove pulled restyler images after restyling"

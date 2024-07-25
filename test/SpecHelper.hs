@@ -52,6 +52,7 @@ import Restyler.Local.Options
 import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
+import Restyler.Options.Manifest
 import Restyler.Options.NoCommit
 import Restyler.Restrictions
 import Restyler.Restyler
@@ -66,14 +67,20 @@ data TestApp = TestApp
   , taFS :: FS
   , taProcessExitCodes :: ExitCode
   }
-  deriving (HasHostDirectoryOption, HasRestrictions) via (ThroughOptions TestApp)
-  deriving (HasImageCleanupOption) via (NoImageCleanupOption TestApp)
+  deriving
+    ( HasHostDirectoryOption
+    , HasRestrictions
+    )
+    via (ThroughOptions TestApp)
 
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
 instance HasOptions TestApp where
   getOptions = taOptions
+
+instance HasImageCleanupOption TestApp where
+  getImageCleanupOption = const $ ImageCleanupOption $ Any False
 
 instance HasNoCommitOption TestApp where
   getNoCommitOption = const $ NoCommitOption $ Any False
@@ -136,10 +143,12 @@ testOptions :: Options
 testOptions =
   Options
     { logSettings = error "logSettings"
-    , restrictions = fullRestrictions
-    , hostDirectory = toHostDirectoryOption Nothing
-    , noCommit = NoCommitOption $ Any False
     , failOnDifferences = FailOnDifferencesOption $ Any False
+    , hostDirectory = HostDirectoryOption $ Last Nothing
+    , imageCleanup = ImageCleanupOption $ Any False
+    , manifest = ManifestOption $ Last Nothing
+    , noCommit = NoCommitOption $ Any False
+    , restrictions = fullRestrictions
     }
 
 testAppExample :: TestAppT a -> TestAppT a
