@@ -47,7 +47,6 @@ import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException
 import Restyler.Config
 import Restyler.Docker
-import Restyler.Git
 import Restyler.Local.Options
 import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
@@ -100,7 +99,6 @@ newtype TestAppT a = TestAppT
     , MonadLogger
     , MonadReader TestApp
     )
-  deriving (MonadGit) via (NullGit TestAppT)
   deriving (MonadDocker) via (NullDocker TestAppT)
 
 instance MonadSystem TestAppT where
