@@ -1,0 +1,19 @@
+changelog:
+  exclude:
+    labels:
+      - chore
+      - dependencies
+  categories:
+    - title: Breaking
+      labels:
+        - semver-major
+        - breaking
+    - title: Features
+      labels:
+        - semver-minor
+        - feature
+    - title: Fixes
+        - bugfix
+    - title: Other Changes
+      labels:
+        - "*"
