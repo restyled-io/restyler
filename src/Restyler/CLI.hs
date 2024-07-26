@@ -26,9 +26,9 @@ main withApp run = do
       RestyleSkipped reason -> do
         logInfo $ "Restyle skipped" :# ["reason" .= reason]
         pure ExitSuccess
-      RestyleSuccessNoDifference -> do
+      RestyleNoDifference -> do
         ExitSuccess <$ logInfo "No differences"
-      RestyleSuccessDifference -> do
+      RestyleDifference -> do
         failOnDifferences <- getFailOnDifferences
 
         if failOnDifferences

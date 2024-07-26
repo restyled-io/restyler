@@ -9,8 +9,8 @@ import Restyler.Ignore
 
 data RestyleResult
   = RestyleSkipped RestyleSkipped
-  | RestyleSuccessNoDifference
-  | RestyleSuccessDifference
+  | RestyleNoDifference
+  | RestyleDifference
 
 data RestyleSkipped
   = RestyleNotEnabled

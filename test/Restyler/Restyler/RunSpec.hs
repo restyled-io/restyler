@@ -25,9 +25,9 @@ spec = withTestApp $ do
               }
           ]
           ["a", "b"]
-          (const pure)
+          (const $ pure . Just)
 
-      filtered `shouldBe` [["a", "b"], ["a"]]
+      filtered `shouldBe` Just (["a", "b"] :| [["a"]])
 
   describe "runRestyler_" $ do
     it "treats non-zero exit codes as RestylerExitFailure"
