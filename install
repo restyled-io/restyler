@@ -69,9 +69,10 @@ Download failed
 
 1. Does https://github.com/restyled-io/restyler/releases/tag/$tag exist?
 2. Does it have an artifact named $artifact_name?
+3. Does $artifact_url exist?
 
 To request an artifact be added for your platform, or to report a bug with this
-script, see https://github.com/restyled-io/restyler/issues.
+script, go to https://github.com/restyled-io/restyler/issues.
 EOM
   exit 1
 fi
