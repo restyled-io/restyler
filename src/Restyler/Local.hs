@@ -68,5 +68,5 @@ run pr paths = do
       results <- runRestylers config paths
       pure
         $ if any restylerCommittedChanges results
-          then RestyleSuccessDifference results
+          then RestyleSuccessDifference
           else RestyleSuccessNoDifference

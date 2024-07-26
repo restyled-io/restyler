@@ -6,12 +6,11 @@ module Restyler.RestyleResult
 import Restyler.Prelude
 
 import Restyler.Ignore
-import Restyler.RestylerResult
 
 data RestyleResult
   = RestyleSkipped RestyleSkipped
   | RestyleSuccessNoDifference
-  | RestyleSuccessDifference [RestylerResult]
+  | RestyleSuccessDifference
 
 data RestyleSkipped
   = RestyleNotEnabled
