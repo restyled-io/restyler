@@ -12,7 +12,6 @@ module Restyler.Restyler.Run
 
     -- * Exported for testing only
   , runRestyler
-  , runRestyler_
   , withFilteredPaths
   , findFiles
   ) where
