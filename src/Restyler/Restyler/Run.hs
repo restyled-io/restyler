@@ -139,17 +139,18 @@ withFilteredPaths restylers paths run = do
         included = includePath includes path
 
       logTrace
-        $ "Matching paths"
+        $ "Matching path"
         :# [ "name" .= rName r
            , "path" .= path
            , "matched" .= matched
            , "includes" .= includes
            , "included" .= included
            , "interpreter" .= mInterpreter
-           -- , "filtered" .= filtered
            ]
 
       pure $ if included then Just path else Nothing
+
+    logDebug $ "Matched paths" :# ["name" .= rName r, "filtered" .= filtered]
 
     run r filtered
 
