@@ -42,7 +42,7 @@ instance
   dockerPull image = runDocker ["pull", "--quiet", image]
   dockerRun args = runDocker $ ["run", "--rm"] <> args
   dockerRunStdout args = runDockerStdout $ ["run", "--rm"] <> args
-  dockerImageRm image = runDocker_ ["rm", "--force", image]
+  dockerImageRm image = runDocker_ ["image", "rm", "--force", image]
 
 runDocker
   :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
