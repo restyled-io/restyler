@@ -213,7 +213,10 @@ runRestyler_ r paths = case rDelimiters r of
  where
   run ps = do
     dockerPullRestyler r
-    traverse_ (dockerRunRestyler r) $ withProgress $ getDockerRunStyles r ps
+    dockerWithImageRm r
+      $ traverse_ (dockerRunRestyler r)
+      $ withProgress
+      $ getDockerRunStyles r ps
 
 data WithProgress a = WithProgress
   { pItem :: a
@@ -262,7 +265,6 @@ dockerRunRestyler
      , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
-     , HasImageCleanupOption env
      , HasRestrictions env
      , HasCallStack
      )
@@ -271,7 +273,6 @@ dockerRunRestyler
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
-  imageCleanup <- getImageCleanup
   restrictions <- asks getRestrictions
 
   let
@@ -285,14 +286,6 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
       | pTotal > 1 = " (" <> pack (show pIndex) <> " of " <> pack (show pTotal) <> ")"
       | otherwise = ""
 
-    -- Our integration tests run every restyler we support in a space-restricted
-    -- environment. This switch triggers removal of each image after running it,
-    -- to avoid out-of-space errors.
-    withImageCleanup f =
-      if imageCleanup
-        then f `finally` suppressWarn (dockerImageRm rImage)
-        else f
-
     logRunningOn =
       logInfo
         . (:# [])
@@ -303,7 +296,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
           [path] -> pack path
           paths -> show (length paths) <> " paths"
 
-  ec <- withImageCleanup $ case pItem of
+  ec <- case pItem of
     DockerRunPathToStdout path -> do
       logRunningOn [path]
       (ec, out) <- dockerRunStdout $ args <> [prefix path]
@@ -327,6 +320,28 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
+
+-- | Remove the Restyler image after the given action
+--
+-- Our integration tests run every restyler we support in a space-restricted
+-- environment. This switch triggers removal of each image after running it,
+-- to avoid out-of-space errors.
+dockerWithImageRm
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadDocker m
+     , MonadReader env m
+     , HasImageCleanupOption env
+     , HasCallStack
+     )
+  => Restyler
+  -> m a
+  -> m a
+dockerWithImageRm r f = do
+  imageCleanup <- getImageCleanup
+  if imageCleanup
+    then finally f $ suppressWarn $ dockerImageRm $ rImage r
+    else f
 
 -- | Expand directory arguments and filter to only existing paths
 --
