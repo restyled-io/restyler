@@ -9,7 +9,6 @@ module Restyler.Restyler.Run
   , RestylerExitFailure (..)
   , RestylerOutOfMemory (..)
   , RestylerCommandNotFound (..)
-  , TooManyChangedPaths (..)
 
     -- * Exported for testing only
   , runRestyler
@@ -25,7 +24,6 @@ import Data.Text qualified as T
 import Restyler.AnnotatedException
 import Restyler.App.Class
 import Restyler.Config
-import Restyler.Config.ChangedPaths
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
@@ -89,19 +87,6 @@ instance Exception RestylerCommandNotFound where
       , "\nSee " <> unpack (Wiki.commonError "Restyle Error 127") <> " for more details"
       ]
 
-data TooManyChangedPaths = TooManyChangedPaths Natural Natural
-  deriving stock (Show, Eq)
-
-instance Exception TooManyChangedPaths where
-  displayException (TooManyChangedPaths lenPaths maxPaths) =
-    "Number of changed paths ("
-      <> show lenPaths
-      <> ") is greater than configured maximum ("
-      <> show maxPaths
-      <> ")"
-      <> "\n  "
-      <> unpack (Wiki.commonError "Restyle Error#too-many-changed-paths")
-
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
   :: ( MonadUnliftIO m
@@ -122,23 +107,8 @@ runRestylers
   -> m [RestylerResult]
 runRestylers config@Config {..} allPaths = do
   paths <- findFiles $ filter included allPaths
-
-  let
-    lenPaths = genericLength paths
-    maxPaths = cChangedPaths.maximum
-
-  if lenPaths > maxPaths
-    then case cChangedPaths.outcome of
-      MaximumChangedPathsOutcomeSkip -> do
-        logWarn
-          $ "Number of changed paths is greater than configured maximum"
-          :# ["paths" .= lenPaths, "maximum" .= maxPaths]
-        pure []
-      MaximumChangedPathsOutcomeError ->
-        throw $ TooManyChangedPaths lenPaths maxPaths
-    else do
-      for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
-      withFilteredPaths restylers paths $ runRestyler config
+  for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
+  withFilteredPaths restylers paths $ runRestyler config
  where
   included path = none (`match` path) cExclude
   restylers = filter rEnabled cRestylers

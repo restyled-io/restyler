@@ -4,15 +4,7 @@ module Restyler.Restyler.RunSpec
 
 import SpecHelper
 
-import Restyler.Config
-import Restyler.Config.ChangedPaths
 import Restyler.Config.Interpreter
-import Restyler.Docker
-import Restyler.Git
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.NoCommit
-import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import Restyler.Test.FS (createFileLink, writeFileExecutable)
@@ -36,19 +28,6 @@ spec = withTestApp $ do
           (const pure)
 
       filtered `shouldBe` [["a", "b"], ["a"]]
-
-  describe "runRestylers" $ do
-    context "maximum changed paths" $ do
-      it "has a default maximum" $ testAppExample $ do
-        runChangedPaths (mkPaths 1001) id
-          `shouldThrow` (== TooManyChangedPaths 1001 1000)
-
-      it "can be configured" $ testAppExample $ do
-        runChangedPaths (mkPaths 11) (setMaximum 10)
-          `shouldThrow` (== TooManyChangedPaths 11 10)
-
-      it "can be configured to skip" $ testAppExample $ do
-        runChangedPaths (mkPaths 1001) setOutcomeSkip `shouldReturn` ()
 
   describe "runRestyler_" $ do
     it "treats non-zero exit codes as RestylerExitFailure"
@@ -80,34 +59,3 @@ spec = withTestApp $ do
       createFileLink "/foo/bar" "/foo/baz/bat"
 
       findFiles ["foo"] `shouldReturn` ["foo/bar"]
-
-mkPaths :: Int -> [FilePath]
-mkPaths n = map (\i -> "/" <> show i <> ".txt") [1 .. n]
-
-runChangedPaths
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadSystem m
-     , MonadDownloadFile m
-     , MonadGit m
-     , MonadDocker m
-     , MonadReader env m
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoCommitOption env
-     , HasRestrictions env
-     )
-  => [FilePath]
-  -> (ChangedPathsConfig -> ChangedPathsConfig)
-  -> m ()
-runChangedPaths paths f = do
-  for_ paths $ \path -> writeFile path ""
-  config <- loadDefaultConfig
-  let updatedConfig = config {cChangedPaths = f $ cChangedPaths config}
-  void $ runRestylers updatedConfig paths
-
-setMaximum :: Natural -> ChangedPathsConfig -> ChangedPathsConfig
-setMaximum m cp = cp {maximum = m}
-
-setOutcomeSkip :: ChangedPathsConfig -> ChangedPathsConfig
-setOutcomeSkip cp = cp {outcome = MaximumChangedPathsOutcomeSkip}
