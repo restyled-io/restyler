@@ -12,8 +12,8 @@ curl --proto '=https' --tlsv1.2 -sSf \
 ## Usage
 
 ```console
-Usage: restyle [--debug] [--trace] [--color WHEN] [--fail-on-differences] 
-               [--host-directory DIRECTORY] [--image-cleanup] [--manifest FILE] 
+Usage: restyle [--debug] [--trace] [--color WHEN] [--fail-on-differences]
+               [--host-directory DIRECTORY] [--image-cleanup] [--manifest FILE]
                [--no-commit] PATH [PATH]
 
   Restyle local files
