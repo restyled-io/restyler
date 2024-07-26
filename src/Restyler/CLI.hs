@@ -28,7 +28,7 @@ main withApp run = do
         pure ExitSuccess
       RestyleSuccessNoDifference -> do
         ExitSuccess <$ logInfo "No differences"
-      RestyleSuccessDifference _ -> do
+      RestyleSuccessDifference -> do
         failOnDifferences <- getFailOnDifferences
 
         if failOnDifferences
