@@ -66,6 +66,25 @@ jobs:
           files: "*-binaries/restyler-*.tar.gz"
           fail_on_unmatched_files: true
 
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+      - run: |
+          tar xzf restyler-*.tar.gz
+          mkdir -p ./bin
+          mv -v restyler-*/restyle ./bin
+          ./bin/restyle --help
+      - uses: restyled-io/actions/setup-demo@v2
+        with:
+          options: --limit 3
+      - uses: restyled-io/actions/run@v2
+        with:
+          log-level: debug
+
   release:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
