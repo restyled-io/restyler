@@ -104,7 +104,7 @@ runRestylers
      )
   => Config
   -> [FilePath]
-  -> m [RestylerResult]
+  -> m (Maybe (NonEmpty RestylerResult))
 runRestylers config@Config {..} allPaths = do
   paths <- findFiles $ filter included allPaths
   for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
@@ -122,12 +122,12 @@ withFilteredPaths
   :: (MonadUnliftIO m, MonadLogger m, MonadSystem m, HasCallStack)
   => [Restyler]
   -> [FilePath]
-  -> (Restyler -> [FilePath] -> m a)
-  -> m [a]
+  -> (Restyler -> [FilePath] -> m (Maybe a))
+  -> m (Maybe (NonEmpty a))
 withFilteredPaths restylers paths run = do
   withInterpreters <- traverse addExecutableInterpreter paths
 
-  for restylers $ \r -> do
+  mas <- for restylers $ \r -> do
     filtered <- (`mapMaybeM` withInterpreters) $ \(path, mInterpreter) -> do
       let
         matched = fromMaybe False $ do
@@ -153,6 +153,8 @@ withFilteredPaths restylers paths run = do
       pure $ if included then Just path else Nothing
 
     run r filtered
+
+  pure $ nonEmpty $ catMaybes mas
 
 addExecutableInterpreter
   :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
@@ -183,9 +185,9 @@ runRestyler
   => Config
   -> Restyler
   -> [FilePath]
-  -> m RestylerResult
+  -> m (Maybe RestylerResult)
 runRestyler config r = \case
-  [] -> pure $ noPathsRestylerResult r
+  [] -> pure Nothing
   paths -> do
     runRestyler_ r paths
     getRestylerResult config r

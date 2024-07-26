@@ -21,6 +21,7 @@ import Restyler.Options.Manifest
 import Restyler.Options.NoCommit
 import Restyler.Restrictions
 import Restyler.RestyleResult
+import Restyler.Restyler
 import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
@@ -57,7 +58,7 @@ run pr paths = do
           (getLabelNames pr)
 
   case (cEnabled config, getPullRequestState pr) of
-    (False, _) ->
+    (False, _) -> do
       pure $ RestyleSkipped RestyleNotEnabled
     (True, PullRequestClosed) ->
       pure $ RestyleSkipped RestylePullRequestClosed
@@ -65,8 +66,15 @@ run pr paths = do
       | Just reason <- mIgnoredReason ->
           pure $ RestyleSkipped $ RestyleIgnored reason
     (True, PullRequestOpen) -> do
-      results <- runRestylers config paths
-      pure
-        $ if any restylerCommittedChanges results
-          then RestyleSuccessDifference
-          else RestyleSuccessNoDifference
+      mresults <- runRestylers config paths
+
+      -- Overall result is logged in CLI, log individual results here
+      for_ mresults $ traverse_ $ \result -> do
+        logDebug
+          $ "RestylerResult"
+          :# [ "restyler" .= rName (result.restyler)
+             , "restyled" .= result.restyled
+             , "sha" .= result.sha
+             ]
+
+      pure $ maybe RestyleNoDifference (const RestyleDifference) mresults
