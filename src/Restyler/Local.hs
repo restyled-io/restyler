@@ -24,25 +24,6 @@ import Restyler.RestyleResult
 import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
--- | A 'PullRequest'-like object designed to never match the state or ignore
--- checks we do here when running against a real PR.
-data NullPullRequest = NullPullRequest
-
-instance HasPullRequestState NullPullRequest where
-  getPullRequestState = const PullRequestOpen
-
-instance HasAuthor NullPullRequest where
-  getAuthor = const "NONE"
-
-instance HasBaseRef NullPullRequest where
-  getBaseRef = const "UNKNOWN"
-
-instance HasHeadSha NullPullRequest where
-  getHeadSha = const "UNKNOWN"
-
-instance HasLabelNames NullPullRequest where
-  getLabelNames = const []
-
 run
   :: ( MonadUnliftIO m
      , MonadLogger m
