@@ -1,20 +1,13 @@
 module Restyler.GitHub.PullRequest
-  ( PullRequest (..)
-  , PullRequestState (..)
-  , User (..)
-  , Label (..)
-  , Commit (..)
-  , Repo (..)
-  , Owner (..)
-
-    -- * Classy access
-  , HasHtmlUrl (..)
-  , HasNumber (..)
+  ( PullRequest
   , HasPullRequestState (..)
+  , PullRequestState (..)
   , HasAuthor (..)
   , HasBaseRef (..)
-  , HasHeadSha (..)
   , HasLabelNames (..)
+
+    -- * Faking the PR interface
+  , NullPullRequest (..)
   ) where
 
 import Restyler.Prelude
@@ -22,13 +15,10 @@ import Restyler.Prelude
 import Data.Aeson (FromJSON (..), ToJSON (..), withText)
 
 data PullRequest = PullRequest
-  { html_url :: String
-  , number :: Int
-  , title :: Text
+  { title :: Text
   , user :: User
   , state :: PullRequestState
   , labels :: [Label]
-  , head :: Commit
   , base :: Commit
   }
   deriving stock (Show, Generic)
@@ -94,18 +84,6 @@ newtype Owner = Owner
   deriving stock (Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-class HasHtmlUrl a where
-  getHtmlUrl :: a -> String
-
-instance HasHtmlUrl PullRequest where
-  getHtmlUrl pr = pr.html_url
-
-class HasNumber a where
-  getNumber :: a -> Int
-
-instance HasNumber PullRequest where
-  getNumber pr = pr.number
-
 class HasPullRequestState a where
   getPullRequestState :: a -> PullRequestState
 
@@ -124,14 +102,24 @@ class HasBaseRef a where
 instance HasBaseRef PullRequest where
   getBaseRef pr = pr.base.ref
 
-class HasHeadSha a where
-  getHeadSha :: a -> Text
-
-instance HasHeadSha PullRequest where
-  getHeadSha pr = pr.head.sha
-
 class HasLabelNames a where
   getLabelNames :: a -> [Text]
 
 instance HasLabelNames PullRequest where
   getLabelNames pr = map (.name) pr.labels
+
+-- | A 'PullRequest'-like object designed to never match the state or ignore
+-- checks we do here when running against a real PR.
+data NullPullRequest = NullPullRequest
+
+instance HasPullRequestState NullPullRequest where
+  getPullRequestState = const PullRequestOpen
+
+instance HasAuthor NullPullRequest where
+  getAuthor = const "NONE"
+
+instance HasBaseRef NullPullRequest where
+  getBaseRef = const "UNKNOWN"
+
+instance HasLabelNames NullPullRequest where
+  getLabelNames = const []
