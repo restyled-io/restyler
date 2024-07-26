@@ -10,7 +10,6 @@ module Restyler.Git
 
 import Restyler.Prelude
 
-import Blammo.Logging.Logger (flushLogger)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
 import System.Process.Typed
@@ -39,8 +38,21 @@ instance
   where
   gitDiffNameOnly mRef = readGitLines $ ["diff", "--name-only"] <> maybeToList mRef
   gitCommitAll msg = do
-    runProcess_ $ proc "git" ["commit", "-a", "--message", msg]
+    runGit_ ["commit", "-a", "--message", msg]
     readGitChomp ["rev-parse", "HEAD"]
+
+runGit_
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => [String]
+  -> m ()
+runGit_ args = checkpointCallStack $ do
+  logProc "git" args
+  runProcess_ $ proc "git" args
 
 readGit
   :: ( MonadUnliftIO m
@@ -52,8 +64,7 @@ readGit
   => [String]
   -> m Text
 readGit args = checkpointCallStack $ do
-  logDebug $ ("exec git " <> unwords (map pack args)) :# []
-  flushLogger
+  logProc "git" args
   decodeUtf8 <$> readProcessStdout_ (proc "git" args)
 
 readGitChomp

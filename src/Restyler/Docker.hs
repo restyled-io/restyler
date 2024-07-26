@@ -10,7 +10,6 @@ module Restyler.Docker
 
 import Restyler.Prelude
 
-import Blammo.Logging.Logger (flushLogger)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
 import System.Process.Typed
@@ -49,8 +48,7 @@ runDocker
   => [String]
   -> m ExitCode
 runDocker args = checkpointCallStack $ do
-  logDebug $ ("exec docker " <> unwords (map pack args)) :# []
-  flushLogger
+  logProc "docker" args
   runProcess $ proc "docker" args
 
 runDocker_
@@ -58,8 +56,7 @@ runDocker_
   => [String]
   -> m ()
 runDocker_ args = checkpointCallStack $ do
-  logDebug $ ("exec docker " <> unwords (map pack args)) :# []
-  flushLogger
+  logProc "docker" args
   runProcess_ $ proc "docker" args
 
 runDockerStdout
@@ -67,8 +64,7 @@ runDockerStdout
   => [String]
   -> m (ExitCode, Text)
 runDockerStdout args = checkpointCallStack $ do
-  logDebug $ ("exec docker " <> unwords (map pack args)) :# []
-  flushLogger
+  logProc "docker" args
   second (fixNewline . decodeUtf8) <$> readProcessStdout (proc "docker" args)
 
 fixNewline :: Text -> Text

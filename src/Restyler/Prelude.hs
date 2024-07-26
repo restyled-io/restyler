@@ -24,6 +24,7 @@ import UnliftIO.Concurrent as X (threadDelay)
 import UnliftIO.Exception as X (finally)
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
+import Blammo.Logging.Logger (flushLogger)
 import Data.Aeson (Key)
 import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -31,6 +32,20 @@ import Data.List (minimum, minimumBy, (!!))
 
 logTrace :: (MonadLogger m, HasCallStack) => Message -> m ()
 logTrace = logOther $ LevelOther "trace"
+
+logProc
+  :: ( MonadIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => String
+  -> [String]
+  -> m ()
+logProc cmd args = do
+  logDebug $ unwords (map pack $ "exec" : cmd : args) :# []
+  flushLogger
 
 minimumMaybe :: Ord a => [a] -> Maybe a
 minimumMaybe = \case
