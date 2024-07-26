@@ -104,8 +104,20 @@ runRestylers
   => Config
   -> [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
-runRestylers config@Config {..} allPaths = do
-  paths <- findFiles $ filter included allPaths
+runRestylers config@Config {..} argPaths = do
+  let allPaths = filter included argPaths
+  expPaths <- findFiles allPaths
+  let paths = filter included expPaths
+
+  logDebug
+    $ "Paths"
+    :# [ "pathsGiven" .= argPaths
+       , "pathsGivenIncluded" .= allPaths
+       , "pathsExpanded" .= expPaths
+       , "pathsExpandedIncluded" .= paths
+       , "exclude" .= cExclude
+       ]
+
   for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
   withFilteredPaths restylers paths $ runRestyler config
  where
