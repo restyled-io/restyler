@@ -51,6 +51,11 @@ if [ -z "$tag" ]; then
     head -n 1)
 fi
 
+if [ -z "$tag" ]; then
+  echo "Unable to determine latest tag" >&2
+  exit 1
+fi
+
 cd /tmp || exit 1
 
 artifact_name=restyler-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
