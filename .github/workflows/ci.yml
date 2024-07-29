@@ -76,8 +76,8 @@ jobs:
       - run: |
           tar xzf restyler-*.tar.gz
           mkdir -p ./bin
-          mv -v restyler-*/restyle ./bin
-          ./bin/restyle --help
+          sudo mv -v restyler-*/restyle /usr/local/bin
+          restyle --help
       - uses: restyled-io/actions/setup-demo@v2
         with:
           options: --limit 3
