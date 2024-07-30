@@ -12,9 +12,9 @@ curl --proto '=https' --tlsv1.2 -sSf \
 ## Usage
 
 ```console
-Usage: restyle [--debug] [--trace] [--color WHEN] [--fail-on-differences] 
-               [--host-directory DIRECTORY] [--image-cleanup] [--manifest FILE] 
-               [--no-commit] PATH [PATH]
+Usage: restyle [--debug] [--trace] [--color WHEN] [--fail-on-differences]
+               [--host-directory DIRECTORY] [--image-cleanup] [--manifest FILE]
+               [--no-commit] [--no-pull] PATH [PATH]
 
   Restyle local files
 
@@ -28,6 +28,7 @@ Available options:
   --image-cleanup          Remove pulled restyler images after restyling
   --manifest FILE          Restylers manifest to use
   --no-commit              Don't make commits for restyle changes
+  --no-pull                Don't docker-pull images before docker-run
   -h,--help                Show this help text
 
 Available environment variables:
@@ -48,6 +49,8 @@ Available environment variables:
   NO_COLOR
   NO_COMMIT              Don't make commits for restyle
                          changes
+  NO_PULL                Don't docker-pull images before
+                         docker-run
   RESTYLER_CPU_SHARES
                          Run restylers with
                          --cpu-shares=<number>
