@@ -15,6 +15,7 @@ import Restyler.AnnotatedException
 import System.Process.Typed
 
 class Monad m => MonadGit m where
+  isGitRepository :: HasCallStack => m Bool
   gitDiffNameOnly :: HasCallStack => Maybe String -> m [FilePath]
   gitCommitAll :: HasCallStack => String -> m String
 
@@ -36,6 +37,7 @@ instance
   (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env)
   => MonadGit (ActualGit m)
   where
+  isGitRepository = (== ExitSuccess) <$> runGitExitCode ["rev-parse"]
   gitDiffNameOnly mRef = readGitLines $ ["diff", "--name-only"] <> maybeToList mRef
   gitCommitAll msg = do
     runGit_ ["commit", "-a", "--message", msg]
@@ -53,6 +55,19 @@ runGit_
 runGit_ args = checkpointCallStack $ do
   logProc "git" args
   runProcess_ $ proc "git" args
+
+runGitExitCode
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadReader env m
+     , HasLogger env
+     , HasCallStack
+     )
+  => [String]
+  -> m ExitCode
+runGitExitCode args = checkpointCallStack $ do
+  logProc "git" args
+  runProcess $ proc "git" args
 
 readGit
   :: ( MonadUnliftIO m
@@ -96,5 +111,6 @@ newtype NullGit m a = NullGit
   deriving newtype (Functor, Applicative, Monad)
 
 instance Monad m => MonadGit (NullGit m) where
+  isGitRepository = pure False
   gitDiffNameOnly _ = pure []
   gitCommitAll _ = pure ""

@@ -202,7 +202,13 @@ runRestyler config r = \case
   [] -> pure Nothing
   paths -> do
     runRestyler_ r paths
-    getRestylerResult config r
+
+    isGit <- isGitRepository
+
+    if isGit
+      then getRestylerResult config r
+      else do
+        Nothing <$ logWarn "Unable to determine Restyler result (not a git repository)"
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
