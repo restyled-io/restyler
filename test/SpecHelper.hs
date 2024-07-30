@@ -69,6 +69,8 @@ data TestApp = TestApp
   }
   deriving
     ( HasHostDirectoryOption
+    , HasImageCleanupOption
+    , HasNoCommitOption
     , HasRestrictions
     )
     via (ThroughOptions TestApp)
@@ -78,12 +80,6 @@ instance HasLogger TestApp where
 
 instance HasOptions TestApp where
   getOptions = taOptions
-
-instance HasImageCleanupOption TestApp where
-  getImageCleanupOption = const $ ImageCleanupOption $ Any False
-
-instance HasNoCommitOption TestApp where
-  getNoCommitOption = const $ NoCommitOption $ Any False
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
