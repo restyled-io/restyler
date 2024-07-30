@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Restyler.Docker
+module Restyler.Monad.Docker
   ( MonadDocker (..)
 
     -- * @DerivingVia@

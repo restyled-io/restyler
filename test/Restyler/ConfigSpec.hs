@@ -363,11 +363,16 @@ hasError _ _ = False
 
 -- | Load a @'Text'@ as configuration
 loadTestConfig
-  :: (MonadUnliftIO m, MonadSystem m) => Text -> m (Either Text Config)
+  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
+  => Text
+  -> m (Either Text Config)
 loadTestConfig = tryTo showConfigError . assertTestConfig
 
 -- | Load a @'Text'@ as configuration, fail on errors
-assertTestConfig :: (MonadUnliftIO m, MonadSystem m) => Text -> m Config
+assertTestConfig
+  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
+  => Text
+  -> m Config
 assertTestConfig content =
   loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
     $ const
@@ -377,7 +382,8 @@ assertTestConfig content =
 assertLoadsRestyler
   :: ( HasCallStack
      , MonadUnliftIO m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadReadFile m
      , Eq a
      , Show a
      )

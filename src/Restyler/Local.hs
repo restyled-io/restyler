@@ -6,15 +6,15 @@ module Restyler.Local
 
 import Restyler.Prelude
 
-import Restyler.App.Class
-  ( MonadDownloadFile (..)
-  , MonadSystem (..)
-  )
 import Restyler.Config
-import Restyler.Docker (MonadDocker)
-import Restyler.Git (MonadGit)
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
+import Restyler.Monad.Directory
+import Restyler.Monad.Docker (MonadDocker)
+import Restyler.Monad.DownloadFile
+import Restyler.Monad.Git (MonadGit)
+import Restyler.Monad.ReadFile
+import Restyler.Monad.WriteFile
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
@@ -30,7 +30,9 @@ run
   :: ( MonadUnliftIO m
      , MonadLogger m
      , MonadDownloadFile m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadReadFile m
+     , MonadWriteFile m
      , MonadGit m
      , MonadDocker m
      , MonadReader env m

@@ -45,7 +45,6 @@ import Data.Yaml
   )
 import Data.Yaml qualified as Yaml
 import Restyler.AnnotatedException
-import Restyler.App.Class
 import Restyler.Config.ChangedPaths
 import Restyler.Config.CommitTemplate
 import Restyler.Config.ExpectedKeys
@@ -55,6 +54,9 @@ import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Config.Statuses
+import Restyler.Monad.Directory
+import Restyler.Monad.DownloadFile
+import Restyler.Monad.ReadFile
 import Restyler.Options.Manifest
 import Restyler.Restyler
 import Restyler.Wiki qualified as Wiki
@@ -199,7 +201,8 @@ formatYamlException path bs = \case
 -- of restylers data, and apply the configured choices and overrides.
 loadConfig
   :: ( MonadUnliftIO m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadReadFile m
      , MonadDownloadFile m
      , MonadReader env m
      , HasManifestOption env
@@ -213,7 +216,7 @@ loadConfig =
     . cfRestylersVersion
 
 loadConfigFrom
-  :: (MonadUnliftIO m, MonadSystem m)
+  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
   => [ConfigSource]
   -> (ConfigF Identity -> m [Restyler])
   -> m Config
@@ -227,10 +230,15 @@ data ConfigSource
   | ConfigContent ByteString
 
 readConfigSources
-  :: MonadSystem m => [ConfigSource] -> m (Maybe (FilePath, ByteString))
+  :: (MonadDirectory m, MonadReadFile m)
+  => [ConfigSource]
+  -> m (Maybe (FilePath, ByteString))
 readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
  where
-  go :: MonadSystem m => ConfigSource -> m (Maybe (FilePath, ByteString))
+  go
+    :: (MonadDirectory m, MonadReadFile m)
+    => ConfigSource
+    -> m (Maybe (FilePath, ByteString))
   go = \case
     ConfigPath path -> do
       exists <- doesFileExist path
@@ -244,7 +252,10 @@ readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
 -- May throw any @'ConfigError'@. May through raw @'ParseException'@s if
 -- there is a programmer error in our static default configuration YAML.
 loadConfigF
-  :: (MonadUnliftIO m, MonadSystem m)
+  :: ( MonadUnliftIO m
+     , MonadDirectory m
+     , MonadReadFile m
+     )
   => [ConfigSource]
   -> m (ConfigF Identity)
 loadConfigF sources =
@@ -253,7 +264,12 @@ loadConfigF sources =
     <*> decodeThrow defaultConfigContent
 
 loadUserConfigF
-  :: (MonadUnliftIO m, MonadSystem m) => [ConfigSource] -> m (ConfigF Maybe)
+  :: ( MonadUnliftIO m
+     , MonadDirectory m
+     , MonadReadFile m
+     )
+  => [ConfigSource]
+  -> m (ConfigF Maybe)
 loadUserConfigF = maybeM (pure emptyConfig) (uncurry decodeThrow') . readConfigSources
 
 -- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@

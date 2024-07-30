@@ -7,14 +7,15 @@ import SpecHelper
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
-import Restyler.Test.FS (createFileLink, writeFileExecutable)
 
 spec :: Spec
 spec = withTestApp $ do
   describe "withFilteredPaths" $ do
     it "does not bring excluded files back by shebang" $ testAppExample $ do
-      writeFileExecutable "/a" "#!/bin/sh\necho A\n"
-      writeFileExecutable "/b" "#!/bin/sh\necho B\n"
+      writeFile "/a" "#!/bin/sh\necho A\n"
+      modifyPermissions "/a" $ \p -> p {executable = True}
+      writeFile "/b" "#!/bin/sh\necho B\n"
+      modifyPermissions "/b" $ \p -> p {executable = True}
 
       filtered <-
         withFilteredPaths
@@ -57,6 +58,6 @@ spec = withTestApp $ do
 
     it "excludes symlinks" $ testAppExample $ do
       writeFile "/foo/bar" ""
-      createFileLink "/foo/bar" "/foo/baz/bat"
+      createFileLink "/foo/bat" "/foo/bar"
 
       findFiles ["foo"] `shouldReturn` ["foo/bar"]

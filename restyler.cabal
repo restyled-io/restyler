@@ -15,7 +15,6 @@ library
       GHC.Generics.Selectors
       Restyler.AnnotatedException
       Restyler.App
-      Restyler.App.Class
       Restyler.CLI
       Restyler.Config
       Restyler.Config.ChangedPaths
@@ -31,13 +30,17 @@ library
       Restyler.Config.SketchyList
       Restyler.Config.Statuses
       Restyler.Delimited
-      Restyler.Docker
-      Restyler.Git
       Restyler.GitHub.PullRequest
       Restyler.Ignore
       Restyler.Local
       Restyler.Local.App
       Restyler.Local.Options
+      Restyler.Monad.Directory
+      Restyler.Monad.Docker
+      Restyler.Monad.DownloadFile
+      Restyler.Monad.Git
+      Restyler.Monad.ReadFile
+      Restyler.Monad.WriteFile
       Restyler.Opt
       Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory
@@ -89,7 +92,6 @@ library
     , composition-extra
     , conduit
     , containers
-    , directory
     , edit-distance
     , envparse
     , errata

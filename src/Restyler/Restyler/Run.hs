@@ -21,15 +21,18 @@ import Restyler.Prelude
 import Data.List (nub)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
-import Restyler.App.Class
 import Restyler.Config
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.RemoteFile
 import Restyler.Delimited
-import Restyler.Docker
-import Restyler.Git
+import Restyler.Monad.Directory
+import Restyler.Monad.Docker
+import Restyler.Monad.DownloadFile
+import Restyler.Monad.Git
+import Restyler.Monad.ReadFile
+import Restyler.Monad.WriteFile
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.NoCommit
@@ -91,7 +94,9 @@ instance Exception RestylerCommandNotFound where
 runRestylers
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadReadFile m
+     , MonadWriteFile m
      , MonadGit m
      , MonadDocker m
      , MonadDownloadFile m
@@ -132,7 +137,12 @@ runRestylers config@Config {..} argPaths = do
 -- processed through global @exclude@ already. This is extracted for specific
 -- testing of Restyler @include@ and @intepreter@ configuration handling.
 withFilteredPaths
-  :: (MonadUnliftIO m, MonadLogger m, MonadSystem m, HasCallStack)
+  :: ( MonadUnliftIO m
+     , MonadLogger m
+     , MonadDirectory m
+     , MonadReadFile m
+     , HasCallStack
+     )
   => [Restyler]
   -> [FilePath]
   -> (Restyler -> [FilePath] -> m (Maybe a))
@@ -171,7 +181,7 @@ withFilteredPaths restylers paths run = do
   pure $ nonEmpty $ catMaybes mas
 
 addExecutableInterpreter
-  :: (MonadUnliftIO m, MonadLogger m, MonadSystem m)
+  :: (MonadUnliftIO m, MonadLogger m, MonadDirectory m, MonadReadFile m)
   => FilePath
   -> m (FilePath, Maybe Interpreter)
 addExecutableInterpreter path = suppressWith (path, Nothing) $ do
@@ -186,7 +196,9 @@ addExecutableInterpreter path = suppressWith (path, Nothing) $ do
 runRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadReadFile m
+     , MonadWriteFile m
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
@@ -217,7 +229,9 @@ runRestyler config r = \case
 runRestyler_
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadReadFile m
+     , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
@@ -285,7 +299,8 @@ dockerPullRestyler r@Restyler {..} = do
 dockerRunRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadSystem m
+     , MonadDirectory m
+     , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
      , HasHostDirectoryOption env
@@ -373,10 +388,10 @@ dockerWithImageRm r f = do
 -- The existence filtering is important for normal Restyling, where we may get
 -- path arguments of removed files in the PR. The expansion is important for
 -- @restyle-path@, where we may be given directories as arguments.
-findFiles :: MonadSystem m => [FilePath] -> m [FilePath]
+findFiles :: MonadDirectory m => [FilePath] -> m [FilePath]
 findFiles = fmap concat . traverse go
  where
-  go :: MonadSystem m => FilePath -> m [FilePath]
+  go :: MonadDirectory m => FilePath -> m [FilePath]
   go parent = do
     isDirectory <- doesDirectoryExist parent
 
@@ -386,5 +401,5 @@ findFiles = fmap concat . traverse go
         findFiles $ map (parent </>) files
       else fmap maybeToList $ runMaybeT $ do
         guardM $ lift $ doesFileExist parent
-        guardM $ lift $ not <$> isFileSymbolicLink parent
+        guardM $ lift $ not <$> pathIsSymbolicLink parent
         pure parent

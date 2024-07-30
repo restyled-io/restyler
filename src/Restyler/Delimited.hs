@@ -18,8 +18,10 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Text qualified as T
-import Restyler.App.Class
 import Restyler.Config.ExpectedKeys
+import Restyler.Monad.Directory
+import Restyler.Monad.ReadFile
+import Restyler.Monad.WriteFile
 import UnliftIO.Exception (bracket)
 
 data Delimiters = Delimiters
@@ -57,7 +59,11 @@ data DelimitedMeta = DelimitedMeta
 
 -- | Restyle delimited content within paths using the given function
 restyleDelimited
-  :: (MonadUnliftIO m, MonadSystem m)
+  :: ( MonadUnliftIO m
+     , MonadDirectory m
+     , MonadReadFile m
+     , MonadWriteFile m
+     )
   => Delimiters
   -> ([FilePath] -> m result)
   -- ^ Restyle files inplace
@@ -86,7 +92,8 @@ delimitedInPaths = map dppPath . filter dppIn . dpParts
 -- Where each file contains the content before, within, and after the given
 -- delimiters (repeatedly). The returned value tracks which paths hold content
 -- that was delimited /in/ or /out/.
-delimit :: MonadSystem m => Delimiters -> FilePath -> m DelimitedPath
+delimit
+  :: (MonadReadFile m, MonadWriteFile m) => Delimiters -> FilePath -> m DelimitedPath
 delimit Delimiters {..} path = do
   content <- readFile path
   parts <-
@@ -99,7 +106,7 @@ delimit Delimiters {..} path = do
   pure DelimitedPath {dpSource = path, dpParts = parts}
 
 writePart
-  :: MonadSystem m
+  :: MonadWriteFile m
   => FilePath
   -> Int
   -> Either Text Text
@@ -146,12 +153,13 @@ cleanDelimitedPart x =
     )
 
 -- | Re-construct a file from its delimited parts
-undelimit :: MonadSystem m => Delimiters -> DelimitedPath -> m ()
+undelimit
+  :: (MonadReadFile m, MonadWriteFile m) => Delimiters -> DelimitedPath -> m ()
 undelimit delimiters DelimitedPath {..} = do
   contents <- traverse (readPart delimiters) dpParts
   writeFile dpSource $ mconcat contents
 
-readPart :: MonadSystem m => Delimiters -> DelimitedPathPart -> m Text
+readPart :: MonadReadFile m => Delimiters -> DelimitedPathPart -> m Text
 readPart Delimiters {..} DelimitedPathPart {..}
   | not dppIn = readFile dppPath
   | otherwise = do
