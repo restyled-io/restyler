@@ -297,6 +297,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   let
     args =
       restrictionOptions restrictions
+        <> ["--pull", "never"]
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
