@@ -33,6 +33,7 @@ import Restyler.Git
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.NoCommit
+import Restyler.Options.NoPull
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
@@ -98,6 +99,7 @@ runRestylers
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasNoCommitOption env
+     , HasNoPullOption env
      , HasRestrictions env
      , HasCallStack
      )
@@ -191,6 +193,7 @@ runRestyler
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasNoCommitOption env
+     , HasNoPullOption env
      , HasRestrictions env
      , HasCallStack
      )
@@ -219,6 +222,7 @@ runRestyler_
      , MonadReader env m
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
+     , HasNoPullOption env
      , HasRestrictions env
      , HasCallStack
      )
@@ -231,7 +235,8 @@ runRestyler_ r paths = case rDelimiters r of
   Just ds -> restyleDelimited ds run paths
  where
   run ps = do
-    dockerPullRestyler r
+    noPull <- getNoPull
+    unless noPull $ dockerPullRestyler r
     dockerWithImageRm r
       $ traverse_ (dockerRunRestyler r)
       $ withProgress

@@ -15,6 +15,7 @@ import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
 import Restyler.Options.NoCommit
+import Restyler.Options.NoPull
 import Restyler.Restrictions
 
 data App = App
@@ -28,6 +29,7 @@ data App = App
   deriving (HasImageCleanupOption) via (ThroughOptions App)
   deriving (HasManifestOption) via (ThroughOptions App)
   deriving (HasNoCommitOption) via (ThroughOptions App)
+  deriving (HasNoPullOption) via (ThroughOptions App)
   deriving (HasRestrictions) via (ThroughOptions App)
 
 instance HasOptions App where

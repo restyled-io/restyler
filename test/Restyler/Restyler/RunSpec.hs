@@ -33,7 +33,7 @@ spec = withTestApp $ do
     it "treats non-zero exit codes as RestylerExitFailure"
       $ testAppExample
       $ do
-        pendingWith "The separate docker-pull process fails first now"
+        pendingWith "We replaced MonadProcess with MonadDocker"
         config <- loadDefaultConfig
         local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
           runRestyler config (someRestyler "foo") ["bar"]

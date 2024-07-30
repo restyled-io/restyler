@@ -54,6 +54,7 @@ import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
 import Restyler.Options.NoCommit
+import Restyler.Options.NoPull
 import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..))
@@ -71,6 +72,7 @@ data TestApp = TestApp
     ( HasHostDirectoryOption
     , HasImageCleanupOption
     , HasNoCommitOption
+    , HasNoPullOption
     , HasRestrictions
     )
     via (ThroughOptions TestApp)
@@ -144,6 +146,7 @@ testOptions =
     , imageCleanup = ImageCleanupOption $ Any False
     , manifest = ManifestOption $ Last Nothing
     , noCommit = NoCommitOption $ Any False
+    , noPull = NoPullOption $ Any False
     , restrictions = fullRestrictions
     }
 
