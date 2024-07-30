@@ -16,11 +16,11 @@ import Data.Aeson.Casing
 import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
-import Restyler.App.Class
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.RemoteFile
 import Restyler.Delimited
+import Restyler.Monad.DownloadFile
 import Restyler.Options.Manifest
 
 data Restyler = Restyler

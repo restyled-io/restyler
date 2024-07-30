@@ -19,7 +19,9 @@ module SpecHelper
   , shouldThrow
   ) where
 
-import Restyler.App.Class as X
+import Restyler.Monad.Directory as X
+import Restyler.Monad.ReadFile as X
+import Restyler.Monad.WriteFile as X
 import Restyler.Prelude as X
 import Test.Hspec as X hiding
   ( expectationFailure
@@ -46,9 +48,10 @@ import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException
 import Restyler.Config
-import Restyler.Docker
-import Restyler.Git
 import Restyler.Local.Options
+import Restyler.Monad.Docker
+import Restyler.Monad.DownloadFile
+import Restyler.Monad.Git
 import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -57,7 +60,7 @@ import Restyler.Options.NoCommit
 import Restyler.Options.NoPull
 import Restyler.Restrictions
 import Restyler.Restyler
-import Restyler.Test.FS (FS, HasFS (..))
+import Restyler.Test.FS (FS, HasFS (..), ReaderFS (..))
 import Restyler.Test.FS qualified as FS
 import Test.Hspec qualified as Hspec
 import Test.Hspec.Core.Spec (Example (..))
@@ -98,23 +101,12 @@ newtype TestAppT a = TestAppT
     , MonadLogger
     , MonadReader TestApp
     )
-  deriving (MonadGit) via (NullGit TestAppT)
+  deriving (MonadDirectory) via (ReaderFS TestAppT)
   deriving (MonadDocker) via (NullDocker TestAppT)
-
-instance MonadSystem TestAppT where
-  getCurrentDirectory = FS.getCurrentDirectory
-  setCurrentDirectory = FS.setCurrentDirectory
-  doesFileExist = FS.doesFileExist
-  doesDirectoryExist = FS.doesDirectoryExist
-  isFileExecutable = FS.isFileExecutable
-  isFileSymbolicLink = FS.isFileSymbolicLink
-  listDirectory = FS.listDirectory
-  readFileBS = FS.readFileBinary
-  writeFile = FS.writeFileUtf8
-  removeFile = FS.removeFile
-
-instance MonadDownloadFile TestAppT where
-  downloadFile _url _path = pure ()
+  deriving (MonadDownloadFile) via (NullDownloadFile TestAppT)
+  deriving (MonadGit) via (NullGit TestAppT)
+  deriving (MonadReadFile) via (ReaderFS TestAppT)
+  deriving (MonadWriteFile) via (ReaderFS TestAppT)
 
 instance Example (TestAppT a) where
   type Arg (TestAppT a) = TestApp

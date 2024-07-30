@@ -10,7 +10,7 @@ import Restyler.Prelude
 
 import Env qualified
 import Options.Applicative
-import Restyler.App.Class (MonadSystem (..))
+import Restyler.Monad.Directory
 
 newtype HostDirectoryOption = HostDirectoryOption
   { unwrap :: Last FilePath
@@ -21,7 +21,7 @@ class HasHostDirectoryOption env where
   getHostDirectoryOption :: env -> HostDirectoryOption
 
 getHostDirectory
-  :: ( MonadSystem m
+  :: ( MonadDirectory m
      , MonadReader env m
      , HasHostDirectoryOption env
      )

@@ -49,7 +49,6 @@ library:
     - composition-extra
     - conduit
     - containers
-    - directory
     - edit-distance
     - envparse
     - errata

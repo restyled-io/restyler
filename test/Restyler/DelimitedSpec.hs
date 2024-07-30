@@ -137,7 +137,8 @@ spec = withTestApp $ do
           , "end"
           ]
 
-markLinesRestyled :: MonadSystem m => [FilePath] -> m ()
+markLinesRestyled
+  :: (MonadDirectory m, MonadReadFile m, MonadWriteFile m) => [FilePath] -> m ()
 markLinesRestyled = traverse_
   $ \path -> writeFile path . mark =<< readFile path
  where

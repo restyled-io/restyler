@@ -7,7 +7,7 @@ import Restyler.Prelude
 
 import Restyler.Config
 import Restyler.Config.CommitTemplate
-import Restyler.Git
+import Restyler.Monad.Git
 import Restyler.Options.NoCommit
 import Restyler.Restyler
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Restyler.Git
+module Restyler.Monad.Git
   ( MonadGit (..)
 
     -- * @DerivingVia@
