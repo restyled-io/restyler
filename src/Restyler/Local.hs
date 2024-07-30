@@ -19,6 +19,7 @@ import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
 import Restyler.Options.NoCommit
+import Restyler.Options.NoPull
 import Restyler.Restrictions
 import Restyler.RestyleResult
 import Restyler.Restyler
@@ -37,6 +38,7 @@ run
      , HasImageCleanupOption env
      , HasManifestOption env
      , HasNoCommitOption env
+     , HasNoPullOption env
      , HasRestrictions env
      , HasPullRequestState pr
      , HasAuthor pr

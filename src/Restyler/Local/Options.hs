@@ -19,6 +19,7 @@ import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
 import Restyler.Options.NoCommit
+import Restyler.Options.NoPull
 import Restyler.Restrictions
 
 data Options = Options
@@ -28,6 +29,7 @@ data Options = Options
   , imageCleanup :: ImageCleanupOption
   , manifest :: ManifestOption
   , noCommit :: NoCommitOption
+  , noPull :: NoPullOption
   , restrictions :: Restrictions
   }
   deriving stock (Generic)
@@ -48,6 +50,9 @@ instance HasManifestOption Options where
 instance HasNoCommitOption Options where
   getNoCommitOption = (.noCommit)
 
+instance HasNoPullOption Options where
+  getNoPullOption = (.noPull)
+
 instance HasRestrictions Options where
   getRestrictions = (.restrictions)
 
@@ -60,6 +65,7 @@ envParser =
     <*> envImageCleanupOption
     <*> envManifestOption
     <*> envNoCommitOption
+    <*> envNoPullOption
     <*> envRestrictions
 
 optParser :: Parser Options
@@ -71,6 +77,7 @@ optParser =
     <*> optImageCleanupOption
     <*> optManifestOption
     <*> optNoCommitOption
+    <*> optNoPullOption
     <*> pure mempty -- Restrictions are ENV-only
 
 class HasOptions a where
@@ -98,6 +105,9 @@ instance HasOptions a => HasManifestOption (ThroughOptions a) where
 
 instance HasOptions a => HasNoCommitOption (ThroughOptions a) where
   getNoCommitOption = getNoCommitOption . getOptions
+
+instance HasOptions a => HasNoPullOption (ThroughOptions a) where
+  getNoPullOption = getNoPullOption . getOptions
 
 instance HasOptions a => HasRestrictions (ThroughOptions a) where
   getRestrictions = getRestrictions . getOptions

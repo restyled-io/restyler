@@ -45,6 +45,7 @@ library
       Restyler.Options.LogSettings
       Restyler.Options.Manifest
       Restyler.Options.NoCommit
+      Restyler.Options.NoPull
       Restyler.Options.Repository
       Restyler.Prelude
       Restyler.ReadP
