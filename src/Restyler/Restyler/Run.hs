@@ -33,6 +33,7 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
+import Restyler.Options.DryRun
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.NoCommit
@@ -101,6 +102,7 @@ runRestylers
      , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
+     , HasDryRunOption env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasNoCommitOption env
@@ -202,6 +204,7 @@ runRestyler
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
+     , HasDryRunOption env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasNoCommitOption env
@@ -234,6 +237,7 @@ runRestyler_
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
+     , HasDryRunOption env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasNoPullOption env
@@ -249,7 +253,7 @@ runRestyler_ r paths = case rDelimiters r of
   Just ds -> restyleDelimited ds run paths
  where
   run ps = do
-    noPull <- getNoPull
+    noPull <- (||) <$> getNoPull <*> getDryRun
     unless noPull $ dockerPullRestyler r
     dockerWithImageRm r
       $ traverse_ (dockerRunRestyler r)
@@ -303,6 +307,7 @@ dockerRunRestyler
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
+     , HasDryRunOption env
      , HasHostDirectoryOption env
      , HasRestrictions env
      , HasCallStack
@@ -313,6 +318,7 @@ dockerRunRestyler
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
   restrictions <- asks getRestrictions
+  dryRun <- getDryRun
 
   let
     args =
@@ -329,24 +335,27 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
     logRunningOn =
       logInfo
         . (:# [])
-        . (("Running " <> pack rName <> " on ") <>)
+        . (((if dryRun then "Would run " else "Running ") <> pack rName <> " on ") <>)
         . (<> progressSuffix)
         . \case
           [] -> "no paths" -- "impossible"
           [path] -> pack path
           paths -> show (length paths) <> " paths"
 
-  ec <- case pItem of
-    DockerRunPathToStdout path -> do
-      logRunningOn [path]
-      (ec, out) <- dockerRunStdout $ args <> [prefix path]
-      ec <$ writeFile path (fixNewline out)
-    DockerRunPathsOverwrite sep paths -> do
-      logRunningOn paths
-      dockerRun $ args <> ["--" | sep] <> map prefix paths
-    DockerRunPathOverwrite sep path -> do
-      logRunningOn [path]
-      dockerRun $ args <> ["--" | sep] <> [prefix path]
+  ec <-
+    if dryRun
+      then pure ExitSuccess
+      else case pItem of
+        DockerRunPathToStdout path -> do
+          logRunningOn [path]
+          (ec, out) <- dockerRunStdout $ args <> [prefix path]
+          ec <$ writeFile path (fixNewline out)
+        DockerRunPathsOverwrite sep paths -> do
+          logRunningOn paths
+          dockerRun $ args <> ["--" | sep] <> map prefix paths
+        DockerRunPathOverwrite sep path -> do
+          logRunningOn [path]
+          dockerRun $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
     ExitSuccess -> pure ()
@@ -371,6 +380,7 @@ dockerWithImageRm
      , MonadLogger m
      , MonadDocker m
      , MonadReader env m
+     , HasDryRunOption env
      , HasImageCleanupOption env
      , HasCallStack
      )
@@ -378,7 +388,7 @@ dockerWithImageRm
   -> m a
   -> m a
 dockerWithImageRm r f = do
-  imageCleanup <- getImageCleanup
+  imageCleanup <- (&&) <$> getImageCleanup <*> (not <$> getDryRun)
   if imageCleanup
     then finally f $ suppressWarn $ dockerImageRm $ rImage r
     else f

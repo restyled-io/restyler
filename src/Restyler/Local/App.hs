@@ -9,6 +9,7 @@ import Data.List.NonEmpty (some1)
 import Env qualified
 import Restyler.Local.Options
 import Restyler.Opt qualified as Opt
+import Restyler.Options.DryRun
 import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -24,6 +25,7 @@ data App = App
   , pullRequestJson :: Maybe FilePath
   , paths :: NonEmpty FilePath
   }
+  deriving (HasDryRunOption) via (ThroughOptions App)
   deriving (HasFailOnDifferencesOption) via (ThroughOptions App)
   deriving (HasHostDirectoryOption) via (ThroughOptions App)
   deriving (HasImageCleanupOption) via (ThroughOptions App)

@@ -15,6 +15,7 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git (MonadGit)
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
+import Restyler.Options.DryRun
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
@@ -36,6 +37,7 @@ run
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
+     , HasDryRunOption env
      , HasHostDirectoryOption env
      , HasImageCleanupOption env
      , HasManifestOption env
