@@ -342,20 +342,22 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
           [path] -> pack path
           paths -> show (length paths) <> " paths"
 
-  ec <-
-    if dryRun
-      then pure ExitSuccess
-      else case pItem of
-        DockerRunPathToStdout path -> do
-          logRunningOn [path]
-          (ec, out) <- dockerRunStdout $ args <> [prefix path]
-          ec <$ writeFile path (fixNewline out)
-        DockerRunPathsOverwrite sep paths -> do
-          logRunningOn paths
-          dockerRun $ args <> ["--" | sep] <> map prefix paths
-        DockerRunPathOverwrite sep path -> do
-          logRunningOn [path]
-          dockerRun $ args <> ["--" | sep] <> [prefix path]
+    unlessDryRun f
+      | dryRun = pure ExitSuccess
+      | otherwise = f
+
+  ec <- case pItem of
+    DockerRunPathToStdout path -> do
+      logRunningOn [path]
+      unlessDryRun $ do
+        (ec, out) <- dockerRunStdout $ args <> [prefix path]
+        ec <$ writeFile path (fixNewline out)
+    DockerRunPathsOverwrite sep paths -> do
+      logRunningOn paths
+      unlessDryRun $ dockerRun $ args <> ["--" | sep] <> map prefix paths
+    DockerRunPathOverwrite sep path -> do
+      logRunningOn [path]
+      unlessDryRun $ dockerRun $ args <> ["--" | sep] <> [prefix path]
 
   case ec of
     ExitSuccess -> pure ()
