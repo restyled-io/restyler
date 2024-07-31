@@ -32,7 +32,7 @@ main withApp run = do
         failOnDifferences <- getFailOnDifferences
 
         if failOnDifferences
-          then ExitFailure 1 <$ logError "Differences found"
+          then ExitFailure 228 <$ logError "Differences found"
           else ExitSuccess <$ logWarn "Differences found"
 
 exitHandler :: MonadLogger m => AnnotatedException SomeException -> m ExitCode
