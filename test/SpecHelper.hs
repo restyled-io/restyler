@@ -15,7 +15,6 @@ module SpecHelper
 
     -- * Re-exports
   , module X
-  , pendingWith
   , shouldThrow
   ) where
 
@@ -196,9 +195,6 @@ testRestylers =
   , someRestyler "terraform"
   , someRestyler "yapf"
   ]
-
-pendingWith :: (HasCallStack, MonadIO m) => String -> m ()
-pendingWith = liftIO . Hspec.pendingWith
 
 -- | 'shouldThrow' but in 'MonadUnliftIO' and handling annotations
 shouldThrow
