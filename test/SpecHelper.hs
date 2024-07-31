@@ -61,7 +61,6 @@ import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..), ReaderFS (..))
 import Restyler.Test.FS qualified as FS
-import Test.Hspec qualified as Hspec
 import Test.Hspec.Core.Spec (Example (..))
 
 data TestApp = TestApp
