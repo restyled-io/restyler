@@ -51,6 +51,7 @@ import Restyler.Local.Options
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
+import Restyler.Options.DryRun
 import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -71,7 +72,8 @@ data TestApp = TestApp
   , taDockerRunExitCode :: ExitCode
   }
   deriving
-    ( HasHostDirectoryOption
+    ( HasDryRunOption
+    , HasHostDirectoryOption
     , HasImageCleanupOption
     , HasNoCommitOption
     , HasNoPullOption
@@ -138,6 +140,7 @@ testOptions :: Options
 testOptions =
   Options
     { logSettings = error "logSettings"
+    , dryRun = DryRunOption $ Any False
     , failOnDifferences = FailOnDifferencesOption $ Any False
     , hostDirectory = HostDirectoryOption $ Last Nothing
     , imageCleanup = ImageCleanupOption $ Any False

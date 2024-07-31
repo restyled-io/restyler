@@ -42,6 +42,7 @@ library
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
       Restyler.Opt
+      Restyler.Options.DryRun
       Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory
       Restyler.Options.ImageCleanup

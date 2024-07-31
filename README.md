@@ -12,9 +12,10 @@ curl --proto '=https' --tlsv1.2 -sSf \
 ## Usage
 
 ```console
-Usage: restyle [--debug] [--trace] [--color WHEN] [--fail-on-differences]
-               [--host-directory DIRECTORY] [--image-cleanup] [--manifest FILE]
-               [--no-commit] [--no-pull] PATH [PATH]
+Usage: restyle [--debug] [--trace] [--color WHEN] [--dry-run]
+               [--fail-on-differences] [--host-directory DIRECTORY]
+               [--image-cleanup] [--manifest FILE] [--no-commit] [--no-pull]
+               PATH [PATH]
 
   Restyle local files
 
@@ -22,6 +23,7 @@ Available options:
   --debug                  Enable debug logging
   --trace                  Enable trace logging
   --color WHEN             When to use color: always|never|auto
+  --dry-run                Don't docker-pull or docker-run Restylers
   --fail-on-differences    Exit non-zero if differences were found
   --host-directory DIRECTORY
                            Working directory on host, if dockerized
@@ -32,6 +34,8 @@ Available options:
   -h,--help                Show this help text
 
 Available environment variables:
+  DRY_RUN                Don't docker-pull or docker-run
+                         Restylers
   FAIL_ON_DIFFERENCES
                          Exit non-zero if differences were
                          found

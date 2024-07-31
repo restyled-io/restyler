@@ -13,6 +13,7 @@ import Restyler.Prelude
 import Data.Semigroup.Generic
 import Env qualified
 import Options.Applicative
+import Restyler.Options.DryRun
 import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
@@ -24,6 +25,7 @@ import Restyler.Restrictions
 
 data Options = Options
   { logSettings :: LogSettingsOption
+  , dryRun :: DryRunOption
   , failOnDifferences :: FailOnDifferencesOption
   , hostDirectory :: HostDirectoryOption
   , imageCleanup :: ImageCleanupOption
@@ -34,6 +36,9 @@ data Options = Options
   }
   deriving stock (Generic)
   deriving (Semigroup) via (GenericSemigroupMonoid Options)
+
+instance HasDryRunOption Options where
+  getDryRunOption = (.dryRun)
 
 instance HasFailOnDifferencesOption Options where
   getFailOnDifferencesOption = (.failOnDifferences)
@@ -60,6 +65,7 @@ envParser :: Env.Parser Env.Error Options
 envParser =
   Options
     <$> envLogSettingsOption
+    <*> envDryRunOption
     <*> envFailOnDifferencesOption
     <*> envHostDirectoryOption
     <*> envImageCleanupOption
@@ -72,6 +78,7 @@ optParser :: Parser Options
 optParser =
   Options
     <$> optLogSettingsOption
+    <*> optDryRunOption
     <*> optFailOnDifferencesOption
     <*> optHostDirectoryOption
     <*> optImageCleanupOption
@@ -90,6 +97,9 @@ newtype ThroughOptions a = ThroughOptions
   { unwrap :: a
   }
   deriving newtype (HasOptions)
+
+instance HasOptions a => HasDryRunOption (ThroughOptions a) where
+  getDryRunOption = getDryRunOption . getOptions
 
 instance HasOptions a => HasFailOnDifferencesOption (ThroughOptions a) where
   getFailOnDifferencesOption = getFailOnDifferencesOption . getOptions
