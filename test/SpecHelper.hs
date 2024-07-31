@@ -69,7 +69,8 @@ data TestApp = TestApp
   { taLogger :: Logger
   , taOptions :: Options
   , taFS :: FS
-  , taProcessExitCodes :: ExitCode
+  , taDockerPullExitCode :: ExitCode
+  , taDockerRunExitCode :: ExitCode
   }
   deriving
     ( HasHostDirectoryOption
@@ -102,11 +103,16 @@ newtype TestAppT a = TestAppT
     , MonadReader TestApp
     )
   deriving (MonadDirectory) via (ReaderFS TestAppT)
-  deriving (MonadDocker) via (NullDocker TestAppT)
   deriving (MonadDownloadFile) via (NullDownloadFile TestAppT)
   deriving (MonadGit) via (NullGit TestAppT)
   deriving (MonadReadFile) via (ReaderFS TestAppT)
   deriving (MonadWriteFile) via (ReaderFS TestAppT)
+
+instance MonadDocker TestAppT where
+  dockerPull _ = asks taDockerPullExitCode
+  dockerRun _ = asks taDockerRunExitCode
+  dockerRunStdout _ = asks $ (,"") . taDockerRunExitCode
+  dockerImageRm _ = pure ()
 
 instance Example (TestAppT a) where
   type Arg (TestAppT a) = TestApp
@@ -127,6 +133,7 @@ loadTestApp = do
     <$> newLoggerEnv
     <*> pure testOptions
     <*> FS.build "/" []
+    <*> pure ExitSuccess
     <*> pure ExitSuccess
 
 testOptions :: Options

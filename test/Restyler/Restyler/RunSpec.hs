@@ -33,16 +33,15 @@ spec = withTestApp $ do
   describe "runRestyler" $ do
     it "treats non-zero exit codes as RestylerExitFailure"
       $ testAppExample
+      $ local (\x -> x {taDockerRunExitCode = ExitFailure 99})
       $ do
-        pendingWith "We replaced MonadProcess with MonadDocker"
         config <- loadDefaultConfig
-        local (\x -> x {taProcessExitCodes = ExitFailure 99}) $ do
-          runRestyler config (someRestyler "foo") ["bar"]
-            `shouldThrow` ( ==
-                              RestylerExitFailure
-                                (someRestyler "foo")
-                                99
-                          )
+        runRestyler config (someRestyler "foo") ["bar"]
+          `shouldThrow` ( ==
+                            RestylerExitFailure
+                              (someRestyler "foo")
+                              99
+                        )
 
   describe "findFiles" $ do
     it "expands and excludes" $ testAppExample $ do
