@@ -4,6 +4,7 @@ enabled: true
 
 exclude:
   - "**/*.patch"
+  - "**/.git/**/*"
   - "**/node_modules/**/*"
   - "**/vendor/**/*"
   - ".github/workflows/**/*" # https://github.com/restyled-io/restyler/issues/73
