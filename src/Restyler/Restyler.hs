@@ -133,6 +133,6 @@ getAllRestylersVersioned version = do
 
 restylersYamlUrl :: String -> String
 restylersYamlUrl version =
-  "https://docs.restyled.io/data-files/restylers/manifests/"
+  "https://github.com/restyled-io/restylers/releases/download/"
     <> version
     <> "/restylers.yaml"
