@@ -10,12 +10,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-      - uses: restyled-io/actions/setup@v2
+      - uses: restyled-io/actions/setup@v3
       - id: restyler
-        uses: restyled-io/actions/run@v2
+        uses: restyled-io/actions/run@v3
         with:
           fail-on-differences: true
-      - if: ${{ !cancelled() && github.event.pull_request.head.repo.full_name == github.repository }}
+      - if: |
+          !cancelled() &&
+          steps.restyler.outputs.success == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/create-pull-request@v6
         with:
           base: ${{ steps.restyler.outputs.restyled-base }}
