@@ -87,15 +87,8 @@ just test
 
 ## LICENSE
 
-Restyled is source-available, [Commons Claused][cc] licensed. For a detailed
-description of another project's rationale for this licensing model, one with
-which I agree, see [here][level].
-
-[cc]: https://commonsclause.com/
-[level]: https://web.archive.org/web/20181120030157/https://leveljournal.com/source-available-licensing
+This project is licensed AGPLv3. See [COPYING](./COPYING).
 
 ---
 
-[CHANGELOG](./CHANGELOG.md) | [LICENSE](./LICENSE) | [CONTRIBUTING][]
-
-[contributing]: https://github.com/restyled-io/restyled.io/wiki/Contributing-to-Restyled
+[CHANGELOG](./CHANGELOG.md)

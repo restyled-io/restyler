@@ -5,9 +5,8 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           restyler
-version:        0.4.3.2
-license:        MIT
-license-file:   LICENSE
+version:        0.5.0.0
+license:        AGPL-3
 build-type:     Simple
 
 library
