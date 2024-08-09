@@ -22,10 +22,9 @@ run-mode: add
 ## same as '-s|--source-path=PATH' command line argument (can be used multiple
 ## times for more than one path).
 source-paths:
-  - _tools/restylers/app
-  - _tools/restylers/src
-  - _tools/restylers/test
-
+  - app
+  - src
+  - test
 
 ## If set to 'true', Headroom tries to detect whether any VCS (like GIT) is used
 ## for current project and if yes, it loads rules for ignored files and excludes
@@ -45,4 +44,9 @@ variables:
   author: Patrick Brisbin
   email: pbrisbin@gmail.com
   project: Restyler
-  year: 2024
+  year: "2024"
+
+license-headers:
+  haskell:
+    line-comment:
+      prefixed-by: "^--"
