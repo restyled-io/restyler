@@ -31,6 +31,9 @@ lint:
 watch:
   stack build --fast --pedantic --test --file-watch
 
+headroom:
+  stack exec -- headroom run
+
 # aws := "aws --profile restyled-ci"
 
 # doc_bucket := `
