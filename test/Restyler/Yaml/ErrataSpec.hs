@@ -1,5 +1,13 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
+-- |
+--
+-- Module      : Restyler.Yaml.ErrataSpec
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Yaml.ErrataSpec
   ( spec
   ) where
