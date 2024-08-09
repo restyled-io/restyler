@@ -1,6 +1,14 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE RecordWildCards #-}
 
+-- |
+--
+-- Module      : Restyler.Restrictions
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Restrictions
   ( HasRestrictions (..)
   , Restrictions (..)

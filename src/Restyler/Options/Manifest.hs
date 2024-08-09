@@ -1,3 +1,11 @@
+-- |
+--
+-- Module      : Restyler.Options.Manifest
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Options.Manifest
   ( ManifestOption (..)
   , HasManifestOption (..)
