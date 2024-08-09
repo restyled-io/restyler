@@ -12,6 +12,13 @@
 --   common prefix shared by multiple files. An empty directory can be created
 --   by creating a file ending in @/@. Therefore, reading and writing to a
 --   \"directory\" could behave in surprising ways.
+--
+-- Module      : Restyler.Test.FS
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Test.FS
   ( FS
   , build
