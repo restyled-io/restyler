@@ -18,6 +18,13 @@
 -- - <https://reasonablypolymorphic.com/blog/higher-kinded-data/>
 -- - <https://chrispenner.ca/posts/hkd-options>
 -- - <https://hackage.haskell.org/package/barbies>
+--
+-- Module      : Restyler.Config
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Config
   ( Config (..)
   , ConfigError (..)

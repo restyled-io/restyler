@@ -5,6 +5,13 @@
 -- | Function for getting the names of fields in a type
 --
 -- <https://stackoverflow.com/questions/27815489/is-it-possible-to-list-the-names-and-types-of-fields-in-a-record-data-type-that>
+--
+-- Module      : GHC.Generics.Selectors
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module GHC.Generics.Selectors
   ( Selectors (..)
   ) where
