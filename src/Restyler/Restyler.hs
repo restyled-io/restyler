@@ -28,6 +28,7 @@ import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.RemoteFile
 import Restyler.Delimited
+import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
 import Restyler.Options.Manifest
 
@@ -119,6 +120,7 @@ instance ToJSON RestylerRunStyle where
 
 getAllRestylersVersioned
   :: ( MonadIO m
+     , MonadDirectory m
      , MonadDownloadFile m
      , MonadReader env m
      , HasManifestOption env
@@ -129,7 +131,8 @@ getAllRestylersVersioned version = do
   mManifest <- getManifest
   case mManifest of
     Nothing -> do
-      downloadFile restylers.url restylers.path
+      exists <- doesFileExist restylers.path
+      unless exists $ downloadFile restylers.url restylers.path
       decodeFileThrow $ restylers.path
     Just path -> decodeFileThrow path
  where
