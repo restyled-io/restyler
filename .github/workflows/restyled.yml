@@ -2,6 +2,14 @@ name: Restyled
 
 on:
   pull_request:
+    types:
+      # Types when we want to Restyle
+      - opened
+      - reopened
+      - synchronize
+
+      # So we can clean up if necessary
+      - closed
 
 jobs:
   restyled:
@@ -28,3 +36,9 @@ jobs:
           labels: restyled
           reviewers: ${{ github.event.pull_request.user.login }}
           delete-branch: true
+
+      - if: ${{ github.event.pull_request.state == 'closed' }}
+        run: gh pr close --delete-branch "$RESTYLED_BRANCH" || true
+        env:
+          RESTYLED_BRANCH: ${{ steps.restyler.outputs.restyled-head }}
+          GH_TOKEN: ${{ github.token }}
