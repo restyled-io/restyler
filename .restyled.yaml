@@ -4,10 +4,10 @@ restylers:
 - fourmolu
 - stylish-haskell:
     enabled: false
-- prettier:
+- prettier-yaml:
     include:
-      - "**/*.yaml"
-      - "**/*.yml"
-      - "**/.*.yaml"
-      - "**/.*.yml"
+      - ".**.yaml"
+      - ".**.yml"
+      - "**.yaml"
+      - "**.yml"
 - "*"
