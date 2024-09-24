@@ -6,6 +6,8 @@ restylers:
     enabled: false
 - prettier:
     include:
+      - "*.yaml"
+      - "*.yml"
       - "**/*.yaml"
       - "**/*.yml"
 - "*"
