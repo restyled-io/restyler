@@ -1,13 +1,13 @@
 restylers_version: dev
 restylers:
-- hlint
-- fourmolu
-- stylish-haskell:
-    enabled: false
-- prettier-yaml:
-    include:
-      - ".**.yaml"
-      - ".**.yml"
-      - "**.yaml"
-      - "**.yml"
-- "*"
+  - hlint
+  - fourmolu
+  - stylish-haskell:
+      enabled: false
+  - prettier-yaml:
+      include:
+        - ".**.yaml"
+        - ".**.yml"
+        - "**.yaml"
+        - "**.yml"
+  - "*"
