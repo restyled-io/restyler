@@ -51,6 +51,7 @@ import Restyler.Restyler
 import Restyler.RestylerResult
 import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
+import System.FilePath qualified as FilePath
 
 data RestylerPullFailure = RestylerPullFailure Restyler Int
   deriving stock (Show, Eq)
@@ -122,7 +123,7 @@ runRestylers
   -> [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
 runRestylers config@Config {..} argPaths = do
-  let allPaths = filter included argPaths
+  let allPaths = filter included $ map FilePath.normalise argPaths
   expPaths <- findFiles allPaths
   let paths = filter included expPaths
 
@@ -422,7 +423,7 @@ findFiles = fmap concat . traverse go
       else fmap maybeToList $ runMaybeT $ do
         guardM $ lift $ doesFileExist parent
         guardM $ lift $ not <$> pathIsSymbolicLink parent
-        pure parent
+        pure $ FilePath.normalise parent
 
 truncatePaths :: Int -> [FilePath] -> [String]
 truncatePaths n ps
