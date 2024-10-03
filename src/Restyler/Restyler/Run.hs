@@ -130,8 +130,8 @@ runRestylers config@Config {..} argPaths = do
     $ "Paths"
     :# [ "pathsGiven" .= argPaths
        , "pathsGivenIncluded" .= allPaths
-       , "pathsExpanded" .= expPaths
-       , "pathsExpandedIncluded" .= paths
+       , "pathsExpanded" .= truncatePaths 50 expPaths
+       , "pathsExpandedIncluded" .= truncatePaths 50 paths
        , "exclude" .= cExclude
        ]
 
@@ -423,3 +423,10 @@ findFiles = fmap concat . traverse go
         guardM $ lift $ doesFileExist parent
         guardM $ lift $ not <$> pathIsSymbolicLink parent
         pure parent
+
+truncatePaths :: Int -> [FilePath] -> [String]
+truncatePaths n ps
+  | len > n = take n ps <> ["And " <> show (len - n) <> " more..."]
+  | otherwise = ps
+ where
+  len = length ps
