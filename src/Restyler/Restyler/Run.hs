@@ -419,11 +419,14 @@ findFiles = fmap concat . traverse go
     if isDirectory
       then do
         files <- listDirectory parent
-        findFiles $ map (parent </>) files
+        findFiles $ map (parent </>) $ filter (not . isHidden) files
       else fmap maybeToList $ runMaybeT $ do
         guardM $ lift $ doesFileExist parent
         guardM $ lift $ not <$> pathIsSymbolicLink parent
         pure $ FilePath.normalise parent
+
+isHidden :: FilePath -> Bool
+isHidden path = "." `isPrefixOf` path && path `notElem` [".", ".."]
 
 truncatePaths :: Int -> [FilePath] -> [String]
 truncatePaths n ps
