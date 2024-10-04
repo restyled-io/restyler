@@ -68,3 +68,26 @@ spec = withTestApp $ do
       createFileLink "/foo/bat" "/foo/bar"
 
       findFiles ["foo"] `shouldReturn` ["foo/bar"]
+
+    it "doesn't include hidden files" $ testAppExample $ do
+      writeFile "/foo/bar/baz/bat" ""
+      writeFile "/foo/bar/baz/.quix" ""
+      writeFile "/foo/bar/baz/.foo/bar" ""
+      writeFile "/foo/bat/baz" ""
+      writeFile "/foo/foo" ""
+      writeFile "/foo/xxx" ""
+      setCurrentDirectory "/foo"
+
+      findFiles ["bar/baz", "bat", "xxx", "zzz"]
+        `shouldReturn` ["bar/baz/bat", "bat/baz", "xxx"]
+
+    it "includes hidden files given explicitly" $ testAppExample $ do
+      writeFile "/foo/.bar/baz/bat" ""
+      writeFile "/foo/.bar/baz/quix" ""
+      writeFile "/foo/bat/baz" ""
+      writeFile "/foo/foo" ""
+      writeFile "/foo/xxx" ""
+      setCurrentDirectory "/foo"
+
+      findFiles [".bar/baz", "bat", "xxx", "zzz"]
+        `shouldReturn` [".bar/baz/bat", ".bar/baz/quix", "bat/baz", "xxx"]
