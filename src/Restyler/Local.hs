@@ -19,13 +19,14 @@ import Restyler.Ignore
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker (MonadDocker)
 import Restyler.Monad.DownloadFile
-import Restyler.Monad.Git (MonadGit)
+import Restyler.Monad.Git (MonadGit (..))
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
 import Restyler.Options.DryRun
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
+import Restyler.Options.NoClean
 import Restyler.Options.NoCommit
 import Restyler.Options.NoPull
 import Restyler.Restrictions
@@ -49,6 +50,7 @@ run
      , HasImageCleanupOption env
      , HasManifestOption env
      , HasNoCommitOption env
+     , HasNoCleanOption env
      , HasNoPullOption env
      , HasRestrictions env
      , HasPullRequestState pr
@@ -89,5 +91,8 @@ run pr paths = do
              , "restyled" .= result.restyled
              , "sha" .= result.sha
              ]
+
+      noClean <- getNoClean
+      unless noClean gitClean
 
       pure $ maybe RestyleNoDifference (const RestyleDifference) mresults

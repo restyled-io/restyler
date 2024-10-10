@@ -47,6 +47,7 @@ library
       Restyler.Options.ImageCleanup
       Restyler.Options.LogSettings
       Restyler.Options.Manifest
+      Restyler.Options.NoClean
       Restyler.Options.NoCommit
       Restyler.Options.NoPull
       Restyler.Options.Repository
