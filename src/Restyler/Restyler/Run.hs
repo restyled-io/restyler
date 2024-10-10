@@ -137,10 +137,30 @@ runRestylers config@Config {..} argPaths = do
        ]
 
   for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
-  withFilteredPaths restylers paths $ runRestyler config
+
+  mResults <- withFilteredPaths restylers paths $ runRestyler config
+  mResetTo <- join <$> traverse checkForNoop mResults
+
+  case mResetTo of
+    Nothing -> pure mResults
+    Just ref -> do
+      logInfo "Restylers offset each other, resetting git state"
+      Nothing <$ gitResetHard ref
  where
   included path = none (`match` path) cExclude
   restylers = filter rEnabled cRestylers
+
+-- | See if multiple restylers offset each other
+--
+-- Returns the git ref to reset to if they did.
+checkForNoop :: MonadGit m => NonEmpty RestylerResult -> m (Maybe String)
+checkForNoop results = runMaybeT $ do
+  sha <- hoistMaybe result.sha
+  let parent = sha <> "^"
+  changed <- lift $ gitDiffNameOnly $ Just parent
+  parent <$ guard (null changed)
+ where
+  result = head results
 
 -- | Run each @'Restyler'@ with appropriate paths out of the given set
 --
