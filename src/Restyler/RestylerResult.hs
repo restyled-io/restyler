@@ -33,17 +33,18 @@ data RestylerResult = RestylerResult
 getRestylerResult
   :: (MonadGit m, MonadReader env m, HasNoCommitOption env)
   => Config
+  -> [FilePath]
   -> Restyler
   -> m (Maybe RestylerResult)
-getRestylerResult config restyler = do
+getRestylerResult config paths restyler = do
   noCommit <- getNoCommit
-  mRestyled <- nonEmpty <$> gitDiffNameOnly Nothing
+  mRestyled <- nonEmpty . filter (`elem` paths) <$> gitDiffNameOnly Nothing
 
   for mRestyled $ \restyled -> do
     sha <-
       if noCommit
         then pure Nothing
-        else Just <$> gitCommitAll commitMessage
+        else Just <$> gitCommit commitMessage restyled
 
     pure
       $ RestylerResult

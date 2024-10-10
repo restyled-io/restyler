@@ -25,7 +25,7 @@ import System.Process.Typed
 class Monad m => MonadGit m where
   isGitRepository :: HasCallStack => m Bool
   gitDiffNameOnly :: HasCallStack => Maybe String -> m [FilePath]
-  gitCommitAll :: HasCallStack => String -> m String
+  gitCommit :: HasCallStack => String -> NonEmpty FilePath -> m String
 
 -- | An instance that invokes the real @git@
 newtype ActualGit m a = ActualGit
@@ -47,8 +47,8 @@ instance
   where
   isGitRepository = (== ExitSuccess) <$> runGitExitCode ["rev-parse"]
   gitDiffNameOnly mRef = readGitLines $ ["diff", "--name-only"] <> maybeToList mRef
-  gitCommitAll msg = do
-    runGit_ ["commit", "-a", "--message", msg]
+  gitCommit msg paths = do
+    runGit_ $ ["commit", "--message", msg, "--"] <> toList paths
     readGitChomp ["rev-parse", "HEAD"]
 
 runGit_
@@ -121,4 +121,4 @@ newtype NullGit m a = NullGit
 instance Monad m => MonadGit (NullGit m) where
   isGitRepository = pure False
   gitDiffNameOnly _ = pure []
-  gitCommitAll _ = pure ""
+  gitCommit _ _ = pure ""
