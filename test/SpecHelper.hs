@@ -64,6 +64,7 @@ import Restyler.Options.FailOnDifferences
 import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.Manifest
+import Restyler.Options.NoClean
 import Restyler.Options.NoCommit
 import Restyler.Options.NoPull
 import Restyler.Restrictions
@@ -154,6 +155,7 @@ testOptions =
     , imageCleanup = ImageCleanupOption $ Any False
     , manifest = ManifestOption $ Last Nothing
     , noCommit = NoCommitOption $ Any False
+    , noClean = NoCleanOption $ Any False
     , noPull = NoPullOption $ Any False
     , restrictions = fullRestrictions
     }

@@ -23,6 +23,7 @@ import Restyler.Options.HostDirectory
 import Restyler.Options.ImageCleanup
 import Restyler.Options.LogSettings
 import Restyler.Options.Manifest
+import Restyler.Options.NoClean
 import Restyler.Options.NoCommit
 import Restyler.Options.NoPull
 import Restyler.Restrictions
@@ -39,6 +40,7 @@ data App = App
   deriving (HasImageCleanupOption) via (ThroughOptions App)
   deriving (HasManifestOption) via (ThroughOptions App)
   deriving (HasNoCommitOption) via (ThroughOptions App)
+  deriving (HasNoCleanOption) via (ThroughOptions App)
   deriving (HasNoPullOption) via (ThroughOptions App)
   deriving (HasRestrictions) via (ThroughOptions App)
 

@@ -26,6 +26,7 @@ class Monad m => MonadGit m where
   isGitRepository :: HasCallStack => m Bool
   gitDiffNameOnly :: HasCallStack => Maybe String -> m [FilePath]
   gitCommit :: HasCallStack => String -> NonEmpty FilePath -> m String
+  gitClean :: HasCallStack => m ()
 
 -- | An instance that invokes the real @git@
 newtype ActualGit m a = ActualGit
@@ -50,6 +51,7 @@ instance
   gitCommit msg paths = do
     runGit_ $ ["commit", "--message", msg, "--"] <> toList paths
     readGitChomp ["rev-parse", "HEAD"]
+  gitClean = runGit_ ["clean", "-d", "--force"]
 
 runGit_
   :: ( MonadUnliftIO m
@@ -122,3 +124,4 @@ instance Monad m => MonadGit (NullGit m) where
   isGitRepository = pure False
   gitDiffNameOnly _ = pure []
   gitCommit _ _ = pure ""
+  gitClean = pure ()
