@@ -233,7 +233,7 @@ runRestyler config r = \case
     isGit <- isGitRepository
 
     if isGit
-      then getRestylerResult config r
+      then getRestylerResult config paths r
       else do
         Nothing <$ logWarn "Unable to determine Restyler result (not a git repository)"
 
