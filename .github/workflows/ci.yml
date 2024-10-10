@@ -84,6 +84,7 @@ jobs:
           options: --limit 3
       - uses: restyled-io/actions/run@v2
         with:
+          paths: .
           log-level: debug
 
   release:
