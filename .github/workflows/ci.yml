@@ -112,4 +112,3 @@ jobs:
       - uses: actions/checkout@v4
       - run: ./install
       - run: restyle --help
-      - run: restyle-gha --help
