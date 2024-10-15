@@ -52,7 +52,12 @@ instance
   gitCommit msg paths = do
     runGit_ $ ["commit", "--message", msg, "--"] <> toList paths
     readGitChomp ["rev-parse", "HEAD"]
-  gitClean = runGit_ ["clean", "-d", "--force"]
+  gitClean = do
+    ec <- runGitExitCode ["clean", "-d", "--force"]
+    when (ec /= ExitSuccess)
+      $ logWarn
+      $ "git clean not successful"
+      :# ["exitCode" .= show @Text ec]
   gitResetHard ref = runGit_ ["reset", "--hard", ref]
 
 runGit_
