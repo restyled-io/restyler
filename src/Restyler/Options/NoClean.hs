@@ -7,36 +7,34 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.NoClean
-  ( NoCleanOption (..)
-  , HasNoCleanOption (..)
+  ( HasOption
+  , NoClean
+  , noCleanSpec
   , getNoClean
-  , envNoCleanOption
-  , optNoCleanOption
   ) where
 
 import Restyler.Prelude
 
 import Env qualified
-import Options.Applicative
+import Options.Applicative qualified as Opt
+import Restyler.Option
 
-newtype NoCleanOption = NoCleanOption
-  { unwrap :: Any
-  }
-  deriving newtype (Semigroup, Monoid)
+data NoClean
 
-class HasNoCleanOption a where
-  getNoCleanOption :: a -> NoCleanOption
+noCleanSpec :: OptionSpec NoClean Bool
+noCleanSpec =
+  OptionSpec
+    { envParser = Env.flag Nothing (Just True) "NO_CLEAN" $ Env.help help
+    , optParser =
+        Opt.flag Nothing (Just True)
+          $ mconcat
+            [ Opt.long "no-clean"
+            , Opt.help help
+            ]
+    }
+ where
+  help :: String
+  help = "Don't run git-clean after restyling"
 
-getNoClean :: (MonadReader env m, HasNoCleanOption env) => m Bool
-getNoClean = asks $ getAny . (.unwrap) . getNoCleanOption
-
-envNoCleanOption :: Env.Parser Env.Error NoCleanOption
-envNoCleanOption =
-  NoCleanOption . Any <$> Env.switch "NO_CLEAN" (Env.help optionHelp)
-
-optNoCleanOption :: Parser NoCleanOption
-optNoCleanOption =
-  NoCleanOption . Any <$> switch (long "no-clean" <> help optionHelp)
-
-optionHelp :: String
-optionHelp = "Don't run git-clean after restyling"
+getNoClean :: (MonadReader env m, HasOption NoClean env Bool) => m Bool
+getNoClean = lookupOptionDefault @NoClean False

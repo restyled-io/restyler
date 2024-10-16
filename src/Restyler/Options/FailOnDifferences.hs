@@ -7,41 +7,35 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.FailOnDifferences
-  ( FailOnDifferencesOption (..)
-  , HasFailOnDifferencesOption (..)
+  ( HasOption
+  , FailOnDifferences
+  , failOnDifferencesSpec
   , getFailOnDifferences
-  , envFailOnDifferencesOption
-  , optFailOnDifferencesOption
   ) where
 
 import Restyler.Prelude
 
 import Env qualified
-import Options.Applicative
+import Options.Applicative qualified as Opt
+import Restyler.Option
 
-newtype FailOnDifferencesOption = FailOnDifferencesOption
-  { unwrap :: Any
-  }
-  deriving newtype (Semigroup, Monoid)
+data FailOnDifferences
 
-class HasFailOnDifferencesOption a where
-  getFailOnDifferencesOption :: a -> FailOnDifferencesOption
+failOnDifferencesSpec :: OptionSpec FailOnDifferences Bool
+failOnDifferencesSpec =
+  OptionSpec
+    { envParser = Env.flag Nothing (Just True) "FAIL_ON_DIFFERENCES" $ Env.help help
+    , optParser =
+        Opt.flag Nothing (Just True)
+          $ mconcat
+            [ Opt.long "fail-on-differences"
+            , Opt.help help
+            ]
+    }
+ where
+  help :: String
+  help = "Exit non-zero if differences were found"
 
 getFailOnDifferences
-  :: (MonadReader env m, HasFailOnDifferencesOption env) => m Bool
-getFailOnDifferences = asks $ getAny . (.unwrap) . getFailOnDifferencesOption
-
-envFailOnDifferencesOption :: Env.Parser Env.Error FailOnDifferencesOption
-envFailOnDifferencesOption =
-  FailOnDifferencesOption
-    . Any
-    <$> Env.switch "FAIL_ON_DIFFERENCES" (Env.help optionHelp)
-
-optFailOnDifferencesOption :: Parser FailOnDifferencesOption
-optFailOnDifferencesOption =
-  FailOnDifferencesOption
-    . Any
-    <$> switch (long "fail-on-differences" <> help optionHelp)
-
-optionHelp :: String
-optionHelp = "Exit non-zero if differences were found"
+  :: (MonadReader env m, HasOption FailOnDifferences env Bool) => m Bool
+getFailOnDifferences = lookupOptionDefault @FailOnDifferences False

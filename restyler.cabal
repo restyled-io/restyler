@@ -31,9 +31,6 @@ library
       Restyler.Delimited
       Restyler.GitHub.PullRequest
       Restyler.Ignore
-      Restyler.Local
-      Restyler.Local.App
-      Restyler.Local.Options
       Restyler.Monad.Directory
       Restyler.Monad.Docker
       Restyler.Monad.DownloadFile
@@ -41,6 +38,8 @@ library
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
       Restyler.Opt
+      Restyler.Option
+      Restyler.Options
       Restyler.Options.DryRun
       Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory
@@ -51,9 +50,10 @@ library
       Restyler.Options.NoCommit
       Restyler.Options.NoPull
       Restyler.Options.Repository
+      Restyler.Options.Restrictions
       Restyler.Prelude
       Restyler.ReadP
-      Restyler.Restrictions
+      Restyler.Restyle
       Restyler.Restyler
       Restyler.Restyler.Run
       Restyler.RestyleResult
@@ -94,7 +94,7 @@ library
     , conduit
     , containers
     , edit-distance
-    , envparse
+    , envparse >=0.6.0
     , errata
     , errors
     , exceptions
@@ -191,7 +191,6 @@ test-suite test
     , base
     , containers
     , directory
-    , envparse
     , extra
     , filepath
     , hspec

@@ -55,19 +55,11 @@ import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException
 import Restyler.Config
-import Restyler.Local.Options
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
-import Restyler.Options.DryRun
-import Restyler.Options.FailOnDifferences
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.Manifest
-import Restyler.Options.NoClean
-import Restyler.Options.NoCommit
-import Restyler.Options.NoPull
-import Restyler.Restrictions
+import Restyler.Option
+import Restyler.Options
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..), ReaderFS (..))
 import Restyler.Test.FS qualified as FS
@@ -80,21 +72,12 @@ data TestApp = TestApp
   , taDockerPullExitCode :: ExitCode
   , taDockerRunExitCode :: ExitCode
   }
-  deriving
-    ( HasDryRunOption
-    , HasHostDirectoryOption
-    , HasImageCleanupOption
-    , HasNoCommitOption
-    , HasNoPullOption
-    , HasRestrictions
-    )
-    via (ThroughOptions TestApp)
 
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
-instance HasOptions TestApp where
-  getOptions = taOptions
+instance HasOption t Options a => HasOption t TestApp a where
+  getOption = getOption . taOptions
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
@@ -140,25 +123,10 @@ loadTestApp = do
   loadEnvFrom ".env.test"
   TestApp
     <$> newLoggerEnv
-    <*> pure testOptions
+    <*> pure mempty
     <*> FS.build "/" []
     <*> pure ExitSuccess
     <*> pure ExitSuccess
-
-testOptions :: Options
-testOptions =
-  Options
-    { logSettings = error "logSettings"
-    , dryRun = DryRunOption $ Any False
-    , failOnDifferences = FailOnDifferencesOption $ Any False
-    , hostDirectory = HostDirectoryOption $ Last Nothing
-    , imageCleanup = ImageCleanupOption $ Any False
-    , manifest = ManifestOption $ Last Nothing
-    , noCommit = NoCommitOption $ Any False
-    , noClean = NoCleanOption $ Any False
-    , noPull = NoPullOption $ Any False
-    , restrictions = fullRestrictions
-    }
 
 testAppExample :: TestAppT a -> TestAppT a
 testAppExample = id

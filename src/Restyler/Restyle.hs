@@ -1,12 +1,12 @@
 -- | @restyle PATH [PATH...]@
 --
--- Module      : Restyler.Local
+-- Module      : Restyler.Restyle
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Local
+module Restyler.Restyle
   ( NullPullRequest (..)
   , run
   ) where
@@ -22,14 +22,7 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git (MonadGit (..))
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
-import Restyler.Options.DryRun
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.Manifest
-import Restyler.Options.NoClean
-import Restyler.Options.NoCommit
-import Restyler.Options.NoPull
-import Restyler.Restrictions
+import Restyler.Options
 import Restyler.RestyleResult
 import Restyler.Restyler
 import Restyler.Restyler.Run
@@ -45,13 +38,13 @@ run
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasManifestOption env
-     , HasNoCommitOption env
-     , HasNoCleanOption env
-     , HasNoPullOption env
+     , HasOption DryRun env Bool
+     , HasOption HostDirectory env FilePath
+     , HasOption ImageCleanup env Bool
+     , HasOption Manifest env FilePath
+     , HasOption NoCommit env Bool
+     , HasOption NoClean env Bool
+     , HasOption NoPull env Bool
      , HasRestrictions env
      , HasPullRequestState pr
      , HasAuthor pr

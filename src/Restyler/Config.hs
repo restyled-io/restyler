@@ -30,6 +30,9 @@ module Restyler.Config
   , ConfigError (..)
   , loadConfig
 
+    -- * Exported as we move logic to "Restyler.Options"
+  , formatYamlException
+
     -- * Exported for use in tests
   , ConfigSource (..)
   , loadConfigFrom
@@ -212,7 +215,7 @@ loadConfig
      , MonadReadFile m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasManifestOption env
+     , HasOption Manifest env FilePath
      )
   => m Config
 loadConfig =

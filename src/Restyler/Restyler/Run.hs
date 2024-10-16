@@ -41,12 +41,7 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
-import Restyler.Options.DryRun
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.NoCommit
-import Restyler.Options.NoPull
-import Restyler.Restrictions
+import Restyler.Options
 import Restyler.Restyler
 import Restyler.RestylerResult
 import Restyler.Wiki qualified as Wiki
@@ -111,11 +106,11 @@ runRestylers
      , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoCommitOption env
-     , HasNoPullOption env
+     , HasOption DryRun env Bool
+     , HasOption HostDirectory env FilePath
+     , HasOption ImageCleanup env Bool
+     , HasOption NoCommit env Bool
+     , HasOption NoPull env Bool
      , HasRestrictions env
      , HasCallStack
      )
@@ -233,11 +228,11 @@ runRestyler
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoCommitOption env
-     , HasNoPullOption env
+     , HasOption DryRun env Bool
+     , HasOption HostDirectory env FilePath
+     , HasOption ImageCleanup env Bool
+     , HasOption NoCommit env Bool
+     , HasOption NoPull env Bool
      , HasRestrictions env
      , HasCallStack
      )
@@ -266,10 +261,10 @@ runRestyler_
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoPullOption env
+     , HasOption DryRun env Bool
+     , HasOption HostDirectory env FilePath
+     , HasOption ImageCleanup env Bool
+     , HasOption NoPull env Bool
      , HasRestrictions env
      , HasCallStack
      )
@@ -336,8 +331,8 @@ dockerRunRestyler
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
+     , HasOption DryRun env Bool
+     , HasOption HostDirectory env FilePath
      , HasRestrictions env
      , HasCallStack
      )
@@ -346,12 +341,12 @@ dockerRunRestyler
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- getHostDirectory
-  restrictions <- asks getRestrictions
+  restrictionArgs <- asks getRestrictionArgs
   dryRun <- getDryRun
 
   let
     args =
-      restrictionOptions restrictions
+      restrictionArgs
         <> ["--pull", "never"]
         <> ["--volume", cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
@@ -411,8 +406,8 @@ dockerWithImageRm
      , MonadLogger m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasImageCleanupOption env
+     , HasOption DryRun env Bool
+     , HasOption ImageCleanup env Bool
      , HasCallStack
      )
   => Restyler

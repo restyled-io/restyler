@@ -11,6 +11,13 @@ packages:
       size: 1725
   original:
     hackage: Blammo-1.2.1.0
+- completed:
+    hackage: envparse-0.6.0@sha256:df4483a7cf9829349b65248e2d6d692a83da807ae2cc3908013d3787a8d17251,2849
+    pantry-tree:
+      sha256: d44ff86675e0da01914f13debd985fa46de25d7f8c2d5b43125f57eb053c014e
+      size: 1181
+  original:
+    hackage: envparse-0.6.0
 snapshots:
 - completed:
     sha256: 87da71cb0ae9ee1ea1bf51a8eb9812f39f779be76abc0a3c926defd8afda05d1

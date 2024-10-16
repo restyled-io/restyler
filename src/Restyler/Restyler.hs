@@ -123,7 +123,7 @@ getAllRestylersVersioned
      , MonadDirectory m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasManifestOption env
+     , HasOption Manifest env FilePath
      )
   => String
   -> m [Restyler]

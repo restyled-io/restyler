@@ -7,49 +7,44 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.HostDirectory
-  ( HostDirectoryOption (..)
-  , HasHostDirectoryOption (..)
+  ( HasOption
+  , HostDirectory
+  , hostDirectorySpec
   , getHostDirectory
-  , envHostDirectoryOption
-  , optHostDirectoryOption
   ) where
 
 import Restyler.Prelude
 
 import Env qualified
-import Options.Applicative
+import Options.Applicative qualified as Opt
 import Restyler.Monad.Directory
+import Restyler.Option
 
-newtype HostDirectoryOption = HostDirectoryOption
-  { unwrap :: Last FilePath
-  }
-  deriving newtype (Semigroup, Monoid)
-
-class HasHostDirectoryOption env where
-  getHostDirectoryOption :: env -> HostDirectoryOption
+data HostDirectory
 
 getHostDirectory
   :: ( MonadDirectory m
      , MonadReader env m
-     , HasHostDirectoryOption env
+     , HasOption HostDirectory env FilePath
      )
   => m FilePath
 getHostDirectory = do
-  mHostDirectory <- asks $ getLast . (.unwrap) . getHostDirectoryOption
+  mHostDirectory <- lookupOption @HostDirectory
   maybe getCurrentDirectory pure mHostDirectory
 
-envHostDirectoryOption :: Env.Parser Env.Error HostDirectoryOption
-envHostDirectoryOption =
-  HostDirectoryOption
-    . Last
-    <$> optional (Env.var Env.nonempty "HOST_DIRECTORY" $ Env.help optionHelp)
-
-optHostDirectoryOption :: Parser HostDirectoryOption
-optHostDirectoryOption =
-  HostDirectoryOption
-    . Last
-    <$> optional
-      (option str $ long "host-directory" <> metavar "DIRECTORY" <> help optionHelp)
-
-optionHelp :: String
-optionHelp = "Working directory on host, if dockerized"
+hostDirectorySpec :: OptionSpec HostDirectory FilePath
+hostDirectorySpec =
+  OptionSpec
+    { envParser = optional $ Env.var Env.nonempty "HOST_DIRECTORY" $ Env.help help
+    , optParser =
+        optional
+          $ Opt.strOption
+          $ mconcat
+            [ Opt.long "host-directory"
+            , Opt.metavar "DIRECTORY"
+            , Opt.help help
+            ]
+    }
+ where
+  help :: String
+  help = "Working directory on host, if dockerized"

@@ -1,3 +1,4 @@
 resolver: lts-22.28
 extra-deps:
   - Blammo-1.2.1.0
+  - envparse-0.6.0

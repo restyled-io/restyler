@@ -18,7 +18,7 @@ import Restyler.Options.FailOnDifferences
 import Restyler.RestyleResult
 
 main
-  :: (HasLogger app, HasFailOnDifferencesOption app)
+  :: (HasLogger app, HasOption FailOnDifferences app Bool)
   => (forall a. (app -> IO a) -> IO a)
   -> AppT app IO RestyleResult
   -> IO ()

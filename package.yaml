@@ -50,11 +50,10 @@ library:
     - conduit
     - containers
     - edit-distance
-    - envparse
+    - envparse >= 0.6.0 # eitherReader
     - errata
     - errors
     - exceptions
-    - extra
     - extra
     - file-embed
     - filepath
@@ -96,7 +95,6 @@ tests:
       - aeson
       - containers
       - directory
-      - envparse
       - extra
       - filepath
       - hspec

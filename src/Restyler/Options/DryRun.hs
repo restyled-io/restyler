@@ -7,36 +7,34 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.DryRun
-  ( DryRunOption (..)
-  , HasDryRunOption (..)
+  ( HasOption
+  , DryRun
+  , dryRunSpec
   , getDryRun
-  , envDryRunOption
-  , optDryRunOption
   ) where
 
 import Restyler.Prelude
 
 import Env qualified
-import Options.Applicative
+import Options.Applicative qualified as Opt
+import Restyler.Option
 
-newtype DryRunOption = DryRunOption
-  { unwrap :: Any
-  }
-  deriving newtype (Semigroup, Monoid)
+data DryRun
 
-class HasDryRunOption a where
-  getDryRunOption :: a -> DryRunOption
+dryRunSpec :: OptionSpec DryRun Bool
+dryRunSpec =
+  OptionSpec
+    { envParser = Env.flag Nothing (Just True) "DRY_RUN" $ Env.help help
+    , optParser =
+        Opt.flag Nothing (Just True)
+          $ mconcat
+            [ Opt.long "dry-run"
+            , Opt.help help
+            ]
+    }
+ where
+  help :: String
+  help = "Skip pulling and running Restylers"
 
-getDryRun :: (MonadReader env m, HasDryRunOption env) => m Bool
-getDryRun = asks $ getAny . (.unwrap) . getDryRunOption
-
-envDryRunOption :: Env.Parser Env.Error DryRunOption
-envDryRunOption =
-  DryRunOption . Any <$> Env.switch "DRY_RUN" (Env.help optionHelp)
-
-optDryRunOption :: Parser DryRunOption
-optDryRunOption =
-  DryRunOption . Any <$> switch (long "dry-run" <> help optionHelp)
-
-optionHelp :: String
-optionHelp = "Don't docker-pull or docker-run Restylers"
+getDryRun :: (MonadReader env m, HasOption DryRun env Bool) => m Bool
+getDryRun = lookupOptionDefault @DryRun False
