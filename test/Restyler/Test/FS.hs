@@ -73,6 +73,9 @@ build cwd files =
 class HasFS env where
   fsL :: Lens' env FS
 
+instance HasFS FS where
+  fsL = id
+
 readFS' :: (MonadIO m, MonadReader env m, HasFS env) => m FS'
 readFS' = readIORef . (.unwrap) =<< view fsL
 

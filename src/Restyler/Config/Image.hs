@@ -1,4 +1,3 @@
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- |
@@ -14,87 +13,79 @@ module Restyler.Config.Image
   , overrideRestylerImage
   ) where
 
-import Restyler.Prelude hiding (First (..))
+import Restyler.Prelude hiding (First (..), (.=))
 
-import Data.Aeson
-import Data.Aeson.Types (typeMismatch)
+import Autodocodec
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Semigroup (First (..))
 import Data.Semigroup.Generic
 import Data.Text qualified as T
 
-data ImageFields = ImageFields
+data Image = Image
   { registry :: Maybe (First Text)
   , name :: Maybe (First Text)
   , tag :: Maybe (First Text)
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-  deriving (Semigroup) via (GenericSemigroupMonoid ImageFields)
+  deriving (Semigroup) via (GenericSemigroupMonoid Image)
+  deriving (FromJSON, ToJSON) via (Autodocodec Image)
 
-imageFieldsFromText :: Text -> ImageFields
-imageFieldsFromText base = case safeBreakOnStrip "/" base of
+instance HasCodec Image where
+  codec = parseAlternatives codecImage [codecObject]
+
+codecImage :: JSONCodec Image
+codecImage =
+  bimapCodec (Right . imageFromText) imageToText textCodec
+    <?> "[<registry>/]<name>:<tag>"
+
+codecObject :: JSONCodec Image
+codecObject =
+  object
+    "Image"
+    $ Image
+    <$> (optionalField' "registry" .= (.registry))
+    <*> (optionalField' "name" .= (.name))
+    <*> (optionalField' "tag" .= (.tag))
+
+imageFromText :: Text -> Image
+imageFromText base = case safeBreakOnStrip "/" base of
   Nothing -> case safeBreakOnStrip ":" base of
     Nothing ->
-      ImageFields
+      Image
         { registry = Nothing
         , name = Just $ First base
         , tag = Nothing
         }
     Just (name, tag) ->
-      ImageFields
+      Image
         { registry = Nothing
         , name = Just $ First name
         , tag = Just $ First tag
         }
   Just (registry, rest) -> case safeBreakOnStrip ":" rest of
     Nothing ->
-      ImageFields
+      Image
         { registry = Just $ First registry
         , name = Just $ First rest
         , tag = Nothing
         }
     Just (name, tag) ->
-      ImageFields
+      Image
         { registry = Just $ First registry
         , name = Just $ First name
         , tag = Just $ First tag
         }
 
-safeBreakOnStrip :: Text -> Text -> Maybe (Text, Text)
-safeBreakOnStrip x = bitraverse pure (T.stripPrefix x) . T.breakOn x
-
-imageFieldsFromString :: String -> ImageFields
-imageFieldsFromString = imageFieldsFromText . pack
-
-imageFieldsToText :: ImageFields -> Text
-imageFieldsToText ImageFields {..} =
+imageToText :: Image -> Text
+imageToText Image {..} =
   mconcat
     [ maybe "" ((<> "/") . getFirst) registry
     , maybe "" getFirst name
     , maybe "" ((":" <>) . getFirst) tag
     ]
 
-imageFieldsToString :: ImageFields -> String
-imageFieldsToString = unpack . imageFieldsToText
-
-data Image = Image Text | ImageOverride ImageFields
-  deriving stock (Eq, Show, Generic)
-
-instance FromJSON Image where
-  parseJSON = \case
-    v@String {} -> Image <$> parseJSON v
-    v@Object {} -> ImageOverride <$> parseJSON v
-    v -> typeMismatch "String or Object" v
-
-instance ToJSON Image where
-  toJSON = \case
-    Image i -> toJSON i
-    ImageOverride fs -> toJSON fs
-  toEncoding = \case
-    Image i -> toEncoding i
-    ImageOverride fs -> toEncoding fs
-
 overrideRestylerImage :: String -> Image -> String
-overrideRestylerImage base = \case
-  Image i -> unpack i
-  ImageOverride fs -> imageFieldsToString $ fs <> imageFieldsFromString base
+overrideRestylerImage base = unpack . imageToText . (<> imageFromText (pack base))
+
+safeBreakOnStrip :: Text -> Text -> Maybe (Text, Text)
+safeBreakOnStrip x = bitraverse pure (T.stripPrefix x) . T.breakOn x
