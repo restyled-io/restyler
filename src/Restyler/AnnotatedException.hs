@@ -17,10 +17,6 @@ module Restyler.AnnotatedException
   , hide
   , displayAnnotatedException
 
-    -- * Annotated-safe handling
-  , handleTo
-  , tryTo
-
     -- * Suppressing exception
   , suppressWith
   , suppressWarn
@@ -38,17 +34,6 @@ displayAnnotatedException aex@AnnotatedException {exception} =
     , ""
     , maybe "" (pack . prettyCallStack) $ annotatedExceptionCallStack aex
     ]
-
-handleTo
-  :: (MonadUnliftIO m, Exception e1, Exception e2) => (e1 -> e2) -> m a -> m a
-handleTo f action = do
-  r <- tryAnnotated action
-  case r of
-    Left AnnotatedException {exception} -> throw $ f exception
-    Right a -> pure a
-
-tryTo :: (MonadUnliftIO m, Exception e) => (e -> b) -> m a -> m (Either b a)
-tryTo f = fmap (first $ f . exception) . tryAnnotated
 
 -- | Suppress any exception and return the given @a@
 suppressWith :: MonadUnliftIO m => a -> m a -> m a

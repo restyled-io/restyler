@@ -33,7 +33,7 @@ class Monad m => MonadDirectory m where
   listDirectory :: FilePath -> m [FilePath]
   removeFile :: FilePath -> m ()
 
-newtype ActualDirectory m a = ActualDocker
+newtype ActualDirectory m a = ActualDirectory
   { unwrap :: m a
   }
   deriving newtype

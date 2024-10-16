@@ -33,7 +33,6 @@ import Restyler.Config
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
-import Restyler.Config.RemoteFile
 import Restyler.Delimited
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker
@@ -41,15 +40,8 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
-import Restyler.Options.DryRun
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.NoCommit
-import Restyler.Options.NoPull
-import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.RestylerResult
-import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
 import System.FilePath qualified as FilePath
 
@@ -83,8 +75,6 @@ instance Exception RestylerOutOfMemory where
   displayException (RestylerOutOfMemory Restyler {..}) =
     mconcat
       [ "Restyler " <> rName <> " used too much memory (exit code 137)"
-      , "\n"
-      , "\nSee " <> unpack (Wiki.commonError "Restyle Error 137") <> " for more details"
       ]
 
 newtype RestylerCommandNotFound = RestylerCommandNotFound Restyler
@@ -96,8 +86,6 @@ instance Exception RestylerCommandNotFound where
       [ "Restyler " <> rName <> " has an invalid command (exit code 127)"
       , "\n"
       , "You may need to adjust restylers[" <> rName <> "].command"
-      , "\n"
-      , "\nSee " <> unpack (Wiki.commonError "Restyle Error 127") <> " for more details"
       ]
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
@@ -111,21 +99,26 @@ runRestylers
      , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoCommitOption env
-     , HasNoPullOption env
+     , HasCommitTemplate env
+     , HasDryRun env
+     , HasExclude env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasManifest env
+     , HasNoCommit env
+     , HasNoPull env
+     , HasRemoteFiles env
      , HasRestrictions env
+     , HasRestylerOverrides env
+     , HasRestylersVersion env
      , HasCallStack
      )
-  => Config
-  -> [FilePath]
+  => [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
-runRestylers config@Config {..} argPaths = do
-  let allPaths = filter included $ map FilePath.normalise argPaths
+runRestylers argPaths = do
+  allPaths <- removeExcluded $ map FilePath.normalise argPaths
   expPaths <- findFiles allPaths
-  let paths = filter included expPaths
+  paths <- removeExcluded expPaths
 
   logDebug
     $ "Paths"
@@ -133,12 +126,13 @@ runRestylers config@Config {..} argPaths = do
        , "pathsGivenIncluded" .= allPaths
        , "pathsExpanded" .= truncatePaths 50 expPaths
        , "pathsExpandedIncluded" .= truncatePaths 50 paths
-       , "exclude" .= cExclude
        ]
 
-  for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
+  remoteFiles <- asks getRemoteFiles
+  for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
 
-  mResults <- withFilteredPaths restylers paths $ runRestyler config
+  restylers <- getEnabledRestylers
+  mResults <- withFilteredPaths restylers paths runRestyler
   mResetTo <- join <$> traverse checkForNoop mResults
 
   case mResetTo of
@@ -146,9 +140,14 @@ runRestylers config@Config {..} argPaths = do
     Just ref -> do
       logInfo "Restylers offset each other, resetting git state"
       Nothing <$ gitResetHard ref
- where
-  included path = none (`match` path) cExclude
-  restylers = filter rEnabled cRestylers
+
+removeExcluded
+  :: (MonadReader env m, HasExclude env)
+  => [FilePath]
+  -> m [FilePath]
+removeExcluded ps = do
+  exclude <- asks getExclude
+  pure $ filter (\path -> none (`match` path) exclude) ps
 
 -- | See if multiple restylers offset each other
 --
@@ -233,19 +232,19 @@ runRestyler
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoCommitOption env
-     , HasNoPullOption env
+     , HasCommitTemplate env
+     , HasDryRun env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasNoCommit env
+     , HasNoPull env
      , HasRestrictions env
      , HasCallStack
      )
-  => Config
-  -> Restyler
+  => Restyler
   -> [FilePath]
   -> m (Maybe RestylerResult)
-runRestyler config r = \case
+runRestyler r = \case
   [] -> pure Nothing
   paths -> do
     runRestyler_ r paths
@@ -253,7 +252,7 @@ runRestyler config r = \case
     isGit <- isGitRepository
 
     if isGit
-      then getRestylerResult config paths r
+      then getRestylerResult paths r
       else do
         Nothing <$ logWarn "Unable to determine Restyler result (not a git repository)"
 
@@ -266,10 +265,10 @@ runRestyler_
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
-     , HasImageCleanupOption env
-     , HasNoPullOption env
+     , HasDryRun env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasNoPull env
      , HasRestrictions env
      , HasCallStack
      )
@@ -282,7 +281,7 @@ runRestyler_ r paths = case rDelimiters r of
   Just ds -> restyleDelimited ds run paths
  where
   run ps = do
-    noPull <- (||) <$> getNoPull <*> getDryRun
+    noPull <- asks $ (||) <$> getNoPull <*> getDryRun
     unless noPull $ dockerPullRestyler r
     dockerWithImageRm r
       $ traverse_ (dockerRunRestyler r)
@@ -332,12 +331,11 @@ dockerPullRestyler r@Restyler {..} = do
 dockerRunRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadDirectory m
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasHostDirectoryOption env
+     , HasDryRun env
+     , HasHostDirectory env
      , HasRestrictions env
      , HasCallStack
      )
@@ -345,15 +343,15 @@ dockerRunRestyler
   -> WithProgress DockerRunStyle
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
-  cwd <- getHostDirectory
+  cwd <- asks getHostDirectory
   restrictions <- asks getRestrictions
-  dryRun <- getDryRun
+  dryRun <- asks getDryRun
 
   let
     args =
       restrictionOptions restrictions
         <> ["--pull", "never"]
-        <> ["--volume", cwd <> ":/code", rImage]
+        <> ["--volume", toFilePath cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
     progressSuffix :: Text
@@ -411,15 +409,15 @@ dockerWithImageRm
      , MonadLogger m
      , MonadDocker m
      , MonadReader env m
-     , HasDryRunOption env
-     , HasImageCleanupOption env
+     , HasDryRun env
+     , HasImageCleanup env
      , HasCallStack
      )
   => Restyler
   -> m a
   -> m a
 dockerWithImageRm r f = do
-  imageCleanup <- (&&) <$> getImageCleanup <*> (not <$> getDryRun)
+  imageCleanup <- asks $ (&&) <$> getImageCleanup <*> (not <$> getDryRun)
   if imageCleanup
     then finally f $ suppressWarn $ dockerImageRm $ rImage r
     else f

@@ -11,16 +11,17 @@ module Restyler.Config.CommitTemplateSpec
   )
 where
 
-import SpecHelper
+import Restyler.Prelude
 
 import Restyler.Config.CommitTemplate
+import Test.Hspec
 
 spec :: Spec
 spec = do
   describe "renderCommitTemplate" $ do
-    it "replaces variables" $ example $ do
+    it "replaces variables" $ do
       let
-        inputs = CommitTemplateInputs {restyler = someRestyler "special"}
+        inputs = CommitTemplateInputs {restyler = "special"}
         template = CommitTemplate "Restyled by ${restyler.name}"
 
       renderCommitTemplate inputs template

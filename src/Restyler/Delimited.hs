@@ -21,12 +21,11 @@ module Restyler.Delimited
   , undelimit
   ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding ((.=))
 
-import Data.Aeson
-import Data.Aeson.Casing
+import Autodocodec
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text qualified as T
-import Restyler.Config.ExpectedKeys
 import Restyler.Monad.Directory
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
@@ -36,14 +35,15 @@ data Delimiters = Delimiters
   { dStart :: Text
   , dEnd :: Text
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Show)
+  deriving (FromJSON, ToJSON) via (Autodocodec Delimiters)
 
-instance FromJSON Delimiters where
-  parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
-
-instance ToJSON Delimiters where
-  toJSON = genericToJSON $ aesonPrefix snakeCase
-  toEncoding = genericToEncoding $ aesonPrefix snakeCase
+instance HasCodec Delimiters where
+  codec =
+    object "Delimiters"
+      $ Delimiters
+      <$> (requiredField' "start" .= dStart)
+      <*> (requiredField' "end" .= dEnd)
 
 data DelimitedPath = DelimitedPath
   { dpSource :: FilePath

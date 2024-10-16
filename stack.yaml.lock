@@ -5,15 +5,64 @@
 
 packages:
 - completed:
-    hackage: Blammo-1.2.1.0@sha256:d319b91109e14762f06c340bbf955efcfccd6cc853a182e4c384113e236ddcb5,4836
+    hackage: Blammo-2.1.1.0@sha256:29fa7c1411fc3dc87504e3c2d1e903a0077208a51228d779eaa02abf025219c0,4755
     pantry-tree:
-      sha256: ea00c0835cbbcfa749803647d2c0415d1991d2bd325ecb13d8de4186b6dd2c4f
-      size: 1725
+      sha256: 3b2772b11e465564d2addc7225e33c211538ed96f4212b8d091edc7d9c352672
+      size: 1788
   original:
-    hackage: Blammo-1.2.1.0
+    hackage: Blammo-2.1.1.0
+- completed:
+    hackage: opt-env-conf-0.6.0.2@sha256:f1e80e1497b71223f6a9ef915ec74985faa5d1b73f67e8b68f7fea0cc72aaa4d,1677
+    pantry-tree:
+      sha256: 005fd0fcf2a4a9844bdf120a0942f63c86e7a2d85f70609992b94b7f7149e54c
+      size: 1196
+  original:
+    hackage: opt-env-conf-0.6.0.2
+- completed:
+    hackage: autodocodec-0.4.2.2@sha256:93b72477d84181a62c81b54bcffec31afbe15af987214e66bc408c37b9555b4f,1595
+    pantry-tree:
+      sha256: bfb550c0eeee66eea27efc870c0a1c9a427749b37b613fb50a669328ad0d84f7
+      size: 762
+  original:
+    hackage: autodocodec-0.4.2.2
+- completed:
+    hackage: autodocodec-nix-0.0.1.4@sha256:ceade0ec47191222fa7852089ab8450a886bf6ee583f62e7c4ec5e0185748872,1010
+    pantry-tree:
+      sha256: 46da2de0aa606fc311b1957ca95add2c255fe47aaa65fd8b55900e56220eb1b7
+      size: 229
+  original:
+    hackage: autodocodec-nix-0.0.1.4
+- completed:
+    hackage: safe-coloured-text-0.3.0.2@sha256:691a08a1b0677ab4bca1f715c692fcc9c89fe1488cb1a658bb63a2384c831e17,1116
+    pantry-tree:
+      sha256: 2392cdc2cb82cabc52fdb13c89dc4f798570ff5fc5924c0dce7c63bec590c63c
+      size: 427
+  original:
+    hackage: safe-coloured-text-0.3.0.2
+- completed:
+    hackage: safe-coloured-text-layout-0.2.0.1@sha256:887cd6e1ca5d42cf9192cbf5c7559e81acb13fd3fb3eb5edaccd29a959121bcf,1016
+    pantry-tree:
+      sha256: 39c207b9e0f6bc84ad386f648f83f9cae23e3da69e864f6bd765fd3117e19619
+      size: 241
+  original:
+    hackage: safe-coloured-text-layout-0.2.0.1
+- completed:
+    hackage: autodocodec-schema-0.2.0.0@sha256:a3d39f242ec7f624af4a18f9bdfb4deafcb6415d4ce07fda8c5c7a5fd17b456e,1111
+    pantry-tree:
+      sha256: d620c97840950c717cd46f2175af49dd42281e357d3dae7c63d4922684a7e6e0
+      size: 235
+  original:
+    hackage: autodocodec-schema-0.2.0.0
+- completed:
+    hackage: autodocodec-yaml-0.4.0.0@sha256:3e2d0056d208460e608844c98c5f5ad2189d4e0bf170c402057d45412867af69,1189
+    pantry-tree:
+      sha256: 54f05b1159487e13b87f437601017ddbb015f4d70ec8b09662c19657de93fb08
+      size: 440
+  original:
+    hackage: autodocodec-yaml-0.4.0.0
 snapshots:
 - completed:
-    sha256: 87da71cb0ae9ee1ea1bf51a8eb9812f39f779be76abc0a3c926defd8afda05d1
-    size: 719139
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/28.yaml
-  original: lts-22.28
+    sha256: 0964f3e2c04e21abf42e271490e6974bc923aac2f2fd595fcb53ad0c237dbed1
+    size: 720034
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/38.yaml
+  original: lts-22.38

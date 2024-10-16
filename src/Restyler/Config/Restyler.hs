@@ -1,6 +1,3 @@
-{-# LANGUAGE FieldSelectors #-}
-{-# LANGUAGE RecordWildCards #-}
-
 -- |
 --
 -- Module      : Restyler.Config.Restyler
@@ -10,72 +7,182 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Config.Restyler
-  ( RestylerOverride
+  ( HasRestylersVersion (..)
+  , restylersVersionParser
+  , HasRestylerOverrides (..)
+  , RestylerOverride (..)
+  , restylerOverride
+  , restylerOverridesParser
+  , RestylersInvalid (..)
+  , getEnabledRestylers
+
+    -- * To test
   , overrideRestylers
   ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding ((.=))
 
-import Data.Aeson hiding (Result (..))
-import Data.Aeson.Casing
+import Autodocodec
+import Data.Aeson (Value (..))
 import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
-import Data.Aeson.Types (Parser, modifyFailure)
+import Data.Aeson.Types (parseEither)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Text qualified as T
 import Data.Validation
-import Restyler.Config.ExpectedKeys
+import OptEnvConf hiding (name)
+import Restyler.AnnotatedException (throw)
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
-import Restyler.Config.SketchyList
+import Restyler.Config.Manifest
 import Restyler.Delimited
+import Restyler.Monad.Directory
+import Restyler.Monad.DownloadFile
 import Restyler.Restyler
 
+class HasRestylersVersion env where
+  getRestylersVersion :: env -> String
+
+restylersVersionParser :: Parser String
+restylersVersionParser =
+  setting
+    [ help "Version of Restylers manifest to use"
+    , option
+    , long "restylers-version"
+    , reader str
+    , metavar "stable|dev|..."
+    , env "RESTYLERS_VERSION"
+    , conf "restylers_version"
+    ]
+
+class HasRestylerOverrides env where
+  getRestylerOverrides :: env -> [RestylerOverride]
+
+newtype RestylersInvalid = RestylersInvalid [Text]
+  deriving stock (Show)
+  deriving anyclass (Exception)
+
 data RestylerOverride = RestylerOverride
-  { roName :: String
-  , roEnabled :: Maybe Bool
-  , roImage :: Maybe Image
-  , roCommand :: Maybe (SketchyList String)
-  , roArguments :: Maybe (SketchyList String)
-  , roInclude :: Maybe (SketchyList Include)
-  , roInterpreters :: Maybe (SketchyList Interpreter)
-  , roDelimiters :: Maybe Delimiters
+  { name :: Text
+  , enabled :: Maybe Bool
+  , image :: Maybe Image
+  , command :: Maybe [String]
+  , arguments :: Maybe [String]
+  , include :: Maybe [Include]
+  , interpreters :: Maybe [Interpreter]
+  , delimiters :: Maybe Delimiters
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Show)
 
-instance FromJSON RestylerOverride where
-  parseJSON = \case
-    String name'
-      | Just name <- T.stripPrefix "!" name' ->
-          namedOverride (Key.fromText name)
-            $ KeyMap.singleton "enabled" (Bool False)
-    String name -> namedOverride (Key.fromText name) KeyMap.empty
-    Object o
-      | [(name, Object o')] <- KeyMap.toList o ->
-          namedOverride name o'
-    v ->
-      suffixIncorrectIndentation
-        $ genericParseJSONValidated (aesonPrefix snakeCase) v
+instance HasCodec RestylerOverride where
+  codec =
+    parseAlternatives
+      codecObject
+      [ codecNamed
+      , codecNameOnly
+      ]
 
-namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
-namedOverride name =
-  parseJSON
-    . Object
-    . insertIfMissing "name" (String $ Key.toText name)
-    . KeyMap.delete name
+restylerOverride :: Text -> RestylerOverride
+restylerOverride name =
+  RestylerOverride
+    { name
+    , enabled = Nothing
+    , image = Nothing
+    , command = Nothing
+    , arguments = Nothing
+    , include = Nothing
+    , interpreters = Nothing
+    , delimiters = Nothing
+    }
 
-suffixIncorrectIndentation :: Parser a -> Parser a
-suffixIncorrectIndentation = modifyFailure (<> msg)
- where
-  msg :: String
-  msg = "\n\nDo you have incorrect indentation for a named override?"
+-- | Parse or render the object normally
+--
+-- - @{...} -> ...@
+codecObject :: JSONCodec RestylerOverride
+codecObject =
+  object "Restyler"
+    $ RestylerOverride
+    <$> (requiredField' "name" .= (.name))
+    <*> (optionalField' "enabled" .= (.enabled))
+    <*> (optionalField' "image" .= (.image))
+    <*> (optionalField' "command" .= (.command))
+    <*> (optionalField' "arguments" .= (.arguments))
+    <*> (optionalField' "include" .= (.include))
+    <*> (optionalField' "interpreters" .= (.interpreters))
+    <*> (optionalField' "delimiters" .= (.delimiters))
+
+-- | Parse a name key and sub-object. Not used for rendering
+--
+-- - @{name: {...}}" -> merge({name: name}, {...})@
+codecNamed :: JSONCodec RestylerOverride
+codecNamed =
+  bimapCodec
+    ( \case
+        Object km | [(name, Object os)] <- KeyMap.toList km -> do
+          parseEither (parseJSONVia codecObject)
+            $ Object
+            $ KeyMap.insert "name" (String $ Key.toText name) os
+        _ -> Left "Not an Object"
+    )
+    (const "unused")
+    valueCodec
+    <?> "{name: Restyler}"
+
+-- | Parse name-only syntax. Not used for rendering
+--
+-- - @"!<name>" -> {name: name, enabled:false}@
+-- - @"<name>" -> {name: name, enabled:true}@
+codecNameOnly :: JSONCodec RestylerOverride
+codecNameOnly =
+  bimapCodec
+    ( \name -> Right $ case T.uncons name of
+        Just (c, rest) | c == '!' -> (restylerOverride rest) {enabled = Just False}
+        _ -> (restylerOverride name) {enabled = Just True}
+    )
+    ( \override ->
+        -- This isn't totally correct, but we never render via this codec
+        if override.enabled == Just False
+          then "!" <> override.name
+          else override.name
+    )
+    textCodec
+    <?> "!<name>|<name>"
+
+-- |
+--
+-- May throw 'RestylersInvalid'
+getEnabledRestylers
+  :: ( MonadIO m
+     , MonadDirectory m
+     , MonadDownloadFile m
+     , MonadReader env m
+     , HasRestylersVersion env
+     , HasRestylerOverrides env
+     , HasManifest env
+     , HasCallStack
+     )
+  => m [Restyler]
+getEnabledRestylers = do
+  version <- asks getRestylersVersion
+  overrides <- asks getRestylerOverrides
+  restylers <- getAllRestylersVersioned version
+  either
+    (throw . RestylersInvalid)
+    (pure . filter rEnabled)
+    $ overrideRestylers restylers overrides
+
+restylerOverridesParser :: Parser [RestylerOverride]
+restylerOverridesParser =
+  setting
+    [ help "Restylers to run"
+    , conf "restylers"
+    ]
 
 overrideRestylers
   :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]
 overrideRestylers restylers overrides =
-  toEither $ case length $ filter ((== "*") . roName) overrides of
+  toEither $ case length $ filter ((== "*") . (.name)) overrides of
     0 -> explicits <$> getOverrides
     1 -> replaced restylers <$> getOverrides
     n ->
@@ -110,24 +217,22 @@ replaceWildcards restylers = concatMap $ \case
 
 overrideRestyler
   :: HashMap Text Restyler -> RestylerOverride -> Validation [Text] Override
-overrideRestyler restylers RestylerOverride {..}
-  | roName == "*" = pure Wildcard
+overrideRestyler restylers o
+  | o.name == "*" = pure Wildcard
   | otherwise = Explicit . override <$> defaults
  where
-  defaults = lookupExpectedKeyBy "Restyler name" restylers $ pack roName
-  override restyler@Restyler {..} =
-    restyler
-      { rEnabled = fromMaybe True roEnabled
-      , rImage = maybe rImage (overrideRestylerImage rImage) roImage
-      , rCommand = maybe rCommand unSketchy roCommand
-      , rArguments = maybe rArguments unSketchy roArguments
-      , rInclude = maybe rInclude unSketchy roInclude
-      , rInterpreters = maybe rInterpreters unSketchy roInterpreters
-      , rDelimiters = roDelimiters <|> rDelimiters
-      }
+  defaults =
+    case HashMap.lookup (o.name) restylers of
+      Nothing -> Failure ["Unexpected Restyler name " <> o.name]
+      Just v -> Success v
 
-lookupExpectedKeyBy :: Text -> HashMap Text v -> Text -> Validation [Text] v
-lookupExpectedKeyBy label hm k =
-  case validateExpectedKeyBy label fst (HashMap.toList hm) k of
-    Left e -> Failure [e]
-    Right (_k, v) -> Success v
+  override restyler =
+    restyler
+      { rEnabled = fromMaybe True o.enabled
+      , rImage = maybe restyler.rImage (overrideRestylerImage restyler.rImage) o.image
+      , rCommand = fromMaybe restyler.rCommand o.command
+      , rArguments = fromMaybe restyler.rArguments o.arguments
+      , rInclude = fromMaybe restyler.rInclude o.include
+      , rInterpreters = fromMaybe restyler.rInterpreters o.interpreters
+      , rDelimiters = o.delimiters <|> restyler.rDelimiters
+      }
