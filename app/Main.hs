@@ -21,14 +21,18 @@ import Restyler.Restyle qualified as Restyle
 
 main :: IO ()
 main = CLI.main withApp $ do
-  paths <- asks $ toList . (.options.paths)
-  mJSON <- asks (.options.pullRequestJson)
+  config <- asks (.config)
+
+  let
+    paths = toList config.options.paths
+    mJSON = config.options.pullRequestJson
+
   case mJSON of
-    Nothing -> Restyle.run NullPullRequest paths
+    Nothing -> Restyle.run config NullPullRequest paths
     Just path -> do
       result <- liftIO $ eitherDecodeFileStrict @PullRequest $ toFilePath path
       case result of
         Left err -> do
           logError $ ("pull-request-json is invalid:\n" <> pack err) :# []
           exitFailure
-        Right pr -> Restyle.run pr paths
+        Right pr -> Restyle.run config pr paths

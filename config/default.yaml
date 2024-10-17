@@ -1,5 +1,3 @@
-# See https://github.com/restyled-io/restyled.io/wiki/Configuring-Restyled
-
 enabled: true
 
 exclude:
@@ -50,6 +48,12 @@ restylers:
   - "*"
 
 cli:
+  # TODO
+  logging:
+    debug: false
+    trace: false
+    color: auto
+
   dry_run: false
 
   fail_on_differences: false
@@ -66,8 +70,7 @@ cli:
 
   restylers:
     restricted: true
+
     net_none: true
     cpu_shares: 512
-    memory:
-      number: 128
-      suffix: m
+    memory: {number: 128, suffix: m}

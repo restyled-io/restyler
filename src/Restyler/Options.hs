@@ -7,8 +7,9 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options
-  ( Options (..)
-  , optionsParser
+  ( Config' (..)
+  , configParser
+  , Options (..)
   , module X
 
     -- * @DerivingVia@
@@ -29,6 +30,34 @@ import Restyler.Options.NoClean as X
 import Restyler.Options.NoCommit as X
 import Restyler.Options.NoPull as X
 import Restyler.Options.Restrictions as X
+
+data Config' = Config'
+  { enabled :: Bool
+  , options :: Options
+  }
+
+configParser :: FilePath -> Parser Config'
+configParser defaults =
+  withCombinedYamlConfigs (configSources defaults)
+    $ Config'
+    <$> setting
+      [ help "Do anything at all"
+      , conf "enabled"
+      ]
+    <*> subConfig_ "cli" optionsParser
+
+configSources :: FilePath -> Parser [Path Abs File]
+configSources defaults =
+  sequenceA
+    [ hiddenPath ".github/restyled.yml"
+    , hiddenPath ".github/restyled.yaml"
+    , hiddenPath ".restyled.yml"
+    , hiddenPath ".restyled.yaml"
+    , hiddenPath defaults
+    ]
+
+hiddenPath :: FilePath -> Parser (Path Abs File)
+hiddenPath x = filePathSetting [value x, hidden]
 
 data Options = Options
   { logSettings :: LogSettings -> LogSettings
@@ -72,26 +101,9 @@ instance HasNoPull Options where
 instance HasRestrictions Options where
   getRestrictions = (.restrictions)
 
-instance HasParser Options where
-  settingsParser = withCombinedYamlConfigs configParser optionsParser
-
-configParser :: Parser [Path Abs File]
-configParser =
-  sequenceA
-    [ hiddenPath ".github/restyled.yml"
-    , hiddenPath ".github/restyled.yaml"
-    , hiddenPath ".restyled.yml"
-    , hiddenPath ".restyled.yaml"
-    , hiddenPath "config/default.yaml"
-    ]
-
-hiddenPath :: FilePath -> Parser (Path Abs File)
-hiddenPath x = filePathSetting [value x, hidden]
-
 optionsParser :: Parser Options
 optionsParser =
-  subConfig_ "cli"
-    $ Options
+  Options
     <$> logSettingsOptionParser
     <*> dryRunParser
     <*> failOnDifferencesParser

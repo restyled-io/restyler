@@ -135,8 +135,7 @@ resolveConfig = bzipWith f
 --
 -- This is what we work with throughout the system.
 data Config = Config
-  { cEnabled :: Bool
-  , cExclude :: Set (Glob FilePath)
+  { cExclude :: Set (Glob FilePath)
   , cChangedPaths :: ChangedPathsConfig
   , cAuto :: Bool
   , cCommitTemplate :: CommitTemplate
@@ -303,8 +302,7 @@ resolveRestylers ConfigF {..} allRestylers = do
 
   pure
     Config
-      { cEnabled = runIdentity cfEnabled
-      , cExclude =
+      { cExclude =
           Set.fromList $ unSketchy $ runIdentity $ cfExclude <> cfAlsoExclude
       , cChangedPaths = runIdentity cfChangedPaths
       , cAuto = runIdentity cfAuto

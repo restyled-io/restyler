@@ -52,17 +52,6 @@ spec = withTestApp $ do
       |]
       False
 
-  it "has a setting for globally disabling" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-            enabled: false
-            restylers:
-              - stylish-haskell
-        |]
-
-    fmap cEnabled result `shouldBe` Right False
-
   it "allows re-configuring includes" $ testAppExample $ do
     assertLoadsRestyler
       rInclude
@@ -322,25 +311,6 @@ spec = withTestApp $ do
 
     result `shouldBe` Right defaultConfig
 
-  it "tries alternative configurations" $ testAppExample $ do
-    writeFile "/a" "enabled: true\n"
-    writeFile "/b" "enabled: false\n"
-
-    aConfig <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    bConfig <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    fmap cEnabled aConfig `shouldBe` Right True
-    fmap cEnabled bConfig `shouldBe` Right False
-
   it "doesn't skip configurations if there are errors" $ testAppExample $ do
     writeFile "/a" "{[^\n"
     writeFile "/b" "enabled: false\n"
@@ -352,18 +322,6 @@ spec = withTestApp $ do
         $ pure testRestylers
 
     result `shouldSatisfy` isLeft
-
-  it "doesn't attempt to read unused configurations" $ testAppExample $ do
-    writeFile "/a" "enabled: false\n"
-    writeFile "/b" "[{^"
-
-    result <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    fmap cEnabled result `shouldBe` Right False
 
 hasError :: Text -> Either Text a -> Bool
 hasError msg (Left err) = msg `T.isInfixOf` err

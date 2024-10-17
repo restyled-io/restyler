@@ -19,7 +19,7 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings.Env qualified as LogSettings
 import Control.Monad.Catch (MonadCatch, MonadThrow)
-import OptEnvConf (runSettingsParser)
+import OptEnvConf (runParser)
 import Paths_restyler qualified as Pkg
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker
@@ -55,7 +55,7 @@ runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT f.unwrap app
 
 data App = App
-  { options :: Options
+  { config :: Config'
   , logger :: Logger
   }
   deriving
@@ -72,13 +72,18 @@ data App = App
     via (ThroughOptions App)
 
 instance HasOptions App where
-  getOptions = (.options)
+  getOptions = (.config.options)
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do
-  options <- runSettingsParser Pkg.version "Restyle local file"
-  logSettings <- options.logSettings <$> LogSettings.parse
-  withLogger logSettings $ f . App options
+  let
+    -- TODO: write to a temp file?
+    defaults :: FilePath
+    defaults = "config/default.yaml"
+
+  config <- runParser Pkg.version "Restyle local file" $ configParser defaults
+  logSettings <- config.options.logSettings <$> LogSettings.parse
+  withLogger logSettings $ f . App config

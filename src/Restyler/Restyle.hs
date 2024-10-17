@@ -52,10 +52,11 @@ run
      , HasLabelNames pr
      , HasCallStack
      )
-  => pr
+  => Config'
+  -> pr
   -> [FilePath]
   -> m RestyleResult
-run pr paths = do
+run config' pr paths = do
   config <- loadConfig
 
   let mIgnoredReason =
@@ -65,7 +66,7 @@ run pr paths = do
           (getBaseRef pr)
           (getLabelNames pr)
 
-  case (cEnabled config, getPullRequestState pr) of
+  case (config'.enabled, getPullRequestState pr) of
     (False, _) -> do
       pure $ RestyleSkipped RestyleNotEnabled
     (True, PullRequestClosed) ->
