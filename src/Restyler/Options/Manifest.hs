@@ -7,37 +7,23 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.Manifest
-  ( HasOption
-  , Manifest
-  , manifestSpec
-  , getManifest
+  ( HasManifest (..)
+  , manifestParser
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Option
+import OptEnvConf
 
-data Manifest
+class HasManifest env where
+  getManifest :: env -> Maybe (Path Abs File)
 
-manifestSpec :: OptionSpec Manifest FilePath
-manifestSpec =
-  OptionSpec
-    { envParser = optional $ Env.var Env.nonempty "MANIFEST" $ Env.help help
-    , optParser =
-        optional
-          $ Opt.strOption
-          $ mconcat
-            [ Opt.long "manifest"
-            , Opt.metavar "FILE"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Restylers manifest to use"
-
-getManifest
-  :: (MonadReader env m, HasOption Manifest env FilePath) => m (Maybe FilePath)
-getManifest = lookupOption @Manifest
+manifestParser :: Parser (Path Abs File)
+manifestParser =
+  filePathSetting
+    [ help "Restylers manifest to use"
+    , option
+    , long "manifest"
+    , env "MANIFEST"
+    , conf "manifest"
+    ]

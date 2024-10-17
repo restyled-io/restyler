@@ -7,34 +7,23 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.DryRun
-  ( HasOption
-  , DryRun
-  , dryRunSpec
-  , getDryRun
+  ( HasDryRun (..)
+  , dryRunParser
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Option
+import OptEnvConf
 
-data DryRun
+class HasDryRun env where
+  getDryRun :: env -> Bool
 
-dryRunSpec :: OptionSpec DryRun Bool
-dryRunSpec =
-  OptionSpec
-    { envParser = Env.flag Nothing (Just True) "DRY_RUN" $ Env.help help
-    , optParser =
-        Opt.flag Nothing (Just True)
-          $ mconcat
-            [ Opt.long "dry-run"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Skip pulling and running Restylers"
-
-getDryRun :: (MonadReader env m, HasOption DryRun env Bool) => m Bool
-getDryRun = lookupOptionDefault @DryRun False
+dryRunParser :: Parser Bool
+dryRunParser =
+  yesNoSwitch
+    [ help "Skip pulling and running Restylers"
+    , long "dry-run"
+    , env "DRY_RUN"
+    , conf "dry_run"
+    , value False
+    ]

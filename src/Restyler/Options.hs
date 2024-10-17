@@ -7,23 +7,18 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options
-  ( Options
-  , getLogSettings
-  , getPullRequestJson
-  , getConfigPath
-  , getPaths
-  , envParser
-  , optParser
+  ( Options (..)
+  , optionsParser
   , module X
+
+    -- * @DerivingVia@
+  , HasOptions (..)
+  , ThroughOptions (..)
   ) where
 
 import Restyler.Prelude
 
-import Data.List.NonEmpty (some1)
-import Data.Semigroup.Generic
-import Env qualified
-import Options.Applicative
-import Restyler.Option as X
+import OptEnvConf
 import Restyler.Options.DryRun as X
 import Restyler.Options.FailOnDifferences as X
 import Restyler.Options.HostDirectory as X
@@ -36,114 +31,126 @@ import Restyler.Options.NoPull as X
 import Restyler.Options.Restrictions as X
 
 data Options = Options
-  { dryRun :: Maybe (Option DryRun Bool)
-  , failOnDifferences :: Maybe (Option FailOnDifferences Bool)
-  , hostDirectory :: Maybe (Option HostDirectory FilePath)
-  , imageCleanup :: Maybe (Option ImageCleanup Bool)
-  , manifest :: Maybe (Option Manifest FilePath)
-  , noCommit :: Maybe (Option NoCommit Bool)
-  , noClean :: Maybe (Option NoClean Bool)
-  , noPull :: Maybe (Option NoPull Bool)
-  , unrestricted :: Maybe (Option Unrestricted Bool)
-  , restylerNoNetNone :: Maybe (Option RestylerNoNetNone Bool)
-  , restylerCpuShares :: Maybe (Option RestylerCpuShares Natural)
-  , restylerMemory :: Maybe (Option RestylerMemory Bytes)
-  , logSettings :: Maybe LogSettingsOption
-  , pullRequestJson :: Maybe FilePath
-  , configPath :: Maybe FilePath
-  , paths :: Maybe (NonEmpty FilePath)
+  { logSettings :: LogSettings -> LogSettings
+  , dryRun :: Bool
+  , failOnDifferences :: Bool
+  , hostDirectory :: Path Abs Dir
+  , imageCleanup :: Bool
+  , manifest :: Maybe (Path Abs File)
+  , noCommit :: Bool
+  , noClean :: Bool
+  , noPull :: Bool
+  , restrictions :: Restrictions
+  , pullRequestJson :: Maybe (Path Abs File)
+  , paths :: NonEmpty FilePath
   }
-  deriving stock (Generic)
-  deriving anyclass (FromJSON)
-  deriving (Semigroup, Monoid) via (GenericSemigroupMonoid Options)
 
-instance HasOption DryRun Options Bool where
-  getOption = (.dryRun)
+instance HasDryRun Options where
+  getDryRun = (.dryRun)
 
-instance HasOption FailOnDifferences Options Bool where
-  getOption = (.failOnDifferences)
+instance HasFailOnDifferences Options where
+  getFailOnDifferences = (.failOnDifferences)
 
-instance HasOption HostDirectory Options FilePath where
-  getOption = (.hostDirectory)
+instance HasHostDirectory Options where
+  getHostDirectory = (.hostDirectory)
 
-instance HasOption ImageCleanup Options Bool where
-  getOption = (.imageCleanup)
+instance HasImageCleanup Options where
+  getImageCleanup = (.imageCleanup)
 
-instance HasOption Manifest Options FilePath where
-  getOption = (.manifest)
+instance HasManifest Options where
+  getManifest = (.manifest)
 
-instance HasOption NoCommit Options Bool where
-  getOption = (.noCommit)
+instance HasNoCommit Options where
+  getNoCommit = (.noCommit)
 
-instance HasOption NoClean Options Bool where
-  getOption = (.noClean)
+instance HasNoClean Options where
+  getNoClean = (.noClean)
 
-instance HasOption NoPull Options Bool where
-  getOption = (.noPull)
+instance HasNoPull Options where
+  getNoPull = (.noPull)
 
-instance HasOption Unrestricted Options Bool where
-  getOption = (.unrestricted)
+instance HasRestrictions Options where
+  getRestrictions = (.restrictions)
 
-instance HasOption RestylerNoNetNone Options Bool where
-  getOption = (.restylerNoNetNone)
+instance HasParser Options where
+  settingsParser = withFirstYamlConfig configParser optionsParser
 
-instance HasOption RestylerCpuShares Options Natural where
-  getOption = (.restylerCpuShares)
+configParser :: Parser [Path Abs File]
+configParser =
+  sequenceA
+    [ hiddenPath ".restyled.yaml"
+    , hiddenPath ".restyled.yml"
+    , hiddenPath ".github/restyled.yaml"
+    , hiddenPath ".github/restyled.yml"
+    ]
 
-instance HasOption RestylerMemory Options Bytes where
-  getOption = (.restylerMemory)
+hiddenPath :: FilePath -> Parser (Path Abs File)
+hiddenPath x = filePathSetting [value x, hidden]
 
-getLogSettings :: Options -> LogSettings
-getLogSettings = resolveLogSettings . fromMaybe mempty . (.logSettings)
-
-getPullRequestJson :: Options -> Maybe FilePath
-getPullRequestJson = (.pullRequestJson)
-
-getConfigPath :: Options -> Maybe FilePath
-getConfigPath = (.configPath)
-
-getPaths :: Options -> [FilePath]
-getPaths = maybe [] toList . (.paths)
-
-envParser :: Env.Parser Env.Error Options
-envParser =
+optionsParser :: Parser Options
+optionsParser =
   Options
-    <$> envOption dryRunSpec
-    <*> envOption failOnDifferencesSpec
-    <*> envOption hostDirectorySpec
-    <*> envOption imageCleanupSpec
-    <*> envOption manifestSpec
-    <*> envOption noCommitSpec
-    <*> envOption noCleanSpec
-    <*> envOption noPullSpec
-    <*> envOption unrestrictedSpec
-    <*> envOption restylerNoNetNoneSpec
-    <*> envOption restylerCpuSharesSpec
-    <*> envOption restylerMemorySpec
-    <*> optional envLogSettingsOption
-    <*> optional (Env.var Env.nonempty "PULL_REQUEST_JSON" mempty)
-    <*> optional (Env.var Env.nonempty "CONFIG" $ Env.help configHelp)
-    <*> pure Nothing
+    <$> logSettingsOptionParser
+    <*> dryRunParser
+    <*> failOnDifferencesParser
+    <*> hostDirectoryParser
+    <*> imageCleanupParser
+    <*> optional manifestParser
+    <*> noCommitParser
+    <*> noCleanParser
+    <*> noPullParser
+    <*> restrictionsParser
+    <*> optional
+      ( filePathSetting
+          [ help ""
+          , hidden
+          , option
+          , long "pull-request-json"
+          ]
+      )
+    <*> someNonEmpty
+      ( setting
+          [ help "Path to restyle"
+          , argument
+          , reader str
+          , metavar "PATH"
+          ]
+      )
 
-optParser :: Parser Options
-optParser =
-  Options
-    <$> optOption dryRunSpec
-    <*> optOption failOnDifferencesSpec
-    <*> optOption hostDirectorySpec
-    <*> optOption imageCleanupSpec
-    <*> optOption manifestSpec
-    <*> optOption noCommitSpec
-    <*> optOption noCleanSpec
-    <*> optOption noPullSpec
-    <*> optOption unrestrictedSpec
-    <*> optOption restylerNoNetNoneSpec
-    <*> optOption restylerCpuSharesSpec
-    <*> optOption restylerMemorySpec
-    <*> optional optLogSettingsOption
-    <*> optional (option str $ long "pull-request-json" <> hidden)
-    <*> optional (option str $ long "config" <> metavar "PATH" <> help configHelp)
-    <*> optional (some1 $ argument str $ metavar "PATH")
+class HasOptions a where
+  getOptions :: a -> Options
 
-configHelp :: String
-configHelp = "Path to configuration file"
+instance HasOptions Options where
+  getOptions = id
+
+newtype ThroughOptions a = ThroughOptions
+  { unwrap :: a
+  }
+  deriving newtype (HasOptions)
+
+instance HasOptions a => HasDryRun (ThroughOptions a) where
+  getDryRun = getDryRun . getOptions
+
+instance HasOptions a => HasFailOnDifferences (ThroughOptions a) where
+  getFailOnDifferences = getFailOnDifferences . getOptions
+
+instance HasOptions a => HasHostDirectory (ThroughOptions a) where
+  getHostDirectory = getHostDirectory . getOptions
+
+instance HasOptions a => HasImageCleanup (ThroughOptions a) where
+  getImageCleanup = getImageCleanup . getOptions
+
+instance HasOptions a => HasManifest (ThroughOptions a) where
+  getManifest = getManifest . getOptions
+
+instance HasOptions a => HasNoCommit (ThroughOptions a) where
+  getNoCommit = getNoCommit . getOptions
+
+instance HasOptions a => HasNoClean (ThroughOptions a) where
+  getNoClean = getNoClean . getOptions
+
+instance HasOptions a => HasNoPull (ThroughOptions a) where
+  getNoPull = getNoPull . getOptions
+
+instance HasOptions a => HasRestrictions (ThroughOptions a) where
+  getRestrictions = getRestrictions . getOptions

@@ -7,195 +7,116 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.Restrictions
-  ( HasOption
-
-    -- * Unrestricted
-  , Unrestricted
-  , unrestrictedSpec
-
-    -- * @--net=none@
-  , RestylerNoNetNone
-  , restylerNoNetNoneSpec
-
-    -- * @--cpu-shares=<number>@
-  , RestylerCpuShares
-  , restylerCpuSharesSpec
-
-    -- * @--memory=<number>[b|k|m|g]@
-  , RestylerMemory
-  , restylerMemorySpec
-
-    -- * For use with @docker-run@
-  , HasRestrictions
-  , getRestrictionArgs
-
-    -- * Bytes
-  , Bytes (..)
-  , Suffix (..)
-  , bytesOption
-  , readBytes
+  ( HasRestrictions (..)
+  , Restrictions (..)
+  , restrictionsParser
+  , restrictionOptions
   ) where
 
 import Restyler.Prelude
 
-import Data.Aeson (FromJSON (..), withText)
-import Data.Char qualified as Char
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Option
+import Data.Semigroup.Generic
+import OptEnvConf
+import Restyler.Options.Restrictions.Bytes
 
-data Unrestricted
+class HasRestrictions a where
+  getRestrictions :: a -> Restrictions
 
-unrestrictedSpec :: OptionSpec Unrestricted Bool
-unrestrictedSpec =
-  OptionSpec
-    { envParser = Env.flag Nothing (Just True) "UNRESTRICTED" $ Env.help help
-    , optParser =
-        Opt.flag Nothing (Just True)
-          $ mconcat
-            [ Opt.long "unrestricted"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Do not restrict restyler resources"
-
-data RestylerNoNetNone
-
-restylerNoNetNoneSpec :: OptionSpec RestylerNoNetNone Bool
-restylerNoNetNoneSpec =
-  OptionSpec
-    { envParser = Env.flag Nothing (Just True) "RESTYLER_NO_NET_NONE" $ Env.help help
-    , optParser =
-        Opt.flag Nothing (Just True)
-          $ mconcat
-            [ Opt.long "restyler-no-net-none"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Run restylers without --net=none"
-
-data RestylerCpuShares
-
-restylerCpuSharesSpec :: OptionSpec RestylerCpuShares Natural
-restylerCpuSharesSpec =
-  OptionSpec
-    { envParser =
-        Env.var (fmap Just . Env.eitherReader readNat) "RESTYLER_CPU_SHARES"
-          $ mconcat
-            [ Env.help help
-            , Env.def Nothing
-            ]
-    , optParser =
-        Opt.option (Just <$> Opt.eitherReader readNat)
-          $ mconcat
-            [ Opt.long "restyler-cpu-shares"
-            , Opt.metavar "NUMBER"
-            , Opt.help help
-            , Opt.value Nothing
-            ]
-    }
- where
-  help :: String
-  help = "Run restylers with --cpu-shares=<number>"
-
-data RestylerMemory
-
-restylerMemorySpec :: OptionSpec RestylerMemory Bytes
-restylerMemorySpec =
-  OptionSpec
-    { envParser =
-        Env.var (fmap Just . Env.eitherReader readBytes) "RESTYLER_MEMORY"
-          $ mconcat
-            [ Env.help help
-            , Env.def Nothing
-            ]
-    , optParser =
-        Opt.option (Just <$> Opt.eitherReader readBytes)
-          $ mconcat
-            [ Opt.long "restyler-memory"
-            , Opt.metavar "NUMBER[b|k|m|g]"
-            , Opt.help help
-            , Opt.value Nothing
-            ]
-    }
- where
-  help :: String
-  help = "Run restylers with --memory=<number>[b|k|m|g]"
-
-type HasRestrictions env =
-  ( HasOption Unrestricted env Bool
-  , HasOption RestylerNoNetNone env Bool
-  , HasOption RestylerCpuShares env Natural
-  , HasOption RestylerMemory env Bytes
-  )
-
-getRestrictionArgs
-  :: (MonadReader env m, HasRestrictions env) => m [String]
-getRestrictionArgs = do
-  unrestricted <- lookupOptionDefault @Unrestricted False
-
-  if unrestricted
-    then pure []
-    else do
-      noNetNone <- lookupOptionDefault @RestylerNoNetNone False
-      cpuShares <- lookupOptionDefault @RestylerCpuShares @_ @_ @Natural 128
-      memory <-
-        lookupOptionDefault @RestylerMemory
-          $ Bytes
-            { number = 512
-            , suffix = Just M
-            }
-
-      pure
-        $ concat
-          [ ["--net=none" | not noNetNone]
-          , ["--cpu-shares", show cpuShares]
-          , ["--memory", bytesOption memory]
-          ]
-
-data Bytes = Bytes
-  { number :: Natural
-  , suffix :: Maybe Suffix
+data Restrictions = Restrictions
+  { netNone :: Any
+  , cpuShares :: Last Natural
+  , memory :: Last Bytes
   }
-  deriving stock (Eq, Show)
+  deriving stock (Generic, Eq, Show)
+  deriving (Semigroup, Monoid) via GenericSemigroupMonoid Restrictions
 
-instance FromJSON Bytes where
-  parseJSON = withText "Bytes" $ either fail pure . readBytes . unpack
+restrictionOptions :: Restrictions -> [String]
+restrictionOptions r =
+  concat
+    [ ["--net=none" | getAny r.netNone]
+    , ["--cpu-shares=" <> show s | s <- maybeToList $ getLast r.cpuShares]
+    , ["--memory=" <> showBytes b | b <- maybeToList $ getLast r.memory]
+    ]
 
-data Suffix = B | K | M | G
-  deriving stock (Eq, Show)
+restrictionsParser :: Parser Restrictions
+restrictionsParser =
+  (<>)
+    <$> unrestrictedParser
+    <*> subRestrictionsParser
 
-readSuffix :: String -> Either String Suffix
-readSuffix = \case
-  "b" -> Right B
-  "k" -> Right K
-  "m" -> Right M
-  "g" -> Right G
-  x -> Left $ "Invalid suffix " <> x <> ", must be one of b, k, m, or g"
+unrestrictedParser :: Parser Restrictions
+unrestrictedParser =
+  bool noRestrictions fullRestrictions
+    <$> yesNoSwitch
+      [ help "Restrict restylers resources"
+      , long "restricted"
+      , env "RESTRICTED"
+      , conf "restricted"
+      , value True
+      ]
 
-showSuffix :: Suffix -> String
-showSuffix = \case
-  B -> "b"
-  K -> "k"
-  M -> "m"
-  G -> "g"
+subRestrictionsParser :: Parser Restrictions
+subRestrictionsParser =
+  subAll "restyler"
+    $ Restrictions
+    <$> ( Any
+            <$> yesNoSwitch
+              [ help "Run restylers with --net=none"
+              , long "net-none"
+              , env "NET_NONE"
+              , conf "net_none"
+              , value True
+              ]
+        )
+    <*> ( Last
+            <$> optional
+              ( setting
+                  [ help "Run restylers with --cpu-shares"
+                  , option
+                  , long "cpu-shares"
+                  , env "CPU_SHARES"
+                  , metavar "NUMBER"
+                  , conf "cpu_shares"
+                  , reader $ eitherReader readNat
+                  ]
+              )
+        )
+    <*> ( Last
+            <$> optional
+              ( setting
+                  [ help "Run restylers with --memory"
+                  , option
+                  , long "memory"
+                  , env "MEMORY"
+                  , conf "memory"
+                  , metavar "NUMBER<b|k|m|g>"
+                  , reader $ eitherReader readBytes
+                  ]
+              )
+        )
 
-bytesOption :: Bytes -> String
-bytesOption b = show b.number <> maybe "" showSuffix b.suffix
+noRestrictions :: Restrictions
+noRestrictions =
+  Restrictions
+    { netNone = Any False
+    , cpuShares = Last Nothing
+    , memory = Last Nothing
+    }
 
-readBytes :: String -> Either String Bytes
-readBytes x =
+fullRestrictions :: Restrictions
+fullRestrictions =
+  Restrictions
+    { netNone = Any True
+    , cpuShares = Last $ Just defaultCpuShares
+    , memory = Last $ Just defaultMemory
+    }
+
+defaultCpuShares :: Natural
+defaultCpuShares = 128
+
+defaultMemory :: Bytes
+defaultMemory =
   Bytes
-    <$> readNat number
-    <*> traverse
-      readSuffix
-      (guarded (not . null) suffix)
- where
-  (number, suffix) = span ((||) <$> (== '-') <*> Char.isDigit) x
-
-readNat :: String -> Either String Natural
-readNat n = first (const $ "Not a valid natural number: " <> n) (readEither n)
+    { number = 512
+    , suffix = Just M
+    }

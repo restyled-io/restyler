@@ -7,44 +7,24 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.HostDirectory
-  ( HasOption
-  , HostDirectory
-  , hostDirectorySpec
-  , getHostDirectory
+  ( HasHostDirectory (..)
+  , hostDirectoryParser
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Monad.Directory
-import Restyler.Option
+import OptEnvConf
 
-data HostDirectory
+class HasHostDirectory env where
+  getHostDirectory :: env -> Path Abs Dir
 
-getHostDirectory
-  :: ( MonadDirectory m
-     , MonadReader env m
-     , HasOption HostDirectory env FilePath
-     )
-  => m FilePath
-getHostDirectory = do
-  mHostDirectory <- lookupOption @HostDirectory
-  maybe getCurrentDirectory pure mHostDirectory
-
-hostDirectorySpec :: OptionSpec HostDirectory FilePath
-hostDirectorySpec =
-  OptionSpec
-    { envParser = optional $ Env.var Env.nonempty "HOST_DIRECTORY" $ Env.help help
-    , optParser =
-        optional
-          $ Opt.strOption
-          $ mconcat
-            [ Opt.long "host-directory"
-            , Opt.metavar "DIRECTORY"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Working directory on host, if dockerized"
+hostDirectoryParser :: Parser (Path Abs Dir)
+hostDirectoryParser =
+  directoryPathSetting
+    [ help "Working directory on host, if dockerized"
+    , option
+    , long "host-directory"
+    , env "HOST_DIRECTORY"
+    , conf "host_directory"
+    , value "."
+    ]

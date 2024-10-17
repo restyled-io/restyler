@@ -7,34 +7,24 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.NoCommit
-  ( HasOption
-  , NoCommit
-  , noCommitSpec
-  , getNoCommit
+  ( HasNoCommit (..)
+  , noCommitParser
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Option
+import OptEnvConf
 
-data NoCommit
+class HasNoCommit env where
+  getNoCommit :: env -> Bool
 
-noCommitSpec :: OptionSpec NoCommit Bool
-noCommitSpec =
-  OptionSpec
-    { envParser = Env.flag Nothing (Just True) "NO_COMMIT" $ Env.help help
-    , optParser =
-        Opt.flag Nothing (Just True)
-          $ mconcat
-            [ Opt.long "no-commit"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Don't make commits for restyle changes"
-
-getNoCommit :: (MonadReader env m, HasOption NoCommit env Bool) => m Bool
-getNoCommit = lookupOptionDefault @NoCommit False
+noCommitParser :: Parser Bool
+noCommitParser =
+  not
+    <$> yesNoSwitch
+      [ help "Make commits for restyle changes"
+      , long "commit"
+      , env "COMMIT"
+      , conf "commit"
+      , value True
+      ]

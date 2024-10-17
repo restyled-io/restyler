@@ -18,7 +18,7 @@ import Restyler.Options.FailOnDifferences
 import Restyler.RestyleResult
 
 main
-  :: (HasLogger app, HasOption FailOnDifferences app Bool)
+  :: (HasLogger app, HasFailOnDifferences app)
   => (forall a. (app -> IO a) -> IO a)
   -> AppT app IO RestyleResult
   -> IO ()
@@ -37,7 +37,7 @@ main withApp run = do
       RestyleNoDifference -> do
         ExitSuccess <$ logInfo "No differences"
       RestyleDifference -> do
-        failOnDifferences <- getFailOnDifferences
+        failOnDifferences <- asks getFailOnDifferences
 
         if failOnDifferences
           then ExitFailure 228 <$ logError "Differences found"

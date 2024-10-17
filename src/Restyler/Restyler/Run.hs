@@ -106,11 +106,11 @@ runRestylers
      , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOption DryRun env Bool
-     , HasOption HostDirectory env FilePath
-     , HasOption ImageCleanup env Bool
-     , HasOption NoCommit env Bool
-     , HasOption NoPull env Bool
+     , HasDryRun env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasNoCommit env
+     , HasNoPull env
      , HasRestrictions env
      , HasCallStack
      )
@@ -228,11 +228,11 @@ runRestyler
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasOption DryRun env Bool
-     , HasOption HostDirectory env FilePath
-     , HasOption ImageCleanup env Bool
-     , HasOption NoCommit env Bool
-     , HasOption NoPull env Bool
+     , HasDryRun env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasNoCommit env
+     , HasNoPull env
      , HasRestrictions env
      , HasCallStack
      )
@@ -261,10 +261,10 @@ runRestyler_
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
-     , HasOption DryRun env Bool
-     , HasOption HostDirectory env FilePath
-     , HasOption ImageCleanup env Bool
-     , HasOption NoPull env Bool
+     , HasDryRun env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasNoPull env
      , HasRestrictions env
      , HasCallStack
      )
@@ -277,7 +277,7 @@ runRestyler_ r paths = case rDelimiters r of
   Just ds -> restyleDelimited ds run paths
  where
   run ps = do
-    noPull <- (||) <$> getNoPull <*> getDryRun
+    noPull <- asks $ (||) <$> getNoPull <*> getDryRun
     unless noPull $ dockerPullRestyler r
     dockerWithImageRm r
       $ traverse_ (dockerRunRestyler r)
@@ -327,12 +327,11 @@ dockerPullRestyler r@Restyler {..} = do
 dockerRunRestyler
   :: ( MonadUnliftIO m
      , MonadLogger m
-     , MonadDirectory m
      , MonadWriteFile m
      , MonadDocker m
      , MonadReader env m
-     , HasOption DryRun env Bool
-     , HasOption HostDirectory env FilePath
+     , HasDryRun env
+     , HasHostDirectory env
      , HasRestrictions env
      , HasCallStack
      )
@@ -340,15 +339,15 @@ dockerRunRestyler
   -> WithProgress DockerRunStyle
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
-  cwd <- getHostDirectory
-  restrictionArgs <- asks getRestrictionArgs
-  dryRun <- getDryRun
+  cwd <- asks getHostDirectory
+  restrictions <- asks getRestrictions
+  dryRun <- asks getDryRun
 
   let
     args =
-      restrictionArgs
+      restrictionOptions restrictions
         <> ["--pull", "never"]
-        <> ["--volume", cwd <> ":/code", rImage]
+        <> ["--volume", toFilePath cwd <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
     progressSuffix :: Text
@@ -406,15 +405,15 @@ dockerWithImageRm
      , MonadLogger m
      , MonadDocker m
      , MonadReader env m
-     , HasOption DryRun env Bool
-     , HasOption ImageCleanup env Bool
+     , HasDryRun env
+     , HasImageCleanup env
      , HasCallStack
      )
   => Restyler
   -> m a
   -> m a
 dockerWithImageRm r f = do
-  imageCleanup <- (&&) <$> getImageCleanup <*> (not <$> getDryRun)
+  imageCleanup <- asks $ (&&) <$> getImageCleanup <*> (not <$> getDryRun)
   if imageCleanup
     then finally f $ suppressWarn $ dockerImageRm $ rImage r
     else f

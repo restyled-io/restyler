@@ -11,10 +11,13 @@ module Restyler.Prelude
   , module Restyler.Prelude
   ) where
 
-import Relude as X hiding (All (..), readFile, readFileBS, writeFile)
+import Relude as X hiding (All (..), readFile, readFileBS, reader, writeFile)
 
 import Blammo.Logging as X
+import Blammo.Logging.Logger as X (HasLogger (..), withLogger)
+import Blammo.Logging.WithLogger as X (WithLogger (..))
 import Control.Error.Util as X (hush, note)
+import Control.Monad.Catch as X (MonadMask)
 import Control.Monad.Extra as X (eitherM, fromMaybeM, maybeM)
 import Control.Monad.IO.Unlift as X (MonadUnliftIO (..))
 import Data.Aeson as X (FromJSON, ToJSON)
@@ -26,6 +29,7 @@ import Data.Traversable as X (for)
 import Data.Vector as X (Vector)
 import Lens.Micro as X (Lens', lens, to, (.~), (^.), (^?))
 import Lens.Micro.Mtl as X (view)
+import Path as X (Abs, Dir, File, Path, Rel, toFilePath)
 import System.Exit as X (ExitCode (..))
 import UnliftIO.Async as X (race)
 import UnliftIO.Concurrent as X (threadDelay)
@@ -54,6 +58,9 @@ logProc
 logProc cmd args = do
   logDebug $ unwords (map pack $ "exec" : cmd : args) :# []
   flushLogger
+
+readNat :: String -> Either String Natural
+readNat n = first (const $ "Not a valid natural number: " <> n) (readEither n)
 
 minimumMaybe :: Ord a => [a] -> Maybe a
 minimumMaybe = \case

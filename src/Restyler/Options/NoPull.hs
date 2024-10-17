@@ -7,34 +7,24 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.NoPull
-  ( HasOption
-  , NoPull
-  , noPullSpec
-  , getNoPull
+  ( HasNoPull (..)
+  , noPullParser
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Option
+import OptEnvConf
 
-data NoPull
+class HasNoPull env where
+  getNoPull :: env -> Bool
 
-noPullSpec :: OptionSpec NoPull Bool
-noPullSpec =
-  OptionSpec
-    { envParser = Env.flag Nothing (Just True) "NO_PULL" $ Env.help help
-    , optParser =
-        Opt.flag Nothing (Just True)
-          $ mconcat
-            [ Opt.long "no-pull"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Don't docker-pull images before docker-run"
-
-getNoPull :: (MonadReader env m, HasOption NoPull env Bool) => m Bool
-getNoPull = lookupOptionDefault @NoPull False
+noPullParser :: Parser Bool
+noPullParser =
+  not
+    <$> yesNoSwitch
+      [ help "docker-pull images before docker-run"
+      , long "pull"
+      , env "PULL"
+      , conf "pull"
+      , value True
+      ]

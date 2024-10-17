@@ -38,13 +38,13 @@ run
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
-     , HasOption DryRun env Bool
-     , HasOption HostDirectory env FilePath
-     , HasOption ImageCleanup env Bool
-     , HasOption Manifest env FilePath
-     , HasOption NoCommit env Bool
-     , HasOption NoClean env Bool
-     , HasOption NoPull env Bool
+     , HasDryRun env
+     , HasHostDirectory env
+     , HasImageCleanup env
+     , HasManifest env
+     , HasNoCommit env
+     , HasNoClean env
+     , HasNoPull env
      , HasRestrictions env
      , HasPullRequestState pr
      , HasAuthor pr
@@ -85,7 +85,7 @@ run pr paths = do
              , "sha" .= result.sha
              ]
 
-      noClean <- getNoClean
+      noClean <- asks getNoClean
       unless noClean gitClean
 
       pure $ maybe RestyleNoDifference (const RestyleDifference) mresults

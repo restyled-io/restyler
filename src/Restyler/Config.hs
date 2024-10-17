@@ -215,7 +215,7 @@ loadConfig
      , MonadReadFile m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasOption Manifest env FilePath
+     , HasManifest env
      )
   => m Config
 loadConfig =

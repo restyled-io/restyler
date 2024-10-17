@@ -7,35 +7,23 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.ImageCleanup
-  ( HasOption
-  , ImageCleanup
-  , imageCleanupSpec
-  , getImageCleanup
+  ( HasImageCleanup (..)
+  , imageCleanupParser
   ) where
 
 import Restyler.Prelude
 
-import Env qualified
-import Options.Applicative qualified as Opt
-import Restyler.Option
+import OptEnvConf
 
-data ImageCleanup
+class HasImageCleanup env where
+  getImageCleanup :: env -> Bool
 
-imageCleanupSpec :: OptionSpec ImageCleanup Bool
-imageCleanupSpec =
-  OptionSpec
-    { envParser = Env.flag Nothing (Just True) "IMAGE_CLEANUP" $ Env.help help
-    , optParser =
-        Opt.flag Nothing (Just True)
-          $ mconcat
-            [ Opt.long "image-cleanup"
-            , Opt.help help
-            ]
-    }
- where
-  help :: String
-  help = "Remove pulled restyler images after restyling"
-
-getImageCleanup
-  :: (MonadReader env m, HasOption ImageCleanup env Bool) => m Bool
-getImageCleanup = lookupOptionDefault @ImageCleanup False
+imageCleanupParser :: Parser Bool
+imageCleanupParser =
+  yesNoSwitch
+    [ help "Remove pulled restyler images after restyling"
+    , long "image-cleanup"
+    , env "IMAGE_CLEANUP"
+    , conf "image_cleanup"
+    , value False
+    ]

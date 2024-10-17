@@ -38,7 +38,6 @@ library
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
       Restyler.Opt
-      Restyler.Option
       Restyler.Options
       Restyler.Options.DryRun
       Restyler.Options.FailOnDifferences
@@ -51,6 +50,7 @@ library
       Restyler.Options.NoPull
       Restyler.Options.Repository
       Restyler.Options.Restrictions
+      Restyler.Options.Restrictions.Bytes
       Restyler.Prelude
       Restyler.ReadP
       Restyler.Restyle
@@ -87,6 +87,7 @@ library
     , aeson
     , aeson-casing
     , annotated-exception
+    , autodocodec
     , barbies
     , base
     , bytestring
@@ -94,7 +95,6 @@ library
     , conduit
     , containers
     , edit-distance
-    , envparse >=0.6.0
     , errata
     , errors
     , exceptions
@@ -104,7 +104,9 @@ library
     , http-conduit
     , microlens
     , microlens-mtl
+    , opt-env-conf
     , optparse-applicative
+    , path
     , relude
     , semigroups
     , text

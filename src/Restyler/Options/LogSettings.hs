@@ -9,84 +9,53 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Options.LogSettings
-  ( LogSettingsOption (..)
-  , resolveLogSettings
-  , envLogSettingsOption
-  , optLogSettingsOption
+  ( LogSettings
+  , logSettingsOptionParser
   )
 where
 
 import Restyler.Prelude
 
 import Blammo.Logging.LogSettings
-import Blammo.Logging.LogSettings.Env qualified as LogSettingsEnv
 import Blammo.Logging.LogSettings.LogLevels
-import Data.Aeson
-import Env qualified
-import Options.Applicative
+import OptEnvConf
 
-instance FromJSON LogColor where
-  parseJSON = withText "LogColor" $ either fail pure . readLogColor . unpack
+logSettingsOptionParser :: Parser (LogSettings -> LogSettings)
+logSettingsOptionParser =
+  appEndo . getDual . foldMap (Dual . Endo) <$> fs
+ where
+  fs = traverse (<|> pure id) [debugParser, traceParser, colorParser]
 
-newtype LogSettingsOption = LogSettingsOption
-  { unwrap :: Dual (Endo LogSettings)
-  }
-  deriving newtype (Semigroup, Monoid)
+debugParser :: Parser (LogSettings -> LogSettings)
+debugParser =
+  setting
+    [ help "Enable debug logging"
+    , switch (setLogLevel LevelDebug)
+    , long "debug"
+    ]
 
-instance FromJSON LogSettingsOption where
-  parseJSON = withObject "LogSettings" $ \o ->
-    mconcat
-      <$> sequenceA
-        [ maybe mempty (bool mempty $ setLogLevel LevelDebug) <$> o .:? "debug"
-        , maybe mempty (bool mempty $ setLogLevel $ LevelOther "trace") <$> o .:? "trace"
-        , maybe mempty setLogColor <$> o .:? "color"
-        ]
+traceParser :: Parser (LogSettings -> LogSettings)
+traceParser =
+  setting
+    [ help "Enable trace logging"
+    , switch (setLogLevel $ LevelOther "trace")
+    , long "trace"
+    ]
 
-toLogSettingsOption :: LogSettings -> LogSettingsOption
-toLogSettingsOption = LogSettingsOption . Dual . Endo . const
+colorParser :: Parser (LogSettings -> LogSettings)
+colorParser =
+  setting
+    [ help "Enabled color WHEN"
+    , option
+    , long "color"
+    , metavar "WHEN"
+    , reader $ eitherReader readSetLogColor
+    ]
 
-resolveLogSettings :: LogSettingsOption -> LogSettings
-resolveLogSettings ls = appEndo (getDual ls.unwrap) defaultLogSettings
+setLogLevel :: LogLevel -> LogSettings -> LogSettings
+setLogLevel = setLogSettingsLevels . flip newLogLevels []
 
-envLogSettingsOption :: Env.Parser Env.Error LogSettingsOption
-envLogSettingsOption = toLogSettingsOption <$> LogSettingsEnv.parser
-
-optLogSettingsOption :: Parser LogSettingsOption
-optLogSettingsOption = mconcat <$> sequenceA [optDebug, optTrace, optColor]
-
-optDebug :: Parser LogSettingsOption
-optDebug = optLogLevel "debug" LevelDebug
-
-optTrace :: Parser LogSettingsOption
-optTrace = optLogLevel "trace" $ LevelOther "trace"
-
-optLogLevel :: String -> LogLevel -> Parser LogSettingsOption
-optLogLevel name level =
-  flag mempty (setLogLevel level)
-    $ long name
-    <> help ("Enable " <> name <> " logging")
-
-optColor :: Parser LogSettingsOption
-optColor =
-  maybe mempty setLogColor
-    <$> optional
-      ( option (eitherReader readLogColor)
-          $ long "color"
-          <> metavar "WHEN"
-          <> help "When to use color: always|never|auto"
-      )
-
-setLogLevel :: LogLevel -> LogSettingsOption
-setLogLevel =
-  LogSettingsOption
-    . Dual
-    . Endo
-    . setLogSettingsLevels
-    . flip newLogLevels []
-
-setLogColor :: LogColor -> LogSettingsOption
-setLogColor =
-  LogSettingsOption
-    . Dual
-    . Endo
-    . setLogSettingsColor
+readSetLogColor :: String -> Either String (LogSettings -> LogSettings)
+readSetLogColor arg = do
+  logColor <- readLogColor arg
+  pure $ setLogSettingsColor logColor
