@@ -18,16 +18,13 @@ library
       Restyler.Config
       Restyler.Config.ChangedPaths
       Restyler.Config.CommitTemplate
-      Restyler.Config.ExpectedKeys
       Restyler.Config.Glob
       Restyler.Config.Image
       Restyler.Config.Include
       Restyler.Config.Interpreter
       Restyler.Config.RemoteFile
-      Restyler.Config.RequestReview
       Restyler.Config.Restyler
       Restyler.Config.SketchyList
-      Restyler.Config.Statuses
       Restyler.Delimited
       Restyler.GitHub.PullRequest
       Restyler.Ignore
@@ -93,8 +90,6 @@ library
     , bytestring
     , composition-extra
     , conduit
-    , containers
-    , edit-distance
     , errata
     , errors
     , exceptions
@@ -153,7 +148,6 @@ test-suite test
   main-is: Spec.hs
   other-modules:
       Restyler.Config.CommitTemplateSpec
-      Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
       Restyler.ConfigSpec

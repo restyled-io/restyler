@@ -26,7 +26,6 @@ import Restyler.Prelude
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Text qualified as T
-import Restyler.Config.ExpectedKeys
 import Restyler.Monad.Directory
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
@@ -39,7 +38,7 @@ data Delimiters = Delimiters
   deriving stock (Eq, Show, Generic)
 
 instance FromJSON Delimiters where
-  parseJSON = genericParseJSONValidated $ aesonPrefix snakeCase
+  parseJSON = genericParseJSON $ aesonPrefix snakeCase
 
 instance ToJSON Delimiters where
   toJSON = genericToJSON $ aesonPrefix snakeCase

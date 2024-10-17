@@ -25,7 +25,6 @@ import Data.Aeson.Types (Parser, modifyFailure)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Text qualified as T
 import Data.Validation
-import Restyler.Config.ExpectedKeys
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
@@ -57,7 +56,7 @@ instance FromJSON RestylerOverride where
           namedOverride name o'
     v ->
       suffixIncorrectIndentation
-        $ genericParseJSONValidated (aesonPrefix snakeCase) v
+        $ genericParseJSON (aesonPrefix snakeCase) v
 
 namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
 namedOverride name =
@@ -114,7 +113,12 @@ overrideRestyler restylers RestylerOverride {..}
   | roName == "*" = pure Wildcard
   | otherwise = Explicit . override <$> defaults
  where
-  defaults = lookupExpectedKeyBy "Restyler name" restylers $ pack roName
+  defaults =
+    let name = pack roName
+    in  case HashMap.lookup name restylers of
+          Nothing -> Failure ["Unexpected Restyler name " <> show name]
+          Just v -> Success v
+
   override restyler@Restyler {..} =
     restyler
       { rEnabled = fromMaybe True roEnabled
@@ -125,9 +129,3 @@ overrideRestyler restylers RestylerOverride {..}
       , rInterpreters = maybe rInterpreters unSketchy roInterpreters
       , rDelimiters = roDelimiters <|> rDelimiters
       }
-
-lookupExpectedKeyBy :: Text -> HashMap Text v -> Text -> Validation [Text] v
-lookupExpectedKeyBy label hm k =
-  case validateExpectedKeyBy label fst (HashMap.toList hm) k of
-    Left e -> Failure [e]
-    Right (_k, v) -> Success v

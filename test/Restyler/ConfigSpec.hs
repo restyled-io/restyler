@@ -152,32 +152,6 @@ spec = withTestApp $ do
       `shouldSatisfy` hasError
         "Unexpected Restyler name \"unknown-name-2\""
 
-  it "provides suggestions for close matches" $ testAppExample $ do
-    result1 <-
-      loadTestConfig
-        [st|
-            - hindex
-        |]
-    result2 <-
-      loadTestConfig
-        [st|
-            - hindex:
-                arguments:
-                  - --foo
-        |]
-    result3 <-
-      loadTestConfig
-        [st|
-            restylers:
-              - hindex:
-                  arguments:
-                  - --foo
-        |]
-
-    result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-    result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-    result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-
   it "doesn't loop on empty overrides" $ testAppExample $ do
     result <-
       loadTestConfig

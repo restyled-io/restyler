@@ -49,8 +49,6 @@ library:
     - bytestring
     - composition-extra
     - conduit
-    - containers
-    - edit-distance
     - errata
     - errors
     - exceptions

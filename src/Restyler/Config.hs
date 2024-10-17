@@ -47,7 +47,6 @@ import Data.Aeson
 import Data.Aeson.Casing
 import Data.FileEmbed (embedFile)
 import Data.Functor.Barbie
-import Data.Set qualified as Set
 import Data.Yaml
   ( ParseException (..)
   , YamlException (..)
@@ -57,13 +56,10 @@ import Data.Yaml qualified as Yaml
 import Restyler.AnnotatedException
 import Restyler.Config.ChangedPaths
 import Restyler.Config.CommitTemplate
-import Restyler.Config.ExpectedKeys
 import Restyler.Config.Glob
 import Restyler.Config.RemoteFile
-import Restyler.Config.RequestReview
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
-import Restyler.Config.Statuses
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
 import Restyler.Monad.ReadFile
@@ -86,18 +82,11 @@ import Restyler.Yaml.Errata (formatInvalidYaml)
 -- See the various @resolve@ functions for how to get a real @'Config'@ out of
 -- this beast.
 data ConfigF f = ConfigF
-  { cfEnabled :: f Bool
-  , cfExclude :: f (SketchyList (Glob FilePath))
+  { cfExclude :: f (SketchyList (Glob FilePath))
   , cfAlsoExclude :: f (SketchyList (Glob FilePath))
   , cfChangedPaths :: f ChangedPathsConfig
-  , cfAuto :: f Bool
   , cfCommitTemplate :: f CommitTemplate
   , cfRemoteFiles :: f (SketchyList RemoteFile)
-  , cfPullRequests :: f Bool
-  , cfComments :: f Bool
-  , cfStatuses :: f Statuses
-  , cfRequestReview :: f RequestReviewConfig
-  , cfLabels :: f (SketchyList Text)
   , cfIgnoreAuthors :: f (SketchyList (Glob Text))
   , cfIgnoreLabels :: f (SketchyList (Glob Text))
   , cfIgnoreBranches :: f (SketchyList (Glob Text))
@@ -119,7 +108,7 @@ instance FromJSON (ConfigF Maybe) where
   parseJSON a@(Array _) = do
     restylers <- parseJSON a
     pure emptyConfig {cfRestylers = restylers}
-  parseJSON v = genericParseJSONValidated (aesonPrefix snakeCase) v
+  parseJSON v = genericParseJSON (aesonPrefix snakeCase) v
 
 instance FromJSON (ConfigF Identity) where
   parseJSON = genericParseJSON $ aesonPrefix snakeCase
@@ -137,14 +126,8 @@ resolveConfig = bzipWith f
 data Config = Config
   { cExclude :: Set (Glob FilePath)
   , cChangedPaths :: ChangedPathsConfig
-  , cAuto :: Bool
   , cCommitTemplate :: CommitTemplate
   , cRemoteFiles :: [RemoteFile]
-  , cPullRequests :: Bool
-  , cComments :: Bool
-  , cStatuses :: Statuses
-  , cRequestReview :: RequestReviewConfig
-  , cLabels :: Set Text
   , cIgnoreAuthors :: [Glob Text]
   , cIgnoreBranches :: [Glob Text]
   , cIgnoreLabels :: [Glob Text]
@@ -305,14 +288,8 @@ resolveRestylers ConfigF {..} allRestylers = do
       { cExclude =
           Set.fromList $ unSketchy $ runIdentity $ cfExclude <> cfAlsoExclude
       , cChangedPaths = runIdentity cfChangedPaths
-      , cAuto = runIdentity cfAuto
       , cCommitTemplate = runIdentity cfCommitTemplate
       , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
-      , cPullRequests = runIdentity cfPullRequests
-      , cComments = runIdentity cfComments
-      , cStatuses = runIdentity cfStatuses
-      , cRequestReview = runIdentity cfRequestReview
-      , cLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
       , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
       , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
       , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
