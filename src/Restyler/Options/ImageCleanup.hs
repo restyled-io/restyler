@@ -25,5 +25,4 @@ imageCleanupParser =
     , long "image-cleanup"
     , env "IMAGE_CLEANUP"
     , conf "image_cleanup"
-    , value False
     ]

@@ -25,5 +25,4 @@ failOnDifferencesParser =
     , long "fail-on-differences"
     , env "FAIL_ON_DIFFERENCES"
     , conf "fail_on_differences"
-    , value False
     ]

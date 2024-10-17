@@ -48,3 +48,26 @@ restylers_version: stable
 
 restylers:
   - "*"
+
+cli:
+  dry_run: false
+
+  fail_on_differences: false
+
+  host_directory: .
+
+  image_cleanup: false
+
+  clean: true
+
+  commit: true
+
+  pull: true
+
+  restylers:
+    restricted: true
+    net_none: true
+    cpu_shares: 512
+    memory:
+      number: 128
+      suffix: m

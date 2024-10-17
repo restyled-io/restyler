@@ -26,5 +26,4 @@ noCleanParser =
       , long "clean"
       , env "CLEAN"
       , conf "clean"
-      , value True
       ]

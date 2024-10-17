@@ -25,5 +25,4 @@ dryRunParser =
     , long "dry-run"
     , env "DRY_RUN"
     , conf "dry_run"
-    , value False
     ]

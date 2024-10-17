@@ -26,5 +26,4 @@ noCommitParser =
       , long "commit"
       , env "COMMIT"
       , conf "commit"
-      , value True
       ]

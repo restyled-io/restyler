@@ -73,15 +73,16 @@ instance HasRestrictions Options where
   getRestrictions = (.restrictions)
 
 instance HasParser Options where
-  settingsParser = withFirstYamlConfig configParser optionsParser
+  settingsParser = withCombinedYamlConfigs configParser optionsParser
 
 configParser :: Parser [Path Abs File]
 configParser =
   sequenceA
-    [ hiddenPath ".restyled.yaml"
-    , hiddenPath ".restyled.yml"
+    [ hiddenPath ".github/restyled.yml"
     , hiddenPath ".github/restyled.yaml"
-    , hiddenPath ".github/restyled.yml"
+    , hiddenPath ".restyled.yml"
+    , hiddenPath ".restyled.yaml"
+    , hiddenPath "config/default.yaml"
     ]
 
 hiddenPath :: FilePath -> Parser (Path Abs File)
@@ -89,7 +90,8 @@ hiddenPath x = filePathSetting [value x, hidden]
 
 optionsParser :: Parser Options
 optionsParser =
-  Options
+  subConfig_ "cli"
+    $ Options
     <$> logSettingsOptionParser
     <*> dryRunParser
     <*> failOnDifferencesParser

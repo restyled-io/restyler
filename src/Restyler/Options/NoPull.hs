@@ -26,5 +26,4 @@ noPullParser =
       , long "pull"
       , env "PULL"
       , conf "pull"
-      , value True
       ]
