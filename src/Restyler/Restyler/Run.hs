@@ -107,6 +107,7 @@ runRestylers
      , MonadDownloadFile m
      , MonadReader env m
      , HasDryRun env
+     , HasExclude env
      , HasHostDirectory env
      , HasImageCleanup env
      , HasNoCommit env
@@ -118,9 +119,9 @@ runRestylers
   -> [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
 runRestylers config@Config {..} argPaths = do
-  let allPaths = filter included $ map FilePath.normalise argPaths
+  allPaths <- removeExcluded $ map FilePath.normalise argPaths
   expPaths <- findFiles allPaths
-  let paths = filter included expPaths
+  paths <- removeExcluded expPaths
 
   logDebug
     $ "Paths"
@@ -128,7 +129,6 @@ runRestylers config@Config {..} argPaths = do
        , "pathsGivenIncluded" .= allPaths
        , "pathsExpanded" .= truncatePaths 50 expPaths
        , "pathsExpandedIncluded" .= truncatePaths 50 paths
-       , "exclude" .= cExclude
        ]
 
   for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
@@ -142,8 +142,15 @@ runRestylers config@Config {..} argPaths = do
       logInfo "Restylers offset each other, resetting git state"
       Nothing <$ gitResetHard ref
  where
-  included path = none (`match` path) cExclude
   restylers = filter rEnabled cRestylers
+
+removeExcluded
+  :: (MonadReader env m, HasExclude env)
+  => [FilePath]
+  -> m [FilePath]
+removeExcluded ps = do
+  exclude <- asks getExclude
+  pure $ filter (\path -> none (`match` path) exclude) ps
 
 -- | See if multiple restylers offset each other
 --

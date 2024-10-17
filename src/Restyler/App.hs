@@ -59,6 +59,10 @@ data App = App
   , logger :: Logger
   }
   deriving
+    ( HasExclude
+    )
+    via (ThroughConfig App)
+  deriving
     ( HasDryRun
     , HasFailOnDifferences
     , HasHostDirectory
@@ -70,6 +74,9 @@ data App = App
     , HasRestrictions
     )
     via (ThroughOptions App)
+
+instance HasConfig App where
+  getConfig = (.config)
 
 instance HasOptions App where
   getOptions = (.config.options)

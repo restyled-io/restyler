@@ -39,6 +39,7 @@ run
      , MonadDocker m
      , MonadReader env m
      , HasDryRun env
+     , HasExclude env
      , HasHostDirectory env
      , HasImageCleanup env
      , HasManifest env

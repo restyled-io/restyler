@@ -37,6 +37,7 @@ library
       Restyler.Opt
       Restyler.Options
       Restyler.Options.DryRun
+      Restyler.Options.Exclude
       Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory
       Restyler.Options.ImageCleanup

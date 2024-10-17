@@ -82,9 +82,7 @@ import Restyler.Yaml.Errata (formatInvalidYaml)
 -- See the various @resolve@ functions for how to get a real @'Config'@ out of
 -- this beast.
 data ConfigF f = ConfigF
-  { cfExclude :: f (SketchyList (Glob FilePath))
-  , cfAlsoExclude :: f (SketchyList (Glob FilePath))
-  , cfChangedPaths :: f ChangedPathsConfig
+  { cfChangedPaths :: f ChangedPathsConfig
   , cfCommitTemplate :: f CommitTemplate
   , cfRemoteFiles :: f (SketchyList RemoteFile)
   , cfIgnoreAuthors :: f (SketchyList (Glob Text))
@@ -124,8 +122,7 @@ resolveConfig = bzipWith f
 --
 -- This is what we work with throughout the system.
 data Config = Config
-  { cExclude :: Set (Glob FilePath)
-  , cChangedPaths :: ChangedPathsConfig
+  { cChangedPaths :: ChangedPathsConfig
   , cCommitTemplate :: CommitTemplate
   , cRemoteFiles :: [RemoteFile]
   , cIgnoreAuthors :: [Glob Text]
@@ -285,9 +282,7 @@ resolveRestylers ConfigF {..} allRestylers = do
 
   pure
     Config
-      { cExclude =
-          Set.fromList $ unSketchy $ runIdentity $ cfExclude <> cfAlsoExclude
-      , cChangedPaths = runIdentity cfChangedPaths
+      { cChangedPaths = runIdentity cfChangedPaths
       , cCommitTemplate = runIdentity cfCommitTemplate
       , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
       , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
