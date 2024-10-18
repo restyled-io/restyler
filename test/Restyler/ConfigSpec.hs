@@ -1,430 +1,202 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 
--- |
---
--- Module      : Restyler.ConfigSpec
--- Copyright   : (c) 2024 Patrick Brisbin
--- License     : AGPL-3
--- Maintainer  : pbrisbin@gmail.com
--- Stability   : experimental
--- Portability : POSIX
 module Restyler.ConfigSpec
   ( spec
   ) where
 
-import SpecHelper
+import Restyler.Prelude
 
-import Data.Text qualified as T
-import Data.Yaml (prettyPrintParseException)
-import Restyler.AnnotatedException
+import Data.Text.IO (hPutStr)
+import OptEnvConf.Args (parseArgs)
+import OptEnvConf.EnvMap qualified as EnvMap
+import OptEnvConf.Error (renderErrors)
+import OptEnvConf.Run (runParserOn)
 import Restyler.Config
-import Restyler.Config.Include
-import Restyler.Restyler
-import Text.Shakespeare.Text (st)
+import Restyler.Config.Restrictions.Bytes
+import System.IO (hClose)
+import Test.Hspec
+import Text.Colour.Capabilities (TerminalCapabilities (..))
+import Text.Colour.Chunk (renderChunksText)
+import UnliftIO.Temporary (withSystemTempFile)
 
 spec :: Spec
-spec = withTestApp $ do
-  it "supports a simple, name-based syntax" $ testAppExample $ do
-    defaultConfig <- loadDefaultConfig
+spec = do
+  -- This test is a maintainence burden, in that when config/default.yaml
+  -- changes, we need a corresponding update here. But it ensures we don't
+  -- unintentionally break loading the defaults.
+  it "uses defined defaults" $ do
+    config <- loadTestConfig [] [] ["Foo.hs"]
 
-    result <-
+    -- config.logSettings `shouldBe` _
+    config.enabled `shouldBe` True
+    config.exclude
+      `shouldBe` [ "**/*.patch"
+                 , "**/.git/**/*"
+                 , "**/node_modules/**/*"
+                 , "**/vendor/**/*"
+                 , ".github/workflows/**/*"
+                 ]
+    config.dryRun `shouldBe` False
+    config.failOnDifferences `shouldBe` False
+    config.commitTemplate `shouldBe` "Restyled by ${restyler.name}\n"
+    config.remoteFiles `shouldBe` []
+    config.ignores
+      `shouldBe` Ignores
+        { byAuthor = ["*[bot]"]
+        , byBranch = ["renovate/*"]
+        , byLabels = ["restyled-ignore"]
+        }
+    config.restylersVersion `shouldBe` "stable"
+    config.restylersManifest `shouldBe` Nothing
+    config.restylerOverrides `shouldBe` [wildcard]
+    -- config.hostDirectory `shouldBe` _
+    config.imageCleanup `shouldBe` False
+    config.noCommit `shouldBe` False
+    config.noClean `shouldBe` False
+    config.noPull `shouldBe` False
+    config.restrictions
+      `shouldBe` Restrictions
+        { netNone = True
+        , cpuShares = Just 512
+        , memory = Just $ Bytes {number = 128, suffix = Just M}
+        }
+    config.pullRequestJson `shouldBe` Nothing
+    config.paths `shouldBe` pure "Foo.hs"
+
+  it "can be overriden in user-configuration" $ do
+    config <-
       loadTestConfig
-        [st|
-            ---
-            - stylish-haskell
-            - prettier
-        |]
+        [ "enabled: false"
+        , "exclude: [a, b]"
+        , "dry_run: true"
+        , "fail_on_differences: true"
+        , "also_exclude: [c, d]"
+        , "commit_template: Hi"
+        , "remote_files:"
+        , "  - url: https://example.com"
+        , "    path: example.txt"
+        , "ignore:"
+        , "  authors: [x]"
+        , "  branches: ['y']"
+        , "  labels: []"
+        , "restylers_version: dev"
+        , "restylers: [fourmolu]"
+        , "docker:"
+        , "  image_cleanup: true"
+        , "  pull: false"
+        , "  restylers:"
+        , "    net_none: false"
+        , "    cpu_shares: 1024"
+        , "    memory: { number: 512, suffix: k }"
+        , "git:"
+        , "  clean: false"
+        , "  commit: false"
+        ]
+        []
+        ["Bar.hs"]
 
-    result
-      `shouldBe` Right
-        defaultConfig
-          { cRestylers =
-              [ someRestyler "stylish-haskell"
-              , someRestyler "prettier"
-              ]
+    -- config.logSettings `shouldBe` _
+    config.enabled `shouldBe` False
+    config.exclude `shouldBe` ["a", "b", "c", "d"]
+    config.dryRun `shouldBe` True
+    config.failOnDifferences `shouldBe` True
+    config.commitTemplate `shouldBe` "Hi"
+    config.remoteFiles
+      `shouldBe` [RemoteFile {url = "https://example.com", path = "example.txt"}]
+    config.ignores
+      `shouldBe` Ignores
+        { byAuthor = ["x"]
+        , byBranch = ["y"]
+        , byLabels = []
+        }
+    config.restylersVersion `shouldBe` "dev"
+    config.restylersManifest `shouldBe` Nothing
+    config.restylerOverrides `shouldBe` [enabled "fourmolu"]
+    -- config.hostDirectory `shouldBe` _
+    config.imageCleanup `shouldBe` True
+    config.noCommit `shouldBe` True
+    config.noClean `shouldBe` True
+    config.noPull `shouldBe` True
+    config.restrictions
+      `shouldBe` Restrictions
+        { netNone = False
+        , cpuShares = Just 1024
+        , memory = Just $ Bytes {number = 512, suffix = Just K}
+        }
+    config.pullRequestJson `shouldBe` Nothing
+    config.paths `shouldBe` pure "Bar.hs"
+
+  context "legacy ignore options" $ do
+    it "fully specified" $ do
+      config <-
+        loadTestConfig
+          [ "ignore_authors: [a]"
+          , "ignore_branches: [b]"
+          , "ignore_labels: [c]"
+          ]
+          []
+          ["Bar.hs"]
+
+      config.ignores
+        `shouldBe` Ignores
+          { byAuthor = ["a"]
+          , byBranch = ["b"]
+          , byLabels = ["c"]
           }
 
-  it "treats !{name} as disabling" $ testAppExample $ do
-    assertLoadsRestyler
-      rEnabled
-      [st|
-          - "!stylish-haskell"
-      |]
-      False
+    it "partially specified" $ do
+      config <-
+        loadTestConfig
+          [ "ignore_authors: [a]"
+          , "ignore_labels: [c]"
+          ]
+          []
+          ["Bar.hs"]
 
-  it "has a setting for globally disabling" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-            enabled: false
-            restylers:
-              - stylish-haskell
-        |]
+      config.ignores
+        `shouldBe` Ignores
+          { byAuthor = ["a"]
+          , byBranch = ["renovate/*"]
+          , byLabels = ["c"]
+          }
 
-    fmap cEnabled result `shouldBe` Right False
-
-  it "allows re-configuring includes" $ testAppExample $ do
-    assertLoadsRestyler
-      rInclude
-      [st|
-          - stylish-haskell:
-              include:
-                - "**/*.lhs"
-      |]
-      [Include "**/*.lhs"]
-
-    assertLoadsRestyler
-      rInclude
-      [st|
-          restylers:
-            - stylish-haskell:
-                include:
-                  - "**/*.lhs"
-      |]
-      [Include "**/*.lhs"]
-
-  it "allows re-configuring image" $ testAppExample $ do
-    assertLoadsRestyler
-      rImage
-      [st|
-        restylers:
-          - stylish-haskell:
-              image: ghcr.io/my-stylish:v1.0
-      |]
-      "ghcr.io/my-stylish:v1.0"
-
-  it "allows re-configuring specific image fields" $ testAppExample $ do
-    assertLoadsRestyler
-      rImage
-      [st|
-        restylers:
-          - stylish-haskell:
-              image:
-                registry: ghcr.io
-      |]
-      "ghcr.io/restyler-stylish-haskell:v1.0.0"
-
-  it "allows re-configuring more than one image field" $ testAppExample $ do
-    assertLoadsRestyler
-      rImage
-      [st|
-        restylers:
-          - stylish-haskell:
-              image:
-                name: my-stylish
-                tag: v5.1
-      |]
-      "restyled/my-stylish:v5.1"
-
-  it "has good errors for unknown name" $ testAppExample $ do
-    result1 <-
-      loadTestConfig
-        [st|
-            - uknown-name
-        |]
-    result2 <-
-      loadTestConfig
-        [st|
-            - uknown-name:
-                arguments:
-                  - --foo
-        |]
-    result3 <-
-      loadTestConfig
-        [st|
-            restylers:
-              - uknown-name:
-                  arguments:
-                    - --foo
-        |]
-
-    result1
-      `shouldSatisfy` hasError
-        "Unexpected Restyler name \"uknown-name\""
-    result2
-      `shouldSatisfy` hasError
-        "Unexpected Restyler name \"uknown-name\""
-    result3
-      `shouldSatisfy` hasError
-        "Unexpected Restyler name \"uknown-name\""
-
-  it "reports multiple unknown names at once" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-            - unknown-name-1
-            - unknown-name-2
-        |]
-
-    result
-      `shouldSatisfy` hasError
-        "Unexpected Restyler name \"unknown-name-1\""
-    result
-      `shouldSatisfy` hasError
-        "Unexpected Restyler name \"unknown-name-2\""
-
-  it "provides suggestions for close matches" $ testAppExample $ do
-    result1 <-
-      loadTestConfig
-        [st|
-            - hindex
-        |]
-    result2 <-
-      loadTestConfig
-        [st|
-            - hindex:
-                arguments:
-                  - --foo
-        |]
-    result3 <-
-      loadTestConfig
-        [st|
-            restylers:
-              - hindex:
-                  arguments:
-                  - --foo
-        |]
-
-    result1 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-    result2 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-    result3 `shouldSatisfy` hasError ", did you mean \"hindent\"?"
-
-  it "doesn't loop on empty overrides" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-          - hindent: {}
-        |]
-
-    result `shouldSatisfy` isRight
-
-  it "can specify a Restyler with name" $ testAppExample $ do
-    assertLoadsRestyler
-      id
-      [st|
-          restylers:
-            - name: hindent
-              image: restyled/restyler-foo
-              command: [foo]
-              arguments: []
-              include:
-                - "**/*.js"
-                - "**/*.jsx"
-      |]
-      (someRestyler "hindent")
-        { rEnabled = True
-        , rImage = "restyled/restyler-foo"
-        , rCommand = ["foo"]
-        , rArguments = []
-        , rInclude = [Include "**/*.js", Include "**/*.jsx"]
-        }
-
-  it "supports * to indicate all other Restylers" $ testAppExample $ do
-    result <-
-      assertTestConfig
-        [st|
-            restylers:
-              - jdt
-              - "*"
-        |]
-
-    map (rName &&& rEnabled) (cRestylers result)
-      `shouldBe` [ ("jdt", True)
-                 , ("astyle", True)
-                 , ("autopep8", True)
-                 , ("black", True)
-                 , ("dfmt", True)
-                 , ("elm-format", True)
-                 , ("hindent", False)
-                 , ("pg_format", True)
-                 , ("php-cs-fixer", True)
-                 , ("prettier", True)
-                 , ("prettier-markdown", True)
-                 , ("prettier-ruby", True)
-                 , ("prettier-yaml", True)
-                 , ("reorder-python-imports", True)
-                 , ("rubocop", True)
-                 , ("rustfmt", True)
-                 , ("shellharden", True)
-                 , ("shfmt", True)
-                 , ("stylish-haskell", True)
-                 , ("terraform", True)
-                 , ("yapf", True)
-                 ]
-
-  it "can place * anywhere" $ testAppExample $ do
-    result <-
-      assertTestConfig
-        [st|
-            restylers:
-              - jdt
-              - "*"
-              - autopep8
-        |]
-
-    map (rName &&& rEnabled) (cRestylers result)
-      `shouldBe` [ ("jdt", True)
-                 , ("astyle", True)
-                 , ("black", True)
-                 , ("dfmt", True)
-                 , ("elm-format", True)
-                 , ("hindent", False)
-                 , ("pg_format", True)
-                 , ("php-cs-fixer", True)
-                 , ("prettier", True)
-                 , ("prettier-markdown", True)
-                 , ("prettier-ruby", True)
-                 , ("prettier-yaml", True)
-                 , ("reorder-python-imports", True)
-                 , ("rubocop", True)
-                 , ("rustfmt", True)
-                 , ("shellharden", True)
-                 , ("shfmt", True)
-                 , ("stylish-haskell", True)
-                 , ("terraform", True)
-                 , ("yapf", True)
-                 , ("autopep8", True)
-                 ]
-
-  it "errors for more than one *" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-            restylers:
-              - "*"
-              - jdt
-              - "*"
-        |]
-
-    result `shouldSatisfy` hasError "1 wildcard"
-
-  it "handles invalid indentation nicely" $ testAppExample $ do
-    result <-
-      loadTestConfig
-        [st|
-            restylers:
-              - prettier:
-                include:
-                  - "**/*.js"
-                  - "**/*.jsx"
-        |]
-
-    result `shouldSatisfy` hasError "Do you have incorrect indentation"
-
-  it "handles no configuration" $ testAppExample $ do
-    defaultConfig <- loadDefaultConfig
-
-    result <-
-      tryTo showConfigError
-        $ loadConfigFrom (map ConfigPath configPaths)
-        $ const
-        $ pure testRestylers
-
-    result `shouldBe` Right defaultConfig
-
-  it "tries alternative configurations" $ testAppExample $ do
-    writeFile "/a" "enabled: true\n"
-    writeFile "/b" "enabled: false\n"
-
-    aConfig <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    bConfig <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/x", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    fmap cEnabled aConfig `shouldBe` Right True
-    fmap cEnabled bConfig `shouldBe` Right False
-
-  it "doesn't skip configurations if there are errors" $ testAppExample $ do
-    writeFile "/a" "{[^\n"
-    writeFile "/b" "enabled: false\n"
-
-    result <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    result `shouldSatisfy` isLeft
-
-  it "doesn't attempt to read unused configurations" $ testAppExample $ do
-    writeFile "/a" "enabled: false\n"
-    writeFile "/b" "[{^"
-
-    result <-
-      tryTo showConfigError
-        $ loadConfigFrom [ConfigPath "/a", ConfigPath "/b"]
-        $ const
-        $ pure testRestylers
-
-    fmap cEnabled result `shouldBe` Right False
-
-hasError :: Text -> Either Text a -> Bool
-hasError msg (Left err) = msg `T.isInfixOf` err
-hasError _ _ = False
-
--- | Load a @'Text'@ as configuration
 loadTestConfig
-  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
-  => Text
-  -> m (Either Text Config)
-loadTestConfig = tryTo showConfigError . assertTestConfig
+  :: HasCallStack
+  => [Text]
+  -- ^ Lines of Yaml
+  --
+  -- Empty means to behave as if no file at all.
+  -> [(String, String)]
+  -- ^ ENV
+  -> [String]
+  -- ^ Args
+  -> IO Config
+loadTestConfig yaml env args = do
+  result <- case yaml of
+    [] -> runParser ["config/default.yaml"]
+    ls -> withSystemTempFile "restyler-test-config.yaml" $ \path h -> do
+      hPutStr h (unlines ls) >> hClose h
+      runParser [path, "config/default.yaml"]
 
--- | Load a @'Text'@ as configuration, fail on errors
-assertTestConfig
-  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
-  => Text
-  -> m Config
-assertTestConfig content =
-  loadConfigFrom [ConfigContent $ encodeUtf8 $ dedent content]
-    $ const
-    $ pure testRestylers
-
--- | Load a @'Text'@ config and assert on a property of a loaded Restyler
-assertLoadsRestyler
-  :: ( HasCallStack
-     , MonadUnliftIO m
-     , MonadDirectory m
-     , MonadReadFile m
-     , Eq a
-     , Show a
-     )
-  => (Restyler -> a)
-  -- ^ Field to assert on
-  -> Text
-  -- ^ Yaml config
-  -> a
-  -- ^ Expected value
-  -> m ()
-assertLoadsRestyler f yaml expected = do
-  eConfig <- loadTestConfig yaml
-
-  let actual = do
-        config <- eConfig
-        restylers <-
-          note "No Restylers loaded"
-            $ nonEmpty
-            $ cRestylers config
-        pure $ f $ head restylers
-
-  actual `shouldBe` Right expected
-
-showConfigError :: ConfigError -> Text
-showConfigError = \case
-  ConfigErrorInvalidYaml _path yaml ex ->
-    unlines [pack $ prettyPrintParseException ex, "---", show yaml]
-  ConfigErrorInvalidRestylers errs -> unlines errs
-  ConfigErrorInvalidRestylersYaml ex -> show ex
-
-dedent :: Text -> Text
-dedent x = T.unlines $ map (T.drop indent) ls
+  case result of
+    Left errs -> do
+      expectationFailure
+        $ unpack
+        $ renderChunksText WithoutColours
+        $ renderErrors errs
+      error "unreachable"
+    Right config -> pure config
  where
-  ls = T.lines $ T.dropWhileEnd isSpace $ T.dropWhile (== '\n') x
-  indent = fromMaybe 0 $ minimumMaybe indents
-  indents = map (T.length . T.takeWhile (== ' ')) ls
+  runParser paths =
+    runParserOn
+      Nothing
+      (configParser paths)
+      (parseArgs args)
+      (EnvMap.parse env)
+      Nothing
+
+wildcard :: RestylerOverride
+wildcard = enabled "*"
+
+enabled :: Text -> RestylerOverride
+enabled name = (restylerOverride name) {enabled = Just True}

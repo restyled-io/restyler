@@ -17,10 +17,6 @@ module SpecHelper
   , withTestApp
   , testAppExample
 
-    -- * Config
-  , loadDefaultConfig
-  , testRestylers
-
     -- * Re-exports
   , module X
   , shouldThrow
@@ -51,23 +47,12 @@ import Test.QuickCheck as X
 
 import Blammo.Logging.Simple
 import Data.Typeable (typeOf)
-import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException
 import Restyler.Config
-import Restyler.Local.Options
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
-import Restyler.Options.DryRun
-import Restyler.Options.FailOnDifferences
-import Restyler.Options.HostDirectory
-import Restyler.Options.ImageCleanup
-import Restyler.Options.Manifest
-import Restyler.Options.NoClean
-import Restyler.Options.NoCommit
-import Restyler.Options.NoPull
-import Restyler.Restrictions
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..), ReaderFS (..))
 import Restyler.Test.FS qualified as FS
@@ -75,26 +60,24 @@ import Test.Hspec.Core.Spec (Example (..))
 
 data TestApp = TestApp
   { taLogger :: Logger
-  , taOptions :: Options
   , taFS :: FS
   , taDockerPullExitCode :: ExitCode
   , taDockerRunExitCode :: ExitCode
   }
-  deriving
-    ( HasDryRunOption
-    , HasHostDirectoryOption
-    , HasImageCleanupOption
-    , HasNoCommitOption
-    , HasNoPullOption
-    , HasRestrictions
-    )
-    via (ThroughOptions TestApp)
 
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
-instance HasOptions TestApp where
-  getOptions = taOptions
+instance HasCommitTemplate TestApp where
+  getCommitTemplate _ = CommitTemplate ""
+
+instance HasDryRun TestApp where getDryRun _ = False
+instance HasHostDirectory TestApp where
+  getHostDirectory _ = error "hostDirectory"
+instance HasImageCleanup TestApp where getImageCleanup _ = False
+instance HasNoCommit TestApp where getNoCommit _ = False
+instance HasNoPull TestApp where getNoPull _ = False
+instance HasRestrictions TestApp where getRestrictions _ = error "restrictions"
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
@@ -140,25 +123,9 @@ loadTestApp = do
   loadEnvFrom ".env.test"
   TestApp
     <$> newLoggerEnv
-    <*> pure testOptions
     <*> FS.build "/" []
     <*> pure ExitSuccess
     <*> pure ExitSuccess
-
-testOptions :: Options
-testOptions =
-  Options
-    { logSettings = error "logSettings"
-    , dryRun = DryRunOption $ Any False
-    , failOnDifferences = FailOnDifferencesOption $ Any False
-    , hostDirectory = HostDirectoryOption $ Last Nothing
-    , imageCleanup = ImageCleanupOption $ Any False
-    , manifest = ManifestOption $ Last Nothing
-    , noCommit = NoCommitOption $ Any False
-    , noClean = NoCleanOption $ Any False
-    , noPull = NoPullOption $ Any False
-    , restrictions = fullRestrictions
-    }
 
 testAppExample :: TestAppT a -> TestAppT a
 testAppExample = id
@@ -177,36 +144,6 @@ someRestyler name =
     , rDelimiters = Nothing
     , rRunStyle = RestylerRunStylePathsOverwriteSep
     }
-
-loadDefaultConfig :: MonadIO m => m Config
-loadDefaultConfig = do
-  config <- either throw pure $ decodeThrow defaultConfigContent
-  resolveRestylers config testRestylers
-
-testRestylers :: [Restyler]
-testRestylers =
-  [ someRestyler "astyle"
-  , someRestyler "autopep8"
-  , someRestyler "black"
-  , someRestyler "dfmt"
-  , someRestyler "elm-format"
-  , (someRestyler "hindent") {rEnabled = False}
-  , (someRestyler "jdt") {rEnabled = False}
-  , someRestyler "pg_format"
-  , someRestyler "php-cs-fixer"
-  , someRestyler "prettier"
-  , someRestyler "prettier-markdown"
-  , someRestyler "prettier-ruby"
-  , someRestyler "prettier-yaml"
-  , someRestyler "reorder-python-imports"
-  , someRestyler "rubocop"
-  , someRestyler "rustfmt"
-  , someRestyler "shellharden"
-  , someRestyler "shfmt"
-  , someRestyler "stylish-haskell"
-  , someRestyler "terraform"
-  , someRestyler "yapf"
-  ]
 
 -- | 'shouldThrow' but in 'MonadUnliftIO' and handling annotations
 shouldThrow

@@ -11,11 +11,15 @@
 module Restyler.App
   ( AppT
   , runAppT
+  , App (..)
+  , withApp
   ) where
 
 import Restyler.Prelude
 
+import Blammo.Logging.LogSettings.Env qualified as LogSettings
 import Control.Monad.Catch (MonadCatch, MonadThrow)
+import Restyler.Config
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
@@ -47,3 +51,39 @@ newtype AppT app m a = AppT
 
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT f.unwrap app
+
+data App = App
+  { config :: Config
+  , logger :: Logger
+  }
+  deriving
+    ( HasCommitTemplate
+    , HasDryRun
+    , HasEnabled
+    , HasExclude
+    , HasFailOnDifferences
+    , HasHostDirectory
+    , HasIgnores
+    , HasImageCleanup
+    , HasManifest
+    , HasNoClean
+    , HasNoCommit
+    , HasNoPull
+    , HasRemoteFiles
+    , HasRestrictions
+    , HasRestylerOverrides
+    , HasRestylersVersion
+    )
+    via (ThroughConfig App)
+
+instance HasConfig App where
+  getConfig = (.config)
+
+instance HasLogger App where
+  loggerL = lens (.logger) $ \x y -> x {logger = y}
+
+withApp :: (App -> IO a) -> IO a
+withApp f = do
+  config <- parseConfig
+  logSettings <- config.logSettings <$> LogSettings.parse
+  withLogger logSettings $ f . App config

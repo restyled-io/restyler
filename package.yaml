@@ -44,24 +44,20 @@ library:
     - aeson
     - aeson-casing
     - annotated-exception
-    - barbies
+    - autodocodec
     - bytestring
     - composition-extra
     - conduit
-    - containers
-    - edit-distance
-    - envparse
-    - errata
     - errors
     - exceptions
-    - extra
     - extra
     - file-embed
     - filepath
     - http-conduit
     - microlens
     - microlens-mtl
-    - optparse-applicative
+    - opt-env-conf
+    - path
     - relude
     - semigroups
     - text
@@ -96,7 +92,6 @@ tests:
       - aeson
       - containers
       - directory
-      - envparse
       - extra
       - filepath
       - hspec
@@ -104,7 +99,8 @@ tests:
       - hspec-expectations-lifted
       - lens-aeson
       - load-env
+      - opt-env-conf
       - restyler
-      - shakespeare
+      - safe-coloured-text
       - text
-      - yaml
+      - unliftio

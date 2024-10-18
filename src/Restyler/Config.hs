@@ -1,23 +1,6 @@
-{-# LANGUAGE FieldSelectors #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_HADDOCK prune, ignore-exports #-}
 
 -- | Handling of @.restyled.yaml@ content and behavior driven there-by
---
--- __Implementation note__: This is a playground. I'm doing lots of HKD stuff
--- here that I would not normally subject my collaborators to.
---
--- 1. We only do this stuff here, and
--- 2. It should stay encapsulated away from the rest of the system
---
--- References:
---
--- - <https://reasonablypolymorphic.com/blog/higher-kinded-data/>
--- - <https://chrispenner.ca/posts/hkd-options>
--- - <https://hackage.haskell.org/package/barbies>
 --
 -- Module      : Restyler.Config
 -- Copyright   : (c) 2024 Patrick Brisbin
@@ -27,304 +10,196 @@
 -- Portability : POSIX
 module Restyler.Config
   ( Config (..)
-  , ConfigError (..)
-  , loadConfig
+  , configParser
+  , parseConfig
 
-    -- * Exported for use in tests
-  , ConfigSource (..)
-  , loadConfigFrom
-  , resolveRestylers
-  , defaultConfigContent
-  , configPaths
+    -- * Individual configuration points
+  , HasEnabled (..)
+  , module X
+
+    -- * @DerivingVia@
+  , HasConfig (..)
+  , ThroughConfig (..)
   ) where
 
 import Restyler.Prelude
 
-import Data.Aeson
-import Data.Aeson.Casing
+import Data.ByteString qualified as BS
 import Data.FileEmbed (embedFile)
-import Data.Functor.Barbie
-import Data.Set qualified as Set
-import Data.Yaml
-  ( ParseException (..)
-  , YamlException (..)
-  , prettyPrintParseException
-  )
-import Data.Yaml qualified as Yaml
-import Restyler.AnnotatedException
-import Restyler.Config.ChangedPaths
-import Restyler.Config.CommitTemplate
-import Restyler.Config.ExpectedKeys
+import OptEnvConf
+import Paths_restyler qualified as Pkg
+import Restyler.Config.CommitTemplate as X
+import Restyler.Config.DryRun as X
+import Restyler.Config.Exclude as X
+import Restyler.Config.FailOnDifferences as X
 import Restyler.Config.Glob
-import Restyler.Config.RemoteFile
-import Restyler.Config.RequestReview
-import Restyler.Config.Restyler
-import Restyler.Config.SketchyList
-import Restyler.Config.Statuses
-import Restyler.Monad.Directory
-import Restyler.Monad.DownloadFile
-import Restyler.Monad.ReadFile
-import Restyler.Options.Manifest
-import Restyler.Restyler
-import Restyler.Wiki qualified as Wiki
-import Restyler.Yaml.Errata (formatInvalidYaml)
+import Restyler.Config.HostDirectory as X
+import Restyler.Config.Ignore as X
+import Restyler.Config.ImageCleanup as X
+import Restyler.Config.LogSettings as X
+import Restyler.Config.Manifest as X
+import Restyler.Config.NoClean as X
+import Restyler.Config.NoCommit as X
+import Restyler.Config.NoPull as X
+import Restyler.Config.RemoteFile as X
+import Restyler.Config.Restrictions as X
+import Restyler.Config.Restyler as X
+import System.IO (hClose)
+import UnliftIO.Temporary (withSystemTempFile)
 
--- | A polymorphic representation of @'Config'@
---
--- 1. The @f@ parameter can dictate if attributes are required (@'Identity'@) or
---    optional (@'Maybe'@), or optional with override semantics (@'Last'@)
---
--- 2. Any list keys use @'SketchyList'@ so users can type a single scalar
---    element or a list of many elements.
---
--- 3. The @Restylers@ attribute is a (sketchy) list of @'ConfigRestyler'@, which
---    is a function to apply to the later-fetched list of all Restylers.
---
--- See the various @resolve@ functions for how to get a real @'Config'@ out of
--- this beast.
-data ConfigF f = ConfigF
-  { cfEnabled :: f Bool
-  , cfExclude :: f (SketchyList (Glob FilePath))
-  , cfAlsoExclude :: f (SketchyList (Glob FilePath))
-  , cfChangedPaths :: f ChangedPathsConfig
-  , cfAuto :: f Bool
-  , cfCommitTemplate :: f CommitTemplate
-  , cfRemoteFiles :: f (SketchyList RemoteFile)
-  , cfPullRequests :: f Bool
-  , cfComments :: f Bool
-  , cfStatuses :: f Statuses
-  , cfRequestReview :: f RequestReviewConfig
-  , cfLabels :: f (SketchyList Text)
-  , cfIgnoreAuthors :: f (SketchyList (Glob Text))
-  , cfIgnoreLabels :: f (SketchyList (Glob Text))
-  , cfIgnoreBranches :: f (SketchyList (Glob Text))
-  , cfRestylersVersion :: f String
-  , cfRestylers :: f (SketchyList RestylerOverride)
-  }
-  deriving stock (Generic)
-  deriving anyclass (FunctorB, ApplicativeB, ConstraintsB)
-
--- | An empty @'ConfigF'@ of all @'Nothing'@s
---
--- N.B. the choice of @'getAlt'@ is somewhat arbitrary. We just need a @Maybe@
--- wrapper @f a@ where @getX mempty@ is @Nothing@, but without a @Monoid a@
--- constraint.
-emptyConfig :: ConfigF Maybe
-emptyConfig = bmap getAlt bmempty
-
-instance FromJSON (ConfigF Maybe) where
-  parseJSON a@(Array _) = do
-    restylers <- parseJSON a
-    pure emptyConfig {cfRestylers = restylers}
-  parseJSON v = genericParseJSONValidated (aesonPrefix snakeCase) v
-
-instance FromJSON (ConfigF Identity) where
-  parseJSON = genericParseJSON $ aesonPrefix snakeCase
-
--- | Fill out one @'ConfigF'@ from another
-resolveConfig :: ConfigF Maybe -> ConfigF Identity -> ConfigF Identity
-resolveConfig = bzipWith f
- where
-  f :: Maybe a -> Identity a -> Identity a
-  f ma ia = maybe ia Identity ma
-
--- | Fully resolved configuration
---
--- This is what we work with throughout the system.
 data Config = Config
-  { cEnabled :: Bool
-  , cExclude :: Set (Glob FilePath)
-  , cChangedPaths :: ChangedPathsConfig
-  , cAuto :: Bool
-  , cCommitTemplate :: CommitTemplate
-  , cRemoteFiles :: [RemoteFile]
-  , cPullRequests :: Bool
-  , cComments :: Bool
-  , cStatuses :: Statuses
-  , cRequestReview :: RequestReviewConfig
-  , cLabels :: Set Text
-  , cIgnoreAuthors :: [Glob Text]
-  , cIgnoreBranches :: [Glob Text]
-  , cIgnoreLabels :: [Glob Text]
-  , cRestylers :: [Restyler]
+  { logSettings :: LogSettings -> LogSettings
+  , enabled :: Bool
+  , dryRun :: Bool
+  , failOnDifferences :: Bool
+  , exclude :: [Glob FilePath]
+  , commitTemplate :: CommitTemplate
+  , remoteFiles :: [RemoteFile]
+  , ignores :: Ignores
+  , restylersVersion :: String
+  , restylersManifest :: Maybe (Path Abs File)
+  , restylerOverrides :: [RestylerOverride]
+  , hostDirectory :: Path Abs Dir
+  , imageCleanup :: Bool
+  , noPull :: Bool
+  , restrictions :: Restrictions
+  , noCommit :: Bool
+  , noClean :: Bool
+  , pullRequestJson :: Maybe (Path Abs File)
+  , paths :: NonEmpty FilePath
   }
-  deriving stock (Eq, Show, Generic)
 
-instance ToJSON Config where
-  toJSON = genericToJSON $ aesonPrefix snakeCase
-  toEncoding = genericToEncoding $ aesonPrefix snakeCase
+class HasEnabled env where
+  getEnabled :: env -> Bool
 
-data ConfigError
-  = ConfigErrorInvalidYaml FilePath ByteString ParseException
-  | ConfigErrorInvalidRestylers [Text]
-  | ConfigErrorInvalidRestylersYaml SomeException
-  deriving stock (Show)
+instance HasCommitTemplate Config where getCommitTemplate = (.commitTemplate)
+instance HasDryRun Config where getDryRun = (.dryRun)
+instance HasEnabled Config where getEnabled = (.enabled)
+instance HasExclude Config where getExclude = (.exclude)
+instance HasFailOnDifferences Config where
+  getFailOnDifferences = (.failOnDifferences)
+instance HasHostDirectory Config where getHostDirectory = (.hostDirectory)
+instance HasIgnores Config where getIgnores = (.ignores)
+instance HasImageCleanup Config where getImageCleanup = (.imageCleanup)
+instance HasManifest Config where getManifest = (.restylersManifest)
+instance HasNoClean Config where getNoClean = (.noClean)
+instance HasNoCommit Config where getNoCommit = (.noCommit)
+instance HasNoPull Config where getNoPull = (.noPull)
+instance HasRemoteFiles Config where getRemoteFiles = (.remoteFiles)
+instance HasRestrictions Config where getRestrictions = (.restrictions)
+instance HasRestylerOverrides Config where
+  getRestylerOverrides = (.restylerOverrides)
+instance HasRestylersVersion Config where
+  getRestylersVersion = (.restylersVersion)
 
-instance Exception ConfigError where
-  displayException =
-    unpack . unlines . \case
-      ConfigErrorInvalidYaml path yaml e ->
-        [ formatYamlException path yaml e
-        , ""
-        , generalHelp
+parseConfig :: IO Config
+parseConfig = do
+  withSystemTempFile "restyler-default-config.yaml" $ \defaults h -> do
+    BS.hPutStr h defaultConfigContent >> hClose h
+    runParser Pkg.version "Restyle local file"
+      $ configParser
+        [ ".github/restyled.yml"
+        , ".github/restyled.yaml"
+        , ".restyled.yml"
+        , ".restyled.yaml"
+        , defaults
         ]
-      ConfigErrorInvalidRestylers errs -> errs <> ["", generalHelp]
-      ConfigErrorInvalidRestylersYaml ex ->
-        [ "Error loading restylers.yaml definition:"
-        , show @Text ex
-        , ""
-        , "==="
-        , ""
-        , "This could be caused by an invalid or too-old restylers_version in"
-        , "your configuration. Consider removing or updating it."
-        , ""
-        , "If that's not the case, this is a bug in our system that we are"
-        , "hopefully already working to fix."
-        , ""
-        , "- " <> Wiki.page "Restyler Versions"
-        , "- " <> generalHelp
-        ]
-   where
-    generalHelp :: Text
-    generalHelp = Wiki.commonError ".restyled.yaml"
-
-formatYamlException :: FilePath -> ByteString -> ParseException -> Text
-formatYamlException path bs = \case
-  InvalidYaml (Just (YamlParseException problem context mark)) ->
-    formatInvalidYaml path bs problem context mark
-  ex ->
-    unlines
-      [ pack path <> " is not valid yaml"
-      , "Exception:"
-      , pack $ prettyPrintParseException ex
-      , ""
-      , "Input:"
-      , decodeUtf8 bs
-      ]
-
--- | Load a fully-inflated @'Config'@
---
--- Read any @.restyled.yaml@, fill it out from defaults, grab the versioned set
--- of restylers data, and apply the configured choices and overrides.
-loadConfig
-  :: ( MonadUnliftIO m
-     , MonadDirectory m
-     , MonadReadFile m
-     , MonadDownloadFile m
-     , MonadReader env m
-     , HasManifestOption env
-     )
-  => m Config
-loadConfig =
-  loadConfigFrom (map ConfigPath configPaths)
-    $ handleTo ConfigErrorInvalidRestylersYaml
-    . getAllRestylersVersioned
-    . runIdentity
-    . cfRestylersVersion
-
-loadConfigFrom
-  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
-  => [ConfigSource]
-  -> (ConfigF Identity -> m [Restyler])
-  -> m Config
-loadConfigFrom sources f = do
-  config <- loadConfigF sources
-  restylers <- f config
-  resolveRestylers config restylers
-
-data ConfigSource
-  = ConfigPath FilePath
-  | ConfigContent ByteString
-
-readConfigSources
-  :: (MonadDirectory m, MonadReadFile m)
-  => [ConfigSource]
-  -> m (Maybe (FilePath, ByteString))
-readConfigSources = runMaybeT . asum . fmap (MaybeT . go)
- where
-  go
-    :: (MonadDirectory m, MonadReadFile m)
-    => ConfigSource
-    -> m (Maybe (FilePath, ByteString))
-  go = \case
-    ConfigPath path -> do
-      exists <- doesFileExist path
-      if exists then Just . (path,) <$> readFileBS path else pure Nothing
-    ConfigContent content -> pure $ Just ("<config>", content)
-
--- | Load configuration if present and apply defaults
---
--- Returns @'ConfigF' 'Identity'@ because defaulting has populated all fields.
---
--- May throw any @'ConfigError'@. May through raw @'ParseException'@s if
--- there is a programmer error in our static default configuration YAML.
-loadConfigF
-  :: ( MonadUnliftIO m
-     , MonadDirectory m
-     , MonadReadFile m
-     )
-  => [ConfigSource]
-  -> m (ConfigF Identity)
-loadConfigF sources =
-  resolveConfig
-    <$> loadUserConfigF sources
-    <*> decodeThrow defaultConfigContent
-
-loadUserConfigF
-  :: ( MonadUnliftIO m
-     , MonadDirectory m
-     , MonadReadFile m
-     )
-  => [ConfigSource]
-  -> m (ConfigF Maybe)
-loadUserConfigF = maybeM (pure emptyConfig) (uncurry decodeThrow') . readConfigSources
-
--- | @'decodeThrow'@, but wrapping YAML parse errors to @'ConfigError'@
-decodeThrow' :: (MonadUnliftIO m, FromJSON a) => FilePath -> ByteString -> m a
-decodeThrow' path content =
-  handleTo (ConfigErrorInvalidYaml path content) $ decodeThrow content
-
-decodeThrow :: (MonadIO m, FromJSON a) => ByteString -> m a
-decodeThrow = either throw pure . Yaml.decodeThrow
-
--- | Populate @'cRestylers'@ using the versioned restylers data
---
--- May throw @'ConfigErrorInvalidRestylers'@.
-resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
-resolveRestylers ConfigF {..} allRestylers = do
-  restylers <-
-    either (throw . ConfigErrorInvalidRestylers) pure
-      $ overrideRestylers allRestylers
-      $ unSketchy
-      $ runIdentity cfRestylers
-
-  pure
-    Config
-      { cEnabled = runIdentity cfEnabled
-      , cExclude =
-          Set.fromList $ unSketchy $ runIdentity $ cfExclude <> cfAlsoExclude
-      , cChangedPaths = runIdentity cfChangedPaths
-      , cAuto = runIdentity cfAuto
-      , cCommitTemplate = runIdentity cfCommitTemplate
-      , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
-      , cPullRequests = runIdentity cfPullRequests
-      , cComments = runIdentity cfComments
-      , cStatuses = runIdentity cfStatuses
-      , cRequestReview = runIdentity cfRequestReview
-      , cLabels = Set.fromList $ unSketchy $ runIdentity cfLabels
-      , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
-      , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
-      , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
-      , cRestylers = restylers
-      }
 
 defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")
 
-configPaths :: [FilePath]
-configPaths =
-  [ ".restyled.yaml"
-  , ".restyled.yml"
-  , ".github/restyled.yaml"
-  , ".github/restyled.yml"
-  ]
+configParser :: [FilePath] -> Parser Config
+configParser paths =
+  withCombinedYamlConfigs (traverse hiddenPath paths)
+    $ Config
+    <$> logSettingsOptionParser
+    <*> setting
+      [ help "Do anything at all"
+      , conf "enabled"
+      ]
+    <*> dryRunParser
+    <*> failOnDifferencesParser
+    <*> excludeParser
+    <*> commitTemplateParser
+    <*> remoteFilesParser
+    <*> ignoresParser
+    <*> setting
+      [ help "Version of Restylers manifest to use"
+      , option
+      , long "restylers-version"
+      , reader str
+      , metavar "stable|dev|..."
+      , env "RESTYLERS_VERSION"
+      , conf "restylers_version"
+      ]
+    <*> optional manifestParser
+    <*> restylerOverridesParser
+    <*> subConfig_ "docker" hostDirectoryParser
+    <*> subConfig_ "docker" noPullParser
+    <*> subConfig_ "docker" imageCleanupParser
+    <*> subConfig_ "docker" restrictionsParser
+    <*> subConfig_ "git" noCommitParser
+    <*> subConfig_ "git" noCleanParser
+    <*> optional
+      ( filePathSetting
+          [ help ""
+          , hidden
+          , option
+          , long "pull-request-json"
+          ]
+      )
+    <*> someNonEmpty
+      ( setting
+          [ help "Path to restyle"
+          , argument
+          , reader str
+          , metavar "PATH"
+          ]
+      )
+
+hiddenPath :: FilePath -> Parser (Path Abs File)
+hiddenPath x = filePathSetting [value x, hidden]
+
+class HasConfig a where
+  getConfig :: a -> Config
+
+instance HasConfig Config where
+  getConfig = id
+
+newtype ThroughConfig a = ThroughConfig
+  { unwrap :: a
+  }
+  deriving newtype (HasConfig)
+
+instance HasConfig a => HasCommitTemplate (ThroughConfig a) where
+  getCommitTemplate = getCommitTemplate . getConfig
+instance HasConfig a => HasDryRun (ThroughConfig a) where
+  getDryRun = getDryRun . getConfig
+instance HasConfig a => HasEnabled (ThroughConfig a) where
+  getEnabled = getEnabled . getConfig
+instance HasConfig a => HasExclude (ThroughConfig a) where
+  getExclude = getExclude . getConfig
+instance HasConfig a => HasFailOnDifferences (ThroughConfig a) where
+  getFailOnDifferences = getFailOnDifferences . getConfig
+instance HasConfig a => HasHostDirectory (ThroughConfig a) where
+  getHostDirectory = getHostDirectory . getConfig
+instance HasConfig a => HasIgnores (ThroughConfig a) where
+  getIgnores = getIgnores . getConfig
+instance HasConfig a => HasImageCleanup (ThroughConfig a) where
+  getImageCleanup = getImageCleanup . getConfig
+instance HasConfig a => HasManifest (ThroughConfig a) where
+  getManifest = getManifest . getConfig
+instance HasConfig a => HasNoClean (ThroughConfig a) where
+  getNoClean = getNoClean . getConfig
+instance HasConfig a => HasNoCommit (ThroughConfig a) where
+  getNoCommit = getNoCommit . getConfig
+instance HasConfig a => HasNoPull (ThroughConfig a) where
+  getNoPull = getNoPull . getConfig
+instance HasConfig a => HasRemoteFiles (ThroughConfig a) where
+  getRemoteFiles = getRemoteFiles . getConfig
+instance HasConfig a => HasRestrictions (ThroughConfig a) where
+  getRestrictions = getRestrictions . getConfig
+instance HasConfig a => HasRestylerOverrides (ThroughConfig a) where
+  getRestylerOverrides = getRestylerOverrides . getConfig
+instance HasConfig a => HasRestylersVersion (ThroughConfig a) where
+  getRestylersVersion = getRestylersVersion . getConfig

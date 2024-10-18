@@ -39,12 +39,9 @@ spec = withTestApp $ do
       filtered `shouldBe` Just (["a", "b"] :| [["a"]])
 
   describe "runRestyler" $ do
-    it "treats non-zero exit codes as RestylerExitFailure"
-      $ testAppExample
-      $ local (\x -> x {taDockerRunExitCode = ExitFailure 99})
-      $ do
-        config <- loadDefaultConfig
-        runRestyler config (someRestyler "foo") ["bar"]
+    it "treats non-zero exit codes as RestylerExitFailure" $ testAppExample $ do
+      local (\x -> x {taDockerRunExitCode = ExitFailure 99}) $ do
+        runRestyler (someRestyler "foo") ["bar"]
           `shouldThrow` ( ==
                             RestylerExitFailure
                               (someRestyler "foo")

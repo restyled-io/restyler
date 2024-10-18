@@ -26,11 +26,11 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.Manifest
 import Restyler.Config.RemoteFile
 import Restyler.Delimited
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
-import Restyler.Options.Manifest
 
 data Restyler = Restyler
   { rEnabled :: Bool
@@ -123,18 +123,18 @@ getAllRestylersVersioned
      , MonadDirectory m
      , MonadDownloadFile m
      , MonadReader env m
-     , HasManifestOption env
+     , HasManifest env
      )
   => String
   -> m [Restyler]
 getAllRestylersVersioned version = do
-  mManifest <- getManifest
+  mManifest <- asks getManifest
   case mManifest of
     Nothing -> do
       exists <- doesFileExist restylers.path
       unless exists $ downloadFile restylers.url restylers.path
       decodeFileThrow $ restylers.path
-    Just path -> decodeFileThrow path
+    Just path -> decodeFileThrow $ toFilePath path
  where
   restylers =
     RemoteFile

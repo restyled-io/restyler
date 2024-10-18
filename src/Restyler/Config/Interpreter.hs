@@ -13,6 +13,7 @@ module Restyler.Config.Interpreter
 
 import Restyler.Prelude
 
+import Autodocodec (HasCodec (..), codecViaAeson)
 import Data.Aeson
 import Data.Text qualified as T
 import Restyler.ReadP
@@ -32,6 +33,9 @@ instance FromJSON Interpreter where
 instance ToJSON Interpreter where
   -- N.B. this may not always work, but it works for now
   toJSON = toJSON . T.toLower . show
+
+instance HasCodec Interpreter where
+  codec = codecViaAeson "Interpreter" -- TODO
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
