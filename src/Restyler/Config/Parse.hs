@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Restyler.Config.Parse
   ( Config' (..)
   , parseConfig
@@ -9,10 +11,14 @@ module Restyler.Config.Parse
 
 import Restyler.Prelude
 
+import Data.ByteString qualified as BS
+import Data.FileEmbed (embedFile)
 import OptEnvConf
 import Paths_restyler qualified as Pkg
 import Restyler.Config.Glob
 import Restyler.Options
+import System.IO (hClose)
+import UnliftIO.Temporary (withSystemTempFile)
 
 data Config' = Config'
   { enabled :: Bool
@@ -25,11 +31,12 @@ instance HasExclude Config' where
 
 parseConfig :: IO Config'
 parseConfig = do
-  let
-    defaults :: FilePath
-    defaults = "config/default.yaml"
+  withSystemTempFile "restyler-default-config.yaml" $ \tmp h -> do
+    BS.hPutStr h defaultConfigContent >> hClose h
+    runParser Pkg.version "Restyle local file" $ configParser tmp
 
-  runParser Pkg.version "Restyle local file" $ configParser defaults
+defaultConfigContent :: ByteString
+defaultConfigContent = $(embedFile "config/default.yaml")
 
 configParser :: FilePath -> Parser Config'
 configParser defaults =
