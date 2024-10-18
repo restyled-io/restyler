@@ -11,10 +11,10 @@ module Restyler.Config.Interpreter
   , readInterpreter
   ) where
 
-import Restyler.Prelude hiding ((.=))
+import Restyler.Prelude
 
-import Autodocodec
-import Data.Aeson (FromJSON, ToJSON)
+import Autodocodec (HasCodec (..), codecViaAeson)
+import Data.Aeson
 import Data.Text qualified as T
 import Restyler.ReadP
 import System.FilePath (takeFileName)
@@ -26,16 +26,16 @@ data Interpreter
   | Ruby
   | Other Text
   deriving stock (Eq, Show)
-  deriving (FromJSON, ToJSON) via (Autodocodec Interpreter)
+
+instance FromJSON Interpreter where
+  parseJSON = withText "Interpreter" $ pure . interpreterFromText
+
+instance ToJSON Interpreter where
+  -- N.B. this may not always work, but it works for now
+  toJSON = toJSON . T.toLower . show
 
 instance HasCodec Interpreter where
-  codec =
-    stringConstCodec
-      $ (Sh, "sh")
-      :| [ (Bash, "bash")
-         , (Python, "python")
-         , (Ruby, "ruby")
-         ]
+  codec = codecViaAeson "Interpreter" -- TODO
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
