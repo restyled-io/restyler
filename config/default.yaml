@@ -14,14 +14,13 @@ remote_files: []
 commit_template: |
   Restyled by ${restyler.name}
 
-ignore_authors:
-  - "*[bot]"
-
-ignore_branches:
-  - "renovate/*"
-
-ignore_labels:
-  - restyled-ignore
+ignore:
+  authors:
+    - "*[bot]"
+  branches:
+    - "renovate/*"
+  labels:
+    - restyled-ignore
 
 restylers_version: stable
 
@@ -45,7 +44,6 @@ cli:
 
   restylers:
     restricted: true
-
     net_none: true
     cpu_shares: 512
     memory: {number: 128, suffix: m}

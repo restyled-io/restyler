@@ -6,7 +6,6 @@ module Restyler.Config.Ignore
 
 import Restyler.Prelude hiding ((.=))
 
-import Autodocodec
 import Data.Semigroup.Generic
 import OptEnvConf
 import Restyler.Config.Glob
@@ -22,32 +21,62 @@ data Ignores = Ignores
   deriving stock (Generic)
   deriving (Semigroup, Monoid) via GenericSemigroupMonoid Ignores
 
-instance HasCodec Ignores where
-  codec =
-    object "Ignores"
-      $ Ignores
-      <$> (requiredField "author" "Author globs to ignore" .= (.byAuthor))
-      <*> (requiredField "branch" "Branch globs to ignore" .= (.byBranch))
-      <*> (requiredField "labels" "Labels globs to ignore" .= (.byLabels))
-
 ignoresParser :: Parser Ignores
-ignoresParser =
-  mconcat
-    <$> sequenceA
-      [ setting
-          [ help "Ignore by author, branch, or labels"
-          , conf "ignore"
-          ]
-      , ignoreAuthorParser
-      , ignoreBranchParser
-      , ignoreLabelsParser
+ignoresParser = mconcat <$> sequenceA (newIgnoresParser : oldIgnoresParsers)
+
+newIgnoresParser :: Parser Ignores
+newIgnoresParser =
+  subAll "ignore"
+    $ Ignores
+    <$> setting
+      [ help "Ignore authors that match globs"
+      , option
+      , long "authors"
+      , reader $ commaSeparatedList str
+      , metavar "GLOB[,GLOB...]"
+      , conf "authors"
+      ]
+    <*> setting
+      [ help "Ignore branches that match globs"
+      , option
+      , long "branches"
+      , reader $ commaSeparatedList str
+      , metavar "GLOB[,GLOB...]"
+      , conf "branches"
+      ]
+    <*> setting
+      [ help "Ignore labels that match globs"
+      , option
+      , long "labels"
+      , reader $ commaSeparatedList str
+      , metavar "GLOB[,GLOB...]"
+      , conf "labels"
       ]
 
-ignoreAuthorParser :: Parser Ignores
-ignoreAuthorParser = pure mempty -- TODO
-
-ignoreBranchParser :: Parser Ignores
-ignoreBranchParser = pure mempty -- TODO
-
-ignoreLabelsParser :: Parser Ignores
-ignoreLabelsParser = pure mempty -- TODO
+oldIgnoresParsers :: [Parser Ignores]
+oldIgnoresParsers =
+  [ Ignores
+      <$> setting
+        [ help ""
+        , conf "ignore_authors"
+        , hidden
+        ]
+      <*> pure []
+      <*> pure []
+  , Ignores
+      <$> setting
+        [ help ""
+        , conf "ignore_branches"
+        , hidden
+        ]
+      <*> pure []
+      <*> pure []
+  , Ignores
+      <$> setting
+        [ help ""
+        , conf "ignore_labels"
+        , hidden
+        ]
+      <*> pure []
+      <*> pure []
+  ]
