@@ -17,13 +17,25 @@ library
       Restyler.CLI
       Restyler.Config
       Restyler.Config.CommitTemplate
+      Restyler.Config.DryRun
       Restyler.Config.Exclude
+      Restyler.Config.FailOnDifferences
       Restyler.Config.Glob
+      Restyler.Config.HostDirectory
       Restyler.Config.Ignore
       Restyler.Config.Image
+      Restyler.Config.ImageCleanup
       Restyler.Config.Include
       Restyler.Config.Interpreter
+      Restyler.Config.LogSettings
+      Restyler.Config.Manifest
+      Restyler.Config.NoClean
+      Restyler.Config.NoCommit
+      Restyler.Config.NoPull
       Restyler.Config.RemoteFile
+      Restyler.Config.Repository
+      Restyler.Config.Restrictions
+      Restyler.Config.Restrictions.Bytes
       Restyler.Config.Restyler
       Restyler.Delimited
       Restyler.GitHub.PullRequest
@@ -34,18 +46,6 @@ library
       Restyler.Monad.Git
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
-      Restyler.Options.DryRun
-      Restyler.Options.FailOnDifferences
-      Restyler.Options.HostDirectory
-      Restyler.Options.ImageCleanup
-      Restyler.Options.LogSettings
-      Restyler.Options.Manifest
-      Restyler.Options.NoClean
-      Restyler.Options.NoCommit
-      Restyler.Options.NoPull
-      Restyler.Options.Repository
-      Restyler.Options.Restrictions
-      Restyler.Options.Restrictions.Bytes
       Restyler.Prelude
       Restyler.ReadP
       Restyler.Restyle
