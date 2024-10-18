@@ -16,7 +16,6 @@ library
       Restyler.App
       Restyler.CLI
       Restyler.Config
-      Restyler.Config.ChangedPaths
       Restyler.Config.CommitTemplate
       Restyler.Config.Exclude
       Restyler.Config.Glob

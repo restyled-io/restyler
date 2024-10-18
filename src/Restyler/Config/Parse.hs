@@ -20,6 +20,7 @@ import Restyler.Config.CommitTemplate as X
 import Restyler.Config.Exclude as X
 import Restyler.Config.Glob
 import Restyler.Config.RemoteFile as X
+import Restyler.Config.Restyler as X
 import Restyler.Options
 import System.IO (hClose)
 import UnliftIO.Temporary (withSystemTempFile)
@@ -29,6 +30,11 @@ data Config' = Config'
   , exclude :: [Glob FilePath]
   , commitTemplate :: CommitTemplate
   , remoteFiles :: [RemoteFile]
+  , ignoreAuthors :: [Glob Text]
+  , ignoreLabels :: [Glob Text]
+  , ignoreBranches :: [Glob Text]
+  , restylersVersion :: String
+  , restylers :: [RestylerOverride]
   , options :: Options
   }
 
@@ -61,6 +67,11 @@ configParser defaults =
     <*> excludeParser
     <*> commitTemplateParser
     <*> remoteFilesParser
+    <*> pure [] -- TODO
+    <*> pure [] -- TODO
+    <*> pure [] -- TODO
+    <*> pure "stable" -- TODO
+    <*> pure [] -- TODO
     <*> subConfig_ "cli" optionsParser
 
 configSources :: FilePath -> Parser [Path Abs File]

@@ -57,11 +57,9 @@ import Data.Yaml
   )
 import Data.Yaml qualified as Yaml
 import Restyler.AnnotatedException
-import Restyler.Config.ChangedPaths
 import Restyler.Config.CommitTemplate
 import Restyler.Config.Glob
 import Restyler.Config.Parse
-import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
@@ -85,8 +83,7 @@ import Restyler.Yaml.Errata (formatInvalidYaml)
 -- See the various @resolve@ functions for how to get a real @'Config'@ out of
 -- this beast.
 data ConfigF f = ConfigF
-  { cfChangedPaths :: f ChangedPathsConfig
-  , cfIgnoreAuthors :: f (SketchyList (Glob Text))
+  { cfIgnoreAuthors :: f (SketchyList (Glob Text))
   , cfIgnoreLabels :: f (SketchyList (Glob Text))
   , cfIgnoreBranches :: f (SketchyList (Glob Text))
   , cfRestylersVersion :: f String
@@ -123,8 +120,7 @@ resolveConfig = bzipWith f
 --
 -- This is what we work with throughout the system.
 data Config = Config
-  { cChangedPaths :: ChangedPathsConfig
-  , cIgnoreAuthors :: [Glob Text]
+  { cIgnoreAuthors :: [Glob Text]
   , cIgnoreBranches :: [Glob Text]
   , cIgnoreLabels :: [Glob Text]
   , cRestylers :: [Restyler]
@@ -281,8 +277,7 @@ resolveRestylers ConfigF {..} allRestylers = do
 
   pure
     Config
-      { cChangedPaths = runIdentity cfChangedPaths
-      , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
+      { cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
       , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
       , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
       , cRestylers = restylers

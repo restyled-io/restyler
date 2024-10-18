@@ -9,10 +9,6 @@ exclude:
 
 also_exclude: []
 
-changed_paths:
-  maximum: 1000
-  outcome: error
-
 remote_files: []
 
 commit_template: |
