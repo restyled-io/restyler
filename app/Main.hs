@@ -17,13 +17,12 @@ import Restyler.App
 import Restyler.CLI qualified as CLI
 import Restyler.Config
 import Restyler.GitHub.PullRequest
-import Restyler.Options
 import Restyler.Restyle qualified as Restyle
 
 main :: IO ()
 main = CLI.main withApp $ do
-  paths <- toList <$> asks (.config.options.paths)
-  mJSON <- asks (.config.options.pullRequestJson)
+  paths <- toList <$> asks (.config.paths)
+  mJSON <- asks (.config.pullRequestJson)
 
   case mJSON of
     Nothing -> Restyle.run NullPullRequest paths

@@ -26,7 +26,6 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
-import Restyler.Options
 
 newtype AppT app m a = AppT
   { unwrap :: ReaderT app m a
@@ -59,32 +58,26 @@ data App = App
   }
   deriving
     ( HasCommitTemplate
-    , HasIgnores
+    , HasDryRun
     , HasEnabled
     , HasExclude
-    , HasRemoteFiles
-    , HasRestylersVersion
-    , HasRestylerOverrides
-    )
-    via (ThroughConfig App)
-  deriving
-    ( HasDryRun
     , HasFailOnDifferences
     , HasHostDirectory
+    , HasIgnores
     , HasImageCleanup
     , HasManifest
     , HasNoClean
     , HasNoCommit
     , HasNoPull
+    , HasRemoteFiles
     , HasRestrictions
+    , HasRestylerOverrides
+    , HasRestylersVersion
     )
-    via (ThroughOptions App)
+    via (ThroughConfig App)
 
 instance HasConfig App where
   getConfig = (.config)
-
-instance HasOptions App where
-  getOptions = (.config.options)
 
 instance HasLogger App where
   loggerL = lens (.logger) $ \x y -> x {logger = y}
@@ -92,5 +85,5 @@ instance HasLogger App where
 withApp :: (App -> IO a) -> IO a
 withApp f = do
   config <- parseConfig
-  logSettings <- config.options.logSettings <$> LogSettings.parse
+  logSettings <- config.logSettings <$> LogSettings.parse
   withLogger logSettings $ f . App config

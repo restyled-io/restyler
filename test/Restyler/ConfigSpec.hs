@@ -12,7 +12,6 @@ import OptEnvConf.EnvMap qualified as EnvMap
 import OptEnvConf.Error (renderErrors)
 import OptEnvConf.Run (runParserOn)
 import Restyler.Config
-import Restyler.Options
 import Restyler.Options.Restrictions.Bytes
 import System.IO (hClose)
 import Test.Hspec
@@ -28,6 +27,7 @@ spec = do
   it "uses defined defaults" $ do
     config <- loadTestConfig [] [] ["Foo.hs"]
 
+    -- config.logSettings `shouldBe` _
     config.enabled `shouldBe` True
     config.exclude
       `shouldBe` [ "**/*.patch"
@@ -36,6 +36,8 @@ spec = do
                  , "**/vendor/**/*"
                  , ".github/workflows/**/*"
                  ]
+    config.dryRun `shouldBe` False
+    config.failOnDifferences `shouldBe` False
     config.commitTemplate `shouldBe` "Restyled by ${restyler.name}\n"
     config.remoteFiles `shouldBe` []
     config.ignores
@@ -45,30 +47,29 @@ spec = do
         , byLabels = ["restyled-ignore"]
         }
     config.restylersVersion `shouldBe` "stable"
+    config.restylersManifest `shouldBe` Nothing
     config.restylerOverrides `shouldBe` [wildcard]
-    -- config.options.logSettings `shouldBe` _
-    config.options.dryRun `shouldBe` False
-    config.options.failOnDifferences `shouldBe` False
-    -- config.options.hostDirectory `shouldBe` _
-    config.options.imageCleanup `shouldBe` False
-    config.options.manifest `shouldBe` Nothing
-    config.options.noCommit `shouldBe` False
-    config.options.noClean `shouldBe` False
-    config.options.noPull `shouldBe` False
-    config.options.restrictions
+    -- config.hostDirectory `shouldBe` _
+    config.imageCleanup `shouldBe` False
+    config.noCommit `shouldBe` False
+    config.noClean `shouldBe` False
+    config.noPull `shouldBe` False
+    config.restrictions
       `shouldBe` Restrictions
         { netNone = True
         , cpuShares = Just 512
         , memory = Just $ Bytes {number = 128, suffix = Just M}
         }
-    config.options.pullRequestJson `shouldBe` Nothing
-    config.options.paths `shouldBe` pure "Foo.hs"
+    config.pullRequestJson `shouldBe` Nothing
+    config.paths `shouldBe` pure "Foo.hs"
 
   it "can be overriden in user-configuration" $ do
     config <-
       loadTestConfig
         [ "enabled: false"
         , "exclude: [a, b]"
+        , "dry_run: true"
+        , "fail_on_differences: true"
         , "also_exclude: [c, d]"
         , "commit_template: Hi"
         , "remote_files:"
@@ -80,23 +81,25 @@ spec = do
         , "  labels: []"
         , "restylers_version: dev"
         , "restylers: [fourmolu]"
-        , "cli:"
-        , "  dry_run: true"
-        , "  fail_on_differences: true"
+        , "docker:"
         , "  image_cleanup: true"
-        , "  clean: false"
-        , "  commit: false"
         , "  pull: false"
         , "  restylers:"
         , "    net_none: false"
         , "    cpu_shares: 1024"
         , "    memory: { number: 512, suffix: k }"
+        , "git:"
+        , "  clean: false"
+        , "  commit: false"
         ]
         []
         ["Bar.hs"]
 
+    -- config.logSettings `shouldBe` _
     config.enabled `shouldBe` False
     config.exclude `shouldBe` ["a", "b", "c", "d"]
+    config.dryRun `shouldBe` True
+    config.failOnDifferences `shouldBe` True
     config.commitTemplate `shouldBe` "Hi"
     config.remoteFiles
       `shouldBe` [RemoteFile {url = "https://example.com", path = "example.txt"}]
@@ -107,24 +110,21 @@ spec = do
         , byLabels = []
         }
     config.restylersVersion `shouldBe` "dev"
+    config.restylersManifest `shouldBe` Nothing
     config.restylerOverrides `shouldBe` [enabled "fourmolu"]
-    -- config.options.logSettings `shouldBe` _
-    config.options.dryRun `shouldBe` True
-    config.options.failOnDifferences `shouldBe` True
-    -- config.options.hostDirectory `shouldBe` _
-    config.options.imageCleanup `shouldBe` True
-    config.options.manifest `shouldBe` Nothing
-    config.options.noCommit `shouldBe` True
-    config.options.noClean `shouldBe` True
-    config.options.noPull `shouldBe` True
-    config.options.restrictions
+    -- config.hostDirectory `shouldBe` _
+    config.imageCleanup `shouldBe` True
+    config.noCommit `shouldBe` True
+    config.noClean `shouldBe` True
+    config.noPull `shouldBe` True
+    config.restrictions
       `shouldBe` Restrictions
         { netNone = False
         , cpuShares = Just 1024
         , memory = Just $ Bytes {number = 512, suffix = Just K}
         }
-    config.options.pullRequestJson `shouldBe` Nothing
-    config.options.paths `shouldBe` pure "Bar.hs"
+    config.pullRequestJson `shouldBe` Nothing
+    config.paths `shouldBe` pure "Bar.hs"
 
   context "legacy ignore options" $ do
     it "fully specified" $ do

@@ -40,7 +40,6 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
-import Restyler.Options
 import Restyler.Restyler
 import Restyler.RestylerResult
 import System.FilePath ((</>))

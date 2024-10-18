@@ -1,5 +1,9 @@
 enabled: true
 
+dry_run: false
+
+fail_on_differences: false
+
 exclude:
   - "**/*.patch"
   - "**/.git/**/*"
@@ -24,26 +28,21 @@ ignore:
 
 restylers_version: stable
 
+restylers_manifest: null
+
 restylers:
   - "*"
 
-cli:
-  dry_run: false
-
-  fail_on_differences: false
-
+docker:
   host_directory: .
-
-  image_cleanup: false
-
-  clean: true
-
-  commit: true
-
   pull: true
-
+  image_cleanup: false
   restylers:
     restricted: true
     net_none: true
     cpu_shares: 512
     memory: { number: 128, suffix: m }
+
+git:
+  clean: true
+  commit: true

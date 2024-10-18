@@ -23,7 +23,7 @@ manifestParser =
   filePathSetting
     [ help "Restylers manifest to use"
     , option
-    , long "manifest"
-    , env "MANIFEST"
-    , conf "manifest"
+    , long "manifest" -- backwards-compatible
+    , env "MANIFEST" -- backwards-compatible
+    , conf "restylers_manifest"
     ]

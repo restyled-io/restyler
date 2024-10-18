@@ -34,7 +34,6 @@ library
       Restyler.Monad.Git
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
-      Restyler.Options
       Restyler.Options.DryRun
       Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory

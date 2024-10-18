@@ -22,7 +22,6 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git (MonadGit (..))
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
-import Restyler.Options
 import Restyler.RestyleResult
 import Restyler.Restyler
 import Restyler.Restyler.Run

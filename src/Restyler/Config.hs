@@ -34,44 +34,63 @@ import Restyler.Config.Glob
 import Restyler.Config.Ignore as X
 import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restyler as X
-import Restyler.Options
+import Restyler.Options.DryRun as X
+import Restyler.Options.FailOnDifferences as X
+import Restyler.Options.HostDirectory as X
+import Restyler.Options.ImageCleanup as X
+import Restyler.Options.LogSettings as X
+import Restyler.Options.Manifest as X
+import Restyler.Options.NoClean as X
+import Restyler.Options.NoCommit as X
+import Restyler.Options.NoPull as X
+import Restyler.Options.Restrictions as X
 import System.IO (hClose)
 import UnliftIO.Temporary (withSystemTempFile)
 
 data Config = Config
-  { enabled :: Bool
+  { logSettings :: LogSettings -> LogSettings
+  , enabled :: Bool
+  , dryRun :: Bool
+  , failOnDifferences :: Bool
   , exclude :: [Glob FilePath]
   , commitTemplate :: CommitTemplate
   , remoteFiles :: [RemoteFile]
   , ignores :: Ignores
   , restylersVersion :: String
+  , restylersManifest :: Maybe (Path Abs File)
   , restylerOverrides :: [RestylerOverride]
-  , options :: Options
+  , hostDirectory :: Path Abs Dir
+  , imageCleanup :: Bool
+  , noPull :: Bool
+  , restrictions :: Restrictions
+  , noCommit :: Bool
+  , noClean :: Bool
+  , pullRequestJson :: Maybe (Path Abs File)
+  , paths :: NonEmpty FilePath
   }
 
 class HasEnabled env where
   getEnabled :: env -> Bool
 
-instance HasEnabled Config where
-  getEnabled = (.enabled)
-
-instance HasExclude Config where
-  getExclude = (.exclude)
-
-instance HasCommitTemplate Config where
-  getCommitTemplate = (.commitTemplate)
-
-instance HasRemoteFiles Config where
-  getRemoteFiles = (.remoteFiles)
-
-instance HasIgnores Config where
-  getIgnores = (.ignores)
-
-instance HasRestylersVersion Config where
-  getRestylersVersion = (.restylersVersion)
-
+instance HasCommitTemplate Config where getCommitTemplate = (.commitTemplate)
+instance HasDryRun Config where getDryRun = (.dryRun)
+instance HasEnabled Config where getEnabled = (.enabled)
+instance HasExclude Config where getExclude = (.exclude)
+instance HasFailOnDifferences Config where
+  getFailOnDifferences = (.failOnDifferences)
+instance HasHostDirectory Config where getHostDirectory = (.hostDirectory)
+instance HasIgnores Config where getIgnores = (.ignores)
+instance HasImageCleanup Config where getImageCleanup = (.imageCleanup)
+instance HasManifest Config where getManifest = (.restylersManifest)
+instance HasNoClean Config where getNoClean = (.noClean)
+instance HasNoCommit Config where getNoCommit = (.noCommit)
+instance HasNoPull Config where getNoPull = (.noPull)
+instance HasRemoteFiles Config where getRemoteFiles = (.remoteFiles)
+instance HasRestrictions Config where getRestrictions = (.restrictions)
 instance HasRestylerOverrides Config where
   getRestylerOverrides = (.restylerOverrides)
+instance HasRestylersVersion Config where
+  getRestylersVersion = (.restylersVersion)
 
 parseConfig :: IO Config
 parseConfig = do
@@ -93,10 +112,13 @@ configParser :: [FilePath] -> Parser Config
 configParser paths =
   withCombinedYamlConfigs (traverse hiddenPath paths)
     $ Config
-    <$> setting
+    <$> logSettingsOptionParser
+    <*> setting
       [ help "Do anything at all"
       , conf "enabled"
       ]
+    <*> dryRunParser
+    <*> failOnDifferencesParser
     <*> excludeParser
     <*> commitTemplateParser
     <*> remoteFilesParser
@@ -110,8 +132,30 @@ configParser paths =
       , env "RESTYLERS_VERSION"
       , conf "restylers_version"
       ]
+    <*> optional manifestParser
     <*> restylerOverridesParser
-    <*> subConfig_ "cli" optionsParser
+    <*> subConfig_ "docker" hostDirectoryParser
+    <*> subConfig_ "docker" noPullParser
+    <*> subConfig_ "docker" imageCleanupParser
+    <*> subConfig_ "docker" restrictionsParser
+    <*> subConfig_ "git" noCommitParser
+    <*> subConfig_ "git" noCleanParser
+    <*> optional
+      ( filePathSetting
+          [ help ""
+          , hidden
+          , option
+          , long "pull-request-json"
+          ]
+      )
+    <*> someNonEmpty
+      ( setting
+          [ help "Path to restyle"
+          , argument
+          , reader str
+          , metavar "PATH"
+          ]
+      )
 
 hiddenPath :: FilePath -> Parser (Path Abs File)
 hiddenPath x = filePathSetting [value x, hidden]
@@ -127,23 +171,35 @@ newtype ThroughConfig a = ThroughConfig
   }
   deriving newtype (HasConfig)
 
-instance HasConfig a => HasEnabled (ThroughConfig a) where
-  getEnabled = getEnabled . getConfig
-
-instance HasConfig a => HasExclude (ThroughConfig a) where
-  getExclude = getExclude . getConfig
-
 instance HasConfig a => HasCommitTemplate (ThroughConfig a) where
   getCommitTemplate = getCommitTemplate . getConfig
-
-instance HasConfig a => HasRemoteFiles (ThroughConfig a) where
-  getRemoteFiles = getRemoteFiles . getConfig
-
+instance HasConfig a => HasDryRun (ThroughConfig a) where
+  getDryRun = getDryRun . getConfig
+instance HasConfig a => HasEnabled (ThroughConfig a) where
+  getEnabled = getEnabled . getConfig
+instance HasConfig a => HasExclude (ThroughConfig a) where
+  getExclude = getExclude . getConfig
+instance HasConfig a => HasFailOnDifferences (ThroughConfig a) where
+  getFailOnDifferences = getFailOnDifferences . getConfig
+instance HasConfig a => HasHostDirectory (ThroughConfig a) where
+  getHostDirectory = getHostDirectory . getConfig
 instance HasConfig a => HasIgnores (ThroughConfig a) where
   getIgnores = getIgnores . getConfig
-
-instance HasConfig a => HasRestylersVersion (ThroughConfig a) where
-  getRestylersVersion = getRestylersVersion . getConfig
-
+instance HasConfig a => HasImageCleanup (ThroughConfig a) where
+  getImageCleanup = getImageCleanup . getConfig
+instance HasConfig a => HasManifest (ThroughConfig a) where
+  getManifest = getManifest . getConfig
+instance HasConfig a => HasNoClean (ThroughConfig a) where
+  getNoClean = getNoClean . getConfig
+instance HasConfig a => HasNoCommit (ThroughConfig a) where
+  getNoCommit = getNoCommit . getConfig
+instance HasConfig a => HasNoPull (ThroughConfig a) where
+  getNoPull = getNoPull . getConfig
+instance HasConfig a => HasRemoteFiles (ThroughConfig a) where
+  getRemoteFiles = getRemoteFiles . getConfig
+instance HasConfig a => HasRestrictions (ThroughConfig a) where
+  getRestrictions = getRestrictions . getConfig
 instance HasConfig a => HasRestylerOverrides (ThroughConfig a) where
   getRestylerOverrides = getRestylerOverrides . getConfig
+instance HasConfig a => HasRestylersVersion (ThroughConfig a) where
+  getRestylersVersion = getRestylersVersion . getConfig

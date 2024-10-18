@@ -53,7 +53,6 @@ import Restyler.Config
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
-import Restyler.Options
 import Restyler.Restyler
 import Restyler.Test.FS (FS, HasFS (..), ReaderFS (..))
 import Restyler.Test.FS qualified as FS
@@ -61,29 +60,24 @@ import Test.Hspec.Core.Spec (Example (..))
 
 data TestApp = TestApp
   { taLogger :: Logger
-  , taOptions :: Options
   , taFS :: FS
   , taDockerPullExitCode :: ExitCode
   , taDockerRunExitCode :: ExitCode
   }
-  deriving
-    ( HasDryRun
-    , HasHostDirectory
-    , HasImageCleanup
-    , HasNoCommit
-    , HasNoPull
-    , HasRestrictions
-    )
-    via (ThroughOptions TestApp)
 
 instance HasLogger TestApp where
   loggerL = lens taLogger $ \x y -> x {taLogger = y}
 
-instance HasOptions TestApp where
-  getOptions = taOptions
-
 instance HasCommitTemplate TestApp where
   getCommitTemplate _ = CommitTemplate ""
+
+instance HasDryRun TestApp where getDryRun _ = False
+instance HasHostDirectory TestApp where
+  getHostDirectory _ = error "hostDirectory"
+instance HasImageCleanup TestApp where getImageCleanup _ = False
+instance HasNoCommit TestApp where getNoCommit _ = False
+instance HasNoPull TestApp where getNoPull _ = False
+instance HasRestrictions TestApp where getRestrictions _ = error "restrictions"
 
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
@@ -129,27 +123,9 @@ loadTestApp = do
   loadEnvFrom ".env.test"
   TestApp
     <$> newLoggerEnv
-    <*> pure testOptions
     <*> FS.build "/" []
     <*> pure ExitSuccess
     <*> pure ExitSuccess
-
-testOptions :: Options
-testOptions =
-  Options
-    { logSettings = error "logSettings"
-    , dryRun = False
-    , failOnDifferences = False
-    , hostDirectory = error "hostDirectory"
-    , imageCleanup = False
-    , manifest = Nothing
-    , noCommit = False
-    , noClean = False
-    , noPull = False
-    , restrictions = error "restrictions"
-    , pullRequestJson = Nothing
-    , paths = error "paths"
-    }
 
 testAppExample :: TestAppT a -> TestAppT a
 testAppExample = id
