@@ -18,7 +18,7 @@ data Ignores = Ignores
   , byBranch :: [Glob Text]
   , byLabels :: [Glob Text]
   }
-  deriving stock (Generic)
+  deriving stock (Eq, Show, Generic)
   deriving (Semigroup, Monoid) via GenericSemigroupMonoid Ignores
 
 ignoresParser :: Parser Ignores

@@ -23,7 +23,8 @@ import System.FilePath.Glob hiding (match)
 import System.FilePath.Glob qualified as Glob
 
 newtype Glob a = Glob {unwrap :: String}
-  deriving newtype (IsString, HasCodec)
+  deriving stock (Eq)
+  deriving newtype (Show, IsString, HasCodec)
 
 class GlobTarget a where
   forMatch :: a -> String

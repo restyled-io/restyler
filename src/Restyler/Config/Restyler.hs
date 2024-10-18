@@ -9,7 +9,8 @@
 module Restyler.Config.Restyler
   ( HasRestylersVersion (..)
   , HasRestylerOverrides (..)
-  , RestylerOverride
+  , RestylerOverride (..)
+  , restylerOverride
   , restylerOverridesParser
   , RestylersInvalid (..)
   , getEnabledRestylers
@@ -56,6 +57,8 @@ data RestylerOverride = RestylerOverride
   , interpreters :: Maybe [Interpreter]
   , delimiters :: Maybe Delimiters
   }
+  deriving stock (Eq, Show)
+
 instance HasCodec RestylerOverride where
   codec =
     parseAlternatives
@@ -63,6 +66,19 @@ instance HasCodec RestylerOverride where
       [ codecNamed
       , codecNameOnly
       ]
+
+restylerOverride :: Text -> RestylerOverride
+restylerOverride name =
+  RestylerOverride
+    { name
+    , enabled = Nothing
+    , image = Nothing
+    , command = Nothing
+    , arguments = Nothing
+    , include = Nothing
+    , interpreters = Nothing
+    , delimiters = Nothing
+    }
 
 -- | Parse or render the object normally
 --
@@ -104,24 +120,11 @@ codecNameOnly :: JSONCodec RestylerOverride
 codecNameOnly =
   bimapCodec
     ( \name -> Right $ case T.uncons name of
-        Just (c, rest) | c == '!' -> (namedRestyler rest) {enabled = Just False}
-        _ -> (namedRestyler name) {enabled = Just True}
+        Just (c, rest) | c == '!' -> (restylerOverride rest) {enabled = Just False}
+        _ -> (restylerOverride name) {enabled = Just True}
     )
     (const "unused")
     textCodec
-
-namedRestyler :: Text -> RestylerOverride
-namedRestyler name =
-  RestylerOverride
-    { name
-    , enabled = Nothing
-    , image = Nothing
-    , command = Nothing
-    , arguments = Nothing
-    , include = Nothing
-    , interpreters = Nothing
-    , delimiters = Nothing
-    }
 
 -- |
 --

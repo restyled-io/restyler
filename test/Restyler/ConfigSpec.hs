@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
+
 module Restyler.ConfigSpec
   ( spec
   ) where
@@ -15,9 +17,29 @@ import UnliftIO.Temporary (withSystemTempFile)
 
 spec :: Spec
 spec = do
+  -- This test is a maintainence burden, in that when config/default.yaml
+  -- changes, we need a corresponding update here. But it ensures we don't
+  -- unintentionally break loading the defaults.
   it "uses defined defaults" $ do
     config <- loadTestConfig [] [] ["Foo.hs"]
     config.enabled `shouldBe` True
+    config.exclude
+      `shouldBe` [ "**/*.patch"
+                 , "**/.git/**/*"
+                 , "**/node_modules/**/*"
+                 , "**/vendor/**/*"
+                 , ".github/workflows/**/*"
+                 ]
+    config.commitTemplate `shouldBe` "Restyled by ${restyler.name}\n"
+    config.remoteFiles `shouldBe` []
+    config.ignores
+      `shouldBe` Ignores
+        { byAuthor = ["*[bot]"]
+        , byBranch = ["renovate/*"]
+        , byLabels = ["restyled-ignore"]
+        }
+    config.restylersVersion `shouldBe` "stable"
+    config.restylerOverrides `shouldBe` [wildcard]
 
 loadTestConfig
   :: HasCallStack
@@ -50,3 +72,6 @@ loadTestConfig yaml env args = do
       (parseArgs args)
       (EnvMap.parse env)
       Nothing
+
+wildcard :: RestylerOverride
+wildcard = (restylerOverride "*") {enabled = Just True}
