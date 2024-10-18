@@ -29,13 +29,13 @@ data Interpreter
   deriving (FromJSON, ToJSON) via (Autodocodec Interpreter)
 
 instance HasCodec Interpreter where
-  codec = parseAlternatives codecKnown [codecOther]
-
-codecKnown :: ValueCodec Interpreter Interpreter
-codecKnown = stringConstCodec $ swap <$> knownBasenames
-
-codecOther :: ValueCodec Interpreter Interpreter
-codecOther = bimapCodec (Right . Other) (T.toLower . pack . show) textCodec
+  codec =
+    stringConstCodec
+      $ (Sh, "sh")
+      :| [ (Bash, "bash")
+         , (Python, "python")
+         , (Ruby, "ruby")
+         ]
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
@@ -55,21 +55,13 @@ parseInterpreter =
   exec = takeFileName <$> word
 
 interpreterFromText :: Text -> Interpreter
-interpreterFromText x = fromMaybe (Other x) $ lookup $ toList knownBasenames
- where
-  lookup = \case
-    [] -> Nothing
-    ((k, v) : _) | k == x -> Just v
-    (_ : kvs) -> lookup kvs
-
-knownBasenames :: NonEmpty (Text, Interpreter)
-knownBasenames =
-  ("sh", Sh)
-    :| [ ("bash", Bash)
-       , ("python", Python)
-       , ("python2", Python)
-       , ("python2.7", Python)
-       , ("python3", Python)
-       , ("python3.6", Python)
-       , ("ruby", Ruby)
-       ]
+interpreterFromText = \case
+  "sh" -> Sh
+  "bash" -> Bash
+  "python" -> Python
+  "python2" -> Python
+  "python2.7" -> Python
+  "python3" -> Python
+  "python3.6" -> Python
+  "ruby" -> Ruby
+  x -> Other x
