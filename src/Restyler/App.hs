@@ -19,7 +19,7 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings.Env qualified as LogSettings
 import Control.Monad.Catch (MonadCatch, MonadThrow)
-import Restyler.Config.Parse
+import Restyler.Config
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
@@ -54,7 +54,7 @@ runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT f.unwrap app
 
 data App = App
-  { config :: Config'
+  { config :: Config
   , logger :: Logger
   }
   deriving

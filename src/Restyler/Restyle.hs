@@ -58,7 +58,7 @@ run
      , HasLabelNames pr
      , HasCallStack
      )
-  => Config'
+  => Config
   -> pr
   -> [FilePath]
   -> m RestyleResult

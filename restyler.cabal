@@ -23,7 +23,6 @@ library
       Restyler.Config.Image
       Restyler.Config.Include
       Restyler.Config.Interpreter
-      Restyler.Config.Parse
       Restyler.Config.RemoteFile
       Restyler.Config.Restyler
       Restyler.Delimited
