@@ -46,4 +46,4 @@ cli:
     restricted: true
     net_none: true
     cpu_shares: 512
-    memory: {number: 128, suffix: m}
+    memory: { number: 128, suffix: m }
