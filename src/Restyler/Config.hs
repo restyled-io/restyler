@@ -61,7 +61,6 @@ import Restyler.Config.ChangedPaths
 import Restyler.Config.CommitTemplate
 import Restyler.Config.Glob
 import Restyler.Config.Parse
-import Restyler.Config.RemoteFile
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
 import Restyler.Monad.Directory
@@ -87,7 +86,6 @@ import Restyler.Yaml.Errata (formatInvalidYaml)
 -- this beast.
 data ConfigF f = ConfigF
   { cfChangedPaths :: f ChangedPathsConfig
-  , cfRemoteFiles :: f (SketchyList RemoteFile)
   , cfIgnoreAuthors :: f (SketchyList (Glob Text))
   , cfIgnoreLabels :: f (SketchyList (Glob Text))
   , cfIgnoreBranches :: f (SketchyList (Glob Text))
@@ -126,7 +124,6 @@ resolveConfig = bzipWith f
 -- This is what we work with throughout the system.
 data Config = Config
   { cChangedPaths :: ChangedPathsConfig
-  , cRemoteFiles :: [RemoteFile]
   , cIgnoreAuthors :: [Glob Text]
   , cIgnoreBranches :: [Glob Text]
   , cIgnoreLabels :: [Glob Text]
@@ -285,7 +282,6 @@ resolveRestylers ConfigF {..} allRestylers = do
   pure
     Config
       { cChangedPaths = runIdentity cfChangedPaths
-      , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
       , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
       , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
       , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels

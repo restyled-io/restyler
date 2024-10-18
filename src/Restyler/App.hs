@@ -60,6 +60,7 @@ data App = App
   deriving
     ( HasCommitTemplate
     , HasExclude
+    , HasRemoteFiles
     )
     via (ThroughConfig App)
   deriving

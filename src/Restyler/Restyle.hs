@@ -47,6 +47,7 @@ run
      , HasNoCommit env
      , HasNoClean env
      , HasNoPull env
+     , HasRemoteFiles env
      , HasRestrictions env
      , HasPullRequestState pr
      , HasAuthor pr

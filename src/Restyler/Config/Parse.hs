@@ -19,6 +19,7 @@ import Paths_restyler qualified as Pkg
 import Restyler.Config.CommitTemplate as X
 import Restyler.Config.Exclude as X
 import Restyler.Config.Glob
+import Restyler.Config.RemoteFile as X
 import Restyler.Options
 import System.IO (hClose)
 import UnliftIO.Temporary (withSystemTempFile)
@@ -27,6 +28,7 @@ data Config' = Config'
   { enabled :: Bool
   , exclude :: [Glob FilePath]
   , commitTemplate :: CommitTemplate
+  , remoteFiles :: [RemoteFile]
   , options :: Options
   }
 
@@ -35,6 +37,9 @@ instance HasExclude Config' where
 
 instance HasCommitTemplate Config' where
   getCommitTemplate = (.commitTemplate)
+
+instance HasRemoteFiles Config' where
+  getRemoteFiles = (.remoteFiles)
 
 parseConfig :: IO Config'
 parseConfig = do
@@ -55,6 +60,7 @@ configParser defaults =
       ]
     <*> excludeParser
     <*> commitTemplateParser
+    <*> remoteFilesParser
     <*> subConfig_ "cli" optionsParser
 
 configSources :: FilePath -> Parser [Path Abs File]
@@ -86,3 +92,6 @@ instance HasConfig a => HasExclude (ThroughConfig a) where
 
 instance HasConfig a => HasCommitTemplate (ThroughConfig a) where
   getCommitTemplate = getCommitTemplate . getConfig
+
+instance HasConfig a => HasRemoteFiles (ThroughConfig a) where
+  getRemoteFiles = getRemoteFiles . getConfig
