@@ -177,7 +177,7 @@ someRestyler name =
 loadDefaultConfig :: MonadIO m => m Config
 loadDefaultConfig = do
   config <- either throw pure $ decodeThrow defaultConfigContent
-  resolveRestylers config testRestylers
+  resolveRestylers config
 
 testRestylers :: [Restyler]
 testRestylers =

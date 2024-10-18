@@ -1,5 +1,4 @@
 {-# LANGUAGE FieldSelectors #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- |
 --
@@ -10,122 +9,147 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Config.Restyler
-  ( RestylerOverride
-  , overrideRestylers
+  ( HasRestylersVersion (..)
+  , HasRestylerOverrides (..)
+  , RestylerOverride
+  , restylerOverridesParser
+  , getEnabledRestylers
   ) where
 
 import Restyler.Prelude
 
-import Data.Aeson hiding (Result (..))
-import Data.Aeson.Casing
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap (KeyMap)
-import Data.Aeson.KeyMap qualified as KeyMap
-import Data.Aeson.Types (Parser, modifyFailure)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Text qualified as T
 import Data.Validation
+import OptEnvConf
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.SketchyList
 import Restyler.Delimited
+import Restyler.Monad.DownloadFile
+import Restyler.Options.Manifest
 import Restyler.Restyler
 
-data RestylerOverride = RestylerOverride
-  { roName :: String
-  , roEnabled :: Maybe Bool
-  , roImage :: Maybe Image
-  , roCommand :: Maybe (SketchyList String)
-  , roArguments :: Maybe (SketchyList String)
-  , roInclude :: Maybe (SketchyList Include)
-  , roInterpreters :: Maybe (SketchyList Interpreter)
-  , roDelimiters :: Maybe Delimiters
-  }
-  deriving stock (Eq, Show, Generic)
+class HasRestylersVersion env where
+  getRestylersVersion :: env -> String
 
-instance FromJSON RestylerOverride where
-  parseJSON = \case
-    String name'
-      | Just name <- T.stripPrefix "!" name' ->
-          namedOverride (Key.fromText name)
-            $ KeyMap.singleton "enabled" (Bool False)
-    String name -> namedOverride (Key.fromText name) KeyMap.empty
-    Object o
-      | [(name, Object o')] <- KeyMap.toList o ->
-          namedOverride name o'
-    v ->
-      suffixIncorrectIndentation
-        $ genericParseJSON (aesonPrefix snakeCase) v
+class HasRestylerOverrides env where
+  getRestylerOverrides :: env -> [RestylerOverride]
 
-namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
-namedOverride name =
-  parseJSON
-    . Object
-    . insertIfMissing "name" (String $ Key.toText name)
-    . KeyMap.delete name
+getEnabledRestylers
+  :: ( MonadDownloadFile m
+     , MonadReader env m
+     , HasRestylersVersion env
+     , HasRestylerOverrides env
+     , HasManifest env
+     )
+  => m [Restyler]
+getEnabledRestylers = undefined
 
-suffixIncorrectIndentation :: Parser a -> Parser a
-suffixIncorrectIndentation = modifyFailure (<> msg)
- where
-  msg :: String
-  msg = "\n\nDo you have incorrect indentation for a named override?"
+data RestylerOverride
+  = Enable String
+  | Disable String
+  | RemainingRestylers
+  | NamedOverride
 
-overrideRestylers
-  :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]
-overrideRestylers restylers overrides =
-  toEither $ case length $ filter ((== "*") . roName) overrides of
-    0 -> explicits <$> getOverrides
-    1 -> replaced restylers <$> getOverrides
-    n ->
-      Failure
-        [ "You may have at most 1 wildcard in restylers ("
-            <> show n
-            <> " found)"
-        ]
- where
-  getOverrides = traverse (overrideRestyler restylersMap) overrides
+restylerOverridesParser :: Parser [RestylerOverride]
+restylerOverridesParser = undefined
 
-  restylersMap :: HashMap Text Restyler
-  restylersMap = HashMap.fromList $ map (pack . rName &&& id) restylers
+-- data RestylerOverride = RestylerOverride
+--   { roName :: String
+--   , roEnabled :: Maybe Bool
+--   , roImage :: Maybe Image
+--   , roCommand :: Maybe (SketchyList String)
+--   , roArguments :: Maybe (SketchyList String)
+--   , roInclude :: Maybe (SketchyList Include)
+--   , roInterpreters :: Maybe (SketchyList Interpreter)
+--   , roDelimiters :: Maybe Delimiters
+--   }
+--   deriving stock (Eq, Show, Generic)
 
-data Override = Explicit Restyler | Wildcard
+-- instance FromJSON RestylerOverride where
+--   parseJSON = \case
+--     String name'
+--       | Just name <- T.stripPrefix "!" name' ->
+--           namedOverride (Key.fromText name)
+--             $ KeyMap.singleton "enabled" (Bool False)
+--     String name -> namedOverride (Key.fromText name) KeyMap.empty
+--     Object o
+--       | [(name, Object o')] <- KeyMap.toList o ->
+--           namedOverride name o'
+--     v ->
+--       suffixIncorrectIndentation
+--         $ genericParseJSON (aesonPrefix snakeCase) v
 
-explicits :: [Override] -> [Restyler]
-explicits = concatMap $ \case
-  Explicit r -> [r]
-  Wildcard -> []
+-- namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
+-- namedOverride name =
+--   parseJSON
+--     . Object
+--     . insertIfMissing "name" (String $ Key.toText name)
+--     . KeyMap.delete name
 
-replaced :: [Restyler] -> [Override] -> [Restyler]
-replaced restylers overrides = replaceWildcards others overrides
- where
-  others = filter ((`notElem` overriden) . rName) restylers
-  overriden = map rName $ explicits overrides
+-- suffixIncorrectIndentation :: Parser a -> Parser a
+-- suffixIncorrectIndentation = modifyFailure (<> msg)
+--  where
+--   msg :: String
+--   msg = "\n\nDo you have incorrect indentation for a named override?"
 
-replaceWildcards :: [Restyler] -> [Override] -> [Restyler]
-replaceWildcards restylers = concatMap $ \case
-  Explicit r -> [r]
-  Wildcard -> restylers
+-- overrideRestylers
+--   :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]
+-- overrideRestylers restylers overrides =
+--   toEither $ case length $ filter ((== "*") . roName) overrides of
+--     0 -> explicits <$> getOverrides
+--     1 -> replaced restylers <$> getOverrides
+--     n ->
+--       Failure
+--         [ "You may have at most 1 wildcard in restylers ("
+--             <> show n
+--             <> " found)"
+--         ]
+--  where
+--   getOverrides = traverse (overrideRestyler restylersMap) overrides
 
-overrideRestyler
-  :: HashMap Text Restyler -> RestylerOverride -> Validation [Text] Override
-overrideRestyler restylers RestylerOverride {..}
-  | roName == "*" = pure Wildcard
-  | otherwise = Explicit . override <$> defaults
- where
-  defaults =
-    let name = pack roName
-    in  case HashMap.lookup name restylers of
-          Nothing -> Failure ["Unexpected Restyler name " <> show name]
-          Just v -> Success v
+--   restylersMap :: HashMap Text Restyler
+--   restylersMap = HashMap.fromList $ map (pack . rName &&& id) restylers
 
-  override restyler@Restyler {..} =
-    restyler
-      { rEnabled = fromMaybe True roEnabled
-      , rImage = maybe rImage (overrideRestylerImage rImage) roImage
-      , rCommand = maybe rCommand unSketchy roCommand
-      , rArguments = maybe rArguments unSketchy roArguments
-      , rInclude = maybe rInclude unSketchy roInclude
-      , rInterpreters = maybe rInterpreters unSketchy roInterpreters
-      , rDelimiters = roDelimiters <|> rDelimiters
-      }
+-- data Override = Explicit Restyler | Wildcard
+
+-- explicits :: [Override] -> [Restyler]
+-- explicits = concatMap $ \case
+--   Explicit r -> [r]
+--   Wildcard -> []
+
+-- replaced :: [Restyler] -> [Override] -> [Restyler]
+-- replaced restylers overrides = replaceWildcards others overrides
+--  where
+--   others = filter ((`notElem` overriden) . rName) restylers
+--   overriden = map rName $ explicits overrides
+
+-- replaceWildcards :: [Restyler] -> [Override] -> [Restyler]
+-- replaceWildcards restylers = concatMap $ \case
+--   Explicit r -> [r]
+--   Wildcard -> restylers
+
+-- overrideRestyler
+--   :: HashMap Text Restyler -> RestylerOverride -> Validation [Text] Override
+-- overrideRestyler restylers RestylerOverride {..}
+--   | roName == "*" = pure Wildcard
+--   | otherwise = Explicit . override <$> defaults
+--  where
+--   defaults =
+--     let name = pack roName
+--     in  case HashMap.lookup name restylers of
+--           Nothing -> Failure ["Unexpected Restyler name " <> show name]
+--           Just v -> Success v
+
+--   override restyler@Restyler {..} =
+--     restyler
+--       { rEnabled = fromMaybe True roEnabled
+--       , rImage = maybe rImage (overrideRestylerImage rImage) roImage
+--       , rCommand = maybe rCommand unSketchy roCommand
+--       , rArguments = maybe rArguments unSketchy roArguments
+--       , rInclude = maybe rInclude unSketchy roInclude
+--       , rInterpreters = maybe rInterpreters unSketchy roInterpreters
+--       , rDelimiters = roDelimiters <|> rDelimiters
+--       }

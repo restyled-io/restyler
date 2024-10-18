@@ -62,10 +62,7 @@ import Restyler.Config.Glob
 import Restyler.Config.Parse
 import Restyler.Config.SketchyList
 import Restyler.Monad.Directory
-import Restyler.Monad.DownloadFile
 import Restyler.Monad.ReadFile
-import Restyler.Options.Manifest
-import Restyler.Restyler
 import Restyler.Wiki qualified as Wiki
 import Restyler.Yaml.Errata (formatInvalidYaml)
 
@@ -86,8 +83,6 @@ data ConfigF f = ConfigF
   { cfIgnoreAuthors :: f (SketchyList (Glob Text))
   , cfIgnoreLabels :: f (SketchyList (Glob Text))
   , cfIgnoreBranches :: f (SketchyList (Glob Text))
-  , cfRestylersVersion :: f String
-  , cfRestylers :: f (SketchyList RestylerOverride)
   }
   deriving stock (Generic)
   deriving anyclass (FunctorB, ApplicativeB, ConstraintsB)
@@ -101,10 +96,7 @@ emptyConfig :: ConfigF Maybe
 emptyConfig = bmap getAlt bmempty
 
 instance FromJSON (ConfigF Maybe) where
-  parseJSON a@(Array _) = do
-    restylers <- parseJSON a
-    pure emptyConfig {cfRestylers = restylers}
-  parseJSON v = genericParseJSON (aesonPrefix snakeCase) v
+  parseJSON = genericParseJSON $ aesonPrefix snakeCase
 
 instance FromJSON (ConfigF Identity) where
   parseJSON = genericParseJSON $ aesonPrefix snakeCase
@@ -123,7 +115,6 @@ data Config = Config
   { cIgnoreAuthors :: [Glob Text]
   , cIgnoreBranches :: [Glob Text]
   , cIgnoreLabels :: [Glob Text]
-  , cRestylers :: [Restyler]
   }
   deriving stock (Eq, Show, Generic)
 
@@ -179,35 +170,17 @@ formatYamlException path bs = \case
       , decodeUtf8 bs
       ]
 
--- | Load a fully-inflated @'Config'@
---
--- Read any @.restyled.yaml@, fill it out from defaults, grab the versioned set
--- of restylers data, and apply the configured choices and overrides.
 loadConfig
-  :: ( MonadUnliftIO m
-     , MonadDirectory m
-     , MonadReadFile m
-     , MonadDownloadFile m
-     , MonadReader env m
-     , HasManifest env
-     )
-  => m Config
-loadConfig =
-  loadConfigFrom (map ConfigPath configPaths)
-    $ handleTo ConfigErrorInvalidRestylersYaml
-    . getAllRestylersVersioned
-    . runIdentity
-    . cfRestylersVersion
+  :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m) => m Config
+loadConfig = loadConfigFrom $ map ConfigPath configPaths
 
 loadConfigFrom
   :: (MonadUnliftIO m, MonadDirectory m, MonadReadFile m)
   => [ConfigSource]
-  -> (ConfigF Identity -> m [Restyler])
   -> m Config
-loadConfigFrom sources f = do
+loadConfigFrom sources = do
   config <- loadConfigF sources
-  restylers <- f config
-  resolveRestylers config restylers
+  resolveRestylers config
 
 data ConfigSource
   = ConfigPath FilePath
@@ -264,23 +237,13 @@ decodeThrow' path content =
 decodeThrow :: (MonadIO m, FromJSON a) => ByteString -> m a
 decodeThrow = either throw pure . Yaml.decodeThrow
 
--- | Populate @'cRestylers'@ using the versioned restylers data
---
--- May throw @'ConfigErrorInvalidRestylers'@.
-resolveRestylers :: MonadIO m => ConfigF Identity -> [Restyler] -> m Config
-resolveRestylers ConfigF {..} allRestylers = do
-  restylers <-
-    either (throw . ConfigErrorInvalidRestylers) pure
-      $ overrideRestylers allRestylers
-      $ unSketchy
-      $ runIdentity cfRestylers
-
+resolveRestylers :: MonadIO m => ConfigF Identity -> m Config
+resolveRestylers ConfigF {..} = do
   pure
     Config
       { cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
       , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches
       , cIgnoreLabels = unSketchy $ runIdentity cfIgnoreLabels
-      , cRestylers = restylers
       }
 
 defaultConfigContent :: ByteString

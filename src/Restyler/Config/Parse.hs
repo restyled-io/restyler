@@ -34,7 +34,7 @@ data Config' = Config'
   , ignoreLabels :: [Glob Text]
   , ignoreBranches :: [Glob Text]
   , restylersVersion :: String
-  , restylers :: [RestylerOverride]
+  , restylerOverrides :: [RestylerOverride]
   , options :: Options
   }
 
@@ -46,6 +46,14 @@ instance HasCommitTemplate Config' where
 
 instance HasRemoteFiles Config' where
   getRemoteFiles = (.remoteFiles)
+
+-- HasIgnores...
+
+instance HasRestylersVersion Config' where
+  getRestylersVersion = (.restylersVersion)
+
+instance HasRestylerOverrides Config' where
+  getRestylerOverrides = (.restylerOverrides)
 
 parseConfig :: IO Config'
 parseConfig = do
@@ -70,8 +78,16 @@ configParser defaults =
     <*> pure [] -- TODO
     <*> pure [] -- TODO
     <*> pure [] -- TODO
-    <*> pure "stable" -- TODO
-    <*> pure [] -- TODO
+    <*> setting
+      [ help "Version of Restylers manifest to use"
+      , option
+      , long "restylers-version"
+      , reader str
+      , metavar "stable|dev|..."
+      , env "RESTYLERS_VERSION"
+      , conf "restylers_version"
+      ]
+    <*> restylerOverridesParser
     <*> subConfig_ "cli" optionsParser
 
 configSources :: FilePath -> Parser [Path Abs File]
@@ -106,3 +122,9 @@ instance HasConfig a => HasCommitTemplate (ThroughConfig a) where
 
 instance HasConfig a => HasRemoteFiles (ThroughConfig a) where
   getRemoteFiles = getRemoteFiles . getConfig
+
+instance HasConfig a => HasRestylersVersion (ThroughConfig a) where
+  getRestylersVersion = getRestylersVersion . getConfig
+
+instance HasConfig a => HasRestylerOverrides (ThroughConfig a) where
+  getRestylerOverrides = getRestylerOverrides . getConfig

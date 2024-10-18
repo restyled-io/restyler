@@ -61,6 +61,8 @@ data App = App
     ( HasCommitTemplate
     , HasExclude
     , HasRemoteFiles
+    , HasRestylersVersion
+    , HasRestylerOverrides
     )
     via (ThroughConfig App)
   deriving

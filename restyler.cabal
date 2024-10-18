@@ -151,7 +151,6 @@ test-suite test
       Restyler.Config.CommitTemplateSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
-      Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
       Restyler.RestrictionsSpec
@@ -196,7 +195,6 @@ test-suite test
     , lens-aeson
     , load-env
     , restyler
-    , shakespeare
     , text
     , yaml
   default-language: GHC2021

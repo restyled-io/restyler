@@ -110,16 +110,18 @@ runRestylers
      , HasExclude env
      , HasHostDirectory env
      , HasImageCleanup env
+     , HasManifest env
      , HasNoCommit env
      , HasNoPull env
      , HasRemoteFiles env
      , HasRestrictions env
+     , HasRestylerOverrides env
+     , HasRestylersVersion env
      , HasCallStack
      )
-  => Config
-  -> [FilePath]
+  => [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
-runRestylers config argPaths = do
+runRestylers argPaths = do
   allPaths <- removeExcluded $ map FilePath.normalise argPaths
   expPaths <- findFiles allPaths
   paths <- removeExcluded expPaths
@@ -135,6 +137,7 @@ runRestylers config argPaths = do
   remoteFiles <- asks getRemoteFiles
   for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
 
+  restylers <- getEnabledRestylers
   mResults <- withFilteredPaths restylers paths runRestyler
   mResetTo <- join <$> traverse checkForNoop mResults
 
@@ -143,8 +146,6 @@ runRestylers config argPaths = do
     Just ref -> do
       logInfo "Restylers offset each other, resetting git state"
       Nothing <$ gitResetHard ref
- where
-  restylers = filter rEnabled $ cRestylers config
 
 removeExcluded
   :: (MonadReader env m, HasExclude env)

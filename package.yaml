@@ -103,6 +103,5 @@ tests:
       - lens-aeson
       - load-env
       - restyler
-      - shakespeare
       - text
       - yaml

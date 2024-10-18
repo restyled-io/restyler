@@ -49,6 +49,8 @@ run
      , HasNoPull env
      , HasRemoteFiles env
      , HasRestrictions env
+     , HasRestylerOverrides env
+     , HasRestylersVersion env
      , HasPullRequestState pr
      , HasAuthor pr
      , HasBaseRef pr
@@ -78,7 +80,7 @@ run config' pr paths = do
       | Just reason <- mIgnoredReason ->
           pure $ RestyleSkipped $ RestyleIgnored reason
     (True, PullRequestOpen) -> do
-      mresults <- runRestylers config paths
+      mresults <- runRestylers paths
 
       -- Overall result is logged in CLI, log individual results here
       for_ mresults $ traverse_ $ \result -> do
