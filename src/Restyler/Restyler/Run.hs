@@ -43,7 +43,6 @@ import Restyler.Monad.WriteFile
 import Restyler.Options
 import Restyler.Restyler
 import Restyler.RestylerResult
-import Restyler.Wiki qualified as Wiki
 import System.FilePath ((</>))
 import System.FilePath qualified as FilePath
 
@@ -77,8 +76,6 @@ instance Exception RestylerOutOfMemory where
   displayException (RestylerOutOfMemory Restyler {..}) =
     mconcat
       [ "Restyler " <> rName <> " used too much memory (exit code 137)"
-      , "\n"
-      , "\nSee " <> unpack (Wiki.commonError "Restyle Error 137") <> " for more details"
       ]
 
 newtype RestylerCommandNotFound = RestylerCommandNotFound Restyler
@@ -90,8 +87,6 @@ instance Exception RestylerCommandNotFound where
       [ "Restyler " <> rName <> " has an invalid command (exit code 127)"
       , "\n"
       , "You may need to adjust restylers[" <> rName <> "].command"
-      , "\n"
-      , "\nSee " <> unpack (Wiki.commonError "Restyle Error 127") <> " for more details"
       ]
 
 -- | Runs the configured @'Restyler'@s for the files and reports results

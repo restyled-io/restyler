@@ -48,7 +48,6 @@ library:
     - bytestring
     - composition-extra
     - conduit
-    - errata
     - errors
     - exceptions
     - extra
@@ -103,4 +102,3 @@ tests:
       - load-env
       - restyler
       - text
-      - yaml

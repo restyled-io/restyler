@@ -55,8 +55,6 @@ library
       Restyler.Restyler.Run
       Restyler.RestyleResult
       Restyler.RestylerResult
-      Restyler.Wiki
-      Restyler.Yaml.Errata
   other-modules:
       Paths_restyler
   hs-source-dirs:
@@ -89,7 +87,6 @@ library
     , bytestring
     , composition-extra
     , conduit
-    , errata
     , errors
     , exceptions
     , extra
@@ -155,8 +152,6 @@ test-suite test
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
       Restyler.Test.FS
-      Restyler.WikiSpec
-      Restyler.Yaml.ErrataSpec
       SpecHelper
       Paths_restyler
   hs-source-dirs:
@@ -194,5 +189,4 @@ test-suite test
     , load-env
     , restyler
     , text
-    , yaml
   default-language: GHC2021
