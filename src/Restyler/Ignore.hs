@@ -13,6 +13,7 @@ module Restyler.Ignore
 
 import Restyler.Prelude
 
+import Data.Aeson (ToJSON)
 import Restyler.Config
 import Restyler.Config.Glob
 

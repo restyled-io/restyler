@@ -17,10 +17,6 @@ module SpecHelper
   , withTestApp
   , testAppExample
 
-    -- * Config
-  , loadDefaultConfig
-  , testRestylers
-
     -- * Re-exports
   , module X
   , shouldThrow
@@ -51,7 +47,6 @@ import Test.QuickCheck as X
 
 import Blammo.Logging.Simple
 import Data.Typeable (typeOf)
-import Data.Yaml (decodeThrow)
 import LoadEnv (loadEnvFrom)
 import Restyler.AnnotatedException
 import Restyler.Config
@@ -173,36 +168,6 @@ someRestyler name =
     , rDelimiters = Nothing
     , rRunStyle = RestylerRunStylePathsOverwriteSep
     }
-
-loadDefaultConfig :: MonadIO m => m Config
-loadDefaultConfig = do
-  config <- either throw pure $ decodeThrow defaultConfigContent
-  resolveRestylers config
-
-testRestylers :: [Restyler]
-testRestylers =
-  [ someRestyler "astyle"
-  , someRestyler "autopep8"
-  , someRestyler "black"
-  , someRestyler "dfmt"
-  , someRestyler "elm-format"
-  , (someRestyler "hindent") {rEnabled = False}
-  , (someRestyler "jdt") {rEnabled = False}
-  , someRestyler "pg_format"
-  , someRestyler "php-cs-fixer"
-  , someRestyler "prettier"
-  , someRestyler "prettier-markdown"
-  , someRestyler "prettier-ruby"
-  , someRestyler "prettier-yaml"
-  , someRestyler "reorder-python-imports"
-  , someRestyler "rubocop"
-  , someRestyler "rustfmt"
-  , someRestyler "shellharden"
-  , someRestyler "shfmt"
-  , someRestyler "stylish-haskell"
-  , someRestyler "terraform"
-  , someRestyler "yapf"
-  ]
 
 -- | 'shouldThrow' but in 'MonadUnliftIO' and handling annotations
 shouldThrow

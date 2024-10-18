@@ -24,8 +24,6 @@ data RemoteFile = RemoteFile
   { url :: String
   , path :: FilePath
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
 
 instance HasCodec RemoteFile where
   codec =

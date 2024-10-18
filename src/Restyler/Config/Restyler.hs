@@ -1,5 +1,3 @@
-{-# LANGUAGE FieldSelectors #-}
-
 -- |
 --
 -- Module      : Restyler.Config.Restyler
@@ -19,13 +17,11 @@ module Restyler.Config.Restyler
 import Restyler.Prelude
 
 import Data.HashMap.Strict qualified as HashMap
-import Data.Text qualified as T
 import Data.Validation
-import OptEnvConf
+import OptEnvConf hiding (name)
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
-import Restyler.Config.SketchyList
 import Restyler.Delimited
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
@@ -52,9 +48,10 @@ getEnabledRestylers = do
   version <- asks getRestylersVersion
   restylers <- getAllRestylersVersioned version
   overrides <- asks getRestylerOverrides
-  case overrideRestylers restylers overrides of
-    Left errs -> undefined
-    Right restylers -> pure $ filter rEnabled restylers
+  either
+    (error "TODO")
+    (pure . filter rEnabled)
+    $ overrideRestylers restylers overrides
 
 data RestylerOverride = RestylerOverride
   { name :: String
@@ -83,7 +80,7 @@ data RestylerOverride = RestylerOverride
 --         $ genericParseJSON (aesonPrefix snakeCase) v
 
 restylerOverridesParser :: Parser [RestylerOverride]
-restylerOverridesParser = undefined
+restylerOverridesParser = pure [] -- TODO
 
 -- namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
 -- namedOverride name =

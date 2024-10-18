@@ -56,4 +56,4 @@ spec = do
         `shouldBe` Just (IgnoredByLabels "debug")
 
 loadModifiedConfig :: (Config -> Config) -> IO Config
-loadModifiedConfig f = liftIO $ f <$> loadDefaultConfig
+loadModifiedConfig f = liftIO $ f <$> loadConfig

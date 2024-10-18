@@ -45,7 +45,6 @@ library:
     - aeson-casing
     - annotated-exception
     - autodocodec
-    - barbies
     - bytestring
     - composition-extra
     - conduit

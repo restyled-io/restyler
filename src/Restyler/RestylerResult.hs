@@ -13,6 +13,7 @@ module Restyler.RestylerResult
 
 import Restyler.Prelude
 
+import Data.Aeson (ToJSON)
 import Restyler.Config
 import Restyler.Monad.Git
 import Restyler.Options.NoCommit

@@ -27,8 +27,7 @@ class HasCommitTemplate env where
 newtype CommitTemplate = CommitTemplate
   { unwrap :: Text
   }
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (HasCodec, FromJSON, ToJSON)
+  deriving newtype (IsString, HasCodec)
 
 commitTemplateParser :: Parser CommitTemplate
 commitTemplateParser =

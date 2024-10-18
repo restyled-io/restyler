@@ -16,5 +16,3 @@ data RepositoryOption = RepositoryOption
   { owner :: Text
   , repo :: Text
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (ToJSON)
