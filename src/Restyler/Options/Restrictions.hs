@@ -26,6 +26,7 @@ data Restrictions = Restrictions
   , cpuShares :: Maybe Natural
   , memory :: Maybe Bytes
   }
+  deriving stock (Eq, Show)
 
 restrictionOptions :: Restrictions -> [String]
 restrictionOptions r =

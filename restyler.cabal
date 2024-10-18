@@ -188,6 +188,7 @@ test-suite test
     , load-env
     , opt-env-conf
     , restyler
+    , safe-coloured-text
     , text
     , unliftio
   default-language: GHC2021

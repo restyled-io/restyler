@@ -101,5 +101,6 @@ tests:
       - load-env
       - opt-env-conf
       - restyler
+      - safe-coloured-text
       - text
       - unliftio
