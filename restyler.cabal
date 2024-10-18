@@ -25,7 +25,6 @@ library
       Restyler.Config.Parse
       Restyler.Config.RemoteFile
       Restyler.Config.Restyler
-      Restyler.Config.SketchyList
       Restyler.Delimited
       Restyler.GitHub.PullRequest
       Restyler.Ignore
