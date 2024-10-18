@@ -60,6 +60,7 @@ data App = App
   deriving
     ( HasCommitTemplate
     , HasIgnores
+    , HasEnabled
     , HasExclude
     , HasRemoteFiles
     , HasRestylersVersion

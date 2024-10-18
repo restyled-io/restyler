@@ -11,6 +11,9 @@
 module Restyler.Config
   ( Config (..)
   , parseConfig
+
+    -- * Individual configuration points
+  , HasEnabled (..)
   , module X
 
     -- * @DerivingVia@
@@ -44,6 +47,12 @@ data Config = Config
   , restylerOverrides :: [RestylerOverride]
   , options :: Options
   }
+
+class HasEnabled env where
+  getEnabled :: env -> Bool
+
+instance HasEnabled Config where
+  getEnabled = (.enabled)
 
 instance HasExclude Config where
   getExclude = (.exclude)
@@ -119,6 +128,9 @@ newtype ThroughConfig a = ThroughConfig
   { unwrap :: a
   }
   deriving newtype (HasConfig)
+
+instance HasConfig a => HasEnabled (ThroughConfig a) where
+  getEnabled = getEnabled . getConfig
 
 instance HasConfig a => HasExclude (ThroughConfig a) where
   getExclude = getExclude . getConfig

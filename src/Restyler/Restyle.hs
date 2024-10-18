@@ -40,6 +40,7 @@ run
      , MonadReader env m
      , HasCommitTemplate env
      , HasDryRun env
+     , HasEnabled env
      , HasExclude env
      , HasHostDirectory env
      , HasIgnores env
@@ -58,11 +59,11 @@ run
      , HasLabelNames pr
      , HasCallStack
      )
-  => Config
-  -> pr
+  => pr
   -> [FilePath]
   -> m RestyleResult
-run config' pr paths = do
+run pr paths = do
+  enabled <- asks getEnabled
   ignores <- asks getIgnores
 
   let mIgnoredReason =
@@ -72,7 +73,7 @@ run config' pr paths = do
           (getBaseRef pr)
           (getLabelNames pr)
 
-  case (config'.enabled, getPullRequestState pr) of
+  case (enabled, getPullRequestState pr) of
     (False, _) -> do
       pure $ RestyleSkipped RestyleNotEnabled
     (True, PullRequestClosed) ->
