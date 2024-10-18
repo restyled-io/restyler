@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Restyler.Config.Ignore
   ( HasIgnores (..)
   , Ignores (..)
@@ -6,7 +8,6 @@ module Restyler.Config.Ignore
 
 import Restyler.Prelude hiding ((.=))
 
-import Data.Semigroup.Generic
 import OptEnvConf
 import Restyler.Config.Glob
 
@@ -18,11 +19,22 @@ data Ignores = Ignores
   , byBranch :: [Glob Text]
   , byLabels :: [Glob Text]
   }
-  deriving stock (Eq, Show, Generic)
-  deriving (Semigroup, Monoid) via GenericSemigroupMonoid Ignores
+  deriving stock (Eq, Show)
 
 ignoresParser :: Parser Ignores
-ignoresParser = mconcat <$> sequenceA (newIgnoresParser : oldIgnoresParsers)
+ignoresParser =
+  go
+    <$> newIgnoresParser
+    <*> oldIgnoresParser
+ where
+  go new old
+    | old /= OldIgnores Nothing Nothing Nothing =
+        Ignores
+          { byAuthor = fromMaybe new.byAuthor old.byAuthor
+          , byBranch = fromMaybe new.byBranch old.byBranch
+          , byLabels = fromMaybe new.byLabels old.byLabels
+          }
+    | otherwise = new
 
 newIgnoresParser :: Parser Ignores
 newIgnoresParser =
@@ -53,12 +65,19 @@ newIgnoresParser =
       , conf "labels"
       ]
 
-oldIgnoresParsers :: [Parser Ignores]
-oldIgnoresParsers =
-  [ Ignores <$> hiddenIgnoreParser "ignore_authors" <*> pure [] <*> pure []
-  , Ignores [] <$> hiddenIgnoreParser "ignore_branches" <*> pure []
-  , Ignores [] [] <$> hiddenIgnoreParser "ignore_labels"
-  ]
+data OldIgnores = OldIgnores
+  { byAuthor :: Maybe [Glob Text]
+  , byBranch :: Maybe [Glob Text]
+  , byLabels :: Maybe [Glob Text]
+  }
+  deriving stock (Eq)
+
+oldIgnoresParser :: Parser OldIgnores
+oldIgnoresParser =
+  OldIgnores
+    <$> optional (hiddenIgnoreParser "ignore_authors")
+    <*> optional (hiddenIgnoreParser "ignore_branches")
+    <*> optional (hiddenIgnoreParser "ignore_labels")
 
 hiddenIgnoreParser :: String -> Parser [Glob Text]
 hiddenIgnoreParser key =
@@ -67,4 +86,3 @@ hiddenIgnoreParser key =
     , conf key
     , hidden
     ]
-    <|> pure []

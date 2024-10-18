@@ -126,6 +126,40 @@ spec = do
     config.options.pullRequestJson `shouldBe` Nothing
     config.options.paths `shouldBe` pure "Bar.hs"
 
+  context "legacy ignore options" $ do
+    it "fully specified" $ do
+      config <-
+        loadTestConfig
+          [ "ignore_authors: [a]"
+          , "ignore_branches: [b]"
+          , "ignore_labels: [c]"
+          ]
+          []
+          ["Bar.hs"]
+
+      config.ignores
+        `shouldBe` Ignores
+          { byAuthor = ["a"]
+          , byBranch = ["b"]
+          , byLabels = ["c"]
+          }
+
+    it "partially specified" $ do
+      config <-
+        loadTestConfig
+          [ "ignore_authors: [a]"
+          , "ignore_labels: [c]"
+          ]
+          []
+          ["Bar.hs"]
+
+      config.ignores
+        `shouldBe` Ignores
+          { byAuthor = ["a"]
+          , byBranch = ["renovate/*"]
+          , byLabels = ["c"]
+          }
+
 loadTestConfig
   :: HasCallStack
   => [Text]
