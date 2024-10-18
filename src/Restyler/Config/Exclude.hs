@@ -1,4 +1,4 @@
-module Restyler.Options.Exclude
+module Restyler.Config.Exclude
   ( HasExclude (..)
   , excludeParser
   ) where

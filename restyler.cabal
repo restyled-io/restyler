@@ -18,6 +18,7 @@ library
       Restyler.Config
       Restyler.Config.ChangedPaths
       Restyler.Config.CommitTemplate
+      Restyler.Config.Exclude
       Restyler.Config.Glob
       Restyler.Config.Image
       Restyler.Config.Include
@@ -38,7 +39,6 @@ library
       Restyler.Opt
       Restyler.Options
       Restyler.Options.DryRun
-      Restyler.Options.Exclude
       Restyler.Options.FailOnDifferences
       Restyler.Options.HostDirectory
       Restyler.Options.ImageCleanup

@@ -20,7 +20,6 @@ import Restyler.Prelude
 
 import OptEnvConf
 import Restyler.Options.DryRun as X
-import Restyler.Options.Exclude as X
 import Restyler.Options.FailOnDifferences as X
 import Restyler.Options.HostDirectory as X
 import Restyler.Options.ImageCleanup as X

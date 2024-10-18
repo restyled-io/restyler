@@ -3,6 +3,7 @@
 module Restyler.Config.Parse
   ( Config' (..)
   , parseConfig
+  , module X
 
     -- * @DerivingVia@
   , HasConfig (..)
@@ -15,6 +16,7 @@ import Data.ByteString qualified as BS
 import Data.FileEmbed (embedFile)
 import OptEnvConf
 import Paths_restyler qualified as Pkg
+import Restyler.Config.Exclude as X
 import Restyler.Config.Glob
 import Restyler.Options
 import System.IO (hClose)

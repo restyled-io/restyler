@@ -39,6 +39,9 @@ module Restyler.Config
   , resolveRestylers
   , defaultConfigContent
   , configPaths
+
+    -- * New stuff
+  , module Restyler.Config.Parse
   ) where
 
 import Restyler.Prelude
@@ -57,6 +60,7 @@ import Restyler.AnnotatedException
 import Restyler.Config.ChangedPaths
 import Restyler.Config.CommitTemplate
 import Restyler.Config.Glob
+import Restyler.Config.Parse
 import Restyler.Config.RemoteFile
 import Restyler.Config.Restyler
 import Restyler.Config.SketchyList
