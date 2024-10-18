@@ -11,9 +11,10 @@ module Restyler.Config.Interpreter
   , readInterpreter
   ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding ((.=))
 
-import Data.Aeson
+import Autodocodec
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text qualified as T
 import Restyler.ReadP
 import System.FilePath (takeFileName)
@@ -25,13 +26,16 @@ data Interpreter
   | Ruby
   | Other Text
   deriving stock (Eq, Show)
+  deriving (FromJSON, ToJSON) via (Autodocodec Interpreter)
 
-instance FromJSON Interpreter where
-  parseJSON = withText "Interpreter" $ pure . interpreterFromText
+instance HasCodec Interpreter where
+  codec = parseAlternatives codecKnown [codecOther]
 
-instance ToJSON Interpreter where
-  -- N.B. this may not always work, but it works for now
-  toJSON = toJSON . T.toLower . show
+codecKnown :: ValueCodec Interpreter Interpreter
+codecKnown = stringConstCodec $ swap <$> knownBasenames
+
+codecOther :: ValueCodec Interpreter Interpreter
+codecOther = bimapCodec (Right . Other) (T.toLower . pack . show) textCodec
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do
@@ -51,13 +55,21 @@ parseInterpreter =
   exec = takeFileName <$> word
 
 interpreterFromText :: Text -> Interpreter
-interpreterFromText = \case
-  "sh" -> Sh
-  "bash" -> Bash
-  "python" -> Python
-  "python2" -> Python
-  "python2.7" -> Python
-  "python3" -> Python
-  "python3.6" -> Python
-  "ruby" -> Ruby
-  x -> Other x
+interpreterFromText x = fromMaybe (Other x) $ lookup $ toList knownBasenames
+ where
+  lookup = \case
+    [] -> Nothing
+    ((k, v) : _) | k == x -> Just v
+    (_ : kvs) -> lookup kvs
+
+knownBasenames :: NonEmpty (Text, Interpreter)
+knownBasenames =
+  ("sh", Sh)
+    :| [ ("bash", Bash)
+       , ("python", Python)
+       , ("python2", Python)
+       , ("python2.7", Python)
+       , ("python3", Python)
+       , ("python3.6", Python)
+       , ("ruby", Ruby)
+       ]

@@ -16,6 +16,7 @@ module Restyler.Config.Image
 
 import Restyler.Prelude hiding (First (..))
 
+import Autodocodec (HasCodec (..), codecViaAeson)
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import Data.Semigroup (First (..))
@@ -93,6 +94,9 @@ instance ToJSON Image where
   toEncoding = \case
     Image i -> toEncoding i
     ImageOverride fs -> toEncoding fs
+
+instance HasCodec Image where
+  codec = codecViaAeson "Image" -- TODO
 
 overrideRestylerImage :: String -> Image -> String
 overrideRestylerImage base = \case

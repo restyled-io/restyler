@@ -9,16 +9,20 @@
 module Restyler.Config.Restyler
   ( HasRestylersVersion (..)
   , HasRestylerOverrides (..)
-  , RestylerOverride (..) -- TODO
+  , RestylerOverride
   , restylerOverridesParser
   , RestylersInvalid (..)
   , getEnabledRestylers
   ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding ((.=))
 
-import Autodocodec (HasCodec (..))
+import Autodocodec
+import Data.Aeson (Value (..))
+import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Aeson.Types (parseEither)
 import Data.HashMap.Strict qualified as HashMap
+import Data.Text qualified as T
 import Data.Validation
 import OptEnvConf hiding (name)
 import Restyler.AnnotatedException (throw)
@@ -40,6 +44,82 @@ class HasRestylerOverrides env where
 newtype RestylersInvalid = RestylersInvalid [Text]
   deriving stock (Show)
   deriving anyclass (Exception)
+
+data RestylerOverride = RestylerOverride
+  { name :: Text
+  , enabled :: Maybe Bool
+  , image :: Maybe Image
+  , command :: Maybe [String]
+  , arguments :: Maybe [String]
+  , include :: Maybe [Include]
+  , interpreters :: Maybe [Interpreter]
+  , delimiters :: Maybe Delimiters
+  }
+instance HasCodec RestylerOverride where
+  codec =
+    parseAlternatives
+      codecObject
+      [ codecNamed
+      , codecNameOnly
+      ]
+
+-- | Parse or render the object normally
+--
+-- - @{...} -> ...@
+codecObject :: JSONCodec RestylerOverride
+codecObject =
+  object "Restyler"
+    $ RestylerOverride
+    <$> (requiredField "name" "Name" .= (.name))
+    <*> (optionalField "enabled" "Enabled?" .= (.enabled))
+    <*> (optionalField "image" "Image" .= (.image))
+    <*> (optionalField "command" "Command" .= (.command))
+    <*> (optionalField "arguments" "Arguments" .= (.arguments))
+    <*> (optionalField "include" "Globs to include" .= (.include))
+    <*> (optionalField "interpreters" "Interpreters to look for" .= (.interpreters))
+    <*> (optionalField "delimiters" "Delimeters" .= (.delimiters))
+
+-- | Parse a name key and sub-object. Not used for rendering
+--
+-- - @{name: {...}}" -> merge({name: name}, {...})@
+codecNamed :: JSONCodec RestylerOverride
+codecNamed =
+  bimapCodec
+    ( \case
+        Object km -> do
+          obj <- note "No name key" $ KeyMap.lookup "name" km
+          parseEither (parseJSONVia codecObject) obj
+        _ -> Left "Not an Object"
+    )
+    (const "unused")
+    valueCodec
+
+-- | Parse name-only syntax. Not used for rendering
+--
+-- - @"!<name>" -> {name: name, enabled:false}@
+-- - @"<name>" -> {name: name, enabled:true}@
+codecNameOnly :: JSONCodec RestylerOverride
+codecNameOnly =
+  bimapCodec
+    ( \name -> Right $ case T.uncons name of
+        Just (c, rest) | c == '!' -> (namedRestyler rest) {enabled = Just False}
+        _ -> (namedRestyler name) {enabled = Just True}
+    )
+    (const "unused")
+    textCodec
+
+namedRestyler :: Text -> RestylerOverride
+namedRestyler name =
+  RestylerOverride
+    { name
+    , enabled = Nothing
+    , image = Nothing
+    , command = Nothing
+    , arguments = Nothing
+    , include = Nothing
+    , interpreters = Nothing
+    , delimiters = Nothing
+    }
 
 -- |
 --
@@ -64,53 +144,12 @@ getEnabledRestylers = do
     (pure . filter rEnabled)
     $ overrideRestylers restylers overrides
 
-data RestylerOverride = RestylerOverride
-  { name :: String
-  , enabled :: Maybe Bool
-  , image :: Maybe Image
-  , command :: Maybe [String]
-  , arguments :: Maybe [String]
-  , include :: Maybe [Include]
-  , interpreters :: Maybe [Interpreter]
-  , delimiters :: Maybe Delimiters
-  }
-
-instance HasCodec RestylerOverride where
-  codec = error "TODO"
-
--- instance FromJSON RestylerOverride where
---   parseJSON = \case
---     String name'
---       | Just name <- T.stripPrefix "!" name' ->
---           namedOverride (Key.fromText name)
---             $ KeyMap.singleton "enabled" (Bool False)
---     String name -> namedOverride (Key.fromText name) KeyMap.empty
---     Object o
---       | [(name, Object o')] <- KeyMap.toList o ->
---           namedOverride name o'
---     v ->
---       suffixIncorrectIndentation
---         $ genericParseJSON (aesonPrefix snakeCase) v
---
--- namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
--- namedOverride name =
---   parseJSON
---     . Object
---     . insertIfMissing "name" (String $ Key.toText name)
---     . KeyMap.delete name
---
--- suffixIncorrectIndentation :: Parser a -> Parser a
--- suffixIncorrectIndentation = modifyFailure (<> msg)
---  where
---   msg :: String
---   msg = "\n\nDo you have incorrect indentation for a named override?"
-
 restylerOverridesParser :: Parser [RestylerOverride]
-restylerOverridesParser = pure [] -- TODO
--- setting -
---   [ help "Restylers to run"
---   , conf "restylers"
---   ]
+restylerOverridesParser =
+  setting
+    [ help "Restylers to run"
+    , conf "restylers"
+    ]
 
 overrideRestylers
   :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]
@@ -155,8 +194,8 @@ overrideRestyler restylers o
   | otherwise = Explicit . override <$> defaults
  where
   defaults =
-    case HashMap.lookup (pack o.name) restylers of
-      Nothing -> Failure ["Unexpected Restyler name " <> pack o.name]
+    case HashMap.lookup (o.name) restylers of
+      Nothing -> Failure ["Unexpected Restyler name " <> o.name]
       Just v -> Success v
 
   override restyler =

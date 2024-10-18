@@ -14,6 +14,7 @@ module Restyler.Config.Include
 
 import Restyler.Prelude
 
+import Autodocodec (HasCodec (..), codecViaAeson)
 import Data.Aeson
 import System.FilePath.Glob (Pattern, compile, decompile, match)
 
@@ -34,6 +35,9 @@ instance ToJSON Include where
 instance IsString Include where
   fromString ('!' : rest) = Negated $ compile rest
   fromString x = Include $ compile x
+
+instance HasCodec Include where
+  codec = codecViaAeson "Include" -- TODO
 
 -- | Build an @'Include'@ matching a path exactly
 explicit :: FilePath -> Include

@@ -32,10 +32,6 @@ instance HasCodec RemoteFile where
       <$> (requiredField "url" "URL to download" .= (.url))
       <*> (requiredField "path" "Path to download to" .= (.path))
 
--- |
---
--- TODO: I swear we used to parse a simple String as a URL and then download it
--- to the base-name of that URL. Where did that go?
 remoteFilesParser :: Parser [RemoteFile]
 remoteFilesParser =
   setting
