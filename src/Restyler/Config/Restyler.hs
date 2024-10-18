@@ -106,11 +106,11 @@ instance HasCodec RestylerOverride where
 --   msg = "\n\nDo you have incorrect indentation for a named override?"
 
 restylerOverridesParser :: Parser [RestylerOverride]
-restylerOverridesParser =
-  setting
-    [ help "Restylers to run"
-    , conf "restylers"
-    ]
+restylerOverridesParser = pure [] -- TODO
+-- setting -
+--   [ help "Restylers to run"
+--   , conf "restylers"
+--   ]
 
 overrideRestylers
   :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]

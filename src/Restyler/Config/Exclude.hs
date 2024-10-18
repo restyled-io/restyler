@@ -13,23 +13,20 @@ class HasExclude env where
 
 excludeParser :: Parser [Glob FilePath]
 excludeParser =
-  mconcat
-    <$> sequenceA
-      [ setting
-          [ help "Globs to exclude"
-          , conf "exclude"
-          ]
-      , setting
-          [ help "Globs to exclude in addition to defaults"
-          , conf "also_exclude"
-          ]
-      , many
-          ( setting
-              [ help "Globs to exclude in addition to defaults"
-              , option
-              , long "exclude"
-              , reader str
-              , metavar "GLOB"
-              ]
-          )
+  (<>)
+    <$> setting
+      [ help "Globs to exclude"
+      , option
+      , long "exclude"
+      , reader $ commaSeparatedList str
+      , metavar "GLOB[,GLOB...]"
+      , conf "exclude"
+      ]
+    <*> setting
+      [ help "Globs to exclude in addition to defaults"
+      , option
+      , long "also-exclude"
+      , reader $ commaSeparatedList str
+      , metavar "GLOB[,GLOB...]"
+      , conf "also_exclude"
       ]
