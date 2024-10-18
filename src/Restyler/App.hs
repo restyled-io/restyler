@@ -19,8 +19,7 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings.Env qualified as LogSettings
 import Control.Monad.Catch (MonadCatch, MonadThrow)
-import OptEnvConf (runParser)
-import Paths_restyler qualified as Pkg
+import Restyler.Config.Parse
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
@@ -86,11 +85,6 @@ instance HasLogger App where
 
 withApp :: (App -> IO a) -> IO a
 withApp f = do
-  let
-    -- TODO: write to a temp file?
-    defaults :: FilePath
-    defaults = "config/default.yaml"
-
-  config <- runParser Pkg.version "Restyle local file" $ configParser defaults
+  config <- parseConfig
   logSettings <- config.options.logSettings <$> LogSettings.parse
   withLogger logSettings $ f . App config

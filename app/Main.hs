@@ -15,6 +15,7 @@ import Restyler.Prelude
 import Data.Aeson
 import Restyler.App
 import Restyler.CLI qualified as CLI
+import Restyler.Config.Parse
 import Restyler.GitHub.PullRequest
 import Restyler.Options
 import Restyler.Restyle qualified as Restyle

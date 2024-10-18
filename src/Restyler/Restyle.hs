@@ -14,6 +14,7 @@ module Restyler.Restyle
 import Restyler.Prelude
 
 import Restyler.Config
+import Restyler.Config.Parse
 import Restyler.GitHub.PullRequest
 import Restyler.Ignore
 import Restyler.Monad.Directory
