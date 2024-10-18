@@ -26,7 +26,7 @@ data IgnoredReason
 
 getIgnoredReason
   :: Foldable t
-  => Config
+  => Ignores
   -> Text
   -- ^ User
   -> Text
@@ -34,9 +34,9 @@ getIgnoredReason
   -> t Text
   -- ^ Labels
   -> Maybe IgnoredReason
-getIgnoredReason c author branch labels =
+getIgnoredReason i author branch labels =
   asum
-    [ IgnoredByAuthor author <$ guard (cIgnoreAuthors c `matchAny` [author])
-    , IgnoredByBranch branch <$ guard (cIgnoreBranches c `matchAny` [branch])
-    , IgnoredByLabels <$> cIgnoreLabels c `matchFirst` labels
+    [ IgnoredByAuthor author <$ guard (i.byAuthor `matchAny` [author])
+    , IgnoredByBranch branch <$ guard (i.byBranch `matchAny` [branch])
+    , IgnoredByLabels <$> i.byLabels `matchFirst` labels
     ]

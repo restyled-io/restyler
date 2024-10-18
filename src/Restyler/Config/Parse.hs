@@ -19,6 +19,7 @@ import Paths_restyler qualified as Pkg
 import Restyler.Config.CommitTemplate as X
 import Restyler.Config.Exclude as X
 import Restyler.Config.Glob
+import Restyler.Config.Ignore as X
 import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restyler as X
 import Restyler.Options
@@ -30,9 +31,7 @@ data Config' = Config'
   , exclude :: [Glob FilePath]
   , commitTemplate :: CommitTemplate
   , remoteFiles :: [RemoteFile]
-  , ignoreAuthors :: [Glob Text]
-  , ignoreLabels :: [Glob Text]
-  , ignoreBranches :: [Glob Text]
+  , ignores :: Ignores
   , restylersVersion :: String
   , restylerOverrides :: [RestylerOverride]
   , options :: Options
@@ -47,7 +46,8 @@ instance HasCommitTemplate Config' where
 instance HasRemoteFiles Config' where
   getRemoteFiles = (.remoteFiles)
 
--- HasIgnores...
+instance HasIgnores Config' where
+  getIgnores = (.ignores)
 
 instance HasRestylersVersion Config' where
   getRestylersVersion = (.restylersVersion)
@@ -75,9 +75,7 @@ configParser defaults =
     <*> excludeParser
     <*> commitTemplateParser
     <*> remoteFilesParser
-    <*> pure [] -- TODO
-    <*> pure [] -- TODO
-    <*> pure [] -- TODO
+    <*> ignoresParser
     <*> setting
       [ help "Version of Restylers manifest to use"
       , option
@@ -122,6 +120,9 @@ instance HasConfig a => HasCommitTemplate (ThroughConfig a) where
 
 instance HasConfig a => HasRemoteFiles (ThroughConfig a) where
   getRemoteFiles = getRemoteFiles . getConfig
+
+instance HasConfig a => HasIgnores (ThroughConfig a) where
+  getIgnores = getIgnores . getConfig
 
 instance HasConfig a => HasRestylersVersion (ThroughConfig a) where
   getRestylersVersion = getRestylersVersion . getConfig

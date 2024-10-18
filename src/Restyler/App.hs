@@ -59,6 +59,7 @@ data App = App
   }
   deriving
     ( HasCommitTemplate
+    , HasIgnores
     , HasExclude
     , HasRemoteFiles
     , HasRestylersVersion

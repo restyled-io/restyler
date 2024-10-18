@@ -42,6 +42,7 @@ run
      , HasDryRun env
      , HasExclude env
      , HasHostDirectory env
+     , HasIgnores env
      , HasImageCleanup env
      , HasManifest env
      , HasNoCommit env
@@ -62,11 +63,11 @@ run
   -> [FilePath]
   -> m RestyleResult
 run config' pr paths = do
-  config <- loadConfig
+  ignores <- asks getIgnores
 
   let mIgnoredReason =
         getIgnoredReason
-          config
+          ignores
           (getAuthor pr)
           (getBaseRef pr)
           (getLabelNames pr)
