@@ -9,16 +9,19 @@
 module Restyler.Config.Restyler
   ( HasRestylersVersion (..)
   , HasRestylerOverrides (..)
-  , RestylerOverride
+  , RestylerOverride (..) -- TODO
   , restylerOverridesParser
+  , RestylersInvalid (..)
   , getEnabledRestylers
   ) where
 
 import Restyler.Prelude
 
+import Autodocodec (HasCodec (..))
 import Data.HashMap.Strict qualified as HashMap
 import Data.Validation
 import OptEnvConf hiding (name)
+import Restyler.AnnotatedException (throw)
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
@@ -34,6 +37,13 @@ class HasRestylersVersion env where
 class HasRestylerOverrides env where
   getRestylerOverrides :: env -> [RestylerOverride]
 
+newtype RestylersInvalid = RestylersInvalid [Text]
+  deriving stock (Show)
+  deriving anyclass (Exception)
+
+-- |
+--
+-- May throw 'RestylersInvalid'
 getEnabledRestylers
   :: ( MonadIO m
      , MonadDirectory m
@@ -42,6 +52,7 @@ getEnabledRestylers
      , HasRestylersVersion env
      , HasRestylerOverrides env
      , HasManifest env
+     , HasCallStack
      )
   => m [Restyler]
 getEnabledRestylers = do
@@ -49,7 +60,7 @@ getEnabledRestylers = do
   restylers <- getAllRestylersVersioned version
   overrides <- asks getRestylerOverrides
   either
-    (error "TODO")
+    (throw . RestylersInvalid)
     (pure . filter rEnabled)
     $ overrideRestylers restylers overrides
 
@@ -63,7 +74,9 @@ data RestylerOverride = RestylerOverride
   , interpreters :: Maybe [Interpreter]
   , delimiters :: Maybe Delimiters
   }
-  deriving stock (Eq, Show, Generic)
+
+instance HasCodec RestylerOverride where
+  codec = error "TODO"
 
 -- instance FromJSON RestylerOverride where
 --   parseJSON = \case
@@ -78,22 +91,26 @@ data RestylerOverride = RestylerOverride
 --     v ->
 --       suffixIncorrectIndentation
 --         $ genericParseJSON (aesonPrefix snakeCase) v
-
-restylerOverridesParser :: Parser [RestylerOverride]
-restylerOverridesParser = pure [] -- TODO
-
+--
 -- namedOverride :: Key -> KeyMap Value -> Parser RestylerOverride
 -- namedOverride name =
 --   parseJSON
 --     . Object
 --     . insertIfMissing "name" (String $ Key.toText name)
 --     . KeyMap.delete name
-
+--
 -- suffixIncorrectIndentation :: Parser a -> Parser a
 -- suffixIncorrectIndentation = modifyFailure (<> msg)
 --  where
 --   msg :: String
 --   msg = "\n\nDo you have incorrect indentation for a named override?"
+
+restylerOverridesParser :: Parser [RestylerOverride]
+restylerOverridesParser =
+  setting
+    [ help "Restylers to run"
+    , conf "restylers"
+    ]
 
 overrideRestylers
   :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]
@@ -138,10 +155,9 @@ overrideRestyler restylers o
   | otherwise = Explicit . override <$> defaults
  where
   defaults =
-    let name = pack o.name
-    in  case HashMap.lookup name restylers of
-          Nothing -> Failure ["Unexpected Restyler name " <> show name]
-          Just v -> Success v
+    case HashMap.lookup (pack o.name) restylers of
+      Nothing -> Failure ["Unexpected Restyler name " <> pack o.name]
+      Just v -> Success v
 
   override restyler =
     restyler
