@@ -19,6 +19,7 @@ import Restyler.Prelude hiding ((.=))
 
 import Autodocodec
 import Data.Aeson (Value (..))
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Aeson.Types (parseEither)
 import Data.HashMap.Strict qualified as HashMap
@@ -86,9 +87,10 @@ codecNamed :: JSONCodec RestylerOverride
 codecNamed =
   bimapCodec
     ( \case
-        Object km -> do
-          obj <- note "No name key" $ KeyMap.lookup "name" km
-          parseEither (parseJSONVia codecObject) obj
+        Object km | [(name, Object os)] <- KeyMap.toList km -> do
+          parseEither (parseJSONVia codecObject)
+            $ Object
+            $ KeyMap.insert "name" (String $ Key.toText name) os
         _ -> Left "Not an Object"
     )
     (const "unused")
