@@ -34,7 +34,6 @@ library
       Restyler.Monad.Git
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
-      Restyler.Opt
       Restyler.Options
       Restyler.Options.DryRun
       Restyler.Options.FailOnDifferences
@@ -96,7 +95,6 @@ library
     , microlens
     , microlens-mtl
     , opt-env-conf
-    , optparse-applicative
     , path
     , relude
     , semigroups

@@ -36,10 +36,7 @@ import UnliftIO.Exception as X (finally)
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
 import Blammo.Logging.Logger (flushLogger)
-import Data.Aeson (Key)
-import Data.Aeson.KeyMap (KeyMap)
-import Data.Aeson.KeyMap qualified as KeyMap
-import Data.List (minimum, minimumBy, (!!))
+import Data.List (minimum)
 
 logTrace :: (MonadLogger m, HasCallStack) => Message -> m ()
 logTrace = logOther $ LevelOther "trace"
@@ -66,22 +63,6 @@ minimumMaybe = \case
   [] -> Nothing
   xs -> Just $ minimum xs
 
-minimumByMaybe :: (a -> a -> Ordering) -> [a] -> Maybe a
-minimumByMaybe f = \case
-  [] -> Nothing
-  xs -> Just $ minimumBy f xs
-
--- | Safe version of '(!!)'
-(!?) :: [a] -> Int -> Maybe a
-xs !? i
-  | length xs > i = Just $ xs !! i
-  | otherwise = Nothing
-
-infixl 9 !?
-
 -- | Inverse of @'any'@
 none :: Foldable t => (a -> Bool) -> t a -> Bool
 none p = not . any p
-
-insertIfMissing :: Key -> v -> KeyMap v -> KeyMap v
-insertIfMissing k v m = KeyMap.unionWith const m $ KeyMap.singleton k v
