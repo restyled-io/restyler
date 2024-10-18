@@ -55,28 +55,16 @@ newIgnoresParser =
 
 oldIgnoresParsers :: [Parser Ignores]
 oldIgnoresParsers =
-  [ Ignores
-      <$> setting
-        [ help ""
-        , conf "ignore_authors"
-        , hidden
-        ]
-      <*> pure []
-      <*> pure []
-  , Ignores
-      <$> setting
-        [ help ""
-        , conf "ignore_branches"
-        , hidden
-        ]
-      <*> pure []
-      <*> pure []
-  , Ignores
-      <$> setting
-        [ help ""
-        , conf "ignore_labels"
-        , hidden
-        ]
-      <*> pure []
-      <*> pure []
+  [ Ignores <$> hiddenIgnoreParser "ignore_authors" <*> pure [] <*> pure []
+  , Ignores [] <$> hiddenIgnoreParser "ignore_branches" <*> pure []
+  , Ignores [] [] <$> hiddenIgnoreParser "ignore_labels"
   ]
+
+hiddenIgnoreParser :: String -> Parser [Glob Text]
+hiddenIgnoreParser key =
+  setting
+    [ help ""
+    , conf key
+    , hidden
+    ]
+    <|> pure []
