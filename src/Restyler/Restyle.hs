@@ -38,6 +38,7 @@ run
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
+     , HasCommitTemplate env
      , HasDryRun env
      , HasExclude env
      , HasHostDirectory env

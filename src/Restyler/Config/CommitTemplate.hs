@@ -7,25 +7,39 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Config.CommitTemplate
-  ( CommitTemplate (..)
+  ( HasCommitTemplate (..)
+  , CommitTemplate (..)
+  , commitTemplateParser
   , CommitTemplateInputs (..)
   , renderCommitTemplate
   ) where
 
 import Restyler.Prelude
 
+import Autodocodec (HasCodec)
 import Data.Text qualified as T
+import OptEnvConf
 import Restyler.Restyler
 
-newtype CommitTemplateInputs = CommitTemplateInputs
-  { restyler :: Restyler
-  }
+class HasCommitTemplate env where
+  getCommitTemplate :: env -> CommitTemplate
 
 newtype CommitTemplate = CommitTemplate
   { unwrap :: Text
   }
   deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, ToJSON)
+  deriving newtype (HasCodec, FromJSON, ToJSON)
+
+commitTemplateParser :: Parser CommitTemplate
+commitTemplateParser =
+  setting
+    [ help "Template for restyling commit messages"
+    , conf "commit_template"
+    ]
+
+newtype CommitTemplateInputs = CommitTemplateInputs
+  { restyler :: Restyler
+  }
 
 renderCommitTemplate :: CommitTemplateInputs -> CommitTemplate -> String
 renderCommitTemplate cti =

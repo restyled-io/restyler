@@ -14,7 +14,6 @@ module Restyler.RestylerResult
 import Restyler.Prelude
 
 import Restyler.Config
-import Restyler.Config.CommitTemplate
 import Restyler.Monad.Git
 import Restyler.Options.NoCommit
 import Restyler.Restyler
@@ -33,13 +32,14 @@ data RestylerResult = RestylerResult
 getRestylerResult
   :: ( MonadGit m
      , MonadReader env m
+     , HasCommitTemplate env
      , HasNoCommit env
      )
-  => Config
-  -> [FilePath]
+  => [FilePath]
   -> Restyler
   -> m (Maybe RestylerResult)
-getRestylerResult config paths restyler = do
+getRestylerResult paths restyler = do
+  template <- asks getCommitTemplate
   noCommit <- asks getNoCommit
   mRestyled <- nonEmpty . filter (`elem` paths) <$> gitDiffNameOnly Nothing
 
@@ -47,7 +47,9 @@ getRestylerResult config paths restyler = do
     sha <-
       if noCommit
         then pure Nothing
-        else Just <$> gitCommit commitMessage restyled
+        else do
+          ref <- gitCommit (renderCommitTemplate inputs template) restyled
+          pure $ Just ref
 
     pure
       $ RestylerResult
@@ -57,4 +59,3 @@ getRestylerResult config paths restyler = do
         }
  where
   inputs = CommitTemplateInputs {restyler}
-  commitMessage = renderCommitTemplate inputs $ cCommitTemplate config

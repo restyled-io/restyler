@@ -87,7 +87,6 @@ import Restyler.Yaml.Errata (formatInvalidYaml)
 -- this beast.
 data ConfigF f = ConfigF
   { cfChangedPaths :: f ChangedPathsConfig
-  , cfCommitTemplate :: f CommitTemplate
   , cfRemoteFiles :: f (SketchyList RemoteFile)
   , cfIgnoreAuthors :: f (SketchyList (Glob Text))
   , cfIgnoreLabels :: f (SketchyList (Glob Text))
@@ -127,7 +126,6 @@ resolveConfig = bzipWith f
 -- This is what we work with throughout the system.
 data Config = Config
   { cChangedPaths :: ChangedPathsConfig
-  , cCommitTemplate :: CommitTemplate
   , cRemoteFiles :: [RemoteFile]
   , cIgnoreAuthors :: [Glob Text]
   , cIgnoreBranches :: [Glob Text]
@@ -287,7 +285,6 @@ resolveRestylers ConfigF {..} allRestylers = do
   pure
     Config
       { cChangedPaths = runIdentity cfChangedPaths
-      , cCommitTemplate = runIdentity cfCommitTemplate
       , cRemoteFiles = unSketchy $ runIdentity cfRemoteFiles
       , cIgnoreAuthors = unSketchy $ runIdentity cfIgnoreAuthors
       , cIgnoreBranches = unSketchy $ runIdentity cfIgnoreBranches

@@ -87,6 +87,9 @@ instance HasLogger TestApp where
 instance HasOptions TestApp where
   getOptions = taOptions
 
+instance HasCommitTemplate TestApp where
+  getCommitTemplate _ = CommitTemplate ""
+
 instance HasFS TestApp where
   fsL = lens taFS $ \x y -> x {taFS = y}
 

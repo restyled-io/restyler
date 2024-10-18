@@ -106,6 +106,7 @@ runRestylers
      , MonadDocker m
      , MonadDownloadFile m
      , MonadReader env m
+     , HasCommitTemplate env
      , HasDryRun env
      , HasExclude env
      , HasHostDirectory env
@@ -118,7 +119,7 @@ runRestylers
   => Config
   -> [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
-runRestylers config@Config {..} argPaths = do
+runRestylers Config {..} argPaths = do
   allPaths <- removeExcluded $ map FilePath.normalise argPaths
   expPaths <- findFiles allPaths
   paths <- removeExcluded expPaths
@@ -133,7 +134,7 @@ runRestylers config@Config {..} argPaths = do
 
   for_ cRemoteFiles $ \rf -> downloadFile rf.url rf.path
 
-  mResults <- withFilteredPaths restylers paths $ runRestyler config
+  mResults <- withFilteredPaths restylers paths runRestyler
   mResetTo <- join <$> traverse checkForNoop mResults
 
   case mResetTo of
@@ -235,6 +236,7 @@ runRestyler
      , MonadGit m
      , MonadDocker m
      , MonadReader env m
+     , HasCommitTemplate env
      , HasDryRun env
      , HasHostDirectory env
      , HasImageCleanup env
@@ -243,11 +245,10 @@ runRestyler
      , HasRestrictions env
      , HasCallStack
      )
-  => Config
-  -> Restyler
+  => Restyler
   -> [FilePath]
   -> m (Maybe RestylerResult)
-runRestyler config r = \case
+runRestyler r = \case
   [] -> pure Nothing
   paths -> do
     runRestyler_ r paths
@@ -255,7 +256,7 @@ runRestyler config r = \case
     isGit <- isGitRepository
 
     if isGit
-      then getRestylerResult config paths r
+      then getRestylerResult paths r
       else do
         Nothing <$ logWarn "Unable to determine Restyler result (not a git repository)"
 

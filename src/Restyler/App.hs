@@ -58,7 +58,8 @@ data App = App
   , logger :: Logger
   }
   deriving
-    ( HasExclude
+    ( HasCommitTemplate
+    , HasExclude
     )
     via (ThroughConfig App)
   deriving

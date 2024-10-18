@@ -15,23 +15,8 @@ changed_paths:
 
 remote_files: []
 
-auto: false
-
 commit_template: |
   Restyled by ${restyler.name}
-
-pull_requests: true
-
-comments: false
-
-statuses:
-  skipped: true
-  differences: true
-  no_differences: true
-
-request_review: none
-
-labels: []
 
 ignore_authors:
   - "*[bot]"
@@ -48,12 +33,6 @@ restylers:
   - "*"
 
 cli:
-  # TODO
-  logging:
-    debug: false
-    trace: false
-    color: auto
-
   dry_run: false
 
   fail_on_differences: false

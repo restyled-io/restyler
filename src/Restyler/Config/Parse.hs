@@ -16,6 +16,7 @@ import Data.ByteString qualified as BS
 import Data.FileEmbed (embedFile)
 import OptEnvConf
 import Paths_restyler qualified as Pkg
+import Restyler.Config.CommitTemplate as X
 import Restyler.Config.Exclude as X
 import Restyler.Config.Glob
 import Restyler.Options
@@ -25,11 +26,15 @@ import UnliftIO.Temporary (withSystemTempFile)
 data Config' = Config'
   { enabled :: Bool
   , exclude :: [Glob FilePath]
+  , commitTemplate :: CommitTemplate
   , options :: Options
   }
 
 instance HasExclude Config' where
   getExclude = (.exclude)
+
+instance HasCommitTemplate Config' where
+  getCommitTemplate = (.commitTemplate)
 
 parseConfig :: IO Config'
 parseConfig = do
@@ -49,6 +54,7 @@ configParser defaults =
       , conf "enabled"
       ]
     <*> excludeParser
+    <*> commitTemplateParser
     <*> subConfig_ "cli" optionsParser
 
 configSources :: FilePath -> Parser [Path Abs File]
@@ -77,3 +83,6 @@ newtype ThroughConfig a = ThroughConfig
 
 instance HasConfig a => HasExclude (ThroughConfig a) where
   getExclude = getExclude . getConfig
+
+instance HasConfig a => HasCommitTemplate (ThroughConfig a) where
+  getCommitTemplate = getCommitTemplate . getConfig
