@@ -100,5 +100,7 @@ tests:
       - hspec-expectations-lifted
       - lens-aeson
       - load-env
+      - opt-env-conf
       - restyler
       - text
+      - unliftio

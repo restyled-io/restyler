@@ -146,6 +146,7 @@ test-suite test
       Restyler.Config.CommitTemplateSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
+      Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
       Restyler.RestrictionsSpec
@@ -187,6 +188,8 @@ test-suite test
     , hspec-expectations-lifted
     , lens-aeson
     , load-env
+    , opt-env-conf
     , restyler
     , text
+    , unliftio
   default-language: GHC2021

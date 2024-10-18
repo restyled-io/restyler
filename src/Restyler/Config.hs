@@ -10,6 +10,7 @@
 -- Portability : POSIX
 module Restyler.Config
   ( Config (..)
+  , configParser
   , parseConfig
 
     -- * Individual configuration points
@@ -74,16 +75,23 @@ instance HasRestylerOverrides Config where
 
 parseConfig :: IO Config
 parseConfig = do
-  withSystemTempFile "restyler-default-config.yaml" $ \tmp h -> do
+  withSystemTempFile "restyler-default-config.yaml" $ \defaults h -> do
     BS.hPutStr h defaultConfigContent >> hClose h
-    runParser Pkg.version "Restyle local file" $ configParser tmp
+    runParser Pkg.version "Restyle local file"
+      $ configParser
+        [ ".github/restyled.yml"
+        , ".github/restyled.yaml"
+        , ".restyled.yml"
+        , ".restyled.yaml"
+        , defaults
+        ]
 
 defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")
 
-configParser :: FilePath -> Parser Config
-configParser defaults =
-  withCombinedYamlConfigs (configSources defaults)
+configParser :: [FilePath] -> Parser Config
+configParser paths =
+  withCombinedYamlConfigs (traverse hiddenPath paths)
     $ Config
     <$> setting
       [ help "Do anything at all"
@@ -104,16 +112,6 @@ configParser defaults =
       ]
     <*> restylerOverridesParser
     <*> subConfig_ "cli" optionsParser
-
-configSources :: FilePath -> Parser [Path Abs File]
-configSources defaults =
-  sequenceA
-    [ hiddenPath ".github/restyled.yml"
-    , hiddenPath ".github/restyled.yaml"
-    , hiddenPath ".restyled.yml"
-    , hiddenPath ".restyled.yaml"
-    , hiddenPath defaults
-    ]
 
 hiddenPath :: FilePath -> Parser (Path Abs File)
 hiddenPath x = filePathSetting [value x, hidden]
