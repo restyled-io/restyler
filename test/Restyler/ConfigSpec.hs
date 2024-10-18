@@ -12,7 +12,7 @@ import OptEnvConf.EnvMap qualified as EnvMap
 import OptEnvConf.Error (renderErrors)
 import OptEnvConf.Run (runParserOn)
 import Restyler.Config
-import Restyler.Options.Restrictions.Bytes
+import Restyler.Config.Restrictions.Bytes
 import System.IO (hClose)
 import Test.Hspec
 import Text.Colour.Capabilities (TerminalCapabilities (..))

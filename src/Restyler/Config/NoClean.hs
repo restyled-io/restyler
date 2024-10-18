@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.NoClean
+-- Module      : Restyler.Config.NoClean
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.NoClean
+module Restyler.Config.NoClean
   ( HasNoClean (..)
   , noCleanParser
   ) where

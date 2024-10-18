@@ -14,7 +14,7 @@ import Restyler.Prelude
 
 import Restyler.AnnotatedException
 import Restyler.App (AppT, runAppT)
-import Restyler.Options.FailOnDifferences
+import Restyler.Config.FailOnDifferences
 import Restyler.RestyleResult
 
 main

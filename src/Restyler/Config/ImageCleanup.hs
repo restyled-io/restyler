@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.ImageCleanup
+-- Module      : Restyler.Config.ImageCleanup
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.ImageCleanup
+module Restyler.Config.ImageCleanup
   ( HasImageCleanup (..)
   , imageCleanupParser
   ) where

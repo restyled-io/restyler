@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.DryRun
+-- Module      : Restyler.Config.DryRun
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.DryRun
+module Restyler.Config.DryRun
   ( HasDryRun (..)
   , dryRunParser
   ) where

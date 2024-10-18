@@ -2,13 +2,13 @@
 
 -- |
 --
--- Module      : Restyler.Options.LogSettings
+-- Module      : Restyler.Config.LogSettings
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.LogSettings
+module Restyler.Config.LogSettings
   ( LogSettings
   , logSettingsOptionParser
   )

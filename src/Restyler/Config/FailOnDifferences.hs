@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.FailOnDifferences
+-- Module      : Restyler.Config.FailOnDifferences
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.FailOnDifferences
+module Restyler.Config.FailOnDifferences
   ( HasFailOnDifferences (..)
   , failOnDifferencesParser
   ) where

@@ -31,10 +31,10 @@ import Restyler.AnnotatedException (throw)
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.Manifest
 import Restyler.Delimited
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
-import Restyler.Options.Manifest
 import Restyler.Restyler
 
 class HasRestylersVersion env where

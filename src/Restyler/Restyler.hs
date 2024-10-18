@@ -26,11 +26,11 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
+import Restyler.Config.Manifest
 import Restyler.Config.RemoteFile
 import Restyler.Delimited
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
-import Restyler.Options.Manifest
 
 data Restyler = Restyler
   { rEnabled :: Bool

@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.Restrictions
+-- Module      : Restyler.Config.Restrictions
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.Restrictions
+module Restyler.Config.Restrictions
   ( HasRestrictions (..)
   , Restrictions (..)
   , restrictionsParser
@@ -16,7 +16,7 @@ module Restyler.Options.Restrictions
 import Restyler.Prelude
 
 import OptEnvConf
-import Restyler.Options.Restrictions.Bytes
+import Restyler.Config.Restrictions.Bytes
 
 class HasRestrictions a where
   getRestrictions :: a -> Restrictions

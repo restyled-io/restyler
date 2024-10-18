@@ -29,21 +29,21 @@ import Data.FileEmbed (embedFile)
 import OptEnvConf
 import Paths_restyler qualified as Pkg
 import Restyler.Config.CommitTemplate as X
+import Restyler.Config.DryRun as X
 import Restyler.Config.Exclude as X
+import Restyler.Config.FailOnDifferences as X
 import Restyler.Config.Glob
+import Restyler.Config.HostDirectory as X
 import Restyler.Config.Ignore as X
+import Restyler.Config.ImageCleanup as X
+import Restyler.Config.LogSettings as X
+import Restyler.Config.Manifest as X
+import Restyler.Config.NoClean as X
+import Restyler.Config.NoCommit as X
+import Restyler.Config.NoPull as X
 import Restyler.Config.RemoteFile as X
+import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
-import Restyler.Options.DryRun as X
-import Restyler.Options.FailOnDifferences as X
-import Restyler.Options.HostDirectory as X
-import Restyler.Options.ImageCleanup as X
-import Restyler.Options.LogSettings as X
-import Restyler.Options.Manifest as X
-import Restyler.Options.NoClean as X
-import Restyler.Options.NoCommit as X
-import Restyler.Options.NoPull as X
-import Restyler.Options.Restrictions as X
 import System.IO (hClose)
 import UnliftIO.Temporary (withSystemTempFile)
 

@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.HostDirectory
+-- Module      : Restyler.Config.HostDirectory
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.HostDirectory
+module Restyler.Config.HostDirectory
   ( HasHostDirectory (..)
   , hostDirectoryParser
   ) where

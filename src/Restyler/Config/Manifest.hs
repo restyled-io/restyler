@@ -1,12 +1,12 @@
 -- |
 --
--- Module      : Restyler.Options.Manifest
+-- Module      : Restyler.Config.Manifest
 -- Copyright   : (c) 2024 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-module Restyler.Options.Manifest
+module Restyler.Config.Manifest
   ( HasManifest (..)
   , manifestParser
   ) where
