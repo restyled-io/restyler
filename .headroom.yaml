@@ -29,7 +29,7 @@ source-paths:
 ## If set to 'true', Headroom tries to detect whether any VCS (like GIT) is used
 ## for current project and if yes, it loads rules for ignored files and excludes
 ## all source paths that matches these rules.
-exclude-ignored-paths: false
+exclude-ignored-paths: true
 
 ## Paths to template files (either files or directories),
 ## same as '-t|--template-path=PATH' command line argument (can be used multiple
