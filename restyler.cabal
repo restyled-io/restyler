@@ -143,6 +143,7 @@ test-suite test
       Restyler.Config.CommitTemplateSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
+      Restyler.Config.RestylerSpec
       Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
