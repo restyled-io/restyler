@@ -12,12 +12,18 @@ packages:
   original:
     hackage: Blammo-2.1.1.0
 - completed:
-    hackage: opt-env-conf-0.5.1.1@sha256:0e55ef804016be6ad3a9495bca19f106a63e18d07e595349b254f9cc4c27d898,1677
+    name: opt-env-conf
     pantry-tree:
-      sha256: 75e0ef177931565c03070b3e56640a72fbc7f510a153ad84a0786e6ba5426830
-      size: 1196
+      sha256: 5c40060d40cfc64d0b9e55e808837e0a08ea9c11b6fd51c7c03267b46ea634b5
+      size: 1299
+    sha256: 9700530a02c6ceb2ec03c8c7259ca63129fdda1c8bef8007e19717e66d647a4e
+    size: 96882
+    subdir: opt-env-conf
+    url: https://github.com/pbrisbin/opt-env-conf/archive/bb0cfa79ef3e4362fe4515b335cc635625897d1f.tar.gz
+    version: 0.6.0.1
   original:
-    hackage: opt-env-conf-0.5.1.1
+    subdir: opt-env-conf
+    url: https://github.com/pbrisbin/opt-env-conf/archive/bb0cfa79ef3e4362fe4515b335cc635625897d1f.tar.gz
 - completed:
     hackage: autodocodec-0.4.2.2@sha256:93b72477d84181a62c81b54bcffec31afbe15af987214e66bc408c37b9555b4f,1595
     pantry-tree:

@@ -1,7 +1,10 @@
 resolver: lts-22.38
 extra-deps:
   - Blammo-2.1.1.0
-  - opt-env-conf-0.5.1.1
+  # - opt-env-conf-0.5.1.1
+  - github: pbrisbin/opt-env-conf
+    commit: bb0cfa79ef3e4362fe4515b335cc635625897d1f
+    subdir: opt-env-conf
 
   # For opt-env-conf
   - autodocodec-0.4.2.2
