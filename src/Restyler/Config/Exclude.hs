@@ -1,3 +1,11 @@
+-- |
+--
+-- Module      : Restyler.Config.Exclude
+-- Copyright   : (c) 2024 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Config.Exclude
   ( HasExclude (..)
   , excludeParser
