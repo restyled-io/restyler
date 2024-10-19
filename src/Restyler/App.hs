@@ -1,5 +1,3 @@
-{-# LANGUAGE DerivingVia #-}
-
 -- |
 --
 -- Module      : Restyler.App
