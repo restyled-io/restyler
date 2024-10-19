@@ -15,6 +15,9 @@ module Restyler.Config.Restyler
   , restylerOverridesParser
   , RestylersInvalid (..)
   , getEnabledRestylers
+
+    -- * To test
+  , overrideRestylers
   ) where
 
 import Restyler.Prelude hiding ((.=))
@@ -155,8 +158,8 @@ getEnabledRestylers
   => m [Restyler]
 getEnabledRestylers = do
   version <- asks getRestylersVersion
-  restylers <- getAllRestylersVersioned version
   overrides <- asks getRestylerOverrides
+  restylers <- getAllRestylersVersioned version
   either
     (throw . RestylersInvalid)
     (pure . filter rEnabled)
