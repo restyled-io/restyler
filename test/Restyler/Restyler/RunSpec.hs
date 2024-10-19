@@ -20,6 +20,7 @@ import Restyler.Restyler.Run
 import Restyler.Test.App
 import Restyler.Test.FS (FS, HasFS (..))
 import Restyler.Test.FS qualified as FS
+import Restyler.Test.Fixtures (someRestyler)
 
 data TestApp = TestApp
   { logger :: Logger
@@ -101,18 +102,3 @@ spec = withTestApp $ do
 
       findFiles [".bar/baz", "bat", "xxx", "zzz"]
         `shouldReturn` [".bar/baz/bat", ".bar/baz/quix", "bat/baz", "xxx"]
-
-someRestyler :: String -> Restyler
-someRestyler name =
-  Restyler
-    { rEnabled = True
-    , rName = name
-    , rImage = "restyled/restyler-" <> name <> ":v1.0.0"
-    , rCommand = ["restyle"]
-    , rDocumentation = []
-    , rArguments = []
-    , rInclude = ["**/*"]
-    , rInterpreters = []
-    , rDelimiters = Nothing
-    , rRunStyle = RestylerRunStylePathsOverwriteSep
-    }

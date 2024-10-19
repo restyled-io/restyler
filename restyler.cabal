@@ -151,6 +151,7 @@ test-suite test
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
       Restyler.Test.App
+      Restyler.Test.Fixtures
       Restyler.Test.FS
       Paths_restyler
   hs-source-dirs:

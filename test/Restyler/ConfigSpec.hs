@@ -21,6 +21,7 @@ import OptEnvConf.Error (renderErrors)
 import OptEnvConf.Run (runParserOn)
 import Restyler.Config
 import Restyler.Config.Restrictions.Bytes
+import Restyler.Test.Fixtures
 import System.IO (hClose)
 import Test.Hspec
 import Text.Colour.Capabilities (TerminalCapabilities (..))
@@ -246,12 +247,3 @@ loadTestConfig yaml env args = do
       (parseArgs args)
       (EnvMap.parse env)
       Nothing
-
-wildcard :: RestylerOverride
-wildcard = enabled "*"
-
-enabled :: Text -> RestylerOverride
-enabled name = (restylerOverride name) {enabled = Just True}
-
-disabled :: Text -> RestylerOverride
-disabled name = (restylerOverride name) {enabled = Just False}

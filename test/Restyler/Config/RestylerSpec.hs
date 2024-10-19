@@ -7,6 +7,7 @@ import Restyler.Prelude
 import Data.Text qualified as T
 import Restyler.Config.Restyler
 import Restyler.Restyler
+import Restyler.Test.Fixtures
 import Test.Hspec
 
 spec :: Spec
@@ -16,10 +17,10 @@ spec = do
       let result =
             overrideRestylers
               []
-              [ (restylerOverride "fourmolu") {enabled = Just True}
-              , (restylerOverride "*") {enabled = Just True}
-              , (restylerOverride "stylish-haskell") {enabled = Just False}
-              , (restylerOverride "*") {enabled = Just True}
+              [ enabled "fourmolu"
+              , wildcard
+              , disabled "stylish-haskell"
+              , wildcard
               ]
 
       result `shouldHaveFailure` "at most 1 wildcard"
@@ -33,9 +34,9 @@ spec = do
               , someRestyler "hlint"
               , someRestyler "stylish-haskell"
               ]
-              [ (restylerOverride "fourmolu") {enabled = Just True}
-              , (restylerOverride "stylish-haskell") {enabled = Just False}
-              , (restylerOverride "boppity-boopy") {enabled = Just True}
+              [ enabled "fourmolu"
+              , disabled "stylish-haskell"
+              , enabled "boppity-boopy"
               ]
 
       result `shouldHaveFailure` "Unexpected"
@@ -52,22 +53,22 @@ spec = do
         resultNone =
           overrideRestylers
             restylers
-            [ (restylerOverride "fourmolu") {enabled = Just True}
-            , (restylerOverride "stylish-haskell") {enabled = Just False}
+            [ enabled "fourmolu"
+            , disabled "stylish-haskell"
             ]
         resultFirst =
           overrideRestylers
             restylers
-            [ (restylerOverride "*") {enabled = Just True}
-            , (restylerOverride "fourmolu") {enabled = Just True}
-            , (restylerOverride "stylish-haskell") {enabled = Just False}
+            [ wildcard
+            , enabled "fourmolu"
+            , disabled "stylish-haskell"
             ]
         resultLast =
           overrideRestylers
             restylers
-            [ (restylerOverride "fourmolu") {enabled = Just True}
-            , (restylerOverride "stylish-haskell") {enabled = Just False}
-            , (restylerOverride "*") {enabled = Just True}
+            [ enabled "fourmolu"
+            , disabled "stylish-haskell"
+            , wildcard
             ]
 
       resultNone
@@ -106,18 +107,3 @@ shouldHaveFailure result needle = go result
         <> show result
 
 infix 1 `shouldHaveFailure`
-
-someRestyler :: String -> Restyler
-someRestyler name =
-  Restyler
-    { rEnabled = True
-    , rName = name
-    , rImage = "restyled/restyler-" <> name <> ":v1.0.0"
-    , rCommand = ["restyle"]
-    , rDocumentation = []
-    , rArguments = []
-    , rInclude = ["**/*"]
-    , rInterpreters = []
-    , rDelimiters = Nothing
-    , rRunStyle = RestylerRunStylePathsOverwriteSep
-    }
