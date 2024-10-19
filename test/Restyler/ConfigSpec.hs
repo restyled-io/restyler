@@ -134,6 +134,50 @@ spec = do
     config.pullRequestJson `shouldBe` Nothing
     config.paths `shouldBe` pure "Bar.hs"
 
+  context "restyler overrides" $ do
+    it "supports names" $ do
+      config <-
+        loadTestConfig
+          [ "restylers:"
+          , "  - fourmolu"
+          , "  - \"!stylish-haskell\""
+          ]
+          []
+          ["x.hs"]
+
+      config.restylerOverrides
+        `shouldBe` [enabled "fourmolu", disabled "stylish-haskell"]
+
+    it "supports name-keys" $ do
+      config <-
+        loadTestConfig
+          [ "restylers:"
+          , "  - fourmolu:"
+          , "      enabled: true"
+          , "  - stylish-haskell:"
+          , "      enabled: false"
+          ]
+          []
+          ["x.hs"]
+
+      config.restylerOverrides
+        `shouldBe` [enabled "fourmolu", disabled "stylish-haskell"]
+
+    it "supports objects with names" $ do
+      config <-
+        loadTestConfig
+          [ "restylers:"
+          , "  - name: fourmolu"
+          , "    enabled: true"
+          , "  - name: stylish-haskell"
+          , "    enabled: false"
+          ]
+          []
+          ["x.hs"]
+
+      config.restylerOverrides
+        `shouldBe` [enabled "fourmolu", disabled "stylish-haskell"]
+
   context "legacy ignore options" $ do
     it "fully specified" $ do
       config <-
@@ -208,3 +252,6 @@ wildcard = enabled "*"
 
 enabled :: Text -> RestylerOverride
 enabled name = (restylerOverride name) {enabled = Just True}
+
+disabled :: Text -> RestylerOverride
+disabled name = (restylerOverride name) {enabled = Just False}
