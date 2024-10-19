@@ -58,4 +58,4 @@ getRestylerResult paths restyler = do
         , sha
         }
  where
-  inputs = CommitTemplateInputs {restyler}
+  inputs = CommitTemplateInputs {restyler = pack restyler.rName}

@@ -19,7 +19,6 @@ import Restyler.Prelude
 import Autodocodec (HasCodec)
 import Data.Text qualified as T
 import OptEnvConf
-import Restyler.Restyler
 
 class HasCommitTemplate env where
   getCommitTemplate :: env -> CommitTemplate
@@ -38,13 +37,13 @@ commitTemplateParser =
     ]
 
 newtype CommitTemplateInputs = CommitTemplateInputs
-  { restyler :: Restyler
+  { restyler :: Text
   }
 
 renderCommitTemplate :: CommitTemplateInputs -> CommitTemplate -> String
 renderCommitTemplate cti =
   unpack
-    . replaceAll [("${restyler.name}", pack $ rName cti.restyler)]
+    . replaceAll [("${restyler.name}", cti.restyler)]
     . (.unwrap)
 
 -- | Let's make this as unreadable as possible, shall we?

@@ -149,6 +149,7 @@ test-suite test
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
+      Restyler.Test.App
       Restyler.Test.FS
       SpecHelper
       Paths_restyler

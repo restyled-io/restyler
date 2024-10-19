@@ -10,16 +10,17 @@ module Restyler.IgnoreSpec
   ( spec
   ) where
 
-import SpecHelper
+import Restyler.Prelude
 
 import Restyler.Config
 import Restyler.Config.Glob
 import Restyler.Ignore
+import Test.Hspec
 
 spec :: Spec
 spec = do
   describe "getIgnoredReason" $ do
-    it "works in empty state" $ example $ do
+    it "works in empty state" $ do
       let ignores =
             Ignores
               { byAuthor = []
@@ -30,7 +31,7 @@ spec = do
       getIgnoredReason ignores "author" "branch" ["label-a", "label-b"]
         `shouldBe` Nothing
 
-    it "matches authors, then branches, then labels" $ example $ do
+    it "matches authors, then branches, then labels" $ do
       let ignores =
             Ignores
               { byAuthor = [Glob "*[bot]"]
