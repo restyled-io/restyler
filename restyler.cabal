@@ -151,7 +151,6 @@ test-suite test
       Restyler.RestylerSpec
       Restyler.Test.App
       Restyler.Test.FS
-      SpecHelper
       Paths_restyler
   hs-source-dirs:
       test
@@ -174,7 +173,6 @@ test-suite test
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Blammo
-    , QuickCheck
     , aeson
     , base
     , containers
@@ -185,7 +183,6 @@ test-suite test
     , hspec-core
     , hspec-expectations-lifted
     , lens-aeson
-    , load-env
     , opt-env-conf
     , restyler
     , safe-coloured-text

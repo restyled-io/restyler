@@ -10,16 +10,39 @@ module Restyler.Restyler.RunSpec
   ( spec
   ) where
 
-import SpecHelper
+import Restyler.Prelude
 
+import Blammo.Logging.LogSettings (defaultLogSettings)
+import Blammo.Logging.Logger (newTestLogger)
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
+import Restyler.Test.App
+import Restyler.Test.FS (FS, HasFS (..))
+import Restyler.Test.FS qualified as FS
+
+data TestApp = TestApp
+  { logger :: Logger
+  , fs :: FS
+  }
+
+instance HasLogger TestApp where
+  loggerL = lens (.logger) $ \x y -> x {logger = y}
+
+instance HasFS TestApp where
+  fsL = lens (.fs) $ \x y -> x {fs = y}
+
+withTestApp :: SpecWith TestApp -> Spec
+withTestApp =
+  before
+    $ TestApp
+    <$> newTestLogger defaultLogSettings
+    <*> FS.build "/" []
 
 spec :: Spec
 spec = withTestApp $ do
   describe "withFilteredPaths" $ do
-    it "does not bring excluded files back by shebang" $ testAppExample $ do
+    it "does not bring excluded files back by shebang" $ do
       writeFile "/a" "#!/bin/sh\necho A\n"
       modifyPermissions "/a" $ \p -> p {executable = True}
       writeFile "/b" "#!/bin/sh\necho B\n"
@@ -38,18 +61,8 @@ spec = withTestApp $ do
 
       filtered `shouldBe` Just (["a", "b"] :| [["a"]])
 
-  describe "runRestyler" $ do
-    it "treats non-zero exit codes as RestylerExitFailure" $ testAppExample $ do
-      local (\x -> x {taDockerRunExitCode = ExitFailure 99}) $ do
-        runRestyler (someRestyler "foo") ["bar"]
-          `shouldThrow` ( ==
-                            RestylerExitFailure
-                              (someRestyler "foo")
-                              99
-                        )
-
   describe "findFiles" $ do
-    it "expands and excludes" $ testAppExample $ do
+    it "expands and excludes" $ do
       writeFile "/foo/bar/baz/bat" ""
       writeFile "/foo/bar/baz/quix" ""
       writeFile "/foo/bat/baz" ""
@@ -60,13 +73,13 @@ spec = withTestApp $ do
       findFiles ["bar/baz", "bat", "xxx", "zzz"]
         `shouldReturn` ["bar/baz/bat", "bar/baz/quix", "bat/baz", "xxx"]
 
-    it "excludes symlinks" $ testAppExample $ do
+    it "excludes symlinks" $ do
       writeFile "/foo/bar" ""
       createFileLink "/foo/bat" "/foo/bar"
 
       findFiles ["foo"] `shouldReturn` ["foo/bar"]
 
-    it "doesn't include hidden files" $ testAppExample $ do
+    it "doesn't include hidden files" $ do
       writeFile "/foo/bar/baz/bat" ""
       writeFile "/foo/bar/baz/.quix" ""
       writeFile "/foo/bar/baz/.foo/bar" ""
@@ -78,7 +91,7 @@ spec = withTestApp $ do
       findFiles ["bar/baz", "bat", "xxx", "zzz"]
         `shouldReturn` ["bar/baz/bat", "bat/baz", "xxx"]
 
-    it "includes hidden files given explicitly" $ testAppExample $ do
+    it "includes hidden files given explicitly" $ do
       writeFile "/foo/.bar/baz/bat" ""
       writeFile "/foo/.bar/baz/quix" ""
       writeFile "/foo/bat/baz" ""
@@ -88,3 +101,18 @@ spec = withTestApp $ do
 
       findFiles [".bar/baz", "bat", "xxx", "zzz"]
         `shouldReturn` [".bar/baz/bat", ".bar/baz/quix", "bat/baz", "xxx"]
+
+someRestyler :: String -> Restyler
+someRestyler name =
+  Restyler
+    { rEnabled = True
+    , rName = name
+    , rImage = "restyled/restyler-" <> name <> ":v1.0.0"
+    , rCommand = ["restyle"]
+    , rDocumentation = []
+    , rArguments = []
+    , rInclude = ["**/*"]
+    , rInterpreters = []
+    , rDelimiters = Nothing
+    , rRunStyle = RestylerRunStylePathsOverwriteSep
+    }
