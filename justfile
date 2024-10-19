@@ -32,7 +32,7 @@ watch:
   stack build --fast --pedantic --test --file-watch
 
 headroom:
-  stack exec -- headroom run -r
+  stack exec -- headroom run --add-headers
   stack exec -- fourmolu -i app src test
 
 # aws := "aws --profile restyled-ci"
