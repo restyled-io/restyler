@@ -8,6 +8,7 @@
 -- Portability : POSIX
 module Restyler.Config.Restyler
   ( HasRestylersVersion (..)
+  , restylersVersionParser
   , HasRestylerOverrides (..)
   , RestylerOverride (..)
   , restylerOverride
@@ -39,6 +40,18 @@ import Restyler.Restyler
 
 class HasRestylersVersion env where
   getRestylersVersion :: env -> String
+
+restylersVersionParser :: Parser String
+restylersVersionParser =
+  setting
+    [ help "Version of Restylers manifest to use"
+    , option
+    , long "restylers-version"
+    , reader str
+    , metavar "stable|dev|..."
+    , env "RESTYLERS_VERSION"
+    , conf "restylers_version"
+    ]
 
 class HasRestylerOverrides env where
   getRestylerOverrides :: env -> [RestylerOverride]

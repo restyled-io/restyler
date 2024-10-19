@@ -17,6 +17,7 @@ library
       Restyler.Config
       Restyler.Config.CommitTemplate
       Restyler.Config.DryRun
+      Restyler.Config.Enabled
       Restyler.Config.Exclude
       Restyler.Config.FailOnDifferences
       Restyler.Config.Glob
