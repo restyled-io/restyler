@@ -230,48 +230,48 @@ restyle [--config-file FILE_PATH] [--debug] [--trace] [--color WHEN] [--[no-]dry
   argument: PATH
 
 .Sh OPTIONS
-  -h|--help                  Show this help text                          
-  --version                  Output version information: 0.5.2.1          
-  --config-file              Path to the configuration file               
-  --debug                    Enable debug logging                         
-  --trace                    Enable trace logging                         
-  --color                    Enabled color WHEN                           
-  --[no-]dry-run             Skip pulling and running Restylers           
-  --[no-]fail-on-differences Exit non-zero if differences were found      
-  --exclude                  Globs to exclude                             
-  --also-exclude             Globs to exclude in addition to defaults     
-  --ignore-authors           Ignore authors that match globs              
-  --ignore-branches          Ignore branches that match globs             
-  --ignore-labels            Ignore labels that match globs               
-  --restylers-version        Version of Restylers manifest to use         
-  --manifest                 Restylers manifest to use                    
-  --host-directory           Working directory on host, if dockerized     
+  -h|--help                  Show this help text
+  --version                  Output version information: 0.5.2.1
+  --config-file              Path to the configuration file
+  --debug                    Enable debug logging
+  --trace                    Enable trace logging
+  --color                    Enabled color WHEN
+  --[no-]dry-run             Skip pulling and running Restylers
+  --[no-]fail-on-differences Exit non-zero if differences were found
+  --exclude                  Globs to exclude
+  --also-exclude             Globs to exclude in addition to defaults
+  --ignore-authors           Ignore authors that match globs
+  --ignore-branches          Ignore branches that match globs
+  --ignore-labels            Ignore labels that match globs
+  --restylers-version        Version of Restylers manifest to use
+  --manifest                 Restylers manifest to use
+  --host-directory           Working directory on host, if dockerized
   --[no-]image-cleanup       Remove pulled restyler images after restyling
-  --[no-]pull                docker-pull images before docker-run         
-  --restyler-[no-]net-none   Run restylers with --net=none                
-  --restyler-cpu-shares      Run restylers with --cpu-shares              
-  --restyler-memory          Run restylers with --memory                  
-  --restyler-[no-]restricted Restrict restylers resources                 
-  --[no-]commit              Make commits for restyle changes             
-  --[no-]clean               Run git-clean after restyling                
-  PATH                       Path to restyle                              
-  PATH                       Path to restyle                              
+  --[no-]pull                docker-pull images before docker-run
+  --restyler-[no-]net-none   Run restylers with --net=none
+  --restyler-cpu-shares      Run restylers with --cpu-shares
+  --restyler-memory          Run restylers with --memory
+  --restyler-[no-]restricted Restrict restylers resources
+  --[no-]commit              Make commits for restyle changes
+  --[no-]clean               Run git-clean after restyling
+  PATH                       Path to restyle
+  PATH                       Path to restyle
 
 .Sh ENVIRONMENT VARIABLES
-  CONFIG_FILE FILE_PATH              Path to the configuration file               
-  DRY_RUN BOOL                       Skip pulling and running Restylers           
-  FAIL_ON_DIFFERENCES BOOL           Exit non-zero if differences were found      
-  RESTYLERS_VERSION stable|dev|...   Version of Restylers manifest to use         
-  MANIFEST FILE_PATH                 Restylers manifest to use                    
-  HOST_DIRECTORY DIRECTORY_PATH      Working directory on host, if dockerized     
+  CONFIG_FILE FILE_PATH              Path to the configuration file
+  DRY_RUN BOOL                       Skip pulling and running Restylers
+  FAIL_ON_DIFFERENCES BOOL           Exit non-zero if differences were found
+  RESTYLERS_VERSION stable|dev|...   Version of Restylers manifest to use
+  MANIFEST FILE_PATH                 Restylers manifest to use
+  HOST_DIRECTORY DIRECTORY_PATH      Working directory on host, if dockerized
   IMAGE_CLEANUP BOOL                 Remove pulled restyler images after restyling
-  PULL BOOL                          docker-pull images before docker-run         
-  RESTYLER_NET_NONE BOOL             Run restylers with --net=none                
-  RESTYLER_CPU_SHARES NUMBER         Run restylers with --cpu-shares              
-  RESTYLER_MEMORY NUMBER<b|k|m|g>    Run restylers with --memory                  
-  RESTYLER_RESTRICTED BOOL           Restrict restylers resources                 
-  COMMIT BOOL                        Make commits for restyle changes             
-  CLEAN BOOL                         Run git-clean after restyling                
+  PULL BOOL                          docker-pull images before docker-run
+  RESTYLER_NET_NONE BOOL             Run restylers with --net=none
+  RESTYLER_CPU_SHARES NUMBER         Run restylers with --cpu-shares
+  RESTYLER_MEMORY NUMBER<b|k|m|g>    Run restylers with --memory
+  RESTYLER_RESTRICTED BOOL           Restrict restylers resources
+  COMMIT BOOL                        Make commits for restyle changes
+  CLEAN BOOL                         Run git-clean after restyling
 
 .Sh CONFIGURATION VALUES
   Do anything at all
@@ -416,4 +416,3 @@ restyle [--config-file FILE_PATH] [--debug] [--trace] [--color WHEN] [--[no-]dry
   git.clean:
     # or null
     <boolean>
-
