@@ -120,7 +120,7 @@ spec = do
           , "docker:"
           , "  image_cleanup: true"
           , "  pull: false"
-          , "  restylers:"
+          , "  restyler:"
           , "    net_none: false"
           , "    cpu_shares: 1024"
           , "    memory: { number: 512, suffix: k }"

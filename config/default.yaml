@@ -37,7 +37,7 @@ docker:
   host_directory: .
   pull: true
   image_cleanup: false
-  restylers:
+  restyler:
     restricted: true
     net_none: true
     cpu_shares: 512

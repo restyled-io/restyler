@@ -38,7 +38,7 @@ restrictionOptions r =
 
 restrictionsParser :: Parser Restrictions
 restrictionsParser =
-  subAll "restylers"
+  subAll "restyler"
     $ go
     <$> subRestrictionsParser
     <*> restrictedParser

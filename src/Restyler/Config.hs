@@ -71,7 +71,7 @@ parseConfig :: IO Config
 parseConfig = do
   withSystemTempFile "restyler-default-config.yaml" $ \defaults h -> do
     BS.hPutStr h defaultConfigContent >> hClose h
-    runParser Pkg.version "Restyle local file"
+    runParser Pkg.version "Restyle local files"
       $ configParser
         [ ".github/restyled.yml"
         , ".github/restyled.yaml"
