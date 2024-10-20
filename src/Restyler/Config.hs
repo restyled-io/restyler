@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | Handling of @.restyled.yaml@ content and behavior driven there-by
@@ -82,42 +84,42 @@ defaultConfigContent :: ByteString
 defaultConfigContent = $(embedFile "config/default.yaml")
 
 configParser :: [FilePath] -> Parser Config
-configParser paths =
-  withCombinedYamlConfigs (traverse hiddenPath paths)
-    $ Config
-    <$> logSettingsOptionParser
-    <*> enabledParser
-    <*> dryRunParser
-    <*> failOnDifferencesParser
-    <*> excludeParser
-    <*> commitTemplateParser
-    <*> remoteFilesParser
-    <*> ignoresParser
-    <*> restylersVersionParser
-    <*> optional manifestParser
-    <*> restylerOverridesParser
-    <*> subConfig_ "docker" hostDirectoryParser
-    <*> subConfig_ "docker" noPullParser
-    <*> subConfig_ "docker" imageCleanupParser
-    <*> subConfig_ "docker" restrictionsParser
-    <*> subConfig_ "git" noCommitParser
-    <*> subConfig_ "git" noCleanParser
-    <*> optional
-      ( filePathSetting
+configParser sources =
+  withCombinedYamlConfigs (traverse hiddenPath sources) $ do
+    logSettings <- logSettingsOptionParser
+    enabled <- enabledParser
+    dryRun <- dryRunParser
+    failOnDifferences <- failOnDifferencesParser
+    exclude <- excludeParser
+    commitTemplate <- commitTemplateParser
+    remoteFiles <- remoteFilesParser
+    ignores <- ignoresParser
+    restylersVersion <- restylersVersionParser
+    restylersManifest <- optional manifestParser
+    restylerOverrides <- restylerOverridesParser
+    hostDirectory <- subConfig_ "docker" hostDirectoryParser
+    imageCleanup <- subConfig_ "docker" imageCleanupParser
+    noPull <- subConfig_ "docker" noPullParser
+    restrictions <- subConfig_ "docker" restrictionsParser
+    noCommit <- subConfig_ "git" noCommitParser
+    noClean <- subConfig_ "git" noCleanParser
+    pullRequestJson <-
+      optional
+        $ filePathSetting
           [ help ""
           , hidden
           , option
           , long "pull-request-json"
           ]
-      )
-    <*> someNonEmpty
-      ( setting
+    paths <-
+      someNonEmpty
+        $ setting
           [ help "Path to restyle"
           , argument
           , reader str
           , metavar "PATH"
           ]
-      )
+    pure Config {..}
 
 hiddenPath :: FilePath -> Parser (Path Abs File)
 hiddenPath x = filePathSetting [value x, hidden]
