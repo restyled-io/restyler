@@ -93,7 +93,7 @@ library
     , http-conduit
     , microlens
     , microlens-mtl
-    , opt-env-conf
+    , opt-env-conf >=0.6.0.2
     , path
     , relude
     , semigroups
