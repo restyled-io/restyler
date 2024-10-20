@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 
 -- |
@@ -20,6 +21,7 @@ import OptEnvConf.Args (parseArgs)
 import OptEnvConf.EnvMap qualified as EnvMap
 import OptEnvConf.Error (renderErrors)
 import OptEnvConf.Run (runParserOn)
+import Path (mkAbsFile)
 import Restyler.Config
 import Restyler.Config.Restrictions.Bytes
 import Restyler.Test.Fixtures
@@ -49,10 +51,9 @@ spec = do
 
       checkOption "no-pull" (.noPull)
 
-  -- TODO: need to assert on Path Abs File
-  -- it "supports --manifest" $ do
-  --   config <- loadTestConfig [] [] ["--manifest", "/tmp/x.yaml", "Foo.hs"]
-  --   config.restylersManifest `shouldBe` Just "/tmp/x.yaml"
+  it "supports --manifest" $ do
+    config <- loadTestConfig [] [] ["--manifest", "/tmp/x.yaml", "Foo.hs"]
+    config.restylersManifest `shouldBe` Just $(mkAbsFile "/tmp/x.yaml")
 
   context "configuration" $ do
     -- This test is a maintainence burden, in that when config/default.yaml

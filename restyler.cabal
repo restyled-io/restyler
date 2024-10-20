@@ -186,6 +186,7 @@ test-suite test
     , hspec-expectations-lifted
     , lens-aeson
     , opt-env-conf
+    , path
     , restyler
     , safe-coloured-text
     , text
