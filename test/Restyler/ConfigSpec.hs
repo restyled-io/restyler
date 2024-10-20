@@ -33,7 +33,7 @@ import UnliftIO.Temporary (withSystemTempFile)
 
 spec :: Spec
 spec = do
-  context "command-line" $ do
+  context "options" $ do
     context "flags used by actions/run" $ do
       let checkOption name p = do
             it ("supports --" <> name) $ do
