@@ -1,3 +1,6 @@
+also_exclude:
+  - doc/**/*
+
 restylers_version: dev
 restylers:
   - hlint
