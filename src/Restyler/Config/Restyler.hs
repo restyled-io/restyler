@@ -103,14 +103,14 @@ codecObject :: JSONCodec RestylerOverride
 codecObject =
   object "Restyler"
     $ RestylerOverride
-    <$> (requiredField "name" "Name" .= (.name))
-    <*> (optionalField "enabled" "Enabled?" .= (.enabled))
-    <*> (optionalField "image" "Image" .= (.image))
-    <*> (optionalField "command" "Command" .= (.command))
-    <*> (optionalField "arguments" "Arguments" .= (.arguments))
-    <*> (optionalField "include" "Globs to include" .= (.include))
-    <*> (optionalField "interpreters" "Interpreters to look for" .= (.interpreters))
-    <*> (optionalField "delimiters" "Delimeters" .= (.delimiters))
+    <$> (requiredField' "name" .= (.name))
+    <*> (optionalField' "enabled" .= (.enabled))
+    <*> (optionalField' "image" .= (.image))
+    <*> (optionalField' "command" .= (.command))
+    <*> (optionalField' "arguments" .= (.arguments))
+    <*> (optionalField' "include" .= (.include))
+    <*> (optionalField' "interpreters" .= (.interpreters))
+    <*> (optionalField' "delimiters" .= (.delimiters))
 
 -- | Parse a name key and sub-object. Not used for rendering
 --
@@ -127,6 +127,7 @@ codecNamed =
     )
     (const "unused")
     valueCodec
+    <?> "{name: Restyler}"
 
 -- | Parse name-only syntax. Not used for rendering
 --
@@ -139,8 +140,14 @@ codecNameOnly =
         Just (c, rest) | c == '!' -> (restylerOverride rest) {enabled = Just False}
         _ -> (restylerOverride name) {enabled = Just True}
     )
-    (const "unused")
+    ( \override ->
+        -- This isn't totally correct, but we never render via this codec
+        if override.enabled == Just False
+          then "!" <> override.name
+          else override.name
+    )
     textCodec
+    <?> "!<name>|<name>"
 
 -- |
 --

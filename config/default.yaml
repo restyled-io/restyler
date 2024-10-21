@@ -46,7 +46,7 @@ docker:
     restricted: true
     net_none: true
     cpu_shares: 512
-    memory: { number: 128, suffix: m }
+    memory: 128m
 
 git:
   clean: true

@@ -42,8 +42,8 @@ instance HasCodec Delimiters where
   codec =
     object "Delimiters"
       $ Delimiters
-      <$> (requiredField "start" "Start" .= dStart)
-      <*> (requiredField "end" "End" .= dEnd)
+      <$> (requiredField' "start" .= dStart)
+      <*> (requiredField' "end" .= dEnd)
 
 data DelimitedPath = DelimitedPath
   { dpSource :: FilePath

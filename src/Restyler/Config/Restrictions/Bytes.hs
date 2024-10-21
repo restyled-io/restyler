@@ -25,11 +25,7 @@ data Bytes = Bytes
   deriving stock (Generic, Eq, Show)
 
 instance HasCodec Bytes where
-  codec =
-    object "Bytes"
-      $ Bytes
-      <$> (requiredField "number" "a number" .= (.number))
-      <*> (optionalField "suffix" "a suffix" .= (.suffix))
+  codec = bimapCodec readBytes showBytes stringCodec <?> "NUMBER<b|k|m|g>"
 
 readBytes :: String -> Either String Bytes
 readBytes x =

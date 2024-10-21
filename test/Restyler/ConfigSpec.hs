@@ -126,7 +126,7 @@ spec = do
           , "  restyler:"
           , "    net_none: false"
           , "    cpu_shares: 1024"
-          , "    memory: { number: 512, suffix: k }"
+          , "    memory: 512k"
           , "git:"
           , "  clean: false"
           , "  commit: false"
