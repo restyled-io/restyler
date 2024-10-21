@@ -165,6 +165,51 @@ spec = do
       config.pullRequestJson `shouldBe` Nothing
       config.paths `shouldBe` pure "Bar.hs"
 
+    context "remote_files" $ do
+      it "supports URLs" $ do
+        config <-
+          loadTestConfig
+            [ "remote_files:"
+            , "  - https://example.com/foo/bar.txt"
+            ]
+            []
+            ["Bar.hs"]
+
+        config.remoteFiles
+          `shouldBe` [ RemoteFile
+                        { url = "https://example.com/foo/bar.txt"
+                        , path = "bar.txt"
+                        }
+                     ]
+
+      it "accepts path-less URLs if path is given" $ do
+        config <-
+          loadTestConfig
+            [ "remote_files:"
+            , "  - url: https://example.com"
+            , "    path: bar.txt"
+            ]
+            []
+            ["Bar.hs"]
+
+        config.remoteFiles
+          `shouldBe` [ RemoteFile
+                        { url = "https://example.com"
+                        , path = "bar.txt"
+                        }
+                     ]
+
+      it "rejects path-less URLs if path is not given" $ do
+        result <-
+          loadTestConfigEither
+            [ "remote_files:"
+            , "  - https://example.com/"
+            ]
+            []
+            ["Bar.hs"]
+
+        void result `shouldSatisfy` isLeft
+
     context "restyler overrides" $ do
       it "supports names" $ do
         config <-
@@ -255,20 +300,32 @@ loadTestConfig
   -- ^ Args
   -> IO Config
 loadTestConfig yaml env args = do
+  result <- loadTestConfigEither yaml env args
+
+  case result of
+    Left err -> do
+      expectationFailure $ unpack err
+      error "unreachable"
+    Right config -> pure config
+
+loadTestConfigEither
+  :: [Text]
+  -- ^ Lines of Yaml
+  --
+  -- Empty means to behave as if no file at all.
+  -> [(String, String)]
+  -- ^ ENV
+  -> [String]
+  -- ^ Args
+  -> IO (Either Text Config)
+loadTestConfigEither yaml env args = do
   result <- case yaml of
     [] -> runParser ["config/default.yaml"]
     ls -> withSystemTempFile "restyler-test-config.yaml" $ \path h -> do
       hPutStr h (unlines ls) >> hClose h
       runParser [path, "config/default.yaml"]
 
-  case result of
-    Left errs -> do
-      expectationFailure
-        $ unpack
-        $ renderChunksText WithoutColours
-        $ renderErrors errs
-      error "unreachable"
-    Right config -> pure config
+  pure $ first (renderChunksText WithoutColours . renderErrors) result
  where
   runParser paths =
     runParserOn
