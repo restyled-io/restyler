@@ -25,7 +25,7 @@ All settings:
     logging.trace: # or null
       <boolean>
 
-  Enabled color WHEN
+  Enable color WHEN
   option: --color WHEN
   env: COLOR WHEN
   config:
@@ -41,7 +41,7 @@ All settings:
     enabled: # or null
       <boolean>
 
-  Skip pulling and running Restylers
+  Do everything except pull and run restylers
   switch: --[no-]dry-run
   env: DRY_RUN BOOL
   config:
@@ -55,14 +55,14 @@ All settings:
     fail_on_differences: # or null
       <boolean>
 
-  Globs to exclude
+  Exclude paths matching the given globs (instead of defaults)
   option: --exclude GLOB[,GLOB...]
   env: EXCLUDE GLOB[,GLOB...]
   config:
     exclude: # or null
       - <string>
 
-  Globs to exclude in addition to defaults
+  Exclude paths matching the given globs (in addition to defaults)
   option: --also-exclude GLOB[,GLOB...]
   config:
     also_exclude: # or null
@@ -173,14 +173,14 @@ All settings:
     docker.host_directory: # or null
       <string>
 
-  Remove pulled restyler images after restyling
+  Remove images after running them
   switch: --[no-]image-cleanup
   env: IMAGE_CLEANUP BOOL
   config:
     docker.image_cleanup: # or null
       <boolean>
 
-  docker-pull images before docker-run
+  Explicitly pull images before running them
   switch: --[no-]pull
   env: PULL BOOL
   config:
@@ -216,7 +216,7 @@ All settings:
     docker.restyler.restricted: # or null
       <boolean>
 
-  Make commits for restyle changes
+  Commit each restyling change
   switch: --[no-]commit
   env: COMMIT BOOL
   config:
@@ -237,55 +237,55 @@ All settings:
   argument: PATH
 
 Options:
-  -h|--help                  Show this help text                          
-  --version                  Output version information                   
-  --config-file              Path to the configuration file               
-  --[no-]debug               Enable debug logging                         
-  --[no-]trace               Enable trace logging                         
-  --color                    Enabled color WHEN                           
-  --[no-]dry-run             Skip pulling and running Restylers           
-  --[no-]fail-on-differences Exit non-zero if differences were found      
-  --exclude                  Globs to exclude                             
-  --also-exclude             Globs to exclude in addition to defaults     
-  --ignore-authors           Ignore authors that match globs              
-  --ignore-branches          Ignore branches that match globs             
-  --ignore-labels            Ignore labels that match globs               
-  --restylers-version        Version of Restylers manifest to use         
-  --manifest                 Restylers manifest to use                    
-  --host-directory           Working directory on host, if dockerized     
-  --[no-]image-cleanup       Remove pulled restyler images after restyling
-  --[no-]pull                docker-pull images before docker-run         
-  --restyler-[no-]net-none   Run restylers with --net=none                
-  --restyler-cpu-shares      Run restylers with --cpu-shares              
-  --restyler-memory          Run restylers with --memory                  
-  --restyler-[no-]restricted Restrict restylers resources                 
-  --[no-]commit              Make commits for restyle changes             
-  --[no-]clean               Run git-clean after restyling                
-  PATH                       Path to restyle                              
-  PATH                       Path to restyle                              
+  -h|--help                  Show this help text                                             
+  --version                  Output version information                                      
+  --config-file              Path to the configuration file                                  
+  --[no-]debug               Enable debug logging                                            
+  --[no-]trace               Enable trace logging                                            
+  --color                    Enable color WHEN                                               
+  --[no-]dry-run             Do everything except pull and run restylers                     
+  --[no-]fail-on-differences Exit non-zero if differences were found                         
+  --exclude                  Exclude paths matching the given globs (instead of defaults)    
+  --also-exclude             Exclude paths matching the given globs (in addition to defaults)
+  --ignore-authors           Ignore authors that match globs                                 
+  --ignore-branches          Ignore branches that match globs                                
+  --ignore-labels            Ignore labels that match globs                                  
+  --restylers-version        Version of Restylers manifest to use                            
+  --manifest                 Restylers manifest to use                                       
+  --host-directory           Working directory on host, if dockerized                        
+  --[no-]image-cleanup       Remove images after running them                                
+  --[no-]pull                Explicitly pull images before running them                      
+  --restyler-[no-]net-none   Run restylers with --net=none                                   
+  --restyler-cpu-shares      Run restylers with --cpu-shares                                 
+  --restyler-memory          Run restylers with --memory                                     
+  --restyler-[no-]restricted Restrict restylers resources                                    
+  --[no-]commit              Commit each restyling change                                    
+  --[no-]clean               Run git-clean after restyling                                   
+  PATH                       Path to restyle                                                 
+  PATH                       Path to restyle                                                 
 
 Environment Variables:
-  CONFIG_FILE FILE_PATH              Path to the configuration file               
-  DEBUG BOOL                         Enable debug logging                         
-  TRACE BOOL                         Enable trace logging                         
-  COLOR WHEN                         Enabled color WHEN                           
-  DRY_RUN BOOL                       Skip pulling and running Restylers           
-  FAIL_ON_DIFFERENCES BOOL           Exit non-zero if differences were found      
-  EXCLUDE GLOB[,GLOB...]             Globs to exclude                             
-  IGNORE_AUTHORS GLOB[,GLOB...]      Ignore authors that match globs              
-  IGNORE_BRANCHES GLOB[,GLOB...]     Ignore branches that match globs             
-  IGNORE_LABELS GLOB[,GLOB...]       Ignore labels that match globs               
-  RESTYLERS_VERSION stable|dev|...   Version of Restylers manifest to use         
-  MANIFEST FILE_PATH                 Restylers manifest to use                    
-  HOST_DIRECTORY DIRECTORY_PATH      Working directory on host, if dockerized     
-  IMAGE_CLEANUP BOOL                 Remove pulled restyler images after restyling
-  PULL BOOL                          docker-pull images before docker-run         
-  RESTYLER_NET_NONE BOOL             Run restylers with --net=none                
-  RESTYLER_CPU_SHARES NUMBER         Run restylers with --cpu-shares              
-  RESTYLER_MEMORY NUMBER<b|k|m|g>    Run restylers with --memory                  
-  RESTYLER_RESTRICTED BOOL           Restrict restylers resources                 
-  COMMIT BOOL                        Make commits for restyle changes             
-  CLEAN BOOL                         Run git-clean after restyling                
+  CONFIG_FILE FILE_PATH              Path to the configuration file                              
+  DEBUG BOOL                         Enable debug logging                                        
+  TRACE BOOL                         Enable trace logging                                        
+  COLOR WHEN                         Enable color WHEN                                           
+  DRY_RUN BOOL                       Do everything except pull and run restylers                 
+  FAIL_ON_DIFFERENCES BOOL           Exit non-zero if differences were found                     
+  EXCLUDE GLOB[,GLOB...]             Exclude paths matching the given globs (instead of defaults)
+  IGNORE_AUTHORS GLOB[,GLOB...]      Ignore authors that match globs                             
+  IGNORE_BRANCHES GLOB[,GLOB...]     Ignore branches that match globs                            
+  IGNORE_LABELS GLOB[,GLOB...]       Ignore labels that match globs                              
+  RESTYLERS_VERSION stable|dev|...   Version of Restylers manifest to use                        
+  MANIFEST FILE_PATH                 Restylers manifest to use                                   
+  HOST_DIRECTORY DIRECTORY_PATH      Working directory on host, if dockerized                    
+  IMAGE_CLEANUP BOOL                 Remove images after running them                            
+  PULL BOOL                          Explicitly pull images before running them                  
+  RESTYLER_NET_NONE BOOL             Run restylers with --net=none                               
+  RESTYLER_CPU_SHARES NUMBER         Run restylers with --cpu-shares                             
+  RESTYLER_MEMORY NUMBER<b|k|m|g>    Run restylers with --memory                                 
+  RESTYLER_RESTRICTED BOOL           Restrict restylers resources                                
+  COMMIT BOOL                        Commit each restyling change                                
+  CLEAN BOOL                         Run git-clean after restyling                               
 
 Configuration Values:
   Enable debug logging
@@ -296,7 +296,7 @@ Configuration Values:
   logging.trace:
     # or null
     <boolean>
-  Enabled color WHEN
+  Enable color WHEN
   logging.color:
     # or null
     # one of
@@ -308,7 +308,7 @@ Configuration Values:
   enabled:
     # or null
     <boolean>
-  Skip pulling and running Restylers
+  Do everything except pull and run restylers
   dry_run:
     # or null
     <boolean>
@@ -316,11 +316,11 @@ Configuration Values:
   fail_on_differences:
     # or null
     <boolean>
-  Globs to exclude
+  Exclude paths matching the given globs (instead of defaults)
   exclude:
     # or null
     - <string>
-  Globs to exclude in addition to defaults
+  Exclude paths matching the given globs (in addition to defaults)
   also_exclude:
     # or null
     - <string>
@@ -408,11 +408,11 @@ Configuration Values:
   docker.host_directory:
     # or null
     <string>
-  Remove pulled restyler images after restyling
+  Remove images after running them
   docker.image_cleanup:
     # or null
     <boolean>
-  docker-pull images before docker-run
+  Explicitly pull images before running them
   docker.pull:
     # or null
     <boolean>
@@ -433,7 +433,7 @@ Configuration Values:
   docker.restyler.restricted:
     # or null
     <boolean>
-  Make commits for restyle changes
+  Commit each restyling change
   git.commit:
     # or null
     <boolean>
