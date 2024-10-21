@@ -77,9 +77,7 @@ subRestrictionsParser =
             <$> setting
               [ help "Run restylers with --memory"
               , option
-              , long "memory"
-              , env "MEMORY"
-              , conf "memory"
+              , name "memory"
               , metavar "NUMBER<b|k|m|g>"
               , reader $ eitherReader readBytes
               ]
@@ -89,7 +87,5 @@ restrictedParser :: Parser Bool
 restrictedParser =
   yesNoSwitch
     [ help "Restrict restylers resources"
-    , long "restricted"
-    , env "RESTRICTED"
-    , conf "restricted"
+    , name "restricted"
     ]

@@ -23,7 +23,5 @@ noPullParser =
   not
     <$> yesNoSwitch
       [ help "docker-pull images before docker-run"
-      , long "pull"
-      , env "PULL"
-      , conf "pull"
+      , name "pull"
       ]

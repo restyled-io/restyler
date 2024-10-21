@@ -23,7 +23,5 @@ noCleanParser =
   not
     <$> yesNoSwitch
       [ help "Run git-clean after restyling"
-      , long "clean"
-      , env "CLEAN"
-      , conf "clean"
+      , name "clean"
       ]

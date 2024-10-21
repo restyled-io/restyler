@@ -23,7 +23,5 @@ noCommitParser =
   not
     <$> yesNoSwitch
       [ help "Make commits for restyle changes"
-      , long "commit"
-      , env "COMMIT"
-      , conf "commit"
+      , name "commit"
       ]
