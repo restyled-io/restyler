@@ -15,7 +15,6 @@ module Restyler.App
 
 import Restyler.Prelude
 
-import Blammo.Logging.LogSettings.Env qualified as LogSettings
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Restyler.Config
 import Restyler.Monad.Directory
@@ -80,5 +79,5 @@ instance HasLogger App where
 withApp :: (App -> IO a) -> IO a
 withApp f = do
   config <- parseConfig
-  logSettings <- config.logSettings <$> LogSettings.parse
+  logSettings <- getLogSettings config.logSettings
   withLogger logSettings $ f . App config

@@ -46,7 +46,7 @@ import System.IO (hClose)
 import UnliftIO.Temporary (withSystemTempFile)
 
 data Config = Config
-  { logSettings :: LogSettings -> LogSettings
+  { logSettings :: LogSettingsOption
   , enabled :: Bool
   , dryRun :: Bool
   , failOnDifferences :: Bool
@@ -86,7 +86,7 @@ defaultConfigContent = $(embedFile "config/default.yaml")
 configParser :: [FilePath] -> Parser Config
 configParser sources =
   withCombinedYamlConfigs (traverse hiddenPath sources) $ do
-    logSettings <- logSettingsOptionParser
+    logSettings <- subConfig_ "logging" logSettingsOptionParser
     enabled <- enabledParser
     dryRun <- dryRunParser
     failOnDifferences <- failOnDifferencesParser

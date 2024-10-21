@@ -25,10 +25,9 @@ excludeParser =
     <$> setting
       [ help "Globs to exclude"
       , option
-      , long "exclude"
+      , name "exclude"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB...]"
-      , conf "exclude"
       ]
     <*> setting
       [ help "Globs to exclude in addition to defaults"

@@ -41,8 +41,11 @@ spec = do
               p config `shouldBe` True
 
       checkOption "debug" $ \config ->
-        let logsLevel = shouldLogLevel (config.logSettings defaultLogSettings) ""
-        in  logsLevel LevelDebug && not (logsLevel $ LevelOther "trace")
+        let
+          settings = modLogSettings config.logSettings defaultLogSettings
+          logsLevel = shouldLogLevel settings ""
+        in
+          logsLevel LevelDebug && not (logsLevel $ LevelOther "trace")
 
       checkOption "fail-on-differences" (.failOnDifferences)
 

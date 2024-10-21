@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 -- |
 --
 -- Module      : Restyler.Config.LogSettings
@@ -8,52 +10,78 @@
 -- Portability : POSIX
 module Restyler.Config.LogSettings
   ( LogSettings
+  , LogSettingsOption
   , logSettingsOptionParser
+  , getLogSettings
+  , modLogSettings
   )
 where
 
 import Restyler.Prelude
 
+import Autodocodec
 import Blammo.Logging.LogSettings
+import Blammo.Logging.LogSettings.Env qualified as LogSettings
 import Blammo.Logging.LogSettings.LogLevels
 import OptEnvConf
 
-logSettingsOptionParser :: Parser (LogSettings -> LogSettings)
+instance HasCodec LogColor where
+  codec =
+    stringConstCodec
+      $ (LogColorAuto, "auto")
+      :| [ (LogColorAlways, "always")
+         , (LogColorNever, "never")
+         ]
+
+newtype Mod a = Mod
+  { appMod :: a -> a
+  }
+  deriving (Semigroup, Monoid) via (Dual (Endo a))
+
+newtype LogSettingsOption = LogSettingsOption
+  { unwrap :: Mod LogSettings
+  }
+  deriving newtype (Semigroup, Monoid)
+
+getLogSettings :: LogSettingsOption -> IO LogSettings
+getLogSettings settings = modLogSettings settings <$> LogSettings.parse
+
+modLogSettings :: LogSettingsOption -> LogSettings -> LogSettings
+modLogSettings = (.unwrap.appMod)
+
+logSettingsOptionParser :: Parser LogSettingsOption
 logSettingsOptionParser =
-  appEndo . getDual . foldMap (Dual . Endo) <$> fs
- where
-  fs = traverse (<|> pure id) [debugParser, traceParser, colorParser]
+  mconcat
+    <$> sequenceA
+      [ levelParser "debug" $ bool id $ setLogLevel LevelDebug
+      , levelParser "trace" $ bool id $ setLogLevel $ LevelOther "trace"
+      , colorParser setLogSettingsColor
+      ]
 
-debugParser :: Parser (LogSettings -> LogSettings)
-debugParser =
-  setting
-    [ help "Enable debug logging"
-    , switch (setLogLevel LevelDebug)
-    , long "debug"
-    ]
+levelParser
+  :: String -> (Bool -> LogSettings -> LogSettings) -> Parser LogSettingsOption
+levelParser level f =
+  LogSettingsOption
+    . Mod
+    . f
+    <$> yesNoSwitch
+      [ help $ "Enable " <> level <> " logging"
+      , name level
+      ]
 
-traceParser :: Parser (LogSettings -> LogSettings)
-traceParser =
-  setting
-    [ help "Enable trace logging"
-    , switch (setLogLevel $ LevelOther "trace")
-    , long "trace"
-    ]
-
-colorParser :: Parser (LogSettings -> LogSettings)
-colorParser =
-  setting
-    [ help "Enabled color WHEN"
-    , option
-    , long "color"
-    , metavar "WHEN"
-    , reader $ eitherReader readSetLogColor
-    ]
+colorParser
+  :: (LogColor -> LogSettings -> LogSettings) -> Parser LogSettingsOption
+colorParser f =
+  LogSettingsOption
+    . Mod
+    . f
+    <$> setting
+      [ help "Enabled color WHEN"
+      , option
+      , name "color"
+      , metavar "WHEN"
+      , reader $ eitherReader readLogColor
+      ]
 
 setLogLevel :: LogLevel -> LogSettings -> LogSettings
 setLogLevel = setLogSettingsLevels . flip newLogLevels []
-
-readSetLogColor :: String -> Either String (LogSettings -> LogSettings)
-readSetLogColor arg = do
-  logColor <- readLogColor arg
-  pure $ setLogSettingsColor logColor
