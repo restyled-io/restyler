@@ -64,6 +64,7 @@ All settings:
 
   Exclude paths matching the given globs (in addition to defaults)
   option: --also-exclude GLOB[,GLOB...]
+  env: ALSO_EXCLUDE GLOB[,GLOB...]
   config:
     also_exclude: # or null
       - <string>
@@ -265,27 +266,28 @@ Options:
   PATH                       Path to restyle                                                 
 
 Environment Variables:
-  CONFIG_FILE FILE_PATH              Path to the configuration file                              
-  DEBUG BOOL                         Enable debug logging                                        
-  TRACE BOOL                         Enable trace logging                                        
-  COLOR WHEN                         Enable color WHEN                                           
-  DRY_RUN BOOL                       Do everything except pull and run restylers                 
-  FAIL_ON_DIFFERENCES BOOL           Exit non-zero if differences were found                     
-  EXCLUDE GLOB[,GLOB...]             Exclude paths matching the given globs (instead of defaults)
-  IGNORE_AUTHORS GLOB[,GLOB...]      Ignore authors that match globs                             
-  IGNORE_BRANCHES GLOB[,GLOB...]     Ignore branches that match globs                            
-  IGNORE_LABELS GLOB[,GLOB...]       Ignore labels that match globs                              
-  RESTYLERS_VERSION stable|dev|...   Version of Restylers manifest to use                        
-  MANIFEST FILE_PATH                 Restylers manifest to use                                   
-  HOST_DIRECTORY DIRECTORY_PATH      Working directory on host, if dockerized                    
-  IMAGE_CLEANUP BOOL                 Remove images after running them                            
-  PULL BOOL                          Explicitly pull images before running them                  
-  RESTYLER_NET_NONE BOOL             Run restylers with --net=none                               
-  RESTYLER_CPU_SHARES NUMBER         Run restylers with --cpu-shares                             
-  RESTYLER_MEMORY NUMBER<b|k|m|g>    Run restylers with --memory                                 
-  RESTYLER_RESTRICTED BOOL           Restrict restylers resources                                
-  COMMIT BOOL                        Commit each restyling change                                
-  CLEAN BOOL                         Run git-clean after restyling                               
+  CONFIG_FILE FILE_PATH              Path to the configuration file                                  
+  DEBUG BOOL                         Enable debug logging                                            
+  TRACE BOOL                         Enable trace logging                                            
+  COLOR WHEN                         Enable color WHEN                                               
+  DRY_RUN BOOL                       Do everything except pull and run restylers                     
+  FAIL_ON_DIFFERENCES BOOL           Exit non-zero if differences were found                         
+  EXCLUDE GLOB[,GLOB...]             Exclude paths matching the given globs (instead of defaults)    
+  ALSO_EXCLUDE GLOB[,GLOB...]        Exclude paths matching the given globs (in addition to defaults)
+  IGNORE_AUTHORS GLOB[,GLOB...]      Ignore authors that match globs                                 
+  IGNORE_BRANCHES GLOB[,GLOB...]     Ignore branches that match globs                                
+  IGNORE_LABELS GLOB[,GLOB...]       Ignore labels that match globs                                  
+  RESTYLERS_VERSION stable|dev|...   Version of Restylers manifest to use                            
+  MANIFEST FILE_PATH                 Restylers manifest to use                                       
+  HOST_DIRECTORY DIRECTORY_PATH      Working directory on host, if dockerized                        
+  IMAGE_CLEANUP BOOL                 Remove images after running them                                
+  PULL BOOL                          Explicitly pull images before running them                      
+  RESTYLER_NET_NONE BOOL             Run restylers with --net=none                                   
+  RESTYLER_CPU_SHARES NUMBER         Run restylers with --cpu-shares                                 
+  RESTYLER_MEMORY NUMBER<b|k|m|g>    Run restylers with --memory                                     
+  RESTYLER_RESTRICTED BOOL           Restrict restylers resources                                    
+  COMMIT BOOL                        Commit each restyling change                                    
+  CLEAN BOOL                         Run git-clean after restyling                                   
 
 Configuration Values:
   Enable debug logging

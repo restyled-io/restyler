@@ -33,6 +33,7 @@ excludeParser =
       [ help "Exclude paths matching the given globs (in addition to defaults)"
       , option
       , long "also-exclude"
+      , env "ALSO_EXCLUDE"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB...]"
       , conf "also_exclude"
