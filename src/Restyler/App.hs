@@ -1,5 +1,3 @@
-{-# LANGUAGE DerivingVia #-}
-
 -- |
 --
 -- Module      : Restyler.App
@@ -11,11 +9,14 @@
 module Restyler.App
   ( AppT
   , runAppT
+  , App (..)
+  , withApp
   ) where
 
 import Restyler.Prelude
 
 import Control.Monad.Catch (MonadCatch, MonadThrow)
+import Restyler.Config
 import Restyler.Monad.Directory
 import Restyler.Monad.Docker
 import Restyler.Monad.DownloadFile
@@ -47,3 +48,36 @@ newtype AppT app m a = AppT
 
 runAppT :: app -> AppT app m a -> m a
 runAppT app f = runReaderT f.unwrap app
+
+data App = App
+  { config :: Config
+  , logger :: Logger
+  }
+
+{- FOURMOLU_DISABLE -}
+instance HasCommitTemplate App where getCommitTemplate = (.config.commitTemplate)
+instance HasDryRun App where getDryRun = (.config.dryRun)
+instance HasEnabled App where getEnabled = (.config.enabled)
+instance HasExclude App where getExclude = (.config.exclude)
+instance HasFailOnDifferences App where getFailOnDifferences = (.config.failOnDifferences)
+instance HasHostDirectory App where getHostDirectory = (.config.hostDirectory)
+instance HasIgnores App where getIgnores = (.config.ignores)
+instance HasImageCleanup App where getImageCleanup = (.config.imageCleanup)
+instance HasManifest App where getManifest = (.config.restylersManifest)
+instance HasNoClean App where getNoClean = (.config.noClean)
+instance HasNoCommit App where getNoCommit = (.config.noCommit)
+instance HasNoPull App where getNoPull = (.config.noPull)
+instance HasRemoteFiles App where getRemoteFiles = (.config.remoteFiles)
+instance HasRestrictions App where getRestrictions = (.config.restrictions)
+instance HasRestylerOverrides App where getRestylerOverrides = (.config.restylerOverrides)
+instance HasRestylersVersion App where getRestylersVersion = (.config.restylersVersion)
+{- FOURMOLU_ENABLE -}
+
+instance HasLogger App where
+  loggerL = lens (.logger) $ \x y -> x {logger = y}
+
+withApp :: (App -> IO a) -> IO a
+withApp f = do
+  config <- parseConfig
+  logSettings <- getLogSettings config.logSettings
+  withLogger logSettings $ f . App config

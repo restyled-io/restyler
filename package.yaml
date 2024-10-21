@@ -44,24 +44,21 @@ library:
     - aeson
     - aeson-casing
     - annotated-exception
-    - barbies
+    - autodocodec
     - bytestring
     - composition-extra
     - conduit
-    - containers
-    - edit-distance
-    - envparse
-    - errata
     - errors
     - exceptions
-    - extra
     - extra
     - file-embed
     - filepath
     - http-conduit
     - microlens
     - microlens-mtl
-    - optparse-applicative
+    - network-uri
+    - opt-env-conf >= 0.6.0.2
+    - path
     - relude
     - semigroups
     - text
@@ -92,19 +89,18 @@ tests:
     source-dirs: test
     dependencies:
       - Blammo
-      - QuickCheck
       - aeson
       - containers
       - directory
-      - envparse
       - extra
       - filepath
       - hspec
       - hspec-core
       - hspec-expectations-lifted
       - lens-aeson
-      - load-env
+      - opt-env-conf
+      - path
       - restyler
-      - shakespeare
+      - safe-coloured-text
       - text
-      - yaml
+      - unliftio

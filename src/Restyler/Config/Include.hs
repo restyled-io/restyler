@@ -14,7 +14,8 @@ module Restyler.Config.Include
 
 import Restyler.Prelude
 
-import Data.Aeson
+import Autodocodec
+import Data.Aeson (FromJSON, ToJSON)
 import System.FilePath.Glob (Pattern, compile, decompile, match)
 
 data Include
@@ -23,17 +24,27 @@ data Include
   | -- | @!**\/*.temp@
     Negated Pattern
   deriving stock (Eq, Show)
-
-instance FromJSON Include where
-  parseJSON = withText "Include pattern" $ pure . fromString . unpack
-
-instance ToJSON Include where
-  toJSON (Include p) = toJSON $ pack $ decompile p
-  toJSON (Negated p) = toJSON $ "!" <> pack (decompile p)
+  deriving (FromJSON, ToJSON) via (Autodocodec Include)
 
 instance IsString Include where
-  fromString ('!' : rest) = Negated $ compile rest
-  fromString x = Include $ compile x
+  fromString = includeFromText . pack
+
+instance HasCodec Include where
+  codec =
+    bimapCodec (Right . includeFromText) includeToText textCodec
+      <?> "<pattern>|!<pattern>"
+
+includeFromText :: Text -> Include
+includeFromText = go . unpack
+ where
+  go = \case
+    '!' : rest -> Negated $ compile rest
+    x -> Include $ compile x
+
+includeToText :: Include -> Text
+includeToText = \case
+  Include p -> pack $ decompile p
+  Negated p -> pack $ "!" <> decompile p
 
 -- | Build an @'Include'@ matching a path exactly
 explicit :: FilePath -> Include

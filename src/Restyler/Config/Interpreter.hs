@@ -13,7 +13,8 @@ module Restyler.Config.Interpreter
 
 import Restyler.Prelude
 
-import Data.Aeson
+import Autodocodec
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text qualified as T
 import Restyler.ReadP
 import System.FilePath (takeFileName)
@@ -25,13 +26,12 @@ data Interpreter
   | Ruby
   | Other Text
   deriving stock (Eq, Show)
+  deriving (FromJSON, ToJSON) via (Autodocodec Interpreter)
 
-instance FromJSON Interpreter where
-  parseJSON = withText "Interpreter" $ pure . interpreterFromText
-
-instance ToJSON Interpreter where
-  -- N.B. this may not always work, but it works for now
-  toJSON = toJSON . T.toLower . show
+instance HasCodec Interpreter where
+  codec =
+    bimapCodec (Right . interpreterFromText) (T.toLower . pack . show) textCodec
+      <?> "sh|bash|python|ruby|..."
 
 readInterpreter :: Text -> Maybe Interpreter
 readInterpreter contents = do

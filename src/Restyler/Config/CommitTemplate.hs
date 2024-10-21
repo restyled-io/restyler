@@ -7,30 +7,43 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Config.CommitTemplate
-  ( CommitTemplate (..)
+  ( HasCommitTemplate (..)
+  , CommitTemplate (..)
+  , commitTemplateParser
   , CommitTemplateInputs (..)
   , renderCommitTemplate
   ) where
 
 import Restyler.Prelude
 
+import Autodocodec (HasCodec)
 import Data.Text qualified as T
-import Restyler.Restyler
+import OptEnvConf
 
-newtype CommitTemplateInputs = CommitTemplateInputs
-  { restyler :: Restyler
-  }
+class HasCommitTemplate env where
+  getCommitTemplate :: env -> CommitTemplate
 
 newtype CommitTemplate = CommitTemplate
   { unwrap :: Text
   }
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, ToJSON)
+  deriving stock (Eq)
+  deriving newtype (Show, IsString, HasCodec)
+
+commitTemplateParser :: Parser CommitTemplate
+commitTemplateParser =
+  setting
+    [ help "Template for restyling commit messages"
+    , conf "commit_template"
+    ]
+
+newtype CommitTemplateInputs = CommitTemplateInputs
+  { restyler :: Text
+  }
 
 renderCommitTemplate :: CommitTemplateInputs -> CommitTemplate -> String
 renderCommitTemplate cti =
   unpack
-    . replaceAll [("${restyler.name}", pack $ rName cti.restyler)]
+    . replaceAll [("${restyler.name}", cti.restyler)]
     . (.unwrap)
 
 -- | Let's make this as unreadable as possible, shall we?

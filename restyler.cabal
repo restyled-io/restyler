@@ -11,55 +11,48 @@ build-type:     Simple
 
 library
   exposed-modules:
-      GHC.Generics.Selectors
       Restyler.AnnotatedException
       Restyler.App
       Restyler.CLI
       Restyler.Config
-      Restyler.Config.ChangedPaths
       Restyler.Config.CommitTemplate
-      Restyler.Config.ExpectedKeys
+      Restyler.Config.DryRun
+      Restyler.Config.Enabled
+      Restyler.Config.Exclude
+      Restyler.Config.FailOnDifferences
       Restyler.Config.Glob
+      Restyler.Config.HostDirectory
+      Restyler.Config.Ignore
       Restyler.Config.Image
+      Restyler.Config.ImageCleanup
       Restyler.Config.Include
       Restyler.Config.Interpreter
+      Restyler.Config.LogSettings
+      Restyler.Config.Manifest
+      Restyler.Config.NoClean
+      Restyler.Config.NoCommit
+      Restyler.Config.NoPull
       Restyler.Config.RemoteFile
-      Restyler.Config.RequestReview
+      Restyler.Config.Repository
+      Restyler.Config.Restrictions
+      Restyler.Config.Restrictions.Bytes
       Restyler.Config.Restyler
-      Restyler.Config.SketchyList
-      Restyler.Config.Statuses
       Restyler.Delimited
       Restyler.GitHub.PullRequest
       Restyler.Ignore
-      Restyler.Local
-      Restyler.Local.App
-      Restyler.Local.Options
       Restyler.Monad.Directory
       Restyler.Monad.Docker
       Restyler.Monad.DownloadFile
       Restyler.Monad.Git
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
-      Restyler.Opt
-      Restyler.Options.DryRun
-      Restyler.Options.FailOnDifferences
-      Restyler.Options.HostDirectory
-      Restyler.Options.ImageCleanup
-      Restyler.Options.LogSettings
-      Restyler.Options.Manifest
-      Restyler.Options.NoClean
-      Restyler.Options.NoCommit
-      Restyler.Options.NoPull
-      Restyler.Options.Repository
       Restyler.Prelude
       Restyler.ReadP
-      Restyler.Restrictions
+      Restyler.Restyle
       Restyler.Restyler
       Restyler.Restyler.Run
       Restyler.RestyleResult
       Restyler.RestylerResult
-      Restyler.Wiki
-      Restyler.Yaml.Errata
   other-modules:
       Paths_restyler
   hs-source-dirs:
@@ -87,15 +80,11 @@ library
     , aeson
     , aeson-casing
     , annotated-exception
-    , barbies
+    , autodocodec
     , base
     , bytestring
     , composition-extra
     , conduit
-    , containers
-    , edit-distance
-    , envparse
-    , errata
     , errors
     , exceptions
     , extra
@@ -104,7 +93,9 @@ library
     , http-conduit
     , microlens
     , microlens-mtl
-    , optparse-applicative
+    , network-uri
+    , opt-env-conf >=0.6.0.2
+    , path
     , relude
     , semigroups
     , text
@@ -151,19 +142,19 @@ test-suite test
   main-is: Spec.hs
   other-modules:
       Restyler.Config.CommitTemplateSpec
-      Restyler.Config.ExpectedKeysSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
+      Restyler.Config.RestylerSpec
       Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
+      Restyler.Test.App
+      Restyler.Test.Fixtures
       Restyler.Test.FS
-      Restyler.WikiSpec
-      Restyler.Yaml.ErrataSpec
-      SpecHelper
+      Restyler.Test.OptEnvConf
       Paths_restyler
   hs-source-dirs:
       test
@@ -186,21 +177,20 @@ test-suite test
   ghc-options: -fignore-optim-changes -fwrite-ide-info -Weverything -Wno-all-missed-specialisations -Wno-missed-specialisations -Wno-missing-import-lists -Wno-missing-kind-signatures -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module -Wno-unsafe
   build-depends:
       Blammo
-    , QuickCheck
     , aeson
     , base
     , containers
     , directory
-    , envparse
     , extra
     , filepath
     , hspec
     , hspec-core
     , hspec-expectations-lifted
     , lens-aeson
-    , load-env
+    , opt-env-conf
+    , path
     , restyler
-    , shakespeare
+    , safe-coloured-text
     , text
-    , yaml
+    , unliftio
   default-language: GHC2021

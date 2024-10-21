@@ -1,6 +1,13 @@
-# See https://github.com/restyled-io/restyled.io/wiki/Configuring-Restyled
+logging:
+  debug: false
+  trace: false
+  color: auto
 
 enabled: true
+
+dry_run: false
+
+fail_on_differences: false
 
 exclude:
   - "**/*.patch"
@@ -11,40 +18,36 @@ exclude:
 
 also_exclude: []
 
-changed_paths:
-  maximum: 1000
-  outcome: error
-
 remote_files: []
-
-auto: false
 
 commit_template: |
   Restyled by ${restyler.name}
 
-pull_requests: true
-
-comments: false
-
-statuses:
-  skipped: true
-  differences: true
-  no_differences: true
-
-request_review: none
-
-labels: []
-
-ignore_authors:
-  - "*[bot]"
-
-ignore_branches:
-  - "renovate/*"
-
-ignore_labels:
-  - restyled-ignore
+ignore:
+  authors:
+    - "*[bot]"
+  branches:
+    - "renovate/*"
+  labels:
+    - restyled-ignore
 
 restylers_version: stable
 
+restylers_manifest: null
+
 restylers:
   - "*"
+
+docker:
+  host_directory: .
+  pull: true
+  image_cleanup: false
+  restyler:
+    restricted: true
+    net_none: true
+    cpu_shares: 512
+    memory: 128m
+
+git:
+  clean: true
+  commit: true

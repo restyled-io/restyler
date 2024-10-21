@@ -18,19 +18,13 @@ module Restyler.Config.Glob
 
 import Restyler.Prelude
 
-import Data.Aeson
+import Autodocodec (HasCodec)
 import System.FilePath.Glob hiding (match)
 import System.FilePath.Glob qualified as Glob
 
 newtype Glob a = Glob {unwrap :: String}
-  deriving stock (Eq, Ord, Generic)
-  deriving newtype (Show)
-
-instance FromJSON (Glob a) where
-  parseJSON = withText "Glob" $ pure . Glob . unpack
-
-instance ToJSON (Glob a) where
-  toJSON = String . pack . (.unwrap)
+  deriving stock (Eq)
+  deriving newtype (Show, IsString, HasCodec)
 
 class GlobTarget a where
   forMatch :: a -> String

@@ -11,11 +11,12 @@ module Restyler.RestylerSpec
   )
 where
 
-import SpecHelper
+import Restyler.Prelude
 
 import Data.Aeson
 import Data.Aeson.Lens
 import Restyler.Restyler (upgradeEnabled)
+import Test.Hspec
 
 spec :: Spec
 spec = do
@@ -27,7 +28,7 @@ spec = do
         Just enabled -> ["name" .= name, "enabled" .= enabled]
 
   describe "upgradeEnabled" $ do
-    it "upgrades missing enabled key based on name" $ example $ do
+    it "upgrades missing enabled key based on name" $ do
       let
         stylish = upgradedValue "stylish-haskell" Nothing
         hindent = upgradedValue "hindent" Nothing
@@ -35,7 +36,7 @@ spec = do
       stylish ^? key "enabled" . _Bool `shouldBe` Just True
       hindent ^? key "enabled" . _Bool `shouldBe` Just False
 
-    it "respects configs that have the key already" $ example $ do
+    it "respects configs that have the key already" $ do
       let
         stylish = upgradedValue "stylish-haskell" $ Just False
         hindent = upgradedValue "hindent" $ Just True

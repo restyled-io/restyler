@@ -10,15 +10,21 @@ module Restyler.DelimitedSpec
   ( spec
   ) where
 
-import SpecHelper
+import Restyler.Prelude
 
 import Data.Text qualified as T
 import Restyler.Delimited
+import Restyler.Test.App
+import Restyler.Test.FS (FS)
+import Restyler.Test.FS qualified as FS
+
+withFS :: SpecWith FS -> Spec
+withFS = before $ FS.build "/" []
 
 spec :: Spec
-spec = withTestApp $ do
+spec = withFS $ do
   describe "restyleDelimited" $ do
-    it "restyles delimited content" $ testAppExample $ do
+    it "restyles delimited content" $ do
       writeFile "foo.rb"
         $ T.unlines
           [ "def some_ruby"
@@ -47,7 +53,7 @@ spec = withTestApp $ do
       -- Test cleanup
       doesFileExist "foo.rb.0" `shouldReturn` False
 
-    it "works for markdown lists" $ testAppExample $ do
+    it "works for markdown lists" $ do
       writeFile "foo.md"
         $ T.unlines
           [ "1. A request API Type should be named `Api{Action}{Resource}({Target})`."
@@ -92,7 +98,7 @@ spec = withTestApp $ do
           ]
 
   describe "delimit" $ do
-    it "splits a file, respecting indentation" $ testAppExample $ do
+    it "splits a file, respecting indentation" $ do
       writeFile "foo.rb"
         $ T.unlines
           [ "def some_ruby"
@@ -119,7 +125,7 @@ spec = withTestApp $ do
       readFile "foo.rb.2" `shouldReturn` "\nend\n"
 
   describe "undelimit" $ do
-    it "can reconstruct a delimited path" $ testAppExample $ do
+    it "can reconstruct a delimited path" $ do
       writeFile "foo.rb.0" "def some_ruby\n  "
       writeFile "foo.rb.1" "SELECT\nFROM\n"
       writeFile "foo.rb.2" "\nend\n"

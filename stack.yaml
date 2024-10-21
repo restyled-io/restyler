@@ -1,3 +1,14 @@
-resolver: lts-22.28
+resolver: lts-22.38
 extra-deps:
-  - Blammo-1.2.1.0
+  - Blammo-2.1.1.0
+  - opt-env-conf-0.6.0.2
+
+  # For opt-env-conf
+  - autodocodec-0.4.2.2
+  - autodocodec-nix-0.0.1.4
+  - safe-coloured-text-0.3.0.2
+  - safe-coloured-text-layout-0.2.0.1
+
+  # Versions in resolver are broken by missing NumberBounds
+  - autodocodec-schema-0.2.0.0
+  - autodocodec-yaml-0.4.0.0
