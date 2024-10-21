@@ -76,7 +76,7 @@ colorParser f =
     . Mod
     . f
     <$> setting
-      [ help "Enabled color WHEN"
+      [ help "Enable color WHEN"
       , option
       , name "color"
       , metavar "WHEN"
