@@ -12,157 +12,105 @@ module Restyler.RestrictionsSpec
 
 import Restyler.Prelude
 
--- import Env qualified
--- import Restyler.Restrictions
+import Restyler.Config.Restrictions
+import Restyler.Config.Restrictions.Bytes
+import Restyler.Test.OptEnvConf
 import Test.Hspec
-
--- import Prelude qualified
 
 spec :: Spec
 spec = do
-  pure ()
-
-{-
-describe "restrictionOptions" $ do
-  it "always adds --net=none" $ do
-    let opts =
-          restrictionOptions
-            $ Restrictions
-              { netNone = Last $ Just True
-              , cpuShares = Last Nothing
-              , memory = Last Nothing
-              }
-
-    opts `shouldContain` ["--net", "none"]
-
-  it "always has default cpu-shares and memory" $ do
-    let opts = restrictionOptions fullRestrictions
-
-    opts `shouldContain` ["--cpu-shares", "128"]
-    opts `shouldContain` ["--memory", "512m"]
-
-  it "respects cpu-shares and memory" $ do
-    let opts =
-          restrictionOptions
-            $ Restrictions
-              { netNone = Last $ Just True
-              , cpuShares = Last $ Just 256
-              , memory = Last $ Just $ Bytes 1 $ Just G
-              }
-
-    opts `shouldContain` ["--cpu-shares", "256"]
-    opts `shouldContain` ["--memory", "1g"]
-
-describe "envRestrictions" $ do
-  it "uses full restrictions by default" $ do
-    Env.parsePure envRestrictions [] `shouldBe` Right fullRestrictions
-
-  it "treats empty UNRESTRICTED as full restrictions" $ do
-    Env.parsePure envRestrictions [("UNRESTRICTED", "")]
-      `shouldBe` Right fullRestrictions
-
-  -- Env.switch means any non-empty value, even false-looking ones
-  for_ (Prelude.words "x 0 1 on off true false yes no") $ \x -> do
-    it ("treats UNRESTRICTED=" <> x <> " as no restrictions") $ do
-      Env.parsePure envRestrictions [("UNRESTRICTED", x)]
-        `shouldBe` Right
+  describe "restrictionOptions" $ do
+    it "is the correct docker-run flags" $ do
+      let
+        noRestrictions =
           Restrictions
-            { netNone = Last $ Just False
-            , cpuShares = Last Nothing
-            , memory = Last Nothing
+            { netNone = False
+            , cpuShares = Nothing
+            , memory = Nothing
             }
 
-  it "can adjust individual restrictions" $ do
-    let
-      env :: [(String, String)]
-      env =
-        [ ("RESTYLER_CPU_SHARES", "256")
-        , ("RESTYLER_MEMORY", "1024m")
-        ]
+        fullRestrictions =
+          Restrictions
+            { netNone = True
+            , cpuShares = Just 128
+            , memory = Just $ Bytes 512 $ Just M
+            }
 
-    Env.parsePure envRestrictions env
-      `shouldBe` Right
-        Restrictions
-          { netNone = Last $ Just True
-          , cpuShares = Last $ Just 256
-          , memory = Last $ Just $ Bytes 1024 $ Just M
-          }
+      restrictionOptions noRestrictions `shouldBe` []
+      restrictionOptions fullRestrictions
+        `shouldBe` [ "--net=none"
+                   , "--cpu-shares=128"
+                   , "--memory=512m"
+                   ]
 
-  it "can adjust individual restrictions after UNRESTRICTED" $ do
-    let
-      env :: [(String, String)]
-      env = [("UNRESTRICTED", "x"), ("RESTYLER_MEMORY", "256b")]
+  describe "restrictionsParser" $ do
+    it "uses full restrictions by default" $ do
+      rs <- parseEnv restrictionsParser []
+      rs.netNone `shouldBe` True
+      rs.cpuShares `shouldSatisfy` isJust
+      rs.memory `shouldSatisfy` isJust
 
-    Env.parsePure envRestrictions env
-      `shouldBe` Right
-        Restrictions
-          { netNone = Last $ Just False
-          , cpuShares = Last Nothing
-          , memory = Last $ Just $ Bytes 256 $ Just B
-          }
+    it "accepts RESTRICTED=False" $ do
+      rs <- parseEnv restrictionsParser [("RESTRICTED", "False")]
+      rs.netNone `shouldBe` False
+      rs.cpuShares `shouldBe` Nothing
+      rs.memory `shouldBe` Nothing
 
-  it "accepts memory without suffix" $ do
-    Env.parsePure envRestrictions [("RESTYLER_MEMORY", "1024")]
-      `shouldBe` Right
-        fullRestrictions
-          { memory = Last $ Just $ Bytes 1024 Nothing
-          }
-
-  context "invalid input" $ do
-    it "rejects invalid RESTYLER_CPU_SHARES" $ do
+    it "can adjust individual restrictions" $ do
       let
         env :: [(String, String)]
-        env = [("RESTYLER_CPU_SHARES", "-100")]
-
-        msg :: String
-        msg = "Not a valid natural number: -100"
-
-      Env.parsePure envRestrictions env
-        `shouldBe` Left
-          [
-            ( "RESTYLER_CPU_SHARES"
-            , Env.UnreadError msg
-            )
+        env =
+          [ ("CPU_SHARES", "256")
+          , ("MEMORY", "1024m")
           ]
 
-    it "rejects MEMORY for invalid number" $ do
-      let
-        env :: [(String, String)]
-        env = [("RESTYLER_MEMORY", "-100b")]
+      rs <- parseEnv restrictionsParser env
+      rs.cpuShares `shouldBe` Just 256
+      rs.memory `shouldBe` Just (Bytes 1024 $ Just M)
 
-        msg :: String
-        msg = "Not a valid natural number: -100"
+    it "accepts memory without suffix" $ do
+      rs <- parseEnv restrictionsParser [("MEMORY", "1024")]
+      rs.memory `shouldBe` Just (Bytes 1024 Nothing)
 
-      Env.parsePure envRestrictions env
-        `shouldBe` Left [("RESTYLER_MEMORY", Env.UnreadError msg)]
+    context "invalid input" $ do
+      it "rejects invalid CPU_SHARES" $ do
+        rs <- parseEnvEither restrictionsParser [("CPU_SHARES", "-100")]
+        rs `shouldHaveParseError` readError "Not a valid natural number: -100"
 
-    it "rejects MEMORY for invalid suffix" $ do
-      let
-        env :: [(String, String)]
-        env = [("RESTYLER_MEMORY", "100x")]
+      it "rejects MEMORY for invalid number" $ do
+        rs <- parseEnvEither restrictionsParser [("MEMORY", "-100b")]
+        rs `shouldHaveParseError` readError "Not a valid natural number: -100"
 
-        msg :: String
-        msg = "Invalid suffix x, must be one of b, k, m, or g"
+      it "rejects MEMORY for invalid suffix" $ do
+        rs <- parseEnvEither restrictionsParser [("MEMORY", "100x")]
+        rs
+          `shouldHaveParseError` readError "Invalid suffix x, must be one of b, k, m, or g"
 
-      Env.parsePure envRestrictions env
-        `shouldBe` Left [("RESTYLER_MEMORY", Env.UnreadError msg)]
+      -- Not desired per se, but we'll cover it as documentation
+      it "rejects MEMORY for invalid number before suffix" $ do
+        rs <- parseEnvEither restrictionsParser [("MEMORY", "-100x")]
+        rs `shouldHaveParseError` readError "Not a valid natural number: -100"
 
-    -- Not desired per se, but we'll cover it as documentation
-    it
-      "rejects RESTYLER_MEMORY for invalid number before checking suffix"
-      $ do
-        let
-          env :: [(String, String)]
-          env = [("RESTYLER_MEMORY", "-100x")]
+readError :: String -> ParseErrorMessage -> Bool
+readError needle = \case
+  ParseErrorArgumentRead _ es -> needle `elem` es
+  ParseErrorOptionRead _ es -> needle `elem` es
+  ParseErrorEnvRead _ es -> needle `elem` es
+  ParseErrorConfigRead _ e -> e == needle
+  _ -> False
 
-          msg :: String
-          msg = "Not a valid natural number: -100"
+parseEnv :: HasCallStack => Parser a -> [(String, String)] -> IO a
+parseEnv p env = runParser p [] env $ Just defaults
 
-        Env.parsePure envRestrictions env
-          `shouldBe` Left
-            [
-              ( "RESTYLER_MEMORY"
-              , Env.UnreadError msg
-              )
-            ]
--}
+parseEnvEither
+  :: Parser a -> [(String, String)] -> IO (Either (NonEmpty ParseError) a)
+parseEnvEither p env = runParserEither p [] env $ Just defaults
+
+defaults :: Object
+defaults =
+  mkObject
+    [ "restricted" .= True
+    , "net_none" .= True
+    , "cpu_shares" .= (512 :: Natural)
+    , "memory" .= ("128m" :: Text)
+    ]
