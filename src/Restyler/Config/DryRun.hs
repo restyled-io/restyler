@@ -21,7 +21,7 @@ class HasDryRun env where
 dryRunParser :: Parser Bool
 dryRunParser =
   yesNoSwitch
-    [ help "Skip pulling and running Restylers"
+    [ help "Do everything except pull and run restylers"
     , long "dry-run"
     , env "DRY_RUN"
     , conf "dry_run"

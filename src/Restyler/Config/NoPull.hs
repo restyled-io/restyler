@@ -22,6 +22,6 @@ noPullParser :: Parser Bool
 noPullParser =
   not
     <$> yesNoSwitch
-      [ help "docker-pull images before docker-run"
+      [ help "Explicitly pull images before running them"
       , name "pull"
       ]

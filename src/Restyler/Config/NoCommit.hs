@@ -22,6 +22,6 @@ noCommitParser :: Parser Bool
 noCommitParser =
   not
     <$> yesNoSwitch
-      [ help "Make commits for restyle changes"
+      [ help "Commit each restyling change"
       , name "commit"
       ]

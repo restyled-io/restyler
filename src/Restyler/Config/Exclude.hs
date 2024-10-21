@@ -23,14 +23,14 @@ excludeParser :: Parser [Glob FilePath]
 excludeParser =
   (<>)
     <$> setting
-      [ help "Globs to exclude"
+      [ help "Exclude paths matching the given globs (instead of defaults)"
       , option
       , name "exclude"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB...]"
       ]
     <*> setting
-      [ help "Globs to exclude in addition to defaults"
+      [ help "Exclude paths matching the given globs (in addition to defaults)"
       , option
       , long "also-exclude"
       , reader $ commaSeparatedList str
