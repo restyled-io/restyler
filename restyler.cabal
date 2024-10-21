@@ -154,6 +154,7 @@ test-suite test
       Restyler.Test.App
       Restyler.Test.Fixtures
       Restyler.Test.FS
+      Restyler.Test.OptEnvConf
       Paths_restyler
   hs-source-dirs:
       test

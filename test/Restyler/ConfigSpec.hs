@@ -17,18 +17,13 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings (defaultLogSettings, shouldLogLevel)
 import Data.Text.IO (hPutStr)
-import OptEnvConf.Args (parseArgs)
-import OptEnvConf.EnvMap qualified as EnvMap
-import OptEnvConf.Error (renderErrors)
-import OptEnvConf.Run (runParserOn)
 import Path (mkAbsFile)
 import Restyler.Config
 import Restyler.Config.Restrictions.Bytes
 import Restyler.Test.Fixtures
+import Restyler.Test.OptEnvConf
 import System.IO (hClose)
 import Test.Hspec
-import Text.Colour.Capabilities (TerminalCapabilities (..))
-import Text.Colour.Chunk (renderChunksText)
 import UnliftIO.Temporary (withSystemTempFile)
 
 spec :: Spec
@@ -300,13 +295,15 @@ loadTestConfig
   -- ^ Args
   -> IO Config
 loadTestConfig yaml env args = do
-  result <- loadTestConfigEither yaml env args
-
-  case result of
-    Left err -> do
-      expectationFailure $ unpack err
-      error "unreachable"
-    Right config -> pure config
+  case yaml of
+    [] -> runConfigParser []
+    ls -> withSystemTempFile "restyler-test-config.yaml" $ \path h -> do
+      hPutStr h (unlines ls) >> hClose h
+      runConfigParser [path]
+ where
+  runConfigParser ps = do
+    let p = configParser $ ps <> ["config/default.yaml"]
+    runParser p args env Nothing
 
 loadTestConfigEither
   :: [Text]
@@ -319,18 +316,12 @@ loadTestConfigEither
   -- ^ Args
   -> IO (Either Text Config)
 loadTestConfigEither yaml env args = do
-  result <- case yaml of
-    [] -> runParser ["config/default.yaml"]
+  case yaml of
+    [] -> runConfigParser []
     ls -> withSystemTempFile "restyler-test-config.yaml" $ \path h -> do
       hPutStr h (unlines ls) >> hClose h
-      runParser [path, "config/default.yaml"]
-
-  pure $ first (renderChunksText WithoutColours . renderErrors) result
+      runConfigParser [path]
  where
-  runParser paths =
-    runParserOn
-      Nothing
-      (configParser paths)
-      (parseArgs args)
-      (EnvMap.parse env)
-      Nothing
+  runConfigParser ps = do
+    let p = configParser $ ps <> ["config/default.yaml"]
+    first parseErrorsText <$> runParserEither p args env Nothing
