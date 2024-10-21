@@ -100,7 +100,7 @@ configParser sources =
     hostDirectory <- subConfig_ "docker" hostDirectoryParser
     imageCleanup <- subConfig_ "docker" imageCleanupParser
     noPull <- subConfig_ "docker" noPullParser
-    restrictions <- subConfig_ "docker" restrictionsParser
+    restrictions <- subConfig_ "docker" $ subAll "restyler" restrictionsParser
     noCommit <- subConfig_ "git" noCommitParser
     noClean <- subConfig_ "git" noCleanParser
     pullRequestJson <-
