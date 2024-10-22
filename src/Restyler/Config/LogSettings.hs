@@ -22,7 +22,7 @@ import Restyler.Prelude
 import Autodocodec
 import Blammo.Logging.LogSettings
 import Blammo.Logging.LogSettings.Env qualified as LogSettings
-import Blammo.Logging.LogSettings.LogLevels
+import Blammo.Logging.LogSettings.LogLevels (newLogLevels)
 import OptEnvConf
 
 instance HasCodec LogColor where
@@ -53,28 +53,26 @@ logSettingsOptionParser :: Parser LogSettingsOption
 logSettingsOptionParser =
   mconcat
     <$> sequenceA
-      [ levelParser "debug" $ bool id $ setLogLevel LevelDebug
-      , levelParser "trace" $ bool id $ setLogLevel $ LevelOther "trace"
-      , colorParser setLogSettingsColor
+      [ levelParser "debug" LevelDebug
+      , levelParser "trace" (LevelOther "trace")
+      , colorParser
       ]
 
-levelParser
-  :: String -> (Bool -> LogSettings -> LogSettings) -> Parser LogSettingsOption
-levelParser level f =
+levelParser :: String -> LogLevel -> Parser LogSettingsOption
+levelParser levelName level =
   LogSettingsOption
     . Mod
-    . f
+    . bool id (setLogLevel level)
     <$> yesNoSwitch
-      [ help $ "Enable " <> level <> " logging"
-      , name level
+      [ help $ "Enable " <> levelName <> " logging"
+      , name levelName
       ]
 
-colorParser
-  :: (LogColor -> LogSettings -> LogSettings) -> Parser LogSettingsOption
-colorParser f =
+colorParser :: Parser LogSettingsOption
+colorParser =
   LogSettingsOption
     . Mod
-    . f
+    . setLogSettingsColor
     <$> setting
       [ help "Enable color WHEN"
       , option
