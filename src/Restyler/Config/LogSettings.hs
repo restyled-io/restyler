@@ -53,9 +53,22 @@ logSettingsOptionParser :: Parser LogSettingsOption
 logSettingsOptionParser =
   mconcat
     <$> sequenceA
-      [ levelParser "debug" LevelDebug
-      , levelParser "trace" (LevelOther "trace")
+      [ levelsParser <|> levelParser "debug" LevelDebug
+      , levelsParser <|> levelParser "trace" (LevelOther "trace")
       , colorParser
+      ]
+
+-- | We'll try to read LOG_LEVELS first, so its respected
+levelsParser :: Parser LogSettingsOption
+levelsParser =
+  LogSettingsOption
+    . Mod
+    . setLogSettingsLevels
+    <$> setting
+      [ help ""
+      , reader $ eitherReader readLogLevels
+      , env "LOG_LEVEL"
+      , hidden
       ]
 
 levelParser :: String -> LogLevel -> Parser LogSettingsOption
@@ -79,6 +92,7 @@ colorParser =
       , name "color"
       , metavar "WHEN"
       , reader $ eitherReader readLogColor
+      , env "LOG_COLOR"
       ]
 
 setLogLevel :: LogLevel -> LogSettings -> LogSettings
