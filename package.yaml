@@ -60,6 +60,8 @@ library:
     - opt-env-conf >= 0.6.0.2
     - path
     - relude
+    - ronn
+    - ronn-opt-env-conf
     - semigroups
     - text
     - typed-process

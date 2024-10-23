@@ -42,6 +42,7 @@ import Restyler.Config.NoPull as X
 import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
+import Restyler.Docs
 import System.IO (hClose)
 import UnliftIO.Temporary (withSystemTempFile)
 
@@ -69,6 +70,11 @@ data Config = Config
 
 parseConfig :: IO Config
 parseConfig = do
+  getArgs >>= \case
+    ["__render-docs-man1__"] -> renderDocsPage Restyle1 $ configParser []
+    ["__render-docs-man5__"] -> renderDocsPage (RestyledYaml5 defaultConfigContent) $ configParser []
+    _ -> pure ()
+
   withSystemTempFile "restyler-default-config.yaml" $ \defaults h -> do
     BS.hPutStr h defaultConfigContent >> hClose h
     runParser Pkg.version "Restyle local files"

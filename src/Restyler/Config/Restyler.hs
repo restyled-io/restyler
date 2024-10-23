@@ -51,7 +51,7 @@ restylersVersionParser =
     , option
     , long "restylers-version"
     , reader str
-    , metavar "stable|dev|..."
+    , metavar "TAG"
     , env "RESTYLERS_VERSION"
     , conf "restylers_version"
     ]

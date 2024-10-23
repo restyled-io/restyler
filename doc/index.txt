@@ -1,0 +1,7 @@
+# manuals included in this project:
+restyle(1) restyle.1.ronn
+restyled.yaml(5) restyled.yaml.5.ronn
+
+# external manuals:
+docker(1) https://manpages.org/docker
+git(1) https://man.cx/git(1)

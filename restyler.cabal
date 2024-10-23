@@ -38,6 +38,7 @@ library
       Restyler.Config.Restrictions.Bytes
       Restyler.Config.Restyler
       Restyler.Delimited
+      Restyler.Docs
       Restyler.GitHub.PullRequest
       Restyler.Ignore
       Restyler.Monad.Directory
@@ -97,6 +98,8 @@ library
     , opt-env-conf >=0.6.0.2
     , path
     , relude
+    , ronn
+    , ronn-opt-env-conf
     , semigroups
     , text
     , typed-process

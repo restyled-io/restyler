@@ -28,11 +28,10 @@ import OptEnvConf.EnvMap qualified as EnvMap
 import OptEnvConf.Error (ParseError (..), ParseErrorMessage (..), renderErrors)
 import OptEnvConf.Run (runParserOn)
 import Test.Hspec
-import Text.Colour.Capabilities (TerminalCapabilities (..))
-import Text.Colour.Chunk (renderChunksText)
+import Text.Colour (chunkText)
 
 parseErrorsText :: NonEmpty ParseError -> Text
-parseErrorsText = renderChunksText WithoutColours . renderErrors
+parseErrorsText = mconcat . map chunkText . renderErrors
 
 -- | Run the 'Parser' on options, environment, and (maybe) config
 --

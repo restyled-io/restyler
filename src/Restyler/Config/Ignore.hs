@@ -53,21 +53,21 @@ newIgnoresParser =
       , option
       , name "authors"
       , reader $ commaSeparatedList str
-      , metavar "GLOB[,GLOB...]"
+      , metavar "GLOB[,GLOB]"
       ]
     <*> setting
       [ help "Ignore branches that match globs"
       , option
       , name "branches"
       , reader $ commaSeparatedList str
-      , metavar "GLOB[,GLOB...]"
+      , metavar "GLOB[,GLOB]"
       ]
     <*> setting
       [ help "Ignore labels that match globs"
       , option
       , name "labels"
       , reader $ commaSeparatedList str
-      , metavar "GLOB[,GLOB...]"
+      , metavar "GLOB[,GLOB]"
       ]
 
 data OldIgnores = OldIgnores
