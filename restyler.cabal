@@ -38,6 +38,8 @@ library
       Restyler.Config.Restrictions.Bytes
       Restyler.Config.Restyler
       Restyler.Delimited
+      Restyler.Docs
+      Restyler.Docs.Ronn
       Restyler.GitHub.PullRequest
       Restyler.Ignore
       Restyler.Monad.Directory
@@ -81,6 +83,7 @@ library
     , aeson-casing
     , annotated-exception
     , autodocodec
+    , autodocodec-yaml
     , base
     , bytestring
     , composition-extra
@@ -97,6 +100,8 @@ library
     , opt-env-conf >=0.6.0.2
     , path
     , relude
+    , safe-coloured-text
+    , safe-coloured-text-terminfo
     , semigroups
     , text
     , typed-process
