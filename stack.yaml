@@ -3,6 +3,9 @@ extra-deps:
   - Blammo-2.1.1.0
   - opt-env-conf-0.6.0.2
 
+  - ronn-1.1.1.0
+  - ronn-opt-env-conf-1.0.1.0
+
   # For opt-env-conf
   - autodocodec-0.4.2.2
   - autodocodec-nix-0.0.1.4

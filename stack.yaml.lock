@@ -19,6 +19,20 @@ packages:
   original:
     hackage: opt-env-conf-0.6.0.2
 - completed:
+    hackage: ronn-1.1.1.0@sha256:6852148b2cd62b3912f1ca851badbac851e0466ce5998ee9c5dd2435d5ea79f8,2834
+    pantry-tree:
+      sha256: ec76e5661a2d4a1db26c74650b06458c13c2bd0b6ac382022e88b130f0af68c1
+      size: 623
+  original:
+    hackage: ronn-1.1.1.0
+- completed:
+    hackage: ronn-opt-env-conf-1.0.1.0@sha256:30049a7baf01a419d62b68321256af9872b228409af28d32cbcf70d100c6f0bf,2847
+    pantry-tree:
+      sha256: f185f3736c9a5f0fbbc7879a5a590fe4c72634ba2112bd14eb69cf3d1335ff7a
+      size: 486
+  original:
+    hackage: ronn-opt-env-conf-1.0.1.0
+- completed:
     hackage: autodocodec-0.4.2.2@sha256:93b72477d84181a62c81b54bcffec31afbe15af987214e66bc408c37b9555b4f,1595
     pantry-tree:
       sha256: bfb550c0eeee66eea27efc870c0a1c9a427749b37b613fb50a669328ad0d84f7
