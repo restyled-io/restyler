@@ -106,6 +106,54 @@ jobs:
           files: "*-binaries/restyler-*.tar.gz"
           fail_on_unmatched_files: true
 
+  docs:
+    #if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [build]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "$HOME/.local/share/gem/ruby/3.0.0/bin" >>"$GITHUB_PATH"
+      - run: gem install --user ronn-ng
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+      - run: |
+          tar xzf restyler-*.tar.gz
+          mkdir -p ./bin
+          sudo mv -v restyler-*/restyle /usr/local/bin
+
+      # TODO: only checkout doc folder
+      - uses: actions/checkout@v4
+
+      - name: Generate ronn documenation
+        run: |
+          restyle __render-docs-man1__ > doc/restyle.1.ronn
+          restyle __render-docs-man5__ > doc/restyled.yaml.5.ronn
+
+      - name: Generate HTML sources to _site
+        run: |
+          env \
+            RONN_STYLE=./doc \
+            RONN_ORGANIZATION=Restyled \
+            RONN_MANUAL="Restyler v$(restyle --version | cut -d' ' -f 2)" \
+            ronn --style toc,custom --roff --html doc/*.ronn
+
+          mkdir -p _site/man-pages
+          cp -v doc/*.html _site/man-pages/
+
+      - uses: actions/configure-pages@v3
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v1
+
   test-install:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest

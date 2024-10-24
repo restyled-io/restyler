@@ -11,7 +11,10 @@ curl --proto '=https' --tlsv1.2 -sSf \
 
 ## Usage
 
-See the [reference documentation](./doc/reference.txt).
+See [`restyle(1)`][restyle.1] and [`restyled.yaml(5)`][restyled.yaml.5].
+
+[restyle.1]: https://restyled-io.github.io/restyler/man-pages/restyle.1
+[restyled.yaml.5]: https://restyled-io.github.io/restyler/man-pages/restyled.yaml.5
 
 ### GitHub Actions
 

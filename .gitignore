@@ -3,3 +3,7 @@
 .stack-work*
 *.hie
 **/.hiedb
+
+doc/*
+!doc/custom.css
+!doc/index.txt
