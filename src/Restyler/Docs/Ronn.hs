@@ -2,7 +2,6 @@ module Restyler.Docs.Ronn
   ( Ronn (..)
   , RonnGroup (..)
   , RonnLine (..)
-  , ronnLineFromChunks
   , indentRonnLine
   , RonnPart (..)
   , ronnPartText
@@ -12,7 +11,7 @@ module Restyler.Docs.Ronn
 import Restyler.Prelude
 
 import Data.Text qualified as T
-import Text.Colour (Chunk, chunk, chunkText, unlinesChunks)
+import Text.Colour (Chunk, chunk, unlinesChunks)
 
 data Ronn = Ronn
   { name :: Text
@@ -63,9 +62,6 @@ indentRonnLine n = \case
 
 ronnLineToChunks :: RonnLine -> [Chunk]
 ronnLineToChunks = map (chunk . ronnPartText) . intersperse " " . (.unwrap)
-
-ronnLineFromChunks :: [Chunk] -> RonnLine
-ronnLineFromChunks = RonnLine . map (RonnRaw . chunkText)
 
 data RonnPart
   = RonnConcat [RonnPart]
