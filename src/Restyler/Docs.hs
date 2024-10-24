@@ -86,12 +86,10 @@ ronnRestyle1 docs =
 ronnRestyledYaml5 :: AnyDocs (Maybe SetDoc) -> Ronn
 ronnRestyledYaml5 docs =
   Ronn
-    { name = ".restyled.yaml"
+    { name = "restyled.yaml"
     , number = 5
     , description = "Restyled configuration file"
-    , sections =
-        synopsis "restyled.yaml" []
-          <> settings confDocs
+    , sections = synopsis ".restyled.yaml" [] <> settings confDocs
     }
  where
   confDocs :: [ConfDoc]
