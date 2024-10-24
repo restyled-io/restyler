@@ -112,6 +112,10 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - run: echo "$HOME/.local/share/gem/ruby/3.0.0/bin" >>"$GITHUB_PATH"
