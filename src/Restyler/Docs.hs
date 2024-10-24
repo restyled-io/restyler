@@ -159,17 +159,13 @@ settings =
               , RonnAngles $ RonnBracket $ RonnRaw x
               ]
           Unknown {} ->
-            RonnConcat
-              [ RonnBacktick
-                  $ RonnRaw
-                  $ pack
-                  $ intercalate "."
-                  $ concatMap (toList . fst)
-                  $ toList
-                  $ confDocKeys doc
-              , "="
-              , RonnAngles "schema"
-              ]
+            RonnBacktick
+              $ RonnRaw
+              $ pack
+              $ intercalate "."
+              $ concatMap (toList . fst)
+              $ toList
+              $ confDocKeys doc
       )
       ( \doc -> case getSchemaLines doc of
           SingleType {} ->
