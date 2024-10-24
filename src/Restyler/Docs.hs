@@ -136,7 +136,7 @@ settings =
   section "DESCRIPTION"
     . ronnDefList
       ( \doc -> case getSchemaLines doc of
-          OneLine x ->
+          SingleType x ->
             RonnConcat
               [ RonnBacktick
                   $ RonnRaw
@@ -148,7 +148,7 @@ settings =
               , "="
               , RonnRaw x
               ]
-          MultiLine {} ->
+          ArrayType x ->
             RonnConcat
               [ RonnBacktick
                   $ RonnRaw
@@ -158,14 +158,29 @@ settings =
                   $ toList
                   $ confDocKeys doc
               , "="
-              , RonnAngles "object"
+              , RonnAngles $ RonnBracket $ RonnRaw x
+              ]
+          Unknown {} ->
+            RonnConcat
+              [ RonnBacktick
+                  $ RonnRaw
+                  $ pack
+                  $ intercalate "."
+                  $ concatMap (toList . fst)
+                  $ toList
+                  $ confDocKeys doc
+              , "="
+              , RonnAngles "schema"
               ]
       )
       ( \doc -> case getSchemaLines doc of
-          OneLine {} ->
+          SingleType {} ->
             [ RonnLine $ pure $ ronnHelp $ confDocHelp doc
             ]
-          MultiLine ls ->
+          ArrayType {} ->
+            [ RonnLine $ pure $ ronnHelp $ confDocHelp doc
+            ]
+          Unknown ls ->
             [ RonnLine $ pure $ ronnHelp $ confDocHelp doc
             , RonnLine []
             ]
@@ -173,14 +188,19 @@ settings =
       )
 
 data SchemaLines
-  = OneLine Text
-  | MultiLine [RonnLine]
+  = SingleType Text
+  | ArrayType Text
+  | Unknown [RonnLine]
 
 getSchemaLines :: ConfDoc -> SchemaLines
 getSchemaLines doc =
   case texts of
-    [t] -> OneLine t
-    ts -> MultiLine $ map (RonnLine . pure . RonnRaw) ts
+    [t]
+      | Just x <- T.stripPrefix "- <" t
+      , Just y <- T.stripSuffix ">" x ->
+          ArrayType y
+      | otherwise -> SingleType t
+    ts -> Unknown $ map (RonnLine . pure . RonnRaw) ts
  where
   texts = filter (/= "# or null") $ map (mconcat . map chunkText) chunks
   chunks =
