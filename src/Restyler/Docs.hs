@@ -89,7 +89,26 @@ ronnRestyledYaml5 docs =
     { name = "restyled.yaml"
     , number = 5
     , description = "Restyled configuration file"
-    , sections = synopsis ".restyled.yaml" [] <> settings confDocs
+    , sections =
+        section
+          "SYNOPSIS"
+          [ RonnGroup
+              [ RonnLine
+                  [ "Restyled configuration, loaded from the first of"
+                  , RonnConcat
+                      $ intersperse ", "
+                      $ map
+                        RonnBacktick
+                        [ ".restyled.yaml"
+                        , ".restyled.yml"
+                        , ".github/restyled.yaml"
+                        , ".github/restyled.yml"
+                        ]
+                  , "found"
+                  ]
+              ]
+          ]
+          <> settings confDocs
     }
  where
   confDocs :: [ConfDoc]
