@@ -4,6 +4,6 @@
 *.hie
 **/.hiedb
 
-doc
+doc/*
 !doc/custom.css
 !doc/index.txt
