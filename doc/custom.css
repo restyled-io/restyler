@@ -1,22 +1,3 @@
-.mp h1,
-.mp h2,
-.mp h3,
-.mp h4,
-.mp h5,
-.mp h6,
-.mp code {
-  color: #A00000;
-}
-
-.mp var {
-  color: #006000;
-}
-
-.mp dd p {
-  margin-top: 20px;
-}
-
-ol.man-decor li.tc {
-  letter-spacing: inherit;
-  text-transform: none;
+.mp {
+  text-align: inherit /* prevent justify */
 }
