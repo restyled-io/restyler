@@ -12,15 +12,16 @@ import Autodocodec.Yaml (jsonSchemaChunkLines)
 import Data.Text.IO qualified as T
 import OptEnvConf.Doc (AnyDocs (..), ConfDoc (..), commandDocs, parserConfDocs)
 import OptEnvConf.Parser (Parser)
+import Restyler.Config (configParser, configPaths)
 import Ronn
 import Ronn.OptEnvConf ()
 import Text.Colour.Chunk (Chunk (..))
 
 data DocsPage = Restyle1 | RestyledYaml5
 
-renderDocsPage :: DocsPage -> Parser a -> IO b
-renderDocsPage docsPage p = do
-  T.putStrLn $ formatDocsPage docsPage p
+renderDocsPage :: DocsPage -> IO b
+renderDocsPage docsPage = do
+  T.putStrLn $ formatDocsPage docsPage $ configParser []
   exitSuccess
 
 formatDocsPage :: DocsPage -> Parser a -> Text
@@ -59,21 +60,14 @@ ronnRestyledYaml5 :: Parser a -> Ronn
 ronnRestyledYaml5 p =
   Ronn
     { name = ManRef "restyled.yaml" ManSection5
-    , description = ["Restyled configuration file"]
+    , description = ["restyled configuration file"]
     , sections =
         [ Section
             { name = "SYNOPSIS"
             , content =
                 [ Groups
                     [ Lines ["Restyled configuration, loaded from the first of:"]
-                    , Lines
-                        $ map
-                          (Line . ("*" :) . pure . Code)
-                          [ ".restyled.yaml"
-                          , ".restyled.yml"
-                          , ".github/restyled.yaml"
-                          , ".github/restyled.yml"
-                          ]
+                    , Lines $ map (Line . ("*" :) . pure . Code . fromString) configPaths
                     ]
                 ]
             }

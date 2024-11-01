@@ -11,6 +11,7 @@
 -- Portability : POSIX
 module Restyler.Config
   ( Config (..)
+  , configPaths
   , configParser
   , parseConfig
 
@@ -39,7 +40,6 @@ import Restyler.Config.NoPull as X
 import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
-import Restyler.Docs
 
 data Config = Config
   { logSettings :: LogSettingsOption
@@ -64,19 +64,15 @@ data Config = Config
   }
 
 parseConfig :: IO Config
-parseConfig = do
-  getArgs >>= \case
-    ["__render-docs-man1__"] -> renderDocsPage Restyle1 $ configParser []
-    ["__render-docs-man5__"] -> renderDocsPage RestyledYaml5 $ configParser []
-    _ -> pure ()
+parseConfig = runParser Pkg.version "Restyle local files" $ configParser configPaths
 
-  runParser Pkg.version "Restyle local files"
-    $ configParser
-      [ ".github/restyled.yml"
-      , ".github/restyled.yaml"
-      , ".restyled.yml"
-      , ".restyled.yaml"
-      ]
+configPaths :: [FilePath]
+configPaths =
+  [ ".github/restyled.yml"
+  , ".github/restyled.yaml"
+  , ".restyled.yml"
+  , ".restyled.yaml"
+  ]
 
 configParser :: [FilePath] -> Parser Config
 configParser sources =
