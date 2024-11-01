@@ -20,9 +20,10 @@ class HasFailOnDifferences env where
 
 failOnDifferencesParser :: Parser Bool
 failOnDifferencesParser =
-  yesNoSwitch
-    [ help "Exit non-zero if differences were found"
-    , long "fail-on-differences"
-    , env "FAIL_ON_DIFFERENCES"
-    , conf "fail_on_differences"
-    ]
+  withDefault False
+    $ yesNoSwitch
+      [ help "Exit non-zero if differences were found"
+      , long "fail-on-differences"
+      , env "FAIL_ON_DIFFERENCES"
+      , conf "fail_on_differences"
+      ]

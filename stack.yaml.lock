@@ -12,12 +12,12 @@ packages:
   original:
     hackage: Blammo-2.1.1.0
 - completed:
-    hackage: opt-env-conf-0.6.0.2@sha256:f1e80e1497b71223f6a9ef915ec74985faa5d1b73f67e8b68f7fea0cc72aaa4d,1677
+    hackage: opt-env-conf-0.7.0.1@sha256:4929991c57dc1737d580c0a324d9fd6d92aba32faf376f84ed80216fdf8f8a84,1677
     pantry-tree:
-      sha256: 005fd0fcf2a4a9844bdf120a0942f63c86e7a2d85f70609992b94b7f7149e54c
+      sha256: 8cf9d0d0fc20008aa819f63081b0b2d18f097b198be054c6ce211c6722cb59b5
       size: 1196
   original:
-    hackage: opt-env-conf-0.6.0.2
+    hackage: opt-env-conf-0.7.0.1
 - completed:
     hackage: ronn-1.1.1.0@sha256:6852148b2cd62b3912f1ca851badbac851e0466ce5998ee9c5dd2435d5ea79f8,2834
     pantry-tree:

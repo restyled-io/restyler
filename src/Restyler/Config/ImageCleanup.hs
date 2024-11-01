@@ -20,9 +20,10 @@ class HasImageCleanup env where
 
 imageCleanupParser :: Parser Bool
 imageCleanupParser =
-  yesNoSwitch
-    [ help "Remove images after running them"
-    , long "image-cleanup"
-    , env "IMAGE_CLEANUP"
-    , conf "image_cleanup"
-    ]
+  withDefault False
+    $ yesNoSwitch
+      [ help "Remove images after running them"
+      , long "image-cleanup"
+      , env "IMAGE_CLEANUP"
+      , conf "image_cleanup"
+      ]

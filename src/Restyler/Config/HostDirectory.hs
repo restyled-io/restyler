@@ -26,4 +26,5 @@ hostDirectoryParser =
     , long "host-directory"
     , env "HOST_DIRECTORY"
     , conf "host_directory"
+    , value "."
     ]

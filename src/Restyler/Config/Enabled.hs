@@ -23,4 +23,5 @@ enabledParser =
   setting
     [ help "Do anything at all"
     , conf "enabled"
+    , value True
     ]
