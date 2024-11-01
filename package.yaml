@@ -45,13 +45,12 @@ library:
     - aeson-casing
     - annotated-exception
     - autodocodec
-    - bytestring
+    - autodocodec-yaml
     - composition-extra
     - conduit
     - errors
     - exceptions
     - extra
-    - file-embed
     - filepath
     - http-conduit
     - microlens
@@ -62,6 +61,7 @@ library:
     - relude
     - ronn
     - ronn-opt-env-conf
+    - safe-coloured-text
     - semigroups
     - text
     - typed-process

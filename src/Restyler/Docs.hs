@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Restyler.Docs
   ( DocsPage (..)
   , renderDocsPage
@@ -6,14 +8,15 @@ where
 
 import Restyler.Prelude
 
-import Data.ByteString qualified as BS
-import Data.ByteString.Char8 qualified as BS8
+import Autodocodec.Yaml (jsonSchemaChunkLines)
 import Data.Text.IO qualified as T
+import OptEnvConf.Doc (AnyDocs (..), ConfDoc (..), commandDocs, parserConfDocs)
 import OptEnvConf.Parser (Parser)
 import Ronn
 import Ronn.OptEnvConf ()
+import Text.Colour.Chunk (Chunk (..))
 
-data DocsPage = Restyle1 | RestyledYaml5 ByteString
+data DocsPage = Restyle1 | RestyledYaml5
 
 renderDocsPage :: DocsPage -> Parser a -> IO b
 renderDocsPage docsPage p = do
@@ -23,7 +26,7 @@ renderDocsPage docsPage p = do
 formatDocsPage :: DocsPage -> Parser a -> Text
 formatDocsPage = \case
   Restyle1 -> ronnToText . ronnRestyle1
-  RestyledYaml5 yaml -> ronnToText . ronnRestyledYaml5 yaml
+  RestyledYaml5 -> ronnToText . ronnRestyledYaml5
 
 ronnRestyle1 :: Parser a -> Ronn
 ronnRestyle1 p =
@@ -52,8 +55,8 @@ ronnRestyle1 p =
              ]
     }
 
-ronnRestyledYaml5 :: ByteString -> Parser a -> Ronn
-ronnRestyledYaml5 yaml _ =
+ronnRestyledYaml5 :: Parser a -> Ronn
+ronnRestyledYaml5 p =
   Ronn
     { name = ManRef "restyled.yaml" ManSection5
     , description = ["Restyled configuration file"]
@@ -62,35 +65,68 @@ ronnRestyledYaml5 yaml _ =
             { name = "SYNOPSIS"
             , content =
                 [ Groups
-                    [ Lines
-                        [ Line
-                            [ "Restyled configuration, loaded from the first of"
-                            , mconcat
-                                $ intersperse ", "
-                                $ map
-                                  Code
-                                  [ ".restyled.yaml"
-                                  , ".restyled.yml"
-                                  , ".github/restyled.yaml"
-                                  , ".github/restyled.yml"
-                                  ]
-                            , "found"
-                            ]
-                        ]
+                    [ Lines ["Restyled configuration, loaded from the first of:"]
+                    , Lines
+                        $ map
+                          (Line . ("*" :) . pure . Code)
+                          [ ".restyled.yaml"
+                          , ".restyled.yml"
+                          , ".github/restyled.yaml"
+                          , ".github/restyled.yml"
+                          ]
                     ]
                 ]
             }
         , Section
             { name = "DESCRIPTION"
-            , content = [Groups [Lines $ indentLines yaml]]
+            , content = [Definitions $ renderConfDocs $ parserConfDocs p]
             }
         ]
     }
 
-indentLines :: ByteString -> [Line]
-indentLines = map (Line . pure . Raw . decodeUtf8 . indentLine) . BS8.lines
+renderConfDocs :: AnyDocs ConfDoc -> [Definition]
+renderConfDocs = \case
+  AnyDocsCommands _ cs -> concatMap (renderConfDocs . commandDocs) cs
+  AnyDocsAnd ds -> concatMap renderConfDocs ds
+  AnyDocsOr ds -> concatMap renderConfDocs ds
+  AnyDocsSingle ed -> renderConfDoc ed
 
-indentLine :: ByteString -> ByteString
-indentLine bs
-  | BS.null bs = bs
-  | otherwise = "    " <> bs
+renderConfDoc :: ConfDoc -> [Definition]
+renderConfDoc ConfDoc {..} =
+  toList $ uncurry toDefinition <$> confDocKeys
+ where
+  -- Different confs with different schema is not really supported. If we do
+  -- that it'll generate separate definitions with the same help and default.
+  (description, rest) = case lines . pack <$> confDocHelp of
+    Nothing -> error "TODO"
+    Just [] -> error "TODO"
+    Just [x] -> (Line $ pure $ Raw x, Nothing)
+    Just (x : xs) -> (Line $ pure $ Raw x, Just $ Lines $ map (Line . pure . Raw) xs)
+
+  toDefinition key schema =
+    Definition
+      { name = Code $ Concat $ intersperse "." $ toList $ fromString <$> key
+      , description
+      , content =
+          Just
+            [ Groups
+                $ catMaybes
+                  [ rest
+                  , Just
+                      $ Lines
+                      $ ("Schema:" :)
+                      $ map (Line . pure . Raw . ("    " <>))
+                      $ filter (/= "# or null")
+                      $ map (mconcat . map chunkText)
+                      $ jsonSchemaChunkLines schema
+                  , Lines
+                      . pure
+                      . Line
+                      . ("Default" :)
+                      . pure
+                      . Code
+                      . fromString
+                      <$> confDocDefault
+                  ]
+            ]
+      }
