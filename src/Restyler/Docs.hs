@@ -35,7 +35,7 @@ ronnRestyle1 p =
           <> [ definitionsSection
                 "FILES"
                 [ Definition
-                    { name = ".restyled.yaml"
+                    { name = Code ".restyled.yaml"
                     , description =
                         Line
                           [ "Configuration for Restyled, see "
