@@ -1,6 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- | Handling of @.restyled.yaml@ content and behavior driven there-by
 --
@@ -21,8 +20,6 @@ module Restyler.Config
 
 import Restyler.Prelude
 
-import Data.ByteString qualified as BS
-import Data.FileEmbed (embedFile)
 import OptEnvConf
 import Paths_restyler qualified as Pkg
 import Restyler.Config.CommitTemplate as X
@@ -43,8 +40,6 @@ import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
 import Restyler.Docs
-import System.IO (hClose)
-import UnliftIO.Temporary (withSystemTempFile)
 
 data Config = Config
   { logSettings :: LogSettingsOption
@@ -72,26 +67,20 @@ parseConfig :: IO Config
 parseConfig = do
   getArgs >>= \case
     ["__render-docs-man1__"] -> renderDocsPage Restyle1 $ configParser []
-    ["__render-docs-man5__"] -> renderDocsPage (RestyledYaml5 defaultConfigContent) $ configParser []
+    ["__render-docs-man5__"] -> renderDocsPage RestyledYaml5 $ configParser []
     _ -> pure ()
 
-  withSystemTempFile "restyler-default-config.yaml" $ \defaults h -> do
-    BS.hPutStr h defaultConfigContent >> hClose h
-    runParser Pkg.version "Restyle local files"
-      $ configParser
-        [ ".github/restyled.yml"
-        , ".github/restyled.yaml"
-        , ".restyled.yml"
-        , ".restyled.yaml"
-        , defaults
-        ]
-
-defaultConfigContent :: ByteString
-defaultConfigContent = $(embedFile "config/default.yaml")
+  runParser Pkg.version "Restyle local files"
+    $ configParser
+      [ ".github/restyled.yml"
+      , ".github/restyled.yaml"
+      , ".restyled.yml"
+      , ".restyled.yaml"
+      ]
 
 configParser :: [FilePath] -> Parser Config
 configParser sources =
-  withCombinedYamlConfigs (traverse hiddenPath sources) $ do
+  withFirstYamlConfig (traverse hiddenPath sources) $ do
     logSettings <- subConfig_ "logging" logSettingsOptionParser
     enabled <- enabledParser
     dryRun <- dryRunParser
@@ -127,5 +116,8 @@ configParser sources =
           ]
     pure Config {..}
 
+-- | Use 'filePathSetting' to handle creating the @'Path' 'Abs' 'File'@ we need
+--
+-- And mark it 'hidden' so it doesn't appear in docs.
 hiddenPath :: FilePath -> Parser (Path Abs File)
 hiddenPath x = filePathSetting [value x, hidden]
