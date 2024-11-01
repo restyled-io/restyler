@@ -54,6 +54,7 @@ newIgnoresParser =
       , name "authors"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB]"
+      , value ["*[bot]"]
       ]
     <*> setting
       [ help "Ignore branches that match globs"
@@ -61,6 +62,7 @@ newIgnoresParser =
       , name "branches"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB]"
+      , value ["renovate/*"]
       ]
     <*> setting
       [ help "Ignore labels that match globs"
@@ -68,6 +70,7 @@ newIgnoresParser =
       , name "labels"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB]"
+      , value ["restyled-ignore"]
       ]
 
 data OldIgnores = OldIgnores

@@ -28,6 +28,13 @@ excludeParser =
       , name "exclude"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB]"
+      , value
+          [ "**/*.patch"
+          , "**/.git/**/*"
+          , "**/node_modules/**/*"
+          , "**/vendor/**/*"
+          , ".github/workflows/**/*"
+          ]
       ]
     <*> setting
       [ help "Exclude paths matching the given globs (in addition to defaults)"
@@ -37,4 +44,5 @@ excludeParser =
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB]"
       , conf "also_exclude"
+      , value []
       ]

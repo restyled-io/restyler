@@ -21,7 +21,10 @@ class HasNoPull env where
 noPullParser :: Parser Bool
 noPullParser =
   not
-    <$> yesNoSwitch
-      [ help "Explicitly pull images before running them"
-      , name "pull"
-      ]
+    <$> withDefault
+      True
+      ( yesNoSwitch
+          [ help "Explicitly pull images before running them"
+          , name "pull"
+          ]
+      )

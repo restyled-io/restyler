@@ -21,7 +21,10 @@ class HasNoCommit env where
 noCommitParser :: Parser Bool
 noCommitParser =
   not
-    <$> yesNoSwitch
-      [ help "Commit each restyling change"
-      , name "commit"
-      ]
+    <$> withDefault
+      True
+      ( yesNoSwitch
+          [ help "Commit each restyling change"
+          , name "commit"
+          ]
+      )

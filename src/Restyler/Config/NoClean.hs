@@ -21,7 +21,10 @@ class HasNoClean env where
 noCleanParser :: Parser Bool
 noCleanParser =
   not
-    <$> yesNoSwitch
-      [ help "Run git-clean after restyling"
-      , name "clean"
-      ]
+    <$> withDefault
+      True
+      ( yesNoSwitch
+          [ help "Run git-clean after restyling"
+          , name "clean"
+          ]
+      )

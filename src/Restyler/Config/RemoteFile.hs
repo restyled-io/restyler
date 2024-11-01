@@ -66,4 +66,5 @@ remoteFilesParser =
   setting
     [ help "Download remote file before restyling"
     , conf "remote_files"
+    , value []
     ]

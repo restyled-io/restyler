@@ -54,6 +54,7 @@ restylersVersionParser =
     , metavar "TAG"
     , env "RESTYLERS_VERSION"
     , conf "restylers_version"
+    , value "stable"
     ]
 
 class HasRestylerOverrides env where
@@ -82,6 +83,19 @@ instance HasCodec RestylerOverride where
       [ codecNamed
       , codecNameOnly
       ]
+
+wildcard :: RestylerOverride
+wildcard =
+  RestylerOverride
+    { name = "*"
+    , enabled = Nothing
+    , image = Nothing
+    , command = Nothing
+    , arguments = Nothing
+    , include = Nothing
+    , interpreters = Nothing
+    , delimiters = Nothing
+    }
 
 restylerOverride :: Text -> RestylerOverride
 restylerOverride name =
@@ -174,10 +188,11 @@ getEnabledRestylers = do
 
 restylerOverridesParser :: Parser [RestylerOverride]
 restylerOverridesParser =
-  setting
-    [ help "Restylers to run"
-    , conf "restylers"
-    ]
+  withShownDefault [wildcard] "[\"*\"]"
+    $ setting
+      [ help "Restylers to run"
+      , conf "restylers"
+      ]
 
 overrideRestylers
   :: [Restyler] -> [RestylerOverride] -> Either [Text] [Restyler]

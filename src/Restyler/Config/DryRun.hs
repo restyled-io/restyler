@@ -20,9 +20,10 @@ class HasDryRun env where
 
 dryRunParser :: Parser Bool
 dryRunParser =
-  yesNoSwitch
-    [ help "Do everything except pull and run restylers"
-    , long "dry-run"
-    , env "DRY_RUN"
-    , conf "dry_run"
-    ]
+  withDefault False
+    $ yesNoSwitch
+      [ help "Do everything except pull and run restylers"
+      , long "dry-run"
+      , env "DRY_RUN"
+      , conf "dry_run"
+      ]

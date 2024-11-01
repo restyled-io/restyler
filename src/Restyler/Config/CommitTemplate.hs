@@ -34,6 +34,7 @@ commitTemplateParser =
   setting
     [ help "Template for restyling commit messages"
     , conf "commit_template"
+    , value "Restyled by ${restyler.name}\n"
     ]
 
 newtype CommitTemplateInputs = CommitTemplateInputs

@@ -1,7 +1,7 @@
 resolver: lts-22.38
 extra-deps:
   - Blammo-2.1.1.0
-  - opt-env-conf-0.6.0.2
+  - opt-env-conf-0.7.0.1
 
   - ronn-1.1.1.0
   - ronn-opt-env-conf-1.0.1.0

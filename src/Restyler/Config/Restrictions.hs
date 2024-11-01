@@ -55,12 +55,15 @@ restrictionsParser =
 subRestrictionsParser :: Parser Restrictions
 subRestrictionsParser =
   Restrictions
-    <$> yesNoSwitch
-      [ help "Run restylers with --net=none"
-      , long "net-none"
-      , env "NET_NONE"
-      , conf "net_none"
-      ]
+    <$> withDefault
+      True
+      ( yesNoSwitch
+          [ help "Run restylers with --net=none"
+          , long "net-none"
+          , env "NET_NONE"
+          , conf "net_none"
+          ]
+      )
     <*> ( Just
             <$> setting
               [ help "Run restylers with --cpu-shares"
@@ -70,21 +73,30 @@ subRestrictionsParser =
               , metavar "NUMBER"
               , conf "cpu_shares"
               , reader $ eitherReader readNat
+              , value 512
               ]
         )
     <*> ( Just
-            <$> setting
-              [ help "Run restylers with --memory"
-              , option
-              , name "memory"
-              , metavar "NUMBER<b|k|m|g>"
-              , reader $ eitherReader readBytes
-              ]
+            <$> withShownByDefault
+              showBytes
+              (Bytes 128 $ Just M)
+              ( setting
+                  [ help "Run restylers with --memory"
+                  , option
+                  , name "memory"
+                  , metavar "NUMBER<b|k|m|g>"
+                  , reader $ eitherReader readBytes
+                  ]
+              )
         )
 
 restrictedParser :: Parser Bool
 restrictedParser =
-  yesNoSwitch
-    [ help "Restrict restylers resources"
-    , name "restricted"
-    ]
+  withDefault True
+    $ yesNoSwitch
+      [ help "Restrict restylers resources"
+      , name "restricted"
+      ]
+
+withShownByDefault :: (a -> String) -> a -> Parser a -> Parser a
+withShownByDefault f a = withShownDefault a (f a)

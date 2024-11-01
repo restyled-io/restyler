@@ -76,10 +76,13 @@ levelParser levelName level =
   LogSettingsOption
     . Mod
     . bool id (setLogLevel level)
-    <$> yesNoSwitch
-      [ help $ "Enable " <> levelName <> " logging"
-      , name levelName
-      ]
+    <$> withDefault
+      False
+      ( yesNoSwitch
+          [ help $ "Enable " <> levelName <> " logging"
+          , name levelName
+          ]
+      )
 
 colorParser :: Parser LogSettingsOption
 colorParser =
@@ -93,6 +96,7 @@ colorParser =
       , metavar "WHEN"
       , reader $ eitherReader readLogColor
       , env "LOG_COLOR"
+      , value LogColorAuto
       ]
 
 setLogLevel :: LogLevel -> LogSettings -> LogSettings
