@@ -124,6 +124,12 @@ renderConfDoc ConfDoc {..} =
                       . Code
                       . fromString
                       <$> confDocDefault
+                  , Lines
+                      . ("Examples:" :)
+                      . map (Line . pure . Raw . ("    " <>))
+                      . intercalate [""] -- blank between examples
+                      . map (lines . pack)
+                      <$> guarded (not . null) confDocExamples
                   ]
             ]
       }

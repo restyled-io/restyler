@@ -64,7 +64,26 @@ remoteFileToUrl = (.url)
 remoteFilesParser :: Parser [RemoteFile]
 remoteFilesParser =
   setting
-    [ help "Download remote file before restyling"
+    [ help
+        $ unpack
+        $ unlines
+          [ "Download remote file before restyling"
+          ]
+    , example
+        $ unpack
+        $ unlines
+          [ "remote_files:"
+          , "  # URL downloaded to a particular path"
+          , "  - url: https://raw.github.com/.../hlint.yaml"
+          , "    path: .hlint.yaml"
+          ]
+    , example
+        $ unpack
+        $ unlines
+          [ "remote_files:"
+          , "  # URL downloaded to its basename"
+          , "  - https://raw.github.com/.../prettier.json"
+          ]
     , conf "remote_files"
     , value []
     ]
