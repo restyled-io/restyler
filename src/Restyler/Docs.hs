@@ -112,6 +112,7 @@ renderConfDoc ConfDoc {..} =
                   , Just
                       $ Lines
                       $ ("Schema:" :)
+                      $ ("" :)
                       $ map (Line . pure . Raw . ("    " <>))
                       $ filter (/= "# or null")
                       $ map (mconcat . map chunkText)
@@ -126,6 +127,7 @@ renderConfDoc ConfDoc {..} =
                       <$> confDocDefault
                   , Lines
                       . ("Examples:" :)
+                      . ("" :)
                       . map (Line . pure . Raw . ("    " <>))
                       . intercalate [""] -- blank between examples
                       . map (lines . pack)
