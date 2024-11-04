@@ -309,7 +309,7 @@ loadTestConfigEither args env yaml =
 withConfigYamls :: [Text] -> ([FilePath] -> IO a) -> IO a
 withConfigYamls yaml f = do
   case yaml of
-    [] -> f ["config/default.yaml"]
+    [] -> f []
     ls -> withSystemTempFile "restyler-test-config.yaml" $ \path h -> do
       hPutStr h (unlines ls) >> hClose h
-      f [path, "config/default.yaml"]
+      f [path]
