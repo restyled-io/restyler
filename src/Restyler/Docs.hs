@@ -95,7 +95,10 @@ renderConfDoc ConfDoc {..} =
     Nothing -> ("No help defined", Nothing)
     Just [] -> ("No help defined", Nothing)
     Just [x] -> (Line $ pure $ Raw x, Nothing)
-    Just (x : xs) -> (Line $ pure $ Raw x, Just $ Lines $ map (Line . pure . Raw) xs)
+    Just (x : xs) ->
+      ( Line $ pure $ Raw x
+      , Just $ Lines $ map (Line . pure . Raw) xs
+      )
 
   toDefinition key schema =
     Definition
@@ -116,7 +119,7 @@ renderConfDoc ConfDoc {..} =
                   , Lines
                       . pure
                       . Line
-                      . ("Default" :)
+                      . ("Default:" :)
                       . pure
                       . Code
                       . fromString

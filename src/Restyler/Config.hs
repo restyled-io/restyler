@@ -42,23 +42,23 @@ import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
 
 data Config = Config
-  { logSettings :: LogSettingsOption
-  , enabled :: Bool
+  { enabled :: Bool
   , dryRun :: Bool
   , failOnDifferences :: Bool
   , exclude :: [Glob FilePath]
-  , commitTemplate :: CommitTemplate
-  , remoteFiles :: [RemoteFile]
-  , ignores :: Ignores
   , restylersVersion :: String
   , restylersManifest :: Maybe (Path Abs File)
   , restylerOverrides :: [RestylerOverride]
+  , ignores :: Ignores
+  , remoteFiles :: [RemoteFile]
   , hostDirectory :: Path Abs Dir
   , imageCleanup :: Bool
   , noPull :: Bool
   , restrictions :: Restrictions
+  , commitTemplate :: CommitTemplate
   , noCommit :: Bool
   , noClean :: Bool
+  , logSettings :: LogSettingsOption
   , pullRequestJson :: Maybe (Path Abs File)
   , paths :: NonEmpty FilePath
   }
@@ -77,23 +77,23 @@ configPaths =
 configParser :: [FilePath] -> Parser Config
 configParser sources =
   withFirstYamlConfig (traverse hiddenPath sources) $ do
-    logSettings <- subConfig_ "logging" logSettingsOptionParser
     enabled <- enabledParser
     dryRun <- dryRunParser
     failOnDifferences <- failOnDifferencesParser
-    exclude <- excludeParser
-    commitTemplate <- commitTemplateParser
-    remoteFiles <- remoteFilesParser
-    ignores <- ignoresParser
     restylersVersion <- restylersVersionParser
     restylersManifest <- optional manifestParser
     restylerOverrides <- restylerOverridesParser
+    exclude <- excludeParser
+    ignores <- ignoresParser
+    remoteFiles <- remoteFilesParser
     hostDirectory <- subConfig_ "docker" hostDirectoryParser
     imageCleanup <- subConfig_ "docker" imageCleanupParser
     noPull <- subConfig_ "docker" noPullParser
     restrictions <- subConfig_ "docker" $ subAll "restyler" restrictionsParser
+    commitTemplate <- commitTemplateParser
     noCommit <- subConfig_ "git" noCommitParser
     noClean <- subConfig_ "git" noCleanParser
+    logSettings <- subConfig_ "logging" logSettingsOptionParser
     pullRequestJson <-
       optional
         $ filePathSetting

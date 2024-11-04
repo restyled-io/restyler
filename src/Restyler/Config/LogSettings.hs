@@ -89,15 +89,18 @@ colorParser =
   LogSettingsOption
     . Mod
     . setLogSettingsColor
-    <$> setting
-      [ help "Enable color WHEN"
-      , option
-      , name "color"
-      , metavar "WHEN"
-      , reader $ eitherReader readLogColor
-      , env "LOG_COLOR"
-      , value LogColorAuto
-      ]
+    <$> withShownDefault
+      LogColorAuto
+      "auto"
+      ( setting
+          [ help "Enable color WHEN"
+          , option
+          , name "color"
+          , metavar "WHEN"
+          , reader $ eitherReader readLogColor
+          , env "LOG_COLOR"
+          ]
+      )
 
 setLogLevel :: LogLevel -> LogSettings -> LogSettings
 setLogLevel = setLogSettingsLevels . flip newLogLevels []
