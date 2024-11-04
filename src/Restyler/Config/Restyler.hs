@@ -85,17 +85,7 @@ instance HasCodec RestylerOverride where
       ]
 
 wildcard :: RestylerOverride
-wildcard =
-  RestylerOverride
-    { name = "*"
-    , enabled = Nothing
-    , image = Nothing
-    , command = Nothing
-    , arguments = Nothing
-    , include = Nothing
-    , interpreters = Nothing
-    , delimiters = Nothing
-    }
+wildcard = restylerOverride "*"
 
 restylerOverride :: Text -> RestylerOverride
 restylerOverride name =

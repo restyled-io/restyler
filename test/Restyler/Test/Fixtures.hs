@@ -29,7 +29,7 @@ someRestyler name =
     }
 
 wildcard :: RestylerOverride
-wildcard = enabled "*"
+wildcard = restylerOverride "*"
 
 enabled :: Text -> RestylerOverride
 enabled name = (restylerOverride name) {enabled = Just True}
