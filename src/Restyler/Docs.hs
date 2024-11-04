@@ -92,8 +92,8 @@ renderConfDoc ConfDoc {..} =
   -- Different confs with different schema is not really supported. If we do
   -- that it'll generate separate definitions with the same help and default.
   (description, rest) = case lines . pack <$> confDocHelp of
-    Nothing -> error "TODO"
-    Just [] -> error "TODO"
+    Nothing -> ("No help defined", Nothing)
+    Just [] -> ("No help defined", Nothing)
     Just [x] -> (Line $ pure $ Raw x, Nothing)
     Just (x : xs) -> (Line $ pure $ Raw x, Just $ Lines $ map (Line . pure . Raw) xs)
 
