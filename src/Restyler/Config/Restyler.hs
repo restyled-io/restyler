@@ -47,7 +47,12 @@ class HasRestylersVersion env where
 restylersVersionParser :: Parser String
 restylersVersionParser =
   setting
-    [ help "Version of Restylers manifest to use"
+    [ help
+        $ unpack
+        $ unlines
+          [ "Version of Restylers manifest to use"
+          , "Ignored if manifest is given"
+          ]
     , option
     , long "restylers-version"
     , reader str
@@ -180,7 +185,133 @@ restylerOverridesParser :: Parser [RestylerOverride]
 restylerOverridesParser =
   withShownDefault [wildcard] "[\"*\"]"
     $ setting
-      [ help "Restylers to run"
+      [ help "Restylers to run, and how"
+      , example
+          $ unpack
+          $ unlines
+            [ "# Elements in this list can be specified in one of three forms:"
+            , "# A string, which means to run that Restyler with all defaults"
+            , "restylers:"
+            , "  - prettier"
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# A single key, that is a name, a Restyler (see Schema) as the"
+            , "# value:"
+            , "restylers:"
+            , "  - prettier:"
+            , "      include:"
+            , "        - \"**/*.js\""
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Or a Restyler including a name key:"
+            , "restylers:"
+            , "  - name: prettier"
+            , "    include:"
+            , "      - \"**/*.js\""
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# All three of the above are equivalent. The latter two are useful"
+            , "# if you want to run the same Restyler multiple ways:"
+            , "restylers:"
+            , "  - name: prettier"
+            , "    arguments: [\"--one-thing\"]"
+            , "    include: [\"needs-one-thing/**/*.js\"]"
+            , ""
+            , "  - name: prettier"
+            , "    arguments: [\"--another\"]"
+            , "    include: [\"needs-another/**/*.js\"]"
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Omitted keys inherit defaults for the Restyler of that name."
+            , "#"
+            , "# Except the enabled key. Adding an item to this list without"
+            , "# specifying {enabled:false}, automatically enables that Restyler."
+            , "#"
+            , "# In string form, prefixing the name with ! is short-hand for"
+            , "# disabling. The following two configurations are equivalent:"
+            , "restylers:"
+            , "  - \"!astyle\" # quoting is required for this"
+            , "  - astyle:"
+            , "      enabled: false"
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# The special value * (wildcard) means all Restylers not"
+            , "# configured. One wildcard may be placed anywhere in the"
+            , "# restylers list and remaining Restylers will be run, with their"
+            , "# default values at that point."
+            , "#"
+            , "# Note that the Restylers added by the * entry will not run if"
+            , "# they're default configuration includes {enabled:false}. You must"
+            , "# explicitly add such Restylers for them to run."
+            , "#"
+            , "# Just run all Restylers with default values, i.e. the default"
+            , "# configuration value:"
+            , "restylers:"
+            , "  - \"*\""
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Enable jdt, and run all others after"
+            , "restylers:"
+            , "  - jdt"
+            , "  - \"*\""
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Enable jdt, and run it after all others"
+            , "restylers:"
+            , "  - \"*\""
+            , "  - jdt"
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Ensure stylish-haskell runs before brittany, and before all others"
+            , "restylers:"
+            , "  - stylish-haskell"
+            , "  - brittany"
+            , "  - \"*\""
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Run only clang-format"
+            , "restylers:"
+            , "  - clang-format"
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Run clang-format, astyle, everything else, then clang-format again with different options"
+            , "restylers:"
+            , "  - clang-format"
+            , "  - astyle"
+            , "  - \"*\""
+            , "  - clang-format:"
+            , "      arguments: [\"--special\"]"
+            , "      include:"
+            , "        - \"special/**/*.cs\""
+            ]
+      , example
+          $ unpack
+          $ unlines
+            [ "# Disable the astyle Restyler, maintaining all other defaults"
+            , "restylers:"
+            , "  - \"!astyle\""
+            , "  - \"*\""
+            ]
       , conf "restylers"
       ]
 
