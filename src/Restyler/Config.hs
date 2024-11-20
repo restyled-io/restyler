@@ -68,10 +68,10 @@ parseConfig = runParser Pkg.version "Restyle local files" $ configParser configP
 
 configPaths :: [FilePath]
 configPaths =
-  [ ".github/restyled.yml"
-  , ".github/restyled.yaml"
+  [ ".restyled.yaml"
   , ".restyled.yml"
-  , ".restyled.yaml"
+  , ".github/restyled.yaml"
+  , ".github/restyled.yml"
   ]
 
 configParser :: [FilePath] -> Parser Config
