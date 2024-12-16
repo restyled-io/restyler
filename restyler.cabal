@@ -97,6 +97,7 @@ library
     , opt-env-conf >=0.6.0.2
     , path
     , relude
+    , retry
     , ronn
     , ronn-opt-env-conf
     , safe-coloured-text
