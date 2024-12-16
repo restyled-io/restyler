@@ -21,6 +21,14 @@ import Restyler.Prelude
 import Data.Text qualified as T
 import Restyler.AnnotatedException
 import System.Process.Typed
+import UnliftIO.Retry
+  ( RetryPolicyM
+  , RetryStatus (..)
+  , exponentialBackoff
+  , limitRetries
+  , recovering
+  , skipAsyncExceptions
+  )
 
 class Monad m => MonadDocker m where
   dockerPull :: HasCallStack => String -> m ExitCode
@@ -46,10 +54,30 @@ instance
   (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env)
   => MonadDocker (ActualDocker m)
   where
-  dockerPull image = runDocker ["pull", "--quiet", image]
+  dockerPull image =
+    recovering dockerPullRetryPolicy skipAsyncExceptions $ \status -> do
+      when (rsIterNumber status > 0) $ do
+        logWarn
+          $ "Retrying docker-pull"
+          :# [ "attempt" .= rsIterNumber status
+             , "limit" .= dockerPullRetryLimit
+             ]
+
+      runDocker ["pull", "--quiet", image]
   dockerRun args = runDocker $ ["run", "--rm"] <> args
   dockerRunStdout args = runDockerStdout $ ["run", "--rm"] <> args
   dockerImageRm image = runDocker_ ["image", "rm", "--force", image]
+
+dockerPullRetryPolicy :: Monad m => RetryPolicyM m
+dockerPullRetryPolicy =
+  exponentialBackoff dockerPullRetryBaseBackoff
+    <> limitRetries dockerPullRetryLimit
+
+dockerPullRetryBaseBackoff :: Int
+dockerPullRetryBaseBackoff = 1 * 1000000
+
+dockerPullRetryLimit :: Int
+dockerPullRetryLimit = 5
 
 runDocker
   :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
