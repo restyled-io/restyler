@@ -63,7 +63,7 @@ jobs:
           npm install --save-dev @commitlint/config-conventional
       - name: Run
         run: |
-          npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+          npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --color --verbose
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
