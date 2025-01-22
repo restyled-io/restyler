@@ -1,0 +1,11 @@
+tagFormat: "v0.${version}" # PVP prefixed
+
+plugins:
+  - "@semantic-release/commit-analyzer"
+  - "@semantic-release/release-notes-generator"
+  - "@semantic-release/github"
+
+branches:
+  - main
+  - name: rc/*
+    prerelease: '${name.replace(/^rc\//g, "rc-")}'
