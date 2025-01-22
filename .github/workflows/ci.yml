@@ -48,6 +48,26 @@ jobs:
         with:
           fail-on: warning
 
+  commitlint:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0 # need to get back to base
+      - uses: actions/setup-node@v4
+      - name: Install
+        run: |
+          npm install --save-dev @commitlint/cli
+          npm install --save-dev @commitlint/config-conventional
+      - name: Run
+        run: |
+          npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --color
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
   prerelease:
     # Comment this to update a pre-release from your PR
     if: ${{ false }}
