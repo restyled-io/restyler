@@ -59,8 +59,8 @@ jobs:
       - uses: actions/setup-node@v4
       - name: Install
         run: |
-          npm install conventional-changelog-conventionalcommits
-          npm install commitlint@latest
+          npm install --save-dev @commitlint/cli
+          npm install --save-dev @commitlint/config-conventional
       - name: Run
         run: |
           npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
