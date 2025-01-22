@@ -35,31 +35,11 @@ headroom:
   stack exec -- headroom run
   stack exec -- fourmolu -i app src test
 
-# aws := "aws --profile restyled-ci"
+install-root := `stack path --local-install-root`
+dist         := 'restyler-' + `uname -s | tr '[:upper:]' '[:lower:]'` + '-' + `uname -m`
+ext          := 'tar.gz'
 
-# doc_bucket := `
-#   {{aws}} cloudformation describe-stacks \
-#     --stack-name sites-docs \
-#     --query 'Stacks[*].Outputs[?OutputKey==`BucketName`].OutputValue' \
-#     --output text \
-# `
-
-# doc_distribution_id := `
-#   {{aws}} cloudformation describe-stacks \
-#     --stack-name sites-docs \
-#     --query 'Stacks[*].Outputs[?OutputKey==`DistributionId`].OutputValue' \
-#     --output text \
-# `
-
-# doc_root := `stack path --local-doc-root`
-# doc_s3_prefix := /restyler
-
-# docs:
-#   [ -n "$$STACK_WORK_DIR" ]
-#   stack build --haddock
-#   find "$$STACK_WORK_DIR" -type f -name '*.html' -exec \
-#     sed -i 's|{{doc_root}}|{{doc_s3_prefix}}|g' {} +
-#   {{aws}} s3 sync --acl public-read --delete {{doc_root}}/ \
-#     s3://{{doc_bucket}}{{doc_s3_prefix}}/
-#   {{aws}} cloudfront create-invalidation \
-#     --distribution-id {{doc_distribution_id}} --paths "{{doc_s3_prefix}}/*"
+dist:
+  mkdir -p '{{dist}}'
+  cp -v '{{install-root}}'/bin/* '{{dist}}'
+  tar czf '{{dist}}.{{ext}}' '{{dist}}'
