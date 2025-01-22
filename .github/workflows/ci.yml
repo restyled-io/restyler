@@ -126,8 +126,12 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - run: echo "$HOME/.local/share/gem/ruby/3.0.0/bin" >>"$GITHUB_PATH"
       - run: gem install --user ronn-ng
+      - run: |
+          for bin in ~/.local/share/gem/ruby/*/bin; do
+            echo "$bin"
+          done >>"$GITHUB_PATH"
+
       - uses: actions/download-artifact@v4
         with:
           name: linux-binaries
