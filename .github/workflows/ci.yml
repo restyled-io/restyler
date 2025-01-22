@@ -55,6 +55,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0 # need to get back to base
       - uses: actions/setup-node@v4
       - name: Install
         run: |
