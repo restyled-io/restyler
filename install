@@ -52,7 +52,7 @@ if [ -z "$tag" ]; then
     -sSf https://api.github.com/repos/restyled-io/restyler/releases |
     grep -o '"tag_name": ".*"' |
     sed 's/^.*: "//; s/"$//' |
-    grep -v -- '-rc$' |
+    grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+$' |
     head -n 1)
 fi
 
