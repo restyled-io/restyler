@@ -26,6 +26,13 @@ module Restyler.Restyler.Run
 
 import Restyler.Prelude
 
+import Control.Retry
+  ( RetryPolicyM
+  , RetryStatus (..)
+  , exponentialBackoff
+  , limitRetries
+  , retrying
+  )
 import Data.List (nub)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
@@ -321,12 +328,33 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerPullRestyler
-  :: (HasCallStack, MonadDocker m, MonadIO m) => Restyler -> m ()
+  :: (HasCallStack, MonadDocker m, MonadIO m, MonadLogger m) => Restyler -> m ()
 dockerPullRestyler r@Restyler {..} = do
-  ec <- dockerPull rImage
+  ec <- retrying policy shouldRetry $ \_ -> dockerPull rImage
+
   case ec of
     ExitSuccess -> pure ()
     ExitFailure i -> throw $ RestylerPullFailure r i
+ where
+  policy :: Monad m => RetryPolicyM m
+  policy = exponentialBackoff (1 * 1000000) <> limitRetries retryLimit
+
+  shouldRetry :: MonadLogger m => RetryStatus -> ExitCode -> m Bool
+  shouldRetry status = \case
+    ExitSuccess -> pure False
+    ExitFailure i -> do
+      when (rsIterNumber status > 0) $ do
+        logWarn
+          $ "Retrying docker-pull"
+          :# [ "attempt" .= rsIterNumber status
+             , "limit" .= retryLimit
+             , "exitCode" .= i
+             ]
+
+      pure True
+
+  retryLimit :: Int
+  retryLimit = 5
 
 dockerRunRestyler
   :: ( HasCallStack
