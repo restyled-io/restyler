@@ -79,8 +79,10 @@ jobs:
           mkdir -p ./bin
           sudo mv -v restyler-*/restyle /usr/local/bin
 
-      # TODO: only checkout doc folder
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            doc
 
       - name: Generate ronn documenation
         run: |
