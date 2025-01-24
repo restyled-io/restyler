@@ -171,9 +171,9 @@ spec = do
 
         config.remoteFiles
           `shouldBe` [ RemoteFile
-                        { url = "https://example.com/foo/bar.txt"
-                        , path = "bar.txt"
-                        }
+                         { url = "https://example.com/foo/bar.txt"
+                         , path = "bar.txt"
+                         }
                      ]
 
       it "accepts path-less URLs if path is given" $ do
@@ -188,9 +188,9 @@ spec = do
 
         config.remoteFiles
           `shouldBe` [ RemoteFile
-                        { url = "https://example.com"
-                        , path = "bar.txt"
-                        }
+                         { url = "https://example.com"
+                         , path = "bar.txt"
+                         }
                      ]
 
       it "rejects path-less URLs if path is not given" $ do
