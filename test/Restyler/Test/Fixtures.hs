@@ -1,3 +1,11 @@
+-- |
+--
+-- Module      : Restyler.Test.Fixtures
+-- Copyright   : (c) 2025 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Test.Fixtures
   ( -- * 'Restyler'
     someRestyler
