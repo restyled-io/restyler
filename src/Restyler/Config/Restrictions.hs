@@ -77,7 +77,7 @@ subRestrictionsParser =
               ]
         )
     <*> ( Just
-            <$> withShownByDefault
+            <$> withShownDefault
               showBytes
               (Bytes 128 $ Just M)
               ( setting
@@ -97,6 +97,3 @@ restrictedParser =
       [ help "Restrict restylers resources"
       , name "restricted"
       ]
-
-withShownByDefault :: (a -> String) -> a -> Parser a -> Parser a
-withShownByDefault f a = withShownDefault a (f a)

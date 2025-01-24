@@ -29,6 +29,8 @@ ghc-options:
   - -Wno-missed-specialisations
   - -Wno-missing-import-lists
   - -Wno-missing-kind-signatures
+  - -Wno-missing-poly-kind-signatures
+  - -Wno-missing-role-annotations
   - -Wno-missing-safe-haskell-mode
   - -Wno-prepositive-qualified-module
   - -Wno-unsafe

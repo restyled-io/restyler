@@ -90,8 +90,8 @@ colorParser =
     . Mod
     . setLogSettingsColor
     <$> withShownDefault
+      (const "auto")
       LogColorAuto
-      "auto"
       ( setting
           [ help "Enable color WHEN"
           , option
