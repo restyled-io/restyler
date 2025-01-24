@@ -1,15 +1,28 @@
 indentation: 2
-column-limit: 80 # ignored until v12 / ghc-9.6
+column-limit: 80
 function-arrows: leading
 comma-style: leading # default
 import-export-style: leading
+import-grouping:
+  - name: "Preludes"
+    rules:
+      - glob: Prelude
+      - glob: Restyler.Prelude
+  - name: "Everything else"
+    rules:
+      - match: all
+        priority: 100
 indent-wheres: false # default
 record-brace-space: true
 newlines-between-decls: 1 # default
 haddock-style: single-line
 let-style: mixed
 in-style: left-align
-single-constraint-parens: never # ignored until v12 / ghc-9.6
+single-constraint-parens: never
+sort-constraints: true
+sort-derived-classes: true
+sort-derived-clauses: true
+trailing-section-operators: false
 unicode: never # default
 respectful: true # default
 fixities: [] # default

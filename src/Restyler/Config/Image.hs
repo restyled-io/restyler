@@ -26,7 +26,7 @@ data Image = Image
   , name :: Maybe (First Text)
   , tag :: Maybe (First Text)
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving (Semigroup) via (GenericSemigroupMonoid Image)
   deriving (FromJSON, ToJSON) via (Autodocodec Image)
 

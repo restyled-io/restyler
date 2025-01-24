@@ -22,7 +22,7 @@ data Bytes = Bytes
   { number :: Natural
   , suffix :: Maybe Suffix
   }
-  deriving stock (Generic, Eq, Show)
+  deriving stock (Eq, Generic, Show)
 
 instance HasCodec Bytes where
   codec = bimapCodec readBytes showBytes stringCodec <?> "NUMBER<b|k|m|g>"

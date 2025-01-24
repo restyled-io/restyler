@@ -28,15 +28,15 @@ newtype AppT app m a = AppT
   { unwrap :: ReaderT app m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
-    , MonadThrow
     , MonadCatch
-    , MonadMask
     , MonadIO
-    , MonadUnliftIO
+    , MonadMask
     , MonadReader app
+    , MonadThrow
+    , MonadUnliftIO
     )
   deriving (MonadLogger, MonadLoggerIO) via (WithLogger app m)
   deriving (MonadDirectory) via (ActualDirectory (AppT app m))

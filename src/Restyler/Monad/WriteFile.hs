@@ -24,8 +24,8 @@ newtype ActualWriteFile m a = ActualWriteFile
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
     , MonadLogger

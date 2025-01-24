@@ -76,22 +76,22 @@ class HasFS env where
 instance HasFS FS where
   fsL = id
 
-readFS' :: (MonadIO m, MonadReader env m, HasFS env) => m FS'
+readFS' :: (HasFS env, MonadIO m, MonadReader env m) => m FS'
 readFS' = readIORef . (.unwrap) =<< view fsL
 
-modifyFS' :: (MonadIO m, MonadReader env m, HasFS env) => (FS' -> FS') -> m ()
+modifyFS' :: (HasFS env, MonadIO m, MonadReader env m) => (FS' -> FS') -> m ()
 modifyFS' f = do
   FS ref <- view fsL
   liftIO $ atomicModifyIORef' ref $ \fs -> (f fs, ())
 
 modifyFiles
-  :: (MonadIO m, MonadReader env m, HasFS env)
+  :: (HasFS env, MonadIO m, MonadReader env m)
   => (Map FilePath ReadableFile -> Map FilePath ReadableFile)
   -> m ()
 modifyFiles f = modifyFS' $ \fs -> fs {files = f fs.files}
 
 readReadableFile
-  :: (MonadIO m, MonadReader env m, HasFS env)
+  :: (HasFS env, MonadIO m, MonadReader env m)
   => FilePath
   -> m (Text, Directory.Permissions)
 readReadableFile path' = do
@@ -109,7 +109,7 @@ throwFileNotFound :: FilePath -> a
 throwFileNotFound path = error $ pack $ "File does not exist: " <> path
 
 writeReadableFile
-  :: (MonadIO m, MonadReader env m, HasFS env)
+  :: (HasFS env, MonadIO m, MonadReader env m)
   => FilePath
   -> ReadableFile
   -> m ()
@@ -118,13 +118,13 @@ writeReadableFile path' content = do
   modifyFiles $ Map.insert path content
 
 doesPathExist
-  :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m Bool
+  :: (HasFS env, MonadIO m, MonadReader env m) => FilePath -> m Bool
 doesPathExist path' = do
   path <- getAbsolutePath path'
   Map.member path . (.files) <$> readFS'
 
 getAbsolutePath
-  :: (MonadIO m, MonadReader env m, HasFS env) => FilePath -> m FilePath
+  :: (HasFS env, MonadIO m, MonadReader env m) => FilePath -> m FilePath
 getAbsolutePath path
   | isAbsolute path = pure path
   | otherwise = do
@@ -132,7 +132,7 @@ getAbsolutePath path
       pure $ cwd </> path
 
 getPrefixed
-  :: (MonadIO m, MonadReader env m, HasFS env) => String -> m [FilePath]
+  :: (HasFS env, MonadIO m, MonadReader env m) => String -> m [FilePath]
 getPrefixed prefix = do
   paths <- Map.keys . (.files) <$> readFS'
   pure $ filter (prefix `isPrefixOf`) paths
@@ -141,14 +141,14 @@ newtype ReaderFS m a = ReaderFS
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
     , MonadReader env
     )
 
-instance (MonadIO m, MonadReader env m, HasFS env) => MonadDirectory (ReaderFS m) where
+instance (HasFS env, MonadIO m, MonadReader env m) => MonadDirectory (ReaderFS m) where
   getCurrentDirectory = (.cwd) <$> readFS'
 
   setCurrentDirectory cwd = modifyFS' $ \fs -> fs {cwd}
@@ -195,8 +195,8 @@ instance (MonadIO m, MonadReader env m, HasFS env) => MonadDirectory (ReaderFS m
     path <- getAbsolutePath path'
     modifyFiles $ Map.delete path
 
-instance (MonadIO m, MonadReader env m, HasFS env) => MonadReadFile (ReaderFS m) where
+instance (HasFS env, MonadIO m, MonadReader env m) => MonadReadFile (ReaderFS m) where
   readFile = fmap fst . readReadableFile
 
-instance (MonadIO m, MonadReader env m, HasFS env) => MonadWriteFile (ReaderFS m) where
+instance (HasFS env, MonadIO m, MonadReader env m) => MonadWriteFile (ReaderFS m) where
   writeFile path = writeReadableFile path . normalFile

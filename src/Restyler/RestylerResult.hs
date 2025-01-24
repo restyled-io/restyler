@@ -30,10 +30,10 @@ data RestylerResult = RestylerResult
 --
 -- N.B. This will create commits if appropriate.
 getRestylerResult
-  :: ( MonadGit m
-     , MonadReader env m
-     , HasCommitTemplate env
+  :: ( HasCommitTemplate env
      , HasNoCommit env
+     , MonadGit m
+     , MonadReader env m
      )
   => [FilePath]
   -> Restyler

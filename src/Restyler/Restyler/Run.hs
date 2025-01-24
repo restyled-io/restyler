@@ -46,7 +46,7 @@ import System.FilePath ((</>))
 import System.FilePath qualified as FilePath
 
 data RestylerPullFailure = RestylerPullFailure Restyler Int
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 instance Exception RestylerPullFailure where
   displayException (RestylerPullFailure Restyler {..} ec) =
@@ -56,7 +56,7 @@ instance Exception RestylerPullFailure where
       ]
 
 data RestylerExitFailure = RestylerExitFailure Restyler Int
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 instance Exception RestylerExitFailure where
   displayException (RestylerExitFailure Restyler {..} ec) =
@@ -69,7 +69,7 @@ instance Exception RestylerExitFailure where
       ]
 
 newtype RestylerOutOfMemory = RestylerOutOfMemory Restyler
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 instance Exception RestylerOutOfMemory where
   displayException (RestylerOutOfMemory Restyler {..}) =
@@ -78,7 +78,7 @@ instance Exception RestylerOutOfMemory where
       ]
 
 newtype RestylerCommandNotFound = RestylerCommandNotFound Restyler
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 instance Exception RestylerCommandNotFound where
   displayException (RestylerCommandNotFound Restyler {..}) =
@@ -90,15 +90,7 @@ instance Exception RestylerCommandNotFound where
 
 -- | Runs the configured @'Restyler'@s for the files and reports results
 runRestylers
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadDirectory m
-     , MonadReadFile m
-     , MonadWriteFile m
-     , MonadGit m
-     , MonadDocker m
-     , MonadDownloadFile m
-     , MonadReader env m
+  :: ( HasCallStack
      , HasCommitTemplate env
      , HasDryRun env
      , HasExclude env
@@ -111,7 +103,15 @@ runRestylers
      , HasRestrictions env
      , HasRestylerOverrides env
      , HasRestylersVersion env
-     , HasCallStack
+     , MonadDirectory m
+     , MonadDocker m
+     , MonadDownloadFile m
+     , MonadGit m
+     , MonadLogger m
+     , MonadReadFile m
+     , MonadReader env m
+     , MonadUnliftIO m
+     , MonadWriteFile m
      )
   => [FilePath]
   -> m (Maybe (NonEmpty RestylerResult))
@@ -142,7 +142,7 @@ runRestylers argPaths = do
       Nothing <$ gitResetHard ref
 
 removeExcluded
-  :: (MonadReader env m, HasExclude env)
+  :: (HasExclude env, MonadReader env m)
   => [FilePath]
   -> m [FilePath]
 removeExcluded ps = do
@@ -167,11 +167,11 @@ checkForNoop results = runMaybeT $ do
 -- processed through global @exclude@ already. This is extracted for specific
 -- testing of Restyler @include@ and @intepreter@ configuration handling.
 withFilteredPaths
-  :: ( MonadUnliftIO m
-     , MonadLogger m
+  :: ( HasCallStack
      , MonadDirectory m
+     , MonadLogger m
      , MonadReadFile m
-     , HasCallStack
+     , MonadUnliftIO m
      )
   => [Restyler]
   -> [FilePath]
@@ -211,7 +211,7 @@ withFilteredPaths restylers paths run = do
   pure $ nonEmpty $ catMaybes mas
 
 addExecutableInterpreter
-  :: (MonadUnliftIO m, MonadLogger m, MonadDirectory m, MonadReadFile m)
+  :: (MonadDirectory m, MonadLogger m, MonadReadFile m, MonadUnliftIO m)
   => FilePath
   -> m (FilePath, Maybe Interpreter)
 addExecutableInterpreter path = suppressWith (path, Nothing) $ do
@@ -224,14 +224,7 @@ addExecutableInterpreter path = suppressWith (path, Nothing) $ do
 
 -- | Run a @'Restyler'@ and get the result (i.e. commit changes)
 runRestyler
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadDirectory m
-     , MonadReadFile m
-     , MonadWriteFile m
-     , MonadGit m
-     , MonadDocker m
-     , MonadReader env m
+  :: ( HasCallStack
      , HasCommitTemplate env
      , HasDryRun env
      , HasHostDirectory env
@@ -239,7 +232,14 @@ runRestyler
      , HasNoCommit env
      , HasNoPull env
      , HasRestrictions env
-     , HasCallStack
+     , MonadDirectory m
+     , MonadDocker m
+     , MonadGit m
+     , MonadLogger m
+     , MonadReadFile m
+     , MonadReader env m
+     , MonadUnliftIO m
+     , MonadWriteFile m
      )
   => Restyler
   -> [FilePath]
@@ -258,19 +258,19 @@ runRestyler r = \case
 
 -- | Run a @'Restyler'@ (don't commit anything)
 runRestyler_
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadDirectory m
-     , MonadReadFile m
-     , MonadWriteFile m
-     , MonadDocker m
-     , MonadReader env m
+  :: ( HasCallStack
      , HasDryRun env
      , HasHostDirectory env
      , HasImageCleanup env
      , HasNoPull env
      , HasRestrictions env
-     , HasCallStack
+     , MonadDirectory m
+     , MonadDocker m
+     , MonadLogger m
+     , MonadReadFile m
+     , MonadReader env m
+     , MonadUnliftIO m
+     , MonadWriteFile m
      )
   => Restyler
   -> [FilePath]
@@ -321,7 +321,7 @@ getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathOverwriteSep -> map (DockerRunPathOverwrite True) paths
 
 dockerPullRestyler
-  :: (MonadIO m, MonadDocker m, HasCallStack) => Restyler -> m ()
+  :: (HasCallStack, MonadDocker m, MonadIO m) => Restyler -> m ()
 dockerPullRestyler r@Restyler {..} = do
   ec <- dockerPull rImage
   case ec of
@@ -329,15 +329,15 @@ dockerPullRestyler r@Restyler {..} = do
     ExitFailure i -> throw $ RestylerPullFailure r i
 
 dockerRunRestyler
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadWriteFile m
-     , MonadDocker m
-     , MonadReader env m
+  :: ( HasCallStack
      , HasDryRun env
      , HasHostDirectory env
      , HasRestrictions env
-     , HasCallStack
+     , MonadDocker m
+     , MonadLogger m
+     , MonadReader env m
+     , MonadUnliftIO m
+     , MonadWriteFile m
      )
   => Restyler
   -> WithProgress DockerRunStyle
@@ -405,13 +405,13 @@ fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
 -- environment. This switch triggers removal of each image after running it,
 -- to avoid out-of-space errors.
 dockerWithImageRm
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadDocker m
-     , MonadReader env m
+  :: ( HasCallStack
      , HasDryRun env
      , HasImageCleanup env
-     , HasCallStack
+     , MonadDocker m
+     , MonadLogger m
+     , MonadReader env m
+     , MonadUnliftIO m
      )
   => Restyler
   -> m a

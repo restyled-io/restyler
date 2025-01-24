@@ -44,7 +44,7 @@ data Restyler = Restyler
   , rDocumentation :: [String]
   , rRunStyle :: RestylerRunStyle
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
 
 instance FromJSON Restyler where
   parseJSON =
@@ -109,7 +109,7 @@ data RestylerRunStyle
     RestylerRunStylePathOverwrite
   | -- | @for input in ...; do ./auto-formatter -- input; done@
     RestylerRunStylePathOverwriteSep
-  deriving stock (Eq, Show, Bounded, Enum, Generic)
+  deriving stock (Bounded, Enum, Eq, Generic, Show)
 
 instance FromJSON RestylerRunStyle where
   parseJSON = genericParseJSON $ aesonPrefix snakeCase
@@ -119,11 +119,11 @@ instance ToJSON RestylerRunStyle where
   toEncoding = genericToEncoding $ aesonPrefix snakeCase
 
 getAllRestylersVersioned
-  :: ( MonadIO m
+  :: ( HasManifest env
      , MonadDirectory m
      , MonadDownloadFile m
+     , MonadIO m
      , MonadReader env m
-     , HasManifest env
      )
   => String
   -> m [Restyler]

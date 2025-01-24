@@ -26,16 +26,16 @@ newtype ActualDownloadFile m a = ActualDownloadFile
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
-    , MonadUnliftIO
     , MonadLogger
+    , MonadUnliftIO
     )
 
 instance
-  (MonadUnliftIO m, MonadLogger m)
+  (MonadLogger m, MonadUnliftIO m)
   => MonadDownloadFile (ActualDownloadFile m)
   where
   downloadFile url path = do
@@ -48,8 +48,8 @@ newtype NullDownloadFile m a = NullDownloadFile
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     )
 
