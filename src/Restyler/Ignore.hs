@@ -21,7 +21,7 @@ data IgnoredReason
   = IgnoredByAuthor Text
   | IgnoredByBranch Text
   | IgnoredByLabels Text
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (ToJSON)
 
 getIgnoredReason

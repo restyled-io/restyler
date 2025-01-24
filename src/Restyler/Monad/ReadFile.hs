@@ -29,8 +29,8 @@ newtype ActualReadFile m a = ActualReadFile
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
     , MonadLogger

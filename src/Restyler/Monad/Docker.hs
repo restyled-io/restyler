@@ -41,17 +41,17 @@ newtype ActualDocker m a = ActualDocker
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
-    , MonadUnliftIO
     , MonadLogger
     , MonadReader env
+    , MonadUnliftIO
     )
 
 instance
-  (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env)
+  (HasLogger env, MonadLogger m, MonadReader env m, MonadUnliftIO m)
   => MonadDocker (ActualDocker m)
   where
   dockerPull image =
@@ -80,7 +80,7 @@ dockerPullRetryLimit :: Int
 dockerPullRetryLimit = 5
 
 runDocker
-  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
+  :: (HasCallStack, HasLogger env, MonadLogger m, MonadReader env m, MonadUnliftIO m)
   => [String]
   -> m ExitCode
 runDocker args = checkpointCallStack $ do
@@ -88,7 +88,7 @@ runDocker args = checkpointCallStack $ do
   runProcess $ proc "docker" args
 
 runDocker_
-  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
+  :: (HasCallStack, HasLogger env, MonadLogger m, MonadReader env m, MonadUnliftIO m)
   => [String]
   -> m ()
 runDocker_ args = checkpointCallStack $ do
@@ -96,7 +96,7 @@ runDocker_ args = checkpointCallStack $ do
   runProcess_ $ proc "docker" args
 
 runDockerStdout
-  :: (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env, HasCallStack)
+  :: (HasCallStack, HasLogger env, MonadLogger m, MonadReader env m, MonadUnliftIO m)
   => [String]
   -> m (ExitCode, Text)
 runDockerStdout args = checkpointCallStack $ do
@@ -110,7 +110,7 @@ fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
 newtype NullDocker m a = NullDocker
   { unwrap :: m a
   }
-  deriving newtype (Functor, Applicative, Monad)
+  deriving newtype (Applicative, Functor, Monad)
 
 instance Monad m => MonadDocker (NullDocker m) where
   dockerPull _ = pure ExitSuccess

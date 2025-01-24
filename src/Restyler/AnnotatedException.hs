@@ -40,11 +40,11 @@ suppressWith :: MonadUnliftIO m => a -> m a -> m a
 suppressWith x = either (const $ pure x) pure <=< tryAnnotated @SomeException
 
 -- | Log any exception and return '()'
-suppressWarn :: (MonadUnliftIO m, MonadLogger m) => m () -> m ()
+suppressWarn :: (MonadLogger m, MonadUnliftIO m) => m () -> m ()
 suppressWarn = suppressWarnWith ()
 
 -- | Log any exception and return the given @a@
-suppressWarnWith :: (MonadUnliftIO m, MonadLogger m) => a -> m a -> m a
+suppressWarnWith :: (MonadLogger m, MonadUnliftIO m) => a -> m a -> m a
 suppressWarnWith x = either warn pure <=< tryAnnotated @SomeException
  where
   warn ex = do

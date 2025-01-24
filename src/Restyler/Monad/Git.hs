@@ -34,17 +34,17 @@ newtype ActualGit m a = ActualGit
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
-    , MonadUnliftIO
     , MonadLogger
     , MonadReader env
+    , MonadUnliftIO
     )
 
 instance
-  (MonadUnliftIO m, MonadLogger m, MonadReader env m, HasLogger env)
+  (HasLogger env, MonadLogger m, MonadReader env m, MonadUnliftIO m)
   => MonadGit (ActualGit m)
   where
   isGitRepository = (== ExitSuccess) <$> runGitExitCode ["rev-parse"]
@@ -61,11 +61,11 @@ instance
   gitResetHard ref = runGit_ ["reset", "--hard", ref]
 
 runGit_
-  :: ( MonadUnliftIO m
+  :: ( HasCallStack
+     , HasLogger env
      , MonadLogger m
      , MonadReader env m
-     , HasLogger env
-     , HasCallStack
+     , MonadUnliftIO m
      )
   => [String]
   -> m ()
@@ -74,11 +74,11 @@ runGit_ args = checkpointCallStack $ do
   runProcess_ $ proc "git" args
 
 runGitExitCode
-  :: ( MonadUnliftIO m
+  :: ( HasCallStack
+     , HasLogger env
      , MonadLogger m
      , MonadReader env m
-     , HasLogger env
-     , HasCallStack
+     , MonadUnliftIO m
      )
   => [String]
   -> m ExitCode
@@ -87,11 +87,11 @@ runGitExitCode args = checkpointCallStack $ do
   runProcess $ proc "git" args
 
 readGit
-  :: ( MonadUnliftIO m
+  :: ( HasCallStack
+     , HasLogger env
      , MonadLogger m
      , MonadReader env m
-     , HasLogger env
-     , HasCallStack
+     , MonadUnliftIO m
      )
   => [String]
   -> m Text
@@ -100,22 +100,22 @@ readGit args = checkpointCallStack $ do
   decodeUtf8 <$> readProcessStdout_ (proc "git" args)
 
 readGitChomp
-  :: ( MonadUnliftIO m
+  :: ( HasCallStack
+     , HasLogger env
      , MonadLogger m
      , MonadReader env m
-     , HasLogger env
-     , HasCallStack
+     , MonadUnliftIO m
      )
   => [String]
   -> m String
 readGitChomp = fmap (unpack . T.dropWhileEnd isSpace) . readGit
 
 readGitLines
-  :: ( MonadUnliftIO m
+  :: ( HasCallStack
+     , HasLogger env
      , MonadLogger m
      , MonadReader env m
-     , HasLogger env
-     , HasCallStack
+     , MonadUnliftIO m
      )
   => [String]
   -> m [String]
@@ -125,7 +125,7 @@ readGitLines = fmap (map unpack . lines) . readGit
 newtype NullGit m a = NullGit
   { unwrap :: m a
   }
-  deriving newtype (Functor, Applicative, Monad)
+  deriving newtype (Applicative, Functor, Monad)
 
 instance Monad m => MonadGit (NullGit m) where
   isGitRepository = pure False

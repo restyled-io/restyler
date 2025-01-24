@@ -11,9 +11,8 @@ module Restyler.Prelude
   , module Restyler.Prelude
   ) where
 
-import Relude as X hiding (All (..), readFile, readFileBS, reader, writeFile)
-
 import Blammo.Logging as X
+import Blammo.Logging.Logger (flushLogger)
 import Blammo.Logging.Logger as X (HasLogger (..), withLogger)
 import Blammo.Logging.WithLogger as X (WithLogger (..))
 import Control.Error.Util as X (hush, note)
@@ -23,30 +22,29 @@ import Control.Monad.IO.Unlift as X (MonadUnliftIO (..))
 import Data.Bitraversable as X (bimapM)
 import Data.Char as X (isSpace)
 import Data.Functor.Syntax as X ((<$$>))
+import Data.List (minimum)
 import Data.Text as X (pack, unpack)
 import Data.Traversable as X (for)
 import Data.Vector as X (Vector)
 import Lens.Micro as X (Lens', lens, to, (.~), (^.), (^?))
 import Lens.Micro.Mtl as X (view)
 import Path as X (Abs, Dir, File, Path, Rel, toFilePath)
+import Relude as X hiding (All (..), readFile, readFileBS, reader, writeFile)
 import System.Exit as X (ExitCode (..))
 import UnliftIO.Async as X (race)
 import UnliftIO.Concurrent as X (threadDelay)
 import UnliftIO.Exception as X (finally)
 import UnliftIO.Temporary as X (withSystemTempDirectory)
 
-import Blammo.Logging.Logger (flushLogger)
-import Data.List (minimum)
-
-logTrace :: (MonadLogger m, HasCallStack) => Message -> m ()
+logTrace :: (HasCallStack, MonadLogger m) => Message -> m ()
 logTrace = logOther $ LevelOther "trace"
 
 logProc
-  :: ( MonadIO m
+  :: ( HasCallStack
+     , HasLogger env
+     , MonadIO m
      , MonadLogger m
      , MonadReader env m
-     , HasLogger env
-     , HasCallStack
      )
   => String
   -> [String]

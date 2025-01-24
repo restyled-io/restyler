@@ -36,12 +36,12 @@ instance HasCodec LogColor where
 newtype Mod a = Mod
   { appMod :: a -> a
   }
-  deriving (Semigroup, Monoid) via (Dual (Endo a))
+  deriving (Monoid, Semigroup) via (Dual (Endo a))
 
 newtype LogSettingsOption = LogSettingsOption
   { unwrap :: Mod LogSettings
   }
-  deriving newtype (Semigroup, Monoid)
+  deriving newtype (Monoid, Semigroup)
 
 getLogSettings :: LogSettingsOption -> IO LogSettings
 getLogSettings settings = modLogSettings settings <$> LogSettings.parse

@@ -29,7 +29,7 @@ data PullRequest = PullRequest
   , labels :: [Label]
   , base :: Commit
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data PullRequestState
@@ -61,13 +61,13 @@ pullRequestStateFromText = \case
 newtype User = User
   { login :: Text
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 newtype Label = Label
   { name :: Text
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data Commit = Commit
@@ -75,7 +75,7 @@ data Commit = Commit
   , sha :: Text
   , repo :: Repo
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data Repo = Repo
@@ -83,13 +83,13 @@ data Repo = Repo
   , owner :: Owner
   , private :: Bool
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 newtype Owner = Owner
   { login :: Text
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 class HasPullRequestState a where

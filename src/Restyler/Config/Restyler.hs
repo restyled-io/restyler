@@ -162,14 +162,14 @@ codecNameOnly =
 --
 -- May throw 'RestylersInvalid'
 getEnabledRestylers
-  :: ( MonadIO m
+  :: ( HasCallStack
+     , HasManifest env
+     , HasRestylerOverrides env
+     , HasRestylersVersion env
      , MonadDirectory m
      , MonadDownloadFile m
+     , MonadIO m
      , MonadReader env m
-     , HasRestylersVersion env
-     , HasRestylerOverrides env
-     , HasManifest env
-     , HasCallStack
      )
   => m [Restyler]
 getEnabledRestylers = do

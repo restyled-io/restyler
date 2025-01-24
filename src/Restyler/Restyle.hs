@@ -28,15 +28,9 @@ import Restyler.Restyler.Run
 import Restyler.RestylerResult
 
 run
-  :: ( MonadUnliftIO m
-     , MonadLogger m
-     , MonadDownloadFile m
-     , MonadDirectory m
-     , MonadReadFile m
-     , MonadWriteFile m
-     , MonadGit m
-     , MonadDocker m
-     , MonadReader env m
+  :: ( HasAuthor pr
+     , HasBaseRef pr
+     , HasCallStack
      , HasCommitTemplate env
      , HasDryRun env
      , HasEnabled env
@@ -44,19 +38,25 @@ run
      , HasHostDirectory env
      , HasIgnores env
      , HasImageCleanup env
+     , HasLabelNames pr
      , HasManifest env
-     , HasNoCommit env
      , HasNoClean env
+     , HasNoCommit env
      , HasNoPull env
+     , HasPullRequestState pr
      , HasRemoteFiles env
      , HasRestrictions env
      , HasRestylerOverrides env
      , HasRestylersVersion env
-     , HasPullRequestState pr
-     , HasAuthor pr
-     , HasBaseRef pr
-     , HasLabelNames pr
-     , HasCallStack
+     , MonadDirectory m
+     , MonadDocker m
+     , MonadDownloadFile m
+     , MonadGit m
+     , MonadLogger m
+     , MonadReadFile m
+     , MonadReader env m
+     , MonadUnliftIO m
+     , MonadWriteFile m
      )
   => pr
   -> [FilePath]

@@ -37,15 +37,15 @@ newtype ActualDirectory m a = ActualDirectory
   { unwrap :: m a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
-    , MonadUnliftIO
     , MonadLogger
+    , MonadUnliftIO
     )
 
-instance (MonadUnliftIO m, MonadLogger m) => MonadDirectory (ActualDirectory m) where
+instance (MonadLogger m, MonadUnliftIO m) => MonadDirectory (ActualDirectory m) where
   getCurrentDirectory = do
     logTrace "getCurrentDirectory"
     liftIO Directory.getCurrentDirectory

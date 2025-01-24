@@ -31,12 +31,12 @@ newtype TestAppT env a = TestAppT
   { unwrap :: ReaderT env IO a
   }
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
-    , MonadUnliftIO
     , MonadReader env
+    , MonadUnliftIO
     )
   deriving (MonadLogger, MonadLoggerIO) via (WithLogger env IO)
   deriving (MonadDirectory) via (ReaderFS (TestAppT env))
@@ -55,13 +55,13 @@ instance Example (TestAppT env a) where
       params
       ($ ())
 
-shouldBe :: (Eq a, Show a, HasCallStack) => a -> a -> TestAppT env ()
+shouldBe :: (Eq a, HasCallStack, Show a) => a -> a -> TestAppT env ()
 shouldBe = Lifted.shouldBe
 
 infix 1 `shouldBe`
 
 shouldReturn
-  :: (Eq a, Show a, HasCallStack) => TestAppT env a -> a -> TestAppT env ()
+  :: (Eq a, HasCallStack, Show a) => TestAppT env a -> a -> TestAppT env ()
 shouldReturn = Lifted.shouldReturn
 
 infix 1 `shouldReturn`

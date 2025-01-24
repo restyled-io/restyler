@@ -27,7 +27,7 @@ newtype CommitTemplate = CommitTemplate
   { unwrap :: Text
   }
   deriving stock (Eq)
-  deriving newtype (Show, IsString, HasCodec)
+  deriving newtype (HasCodec, IsString, Show)
 
 commitTemplateParser :: Parser CommitTemplate
 commitTemplateParser =

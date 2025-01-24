@@ -99,7 +99,7 @@ spec = do
           , someRestyler "hlint"
           ]
 
-shouldHaveFailure :: (Show a, HasCallStack) => Either [Text] a -> Text -> IO ()
+shouldHaveFailure :: (HasCallStack, Show a) => Either [Text] a -> Text -> IO ()
 shouldHaveFailure result needle = go result
  where
   go = \case

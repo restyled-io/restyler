@@ -24,7 +24,7 @@ import System.FilePath.Glob qualified as Glob
 
 newtype Glob a = Glob {unwrap :: String}
   deriving stock (Eq)
-  deriving newtype (Show, IsString, HasCodec)
+  deriving newtype (HasCodec, IsString, Show)
 
 class GlobTarget a where
   forMatch :: a -> String

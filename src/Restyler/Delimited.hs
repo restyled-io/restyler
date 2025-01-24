@@ -67,9 +67,9 @@ data DelimitedMeta = DelimitedMeta
 
 -- | Restyle delimited content within paths using the given function
 restyleDelimited
-  :: ( MonadUnliftIO m
-     , MonadDirectory m
+  :: ( MonadDirectory m
      , MonadReadFile m
+     , MonadUnliftIO m
      , MonadWriteFile m
      )
   => Delimiters
