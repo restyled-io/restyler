@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 -- |
 --
 -- Module      : Restyler.Docs
@@ -6,8 +8,6 @@
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
-{-# LANGUAGE RecordWildCards #-}
-
 module Restyler.Docs
   ( DocsPage (..)
   , renderDocsPage
@@ -45,22 +45,22 @@ ronnRestyle1 p =
     , sections =
         getSections "restyle" p
           <> [ definitionsSection
-                "FILES"
-                [ Definition
-                    { name = Code ".restyled.yaml"
-                    , description =
-                        Line
-                          [ "Configuration for Restyled, see "
-                          , Ref $ ManRef "restyled.yaml" ManSection5
-                          ]
-                    , content = Nothing
-                    }
-                ]
+                 "FILES"
+                 [ Definition
+                     { name = Code ".restyled.yaml"
+                     , description =
+                         Line
+                           [ "Configuration for Restyled, see "
+                           , Ref $ ManRef "restyled.yaml" ManSection5
+                           ]
+                     , content = Nothing
+                     }
+                 ]
              , seeAlsoSection
-                [ ManRef "restyled.yaml" ManSection5
-                , ManRef "docker" ManSection1
-                , ManRef "git" ManSection1
-                ]
+                 [ ManRef "restyled.yaml" ManSection5
+                 , ManRef "docker" ManSection1
+                 , ManRef "git" ManSection1
+                 ]
              ]
     }
 
