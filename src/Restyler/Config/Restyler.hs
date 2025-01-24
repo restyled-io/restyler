@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-term-variable-capture #-}
+
 -- |
 --
 -- Module      : Restyler.Config.Restyler
@@ -183,7 +185,7 @@ getEnabledRestylers = do
 
 restylerOverridesParser :: Parser [RestylerOverride]
 restylerOverridesParser =
-  withShownDefault [wildcard] "[\"*\"]"
+  withShownDefault (const "[\"*\"]") [wildcard]
     $ setting
       [ help "Restylers to run, and how"
       , example

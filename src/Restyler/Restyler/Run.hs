@@ -211,7 +211,7 @@ withFilteredPaths restylers paths run = do
   pure $ nonEmpty $ catMaybes mas
 
 addExecutableInterpreter
-  :: (MonadDirectory m, MonadLogger m, MonadReadFile m, MonadUnliftIO m)
+  :: (MonadDirectory m, MonadReadFile m, MonadUnliftIO m)
   => FilePath
   -> m (FilePath, Maybe Interpreter)
 addExecutableInterpreter path = suppressWith (path, Nothing) $ do
