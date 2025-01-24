@@ -3,10 +3,9 @@ tagFormat: "v0.${version}" # PVP prefixed
 plugins:
   - "@semantic-release/commit-analyzer"
   - "@semantic-release/release-notes-generator"
-  - "@semantic-release/github":
-      assets:
-        - path: "*-binaries/restyler-*.tar.gz"
-      successComment: false
+  - - "@semantic-release/github"
+    - assets: "*-binaries/restyler-*.tar.gz"
+      successCommentCondition: false
 
 branches:
   - main
