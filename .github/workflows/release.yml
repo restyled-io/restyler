@@ -51,13 +51,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
 
-      # - if: ${{ steps.release.outputs.new_release_published == 'true' }}
-      #   run: |
-      #     gh release upload "$TAG" ./*-binaries/restyler-*.tar.gz
-      #   env:
-      #     TAG: ${{ steps.release.outputs.new_release_git_tag }}
-      #     GH_TOKEN: ${{ github.token }}
-
   docs:
     needs: [build]
     environment:
