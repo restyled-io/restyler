@@ -3,7 +3,7 @@
 -- |
 --
 -- Module      : Restyler.Config.Image
--- Copyright   : (c) 2024 Patrick Brisbin
+-- Copyright   : (c) 2025 Patrick Brisbin
 -- License     : AGPL-3
 -- Maintainer  : pbrisbin@gmail.com
 -- Stability   : experimental
