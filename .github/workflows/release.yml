@@ -19,6 +19,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
 
     steps:
+      - run: gem install --user ronn-ng
+      - run: |
+          for bin in ~/.local/share/gem/ruby/*/bin; do
+            echo "$bin"
+          done >>"$GITHUB_PATH"
       - uses: actions/checkout@v4
       - id: stack
         uses: freckle/stack-action@v5
