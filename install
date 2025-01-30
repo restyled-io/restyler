@@ -84,7 +84,7 @@ fi
 
 if [ -f "$artifact_name"/Makefile ]; then
   echo "Running \`make install PREFIX=$prefix'"
-  cd "$artifact_name" && make install PREFIX=$prefix
+  cd "$artifact_name" && make install PREFIX="$prefix"
 else
   echo "Installing binaries in $prefix/bin"
   for bin in "$artifact_name"/*; do
