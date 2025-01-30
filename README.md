@@ -22,16 +22,11 @@ See https://github.com/restyled-io/actions#readme.
 
 ## Development
 
-```console
-just
-```
-
 Requires [stack](https://docs.haskellstack.org/en/stable/README/).
 
-## Tests
-
 ```console
-just test
+stack setup
+stack build --fast --pedantic --test --file-watch
 ```
 
 ## LICENSE
