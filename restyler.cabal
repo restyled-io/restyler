@@ -41,6 +41,7 @@ library
       Restyler.Docs
       Restyler.GitHub.PullRequest
       Restyler.Ignore
+      Restyler.LogFormat
       Restyler.Monad.Directory
       Restyler.Monad.Docker
       Restyler.Monad.DownloadFile
@@ -80,6 +81,7 @@ library
     , Glob
     , aeson
     , aeson-casing
+    , aeson-pretty
     , annotated-exception
     , autodocodec
     , autodocodec-yaml
@@ -93,6 +95,7 @@ library
     , http-conduit
     , microlens
     , microlens-mtl
+    , monad-logger-aeson
     , network-uri
     , opt-env-conf >=0.6.0.2
     , path

@@ -20,7 +20,7 @@ packages:
     hackage: ronn-opt-env-conf-1.0.1.0
 snapshots:
 - completed:
-    sha256: 2d580e973dc1a5ff70cd2bb1248613f835829b38eed5db5dafc3615a22cb1bcd
-    size: 679292
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/23/5.yaml
-  original: lts-23.5
+    sha256: f51b4cbfe8a6df42815e203f842085528698989ea81f7c82667451ad955b1819
+    size: 680576
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/23/11.yaml
+  original: lts-23.11

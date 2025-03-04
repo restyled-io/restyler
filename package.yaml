@@ -45,6 +45,7 @@ library:
     - Glob
     - aeson
     - aeson-casing
+    - aeson-pretty
     - annotated-exception
     - autodocodec
     - autodocodec-yaml
@@ -57,6 +58,7 @@ library:
     - http-conduit
     - microlens
     - microlens-mtl
+    - monad-logger-aeson
     - network-uri
     - opt-env-conf >= 0.6.0.2
     - path
