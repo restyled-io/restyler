@@ -31,6 +31,7 @@ data RestylerResult = RestylerResult
 -- N.B. This will create commits if appropriate.
 getRestylerResult
   :: ( HasCommitTemplate env
+     , HasDryRun env
      , HasNoCommit env
      , MonadGit m
      , MonadReader env m
@@ -40,7 +41,7 @@ getRestylerResult
   -> m (Maybe RestylerResult)
 getRestylerResult paths restyler = do
   template <- asks getCommitTemplate
-  noCommit <- asks getNoCommit
+  noCommit <- asks $ (||) <$> getDryRun <*> getNoCommit
   mRestyled <- nonEmpty . filter (`elem` paths) <$> gitDiffNameOnly Nothing
 
   for mRestyled $ \restyled -> do
