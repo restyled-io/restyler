@@ -1,4 +1,4 @@
-resolver: lts-23.5
+resolver: lts-23.11
 extra-deps:
   - ronn-1.1.1.0
   - ronn-opt-env-conf-1.0.1.0
