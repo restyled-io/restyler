@@ -92,7 +92,7 @@ run pr paths = do
              , "sha" .= result.sha
              ]
 
-      noClean <- asks getNoClean
+      noClean <- asks $ (||) <$> getDryRun <*> getNoClean
       unless noClean gitClean
 
       pure $ maybe RestyleNoDifference (const RestyleDifference) mresults
