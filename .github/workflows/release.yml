@@ -55,6 +55,25 @@ jobs:
         env:
           FORCE_COLOR: 1
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+    outputs:
+      tag: ${{ steps.release.outputs.new_release_git_tag }}
+
+  install-release:
+    needs: release
+    if: ${{ needs.release.outputs.tag }}
+
+    strategy:
+      matrix:
+        runner:
+          - ubuntu-latest
+          - macos-latest
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./install -t '${{ needs.release.outputs.tag }}'
+      - run: restyle --help
 
   docs:
     needs: [build]
