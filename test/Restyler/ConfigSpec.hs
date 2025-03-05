@@ -50,8 +50,8 @@ spec = do
     checkOption "no-pull" (.noPull)
 
     it "supports --manifest" $ do
-      config <- loadTestConfig ["--manifest", "/tmp/x.yaml", "Foo.hs"] [] []
-      config.restylersManifest `shouldBe` Just $(mkAbsFile "/tmp/x.yaml")
+      config <- loadTestConfig ["--manifest", "/foo/bar/x.yaml", "Foo.hs"] [] []
+      config.restylersManifest `shouldBe` Just $(mkAbsFile "/foo/bar/x.yaml")
 
   context "configuration" $ do
     -- This test is a maintainence burden, in that when config/default.yaml
