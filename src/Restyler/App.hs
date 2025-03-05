@@ -81,5 +81,8 @@ withApp :: (App -> IO a) -> IO a
 withApp f = do
   config <- parseConfig
   logSettings <- getLogSettings config.logSettings
-  setReformat <- getSetReformat
-  withLogger logSettings $ f . App config . setReformat
+
+  withLogger logSettings
+    $ f
+    . App config
+    . getSetReformat config.githubActions
