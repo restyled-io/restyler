@@ -19,7 +19,7 @@ module Restyler.Config
   , module X
   ) where
 
-import Restyler.Prelude
+import Restyler.Prelude hiding (Reader)
 
 import OptEnvConf
 import Paths_restyler qualified as Pkg
@@ -59,6 +59,7 @@ data Config = Config
   , noCommit :: Bool
   , noClean :: Bool
   , logSettings :: LogSettingsOption
+  , githubActions :: Bool
   , pullRequestJson :: Maybe (Path Abs File)
   , paths :: NonEmpty FilePath
   }
@@ -94,6 +95,14 @@ configParser sources =
     noCommit <- subConfig_ "git" noCommitParser
     noClean <- subConfig_ "git" noCleanParser
     logSettings <- subConfig_ "logging" logSettingsOptionParser
+    githubActions <-
+      setting
+        [ env "GITHUB_ACTIONS"
+        , help "The value \"true\" if running on GitHub Actions"
+        , reader $ boolReader (== "true")
+        , metavar "true"
+        , value False
+        ]
     pullRequestJson <-
       optional
         $ filePathSetting
@@ -117,3 +126,6 @@ configParser sources =
 -- And mark it 'hidden' so it doesn't appear in docs.
 hiddenPath :: FilePath -> Parser (Path Abs File)
 hiddenPath x = filePathSetting [value x, hidden]
+
+boolReader :: (String -> Bool) -> Reader Bool
+boolReader p = maybeReader $ Just . p

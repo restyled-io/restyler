@@ -24,12 +24,9 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString.Lazy qualified as BSL
 import Data.Text qualified as T
 
-getSetReformat :: MonadIO m => m (Logger -> Logger)
-getSetReformat = do
-  isGHA <- (== Just "true") <$> lookupEnv "GITHUB_ACTIONS"
-
-  pure
-    $ setLoggerReformat
+getSetReformat :: Bool -> (Logger -> Logger)
+getSetReformat isGHA = do
+  setLoggerReformat
     $ if isGHA
       then reformatLoggedMessage gray
       else reformatLoggedMessage dim
