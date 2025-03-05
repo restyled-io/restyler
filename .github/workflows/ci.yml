@@ -68,10 +68,10 @@ jobs:
           mkdir -p ./bin
           sudo mv -v restyler-*/restyle /usr/local/bin
           restyle --help
-      - uses: restyled-io/actions/setup-demo@v2
+      - uses: restyled-io/actions/setup-demo@v4
         with:
           options: --limit 3
-      - uses: restyled-io/actions/run@v2
+      - uses: restyled-io/actions/run@v4
         with:
           paths: .
           log-level: debug
