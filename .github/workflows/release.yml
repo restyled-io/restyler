@@ -10,11 +10,15 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [linux]
+        os:
+          - linux
+          - darwin
 
         include:
           - os: linux
             runner: ubuntu-latest
+          - os: darwin
+            runner: macos-latest
 
     runs-on: ${{ matrix.runner }}
 
