@@ -9,13 +9,14 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.LogFormat
-  ( reformatLoggedMessage
+  ( getSetReformat
   ) where
 
 import Restyler.Prelude
 
 import Blammo.Logging.Colors
 import Blammo.Logging.LogSettings (LogSettings)
+import Blammo.Logging.Logger (setLoggerReformat)
 import Control.Monad.Logger.Aeson
 import Data.Aeson
 import Data.Aeson.Encode.Pretty qualified as Pretty
@@ -23,9 +24,24 @@ import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString.Lazy qualified as BSL
 import Data.Text qualified as T
 
+getSetReformat :: MonadIO m => m (Logger -> Logger)
+getSetReformat = do
+  isGHA <- (== Just "true") <$> lookupEnv "GITHUB_ACTIONS"
+
+  pure
+    $ setLoggerReformat
+    $ if isGHA
+      then reformatLoggedMessage gray
+      else reformatLoggedMessage dim
+
 reformatLoggedMessage
-  :: LogSettings -> Colors -> LogLevel -> LoggedMessage -> ByteString
-reformatLoggedMessage _ Colors {..} logLevel LoggedMessage {..} =
+  :: (Colors -> Text -> Text)
+  -> LogSettings
+  -> Colors
+  -> LogLevel
+  -> LoggedMessage
+  -> ByteString
+reformatLoggedMessage getDim _ colors@Colors {..} logLevel LoggedMessage {..} =
   encodeUtf8
     $ mconcat
       [ case logLevel of
@@ -35,9 +51,9 @@ reformatLoggedMessage _ Colors {..} logLevel LoggedMessage {..} =
           LevelError -> red $ fixedWidth levelWidth "ERROR" <> ":"
           LevelOther x -> gray $ fixedWidth levelWidth x <> ":"
       , " " <> loggedMessageText
-      , maybe "" (("\n" <>) . dim) $ do
+      , fromMaybe "" $ do
           guard $ not $ KeyMap.null metaKeyMap
-          pure $ encodePretty $ Object metaKeyMap
+          pure $ encodePretty (getDim colors) $ Object metaKeyMap
       ]
  where
   levelWidth :: Int
@@ -48,10 +64,10 @@ reformatLoggedMessage _ Colors {..} logLevel LoggedMessage {..} =
       <> loggedMessageThreadContext
       <> loggedMessageMeta
 
-encodePretty :: Value -> Text
-encodePretty =
-  (indent <>)
-    . T.intercalate ("\n" <> indent)
+encodePretty :: (Text -> Text) -> Value -> Text
+encodePretty dim =
+  mconcat
+    . map (\x -> "\n" <> indent <> dim x)
     . T.lines
     . decodeUtf8
     . BSL.toStrict

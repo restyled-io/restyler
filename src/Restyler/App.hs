@@ -15,7 +15,6 @@ module Restyler.App
 
 import Restyler.Prelude
 
-import Blammo.Logging.Logger (setLoggerReformat)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Restyler.Config
 import Restyler.LogFormat
@@ -82,8 +81,5 @@ withApp :: (App -> IO a) -> IO a
 withApp f = do
   config <- parseConfig
   logSettings <- getLogSettings config.logSettings
-
-  withLogger logSettings
-    $ f
-    . App config
-    . setLoggerReformat reformatLoggedMessage
+  setReformat <- getSetReformat
+  withLogger logSettings $ f . App config . setReformat
