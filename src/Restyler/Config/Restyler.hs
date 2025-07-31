@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 {-# OPTIONS_GHC -Wno-term-variable-capture #-}
 
 -- |
@@ -18,7 +19,8 @@ module Restyler.Config.Restyler
   , RestylersInvalid (..)
   , getEnabledRestylers
 
-    -- * To test
+    -- * Exported for testing
+  , autoEnableOverrides
   , overrideRestylers
   ) where
 
@@ -26,6 +28,7 @@ import Restyler.Prelude hiding ((.=))
 
 import Autodocodec
 import Data.Aeson (Value (..))
+import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Aeson.Types (parseEither)
@@ -34,6 +37,7 @@ import Data.Text qualified as T
 import Data.Validation
 import OptEnvConf hiding (name)
 import Restyler.AnnotatedException (throw)
+import Restyler.Config.AutoEnable
 import Restyler.Config.Image
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
@@ -171,17 +175,37 @@ getEnabledRestylers
      , MonadDirectory m
      , MonadDownloadFile m
      , MonadIO m
+     , MonadLogger m
      , MonadReader env m
      )
   => m [Restyler]
 getEnabledRestylers = do
   version <- asks getRestylersVersion
-  overrides <- asks getRestylerOverrides
   restylers <- getAllRestylersVersioned version
-  either
-    (throw . RestylersInvalid)
-    (pure . filter rEnabled)
-    $ overrideRestylers restylers overrides
+  overrides <- asks getRestylerOverrides
+  overrides' <- autoEnableOverrides restylers overrides
+  either (throw . RestylersInvalid) (pure . filter rEnabled)
+    $ overrideRestylers restylers overrides'
+
+autoEnableOverrides
+  :: (MonadDirectory m, MonadLogger m)
+  => [Restyler]
+  -> [RestylerOverride]
+  -> m [RestylerOverride]
+autoEnableOverrides restylers overrides = do
+  results <- toAutoEnableResults explicitNames autoEnablePairs
+  autoEnables <- concat <$> traverse resultToOverride results
+  pure $ autoEnables <> overrides
+ where
+  explicitNames = map (.name) $ filter (fromMaybe True . (.enabled)) overrides
+  autoEnablePairs = mapMaybe (\r -> (pack $ rName r,) <$> rAutoEnable r) restylers
+
+resultToOverride :: MonadLogger m => AutoEnableResult -> m [RestylerOverride]
+resultToOverride = \case
+  AutoEnableSome msg names -> do
+    logInfo $ "Auto-enable" :# ["restylers" Aeson..= names, "reason" Aeson..= msg]
+    pure $ map autoEnableOverride $ toList names
+  AutoEnableNone -> pure []
 
 restylerOverridesParser :: Parser [RestylerOverride]
 restylerOverridesParser =
@@ -374,3 +398,16 @@ overrideRestyler restylers o
       , rInterpreters = fromMaybe restyler.rInterpreters o.interpreters
       , rDelimiters = o.delimiters <|> restyler.rDelimiters
       }
+
+autoEnableOverride :: Text -> RestylerOverride
+autoEnableOverride name =
+  RestylerOverride
+    { name
+    , enabled = Just True
+    , image = Nothing
+    , command = Nothing
+    , arguments = Nothing
+    , include = Nothing
+    , interpreters = Nothing
+    , delimiters = Nothing
+    }

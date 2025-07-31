@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -15,6 +15,7 @@ library
       Restyler.App
       Restyler.CLI
       Restyler.Config
+      Restyler.Config.AutoEnable
       Restyler.Config.CommitTemplate
       Restyler.Config.DryRun
       Restyler.Config.Enabled
@@ -149,6 +150,7 @@ test-suite test
   main-is: Spec.hs
   other-modules:
       Restyler.Config.CommitTemplateSpec
+      Restyler.Config.GlobSpec
       Restyler.Config.IncludeSpec
       Restyler.Config.InterpreterSpec
       Restyler.Config.RestylerSpec
@@ -185,6 +187,8 @@ test-suite test
   build-depends:
       Blammo
     , aeson
+    , autodocodec
+    , autodocodec-yaml
     , base
     , containers
     , directory
@@ -200,4 +204,5 @@ test-suite test
     , safe-coloured-text
     , text
     , unliftio
+    , yaml
   default-language: GHC2021
