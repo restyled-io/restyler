@@ -24,6 +24,7 @@ import Data.Aeson.Casing
 import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
+import Restyler.Config.AutoEnable
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.Manifest
@@ -34,6 +35,7 @@ import Restyler.Monad.DownloadFile
 
 data Restyler = Restyler
   { rEnabled :: Bool
+  , rAutoEnable :: Maybe AutoEnable
   , rName :: String
   , rImage :: String
   , rCommand :: [String]

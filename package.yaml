@@ -97,6 +97,8 @@ tests:
     dependencies:
       - Blammo
       - aeson
+      - autodocodec
+      - autodocodec-yaml
       - containers
       - directory
       - extra
@@ -111,3 +113,4 @@ tests:
       - safe-coloured-text
       - text
       - unliftio
+      - yaml

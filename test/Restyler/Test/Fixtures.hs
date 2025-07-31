@@ -25,6 +25,7 @@ someRestyler :: String -> Restyler
 someRestyler name =
   Restyler
     { rEnabled = True
+    , rAutoEnable = Nothing
     , rName = name
     , rImage = "restyled/restyler-" <> name <> ":v1.0.0"
     , rCommand = ["restyle"]

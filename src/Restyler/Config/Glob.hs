@@ -14,17 +14,22 @@ module Restyler.Config.Glob
   , match
   , matchAny
   , matchFirst
+  , matchAnyInDirectory
   ) where
 
 import Restyler.Prelude
 
-import Autodocodec (HasCodec)
+import Autodocodec (Autodocodec (..), HasCodec)
+import Data.Aeson
+import Restyler.Monad.Directory
+import System.FilePath ((</>))
 import System.FilePath.Glob hiding (match)
 import System.FilePath.Glob qualified as Glob
 
 newtype Glob a = Glob {unwrap :: String}
   deriving stock (Eq)
   deriving newtype (HasCodec, IsString, Show)
+  deriving (FromJSON, ToJSON) via (Autodocodec (Glob a))
 
 class GlobTarget a where
   forMatch :: a -> String
@@ -51,3 +56,14 @@ matchAny globs = any $ \x -> any (`match` x) globs
 
 matchFirst :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Maybe a
 matchFirst globs = find $ \x -> any (`match` x) globs
+
+matchAnyInDirectory :: MonadDirectory m => [Glob FilePath] -> FilePath -> m Bool
+matchAnyInDirectory gs d = do
+  -- If listing the current directory, don't prefix the results
+  prefix <- bool (d </>) id . (== d) <$> getCurrentDirectory
+  contents <- map prefix <$> listDirectory d
+  subdirs <- filterM doesDirectoryExist contents
+
+  if matchAny gs contents
+    then pure True
+    else anyM (matchAnyInDirectory gs) subdirs

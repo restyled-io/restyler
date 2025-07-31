@@ -12,14 +12,109 @@ module Restyler.Config.RestylerSpec
 
 import Restyler.Prelude
 
+import Autodocodec (HasCodec)
+import Autodocodec.Yaml (eitherDecodeYamlViaCodec)
+import Data.Aeson (FromJSON)
 import Data.Text qualified as T
+import Data.Yaml qualified as Yaml
 import Restyler.Config.Restyler
 import Restyler.Restyler
+import Restyler.Test.App
 import Restyler.Test.Fixtures
-import Test.Hspec
 
 spec :: Spec
 spec = do
+  withSimpleTestApp $ do
+    describe "autoEnableOverrides" $ do
+      let
+        mkRestylersYaml :: [[Text]] -> [Text]
+        mkRestylersYaml =
+          concatMap
+            ( <>
+                [ "  image: restyled/x:dev"
+                , "  command: []"
+                , "  arguments: []"
+                , "  include: []"
+                , "  interpreters: []"
+                , "  documentation: []"
+                ]
+            )
+
+      context "haskell example" $ do
+        let
+          restylersYaml :: [Text]
+          restylersYaml =
+            mkRestylersYaml
+              [
+                [ "- name: fourmolu"
+                , "  auto_enable:"
+                , "    config_patterns: ['.fourmolu.yaml']"
+                , "    group: {name: 'haskell', priority: 5}"
+                ]
+              ,
+                [ "- name: brittany"
+                , "  auto_enable:"
+                , "    config_patterns: ['.brittany.yaml']"
+                , "    group: {name: 'haskell', priority: 10}"
+                ]
+              ,
+                [ "- name: stylish-haskell"
+                , "  auto_enable:"
+                , "    config_patterns: ['.stylish-haskell.yaml']"
+                , "    group: {name: 'haskell', priority: 0}"
+                ]
+              ]
+
+        it "by priority" $ do
+          overrides <- autoEnableTest restylersYaml Nothing
+          overrides `shouldBe` [enabled "brittany"]
+
+        it "by configuration" $ do
+          writeFile ".fourmolu.yaml" ""
+
+          overrides <- autoEnableTest restylersYaml Nothing
+          overrides `shouldBe` [enabled "fourmolu"]
+
+        it "multiple configurations" $ do
+          writeFile ".fourmolu.yaml" ""
+          writeFile ".brittany.yaml" ""
+
+          overrides <- autoEnableTest restylersYaml Nothing
+          overrides `shouldBe` [enabled "fourmolu", enabled "brittany"]
+
+        it "explicit selection" $ do
+          overrides <- autoEnableTest restylersYaml $ Just ["- stylish-haskell"]
+          overrides `shouldBe` [enabled "stylish-haskell"]
+
+        it "explicit selection with config" $ do
+          writeFile ".brittany.yaml" ""
+          overrides <- autoEnableTest restylersYaml $ Just ["- stylish-haskell"]
+          overrides `shouldBe` [enabled "brittany", enabled "stylish-haskell"]
+
+      context "json example" $ do
+        let
+          restylersYaml :: [Text]
+          restylersYaml =
+            mkRestylersYaml
+              [
+                [ "- name: jq"
+                , "  auto_enable:"
+                , "    group: {name: 'json', priority: 0}"
+                ]
+              ,
+                [ "- name: prettier-json"
+                , "  auto_enable:"
+                , "    group: {name: 'json', priority: 5}"
+                ]
+              ]
+        it "by priority" $ do
+          overrides <- autoEnableTest restylersYaml Nothing
+          overrides `shouldBe` [enabled "prettier-json"]
+
+        it "explicit selection" $ do
+          overrides <- autoEnableTest restylersYaml $ Just ["- jq"]
+          overrides `shouldBe` [enabled "jq"]
+
   describe "overrideRestylers" $ do
     it "fails if wildcard is specified more than once" $ do
       let result =
@@ -98,6 +193,38 @@ spec = do
           , someRestyler "brittany"
           , someRestyler "hlint"
           ]
+
+autoEnableTest
+  :: (MonadDirectory m, MonadIO m, MonadLogger m)
+  => [Text]
+  -- ^ restylers.yaml contents
+  -> Maybe [Text]
+  -- ^ .restyled.yaml contents
+  -> m [RestylerOverride]
+autoEnableTest restylersYaml mRestyledYaml = do
+  restylers <- yamlFromLinesJSON restylersYaml
+  overrides <- maybe (pure []) yamlFromLines mRestyledYaml
+  autoEnableOverrides restylers overrides
+
+yamlFromLines :: (HasCodec a, MonadIO m) => [Text] -> m a
+yamlFromLines = yamlFromLines' eitherDecodeYamlViaCodec
+
+yamlFromLinesJSON :: (FromJSON a, MonadIO m) => [Text] -> m a
+yamlFromLinesJSON = yamlFromLines' Yaml.decodeEither'
+
+yamlFromLines'
+  :: MonadIO m
+  => (ByteString -> Either Yaml.ParseException a)
+  -> [Text]
+  -> m a
+yamlFromLines' f ts = case f $ encodeUtf8 $ T.unlines ts of
+  Left err -> do
+    liftIO
+      $ expectationFailure
+      $ "Failed to parse YAML: "
+      <> Yaml.prettyPrintParseException err
+    error "unreachable"
+  Right a -> pure a
 
 shouldHaveFailure :: (HasCallStack, Show a) => Either [Text] a -> Text -> IO ()
 shouldHaveFailure result needle = go result
