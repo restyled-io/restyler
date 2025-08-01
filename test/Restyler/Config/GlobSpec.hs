@@ -19,16 +19,16 @@ spec = withSimpleTestApp $ do
         ]
 
     it "no matches" $ do
-      matchAnyInDirectory globs "/" `shouldReturn` False
+      matchAnyInCurrentDirectory globs `shouldReturn` False
 
     it "top-level" $ do
       writeFile ".fourmolu.yaml" ""
-      matchAnyInDirectory globs "/" `shouldReturn` True
+      matchAnyInCurrentDirectory globs `shouldReturn` True
 
     it "sub-directory" $ do
       writeFile ".fourmolu/config.yaml" ""
-      matchAnyInDirectory globs "/" `shouldReturn` True
+      matchAnyInCurrentDirectory globs `shouldReturn` True
 
     it "extended glob" $ do
       writeFile "config/fourmolu/x/y.yaml" ""
-      matchAnyInDirectory globs "/" `shouldReturn` True
+      matchAnyInCurrentDirectory globs `shouldReturn` True
