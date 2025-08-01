@@ -56,7 +56,7 @@ toAutoEnableResult es = fromMaybe AutoEnableNone $ byConfig <|> byPriority
     guard $ none (.wasExplicit) es
 
     let message = case NE.length es of
-          1 -> "restyler is auto_enable"
+          1 -> "restyler is in an auto_enable group"
           _ -> "restyler is highest priority in an auto_enable group"
 
     pure
