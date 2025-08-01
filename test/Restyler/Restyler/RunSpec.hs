@@ -12,36 +12,14 @@ module Restyler.Restyler.RunSpec
 
 import Restyler.Prelude
 
-import Blammo.Logging.LogSettings (defaultLogSettings)
-import Blammo.Logging.Logger (newTestLogger)
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
 import Restyler.Test.App
-import Restyler.Test.FS (FS, HasFS (..))
-import Restyler.Test.FS qualified as FS
 import Restyler.Test.Fixtures (someRestyler)
 
-data TestApp = TestApp
-  { logger :: Logger
-  , fs :: FS
-  }
-
-instance HasLogger TestApp where
-  loggerL = lens (.logger) $ \x y -> x {logger = y}
-
-instance HasFS TestApp where
-  fsL = lens (.fs) $ \x y -> x {fs = y}
-
-withTestApp :: SpecWith TestApp -> Spec
-withTestApp =
-  before
-    $ TestApp
-    <$> newTestLogger defaultLogSettings
-    <*> FS.build "/" []
-
 spec :: Spec
-spec = withTestApp $ do
+spec = withSimpleTestApp $ do
   describe "withFilteredPaths" $ do
     it "does not bring excluded files back by shebang" $ do
       writeFile "/a" "#!/bin/sh\necho A\n"
