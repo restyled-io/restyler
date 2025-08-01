@@ -14,7 +14,7 @@ module Restyler.Config.Glob
   , match
   , matchAny
   , matchFirst
-  , matchAnyInDirectory
+  , matchAnyInCurrentDirectory
   ) where
 
 import Restyler.Prelude
@@ -57,13 +57,13 @@ matchAny globs = any $ \x -> any (`match` x) globs
 matchFirst :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Maybe a
 matchFirst globs = find $ \x -> any (`match` x) globs
 
-matchAnyInDirectory :: MonadDirectory m => [Glob FilePath] -> FilePath -> m Bool
-matchAnyInDirectory gs d = do
-  -- If listing the current directory, don't prefix the results
-  prefix <- bool (d </>) id . (== d) <$> getCurrentDirectory
-  contents <- map prefix <$> listDirectory d
-  subdirs <- filterM doesDirectoryExist contents
+matchAnyInCurrentDirectory :: MonadDirectory m => [Glob FilePath] -> m Bool
+matchAnyInCurrentDirectory gs = go id =<< getCurrentDirectory
+ where
+  go :: MonadDirectory m => (FilePath -> FilePath) -> FilePath -> m Bool
+  go prefix d = do
+    contents <- map prefix <$> listDirectory d
 
-  if matchAny gs contents
-    then pure True
-    else anyM (matchAnyInDirectory gs) subdirs
+    if matchAny gs contents
+      then pure True
+      else anyM (go (d </>)) =<< filterM doesDirectoryExist contents

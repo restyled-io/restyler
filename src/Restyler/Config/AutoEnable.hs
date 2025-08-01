@@ -81,7 +81,7 @@ toAutoEnableGroupElem
 toAutoEnableGroupElem explicits name autoEnable = do
   hasConfig <- case autoEnable.config_patterns of
     Nothing -> pure False
-    Just ps -> matchAnyInDirectory ps =<< getCurrentDirectory
+    Just ps -> matchAnyInCurrentDirectory ps
   pure AutoEnableGroupElem {name, autoEnableGroup, hasConfig, wasExplicit}
  where
   autoEnableGroup = fromMaybe (AutoEnableGroup name 0) autoEnable.group
