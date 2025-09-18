@@ -84,8 +84,8 @@ spec = do
       config.restylerOverrides `shouldBe` [wildcard]
       -- config.hostDirectory `shouldBe` _
       config.imageCleanup `shouldBe` False
-      config.noCommit `shouldBe` False
-      config.noClean `shouldBe` False
+      config.noCommit `shouldBe` True
+      config.noClean `shouldBe` True
       config.noPull `shouldBe` False
       config.restrictions
         `shouldBe` Restrictions

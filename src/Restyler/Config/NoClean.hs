@@ -22,7 +22,7 @@ noCleanParser :: Parser Bool
 noCleanParser =
   not
     <$> withDefault
-      True
+      False
       ( yesNoSwitch
           [ help "Run git-clean after restyling"
           , name "clean"

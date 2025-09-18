@@ -22,7 +22,7 @@ noCommitParser :: Parser Bool
 noCommitParser =
   not
     <$> withDefault
-      True
+      False
       ( yesNoSwitch
           [ help "Commit each restyling change"
           , name "commit"
