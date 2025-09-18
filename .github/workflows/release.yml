@@ -52,6 +52,9 @@ jobs:
 
       - id: release
         uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            conventional-changelog-conventionalcommits
         env:
           FORCE_COLOR: 1
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
