@@ -16,6 +16,7 @@ module Restyler.ConfigSpec
 import Restyler.Prelude
 
 import Blammo.Logging.LogSettings (defaultLogSettings, shouldLogLevel)
+import Data.Text qualified as T
 import Data.Text.IO (hPutStr)
 import Path (mkAbsFile)
 import Restyler.Config
@@ -23,6 +24,7 @@ import Restyler.Config.Restrictions.Bytes
 import Restyler.Test.Fixtures
 import Restyler.Test.OptEnvConf
 import System.IO (hClose)
+import System.Process.Typed
 import Test.Hspec
 import UnliftIO.Temporary (withSystemTempFile)
 
@@ -52,6 +54,21 @@ spec = do
     it "supports --manifest" $ do
       config <- loadTestConfig ["--manifest", "/foo/bar/x.yaml", "Foo.hs"] [] []
       config.restylersManifest `shouldBe` Just $(mkAbsFile "/foo/bar/x.yaml")
+
+    context "docker.user" $ do
+      it "supports --no-run-user" $ do
+        config <- loadTestConfig ["--no-run-user", "Foo.hs"] [] []
+        config.runUser `shouldBe` Nothing
+
+      it "reads id -u and id -g by default" $ do
+        expected <-
+          unpack
+            . T.dropWhileEnd isSpace
+            . decodeUtf8
+            <$> readProcessStdout_ (shell "echo \"$(id -u):$(id -g)\"")
+
+        config <- loadTestConfig ["Foo.hs"] [] []
+        fmap runUserArg config.runUser `shouldBe` Just expected
 
   context "configuration" $ do
     -- This test is a maintainence burden, in that when config/default.yaml

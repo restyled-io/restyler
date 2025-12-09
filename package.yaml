@@ -112,5 +112,6 @@ tests:
       - restyler
       - safe-coloured-text
       - text
+      - typed-process
       - unliftio
       - yaml

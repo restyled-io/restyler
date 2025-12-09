@@ -110,6 +110,7 @@ runRestylers
      , HasRestrictions env
      , HasRestylerOverrides env
      , HasRestylersVersion env
+     , HasRunUser env
      , MonadDirectory m
      , MonadDocker m
      , MonadDownloadFile m
@@ -239,6 +240,7 @@ runRestyler
      , HasNoCommit env
      , HasNoPull env
      , HasRestrictions env
+     , HasRunUser env
      , MonadDirectory m
      , MonadDocker m
      , MonadGit m
@@ -271,6 +273,7 @@ runRestyler_
      , HasImageCleanup env
      , HasNoPull env
      , HasRestrictions env
+     , HasRunUser env
      , MonadDirectory m
      , MonadDocker m
      , MonadLogger m
@@ -361,6 +364,7 @@ dockerRunRestyler
      , HasDryRun env
      , HasHostDirectory env
      , HasRestrictions env
+     , HasRunUser env
      , MonadDocker m
      , MonadLogger m
      , MonadReader env m
@@ -372,6 +376,7 @@ dockerRunRestyler
   -> m ()
 dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   cwd <- asks getHostDirectory
+  mRunUser <- asks getRunUser
   restrictions <- asks getRestrictions
   dryRun <- asks getDryRun
 
@@ -380,6 +385,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
       restrictionOptions restrictions
         <> ["--pull", "never"]
         <> ["--volume", toFilePath cwd <> ":/code", rImage]
+        <> maybe [] (\ru -> ["--user", runUserArg ru]) mRunUser
         <> nub (rCommand <> rArguments)
 
     progressSuffix :: Text

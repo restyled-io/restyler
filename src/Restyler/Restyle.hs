@@ -48,6 +48,7 @@ run
      , HasRestrictions env
      , HasRestylerOverrides env
      , HasRestylersVersion env
+     , HasRunUser env
      , MonadDirectory m
      , MonadDocker m
      , MonadDownloadFile m

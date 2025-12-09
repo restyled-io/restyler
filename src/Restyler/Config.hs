@@ -40,6 +40,7 @@ import Restyler.Config.NoPull as X
 import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
+import Restyler.Config.RunUser as X
 
 data Config = Config
   { enabled :: Bool
@@ -55,6 +56,7 @@ data Config = Config
   , imageCleanup :: Bool
   , noPull :: Bool
   , restrictions :: Restrictions
+  , runUser :: Maybe RunUser
   , commitTemplate :: CommitTemplate
   , noCommit :: Bool
   , noClean :: Bool
@@ -91,6 +93,7 @@ configParser sources =
     imageCleanup <- subConfig_ "docker" imageCleanupParser
     noPull <- subConfig_ "docker" noPullParser
     restrictions <- subConfig_ "docker" $ subAll "restyler" restrictionsParser
+    runUser <- subConfig_ "docker" $ subEnv_ "DOCKER" runUserParser
     commitTemplate <- commitTemplateParser
     noCommit <- subConfig_ "git" noCommitParser
     noClean <- subConfig_ "git" noCleanParser

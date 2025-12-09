@@ -72,6 +72,7 @@ instance HasRemoteFiles App where getRemoteFiles = (.config.remoteFiles)
 instance HasRestrictions App where getRestrictions = (.config.restrictions)
 instance HasRestylerOverrides App where getRestylerOverrides = (.config.restylerOverrides)
 instance HasRestylersVersion App where getRestylersVersion = (.config.restylersVersion)
+instance HasRunUser App where getRunUser = (.config.runUser)
 {- FOURMOLU_ENABLE -}
 
 instance HasLogger App where

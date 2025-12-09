@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.38.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -38,6 +38,7 @@ library
       Restyler.Config.Restrictions
       Restyler.Config.Restrictions.Bytes
       Restyler.Config.Restyler
+      Restyler.Config.RunUser
       Restyler.Delimited
       Restyler.Docs
       Restyler.GitHub.PullRequest
@@ -203,6 +204,7 @@ test-suite test
     , restyler
     , safe-coloured-text
     , text
+    , typed-process
     , unliftio
     , yaml
   default-language: GHC2021
