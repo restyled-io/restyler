@@ -9,6 +9,7 @@
 module Restyler.Config.RunUser
   ( RunUser
   , runUserArg
+  , runUserShExec
   , HasRunUser (..)
   , runUserParser
   ) where
@@ -28,6 +29,18 @@ data RunUser = RunUser
 
 runUserArg :: RunUser -> String
 runUserArg ug = show ug.uid <> ":" <> show ug.gid
+
+runUserShExec :: RunUser -> [String] -> String
+runUserShExec ug args =
+  intercalate
+    " && "
+    [ "groupadd -g " <> show ug.gid <> " app"
+    , "useradd -u " <> show ug.uid <> " -g " <> show ug.gid <> " -m app"
+    , "exec su -g "
+        <> show ug.gid
+        <> " -p app"
+        <> concatMap (\arg -> " \"" <> arg <> "\"") args -- TODO: naive
+    ]
 
 class HasRunUser env where
   getRunUser :: env -> Maybe RunUser

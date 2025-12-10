@@ -386,14 +386,17 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   keepGoing <- asks getKeepGoing
 
   let
+    wrapSh =
+      case mRunUser of
+        Nothing -> id
+        Just ru -> \xs -> ["sh", "-c", runUserShExec ru xs]
+
     args =
       restrictionOptions restrictions
-        <> ["--env", "HOME=/tmp"]
         <> ["--pull", "never"]
         <> ["--volume", toFilePath cwd <> ":/code"]
-        <> maybe [] (\ru -> ["--user", runUserArg ru]) mRunUser
         <> [rImage]
-        <> nub (rCommand <> rArguments)
+        <> wrapSh (nub $ rCommand <> rArguments)
 
     progressSuffix :: Text
     progressSuffix
