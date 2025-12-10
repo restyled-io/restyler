@@ -76,7 +76,7 @@ jobs:
           paths: .
           debug: true
         env:
-          KEEP_GOING: true
+          KEEP_GOING: "True"
 
   test-install:
     runs-on: ubuntu-latest
