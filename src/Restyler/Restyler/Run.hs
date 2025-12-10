@@ -388,6 +388,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   let
     args =
       restrictionOptions restrictions
+        <> ["--env", "HOME=/tmp"]
         <> ["--pull", "never"]
         <> ["--volume", toFilePath cwd <> ":/code"]
         <> maybe [] (\ru -> ["--user", runUserArg ru]) mRunUser
