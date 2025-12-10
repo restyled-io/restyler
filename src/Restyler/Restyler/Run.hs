@@ -426,11 +426,17 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
       logRunningOn [path]
       unlessDryRun $ dockerRun $ args <> ["--" | sep] <> [prefix path]
 
-  unless keepGoing $ case ec of
+  let
+    logOrThrow :: (Exception e, MonadIO m, MonadLogger m) => e -> m ()
+    logOrThrow ex
+      | keepGoing = logError $ pack (displayException ex) :# []
+      | otherwise = throw ex
+
+  case ec of
     ExitSuccess -> pure ()
-    ExitFailure 137 -> throw $ RestylerOutOfMemory r
-    ExitFailure 127 -> throw $ RestylerCommandNotFound r
-    ExitFailure i -> throw $ RestylerExitFailure r i
+    ExitFailure 137 -> logOrThrow $ RestylerOutOfMemory r
+    ExitFailure 127 -> logOrThrow $ RestylerCommandNotFound r
+    ExitFailure i -> logOrThrow $ RestylerExitFailure r i
  where
   prefix p
     | "./" `isPrefixOf` p = p
