@@ -384,8 +384,9 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
     args =
       restrictionOptions restrictions
         <> ["--pull", "never"]
-        <> ["--volume", toFilePath cwd <> ":/code", rImage]
+        <> ["--volume", toFilePath cwd <> ":/code"]
         <> maybe [] (\ru -> ["--user", runUserArg ru]) mRunUser
+        <> [rImage]
         <> nub (rCommand <> rArguments)
 
     progressSuffix :: Text
