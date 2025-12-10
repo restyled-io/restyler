@@ -75,8 +75,8 @@ jobs:
         with:
           paths: .
           debug: true
+          image-cleanup: true
         env:
-          IMAGE_CLEANUP: "True"
           KEEP_GOING: "True"
 
   test-install:
