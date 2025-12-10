@@ -32,6 +32,7 @@ import Restyler.Config.Glob
 import Restyler.Config.HostDirectory as X
 import Restyler.Config.Ignore as X
 import Restyler.Config.ImageCleanup as X
+import Restyler.Config.KeepGoing as X
 import Restyler.Config.LogSettings as X
 import Restyler.Config.Manifest as X
 import Restyler.Config.NoClean as X
@@ -45,6 +46,7 @@ import Restyler.Config.RunUser as X
 data Config = Config
   { enabled :: Bool
   , dryRun :: Bool
+  , keepGoing :: Bool
   , failOnDifferences :: Bool
   , exclude :: [Glob FilePath]
   , restylersVersion :: String
@@ -82,6 +84,7 @@ configParser sources =
   withFirstYamlConfig (traverse hiddenPath sources) $ do
     enabled <- enabledParser
     dryRun <- dryRunParser
+    keepGoing <- keepGoingParser
     failOnDifferences <- failOnDifferencesParser
     restylersVersion <- restylersVersionParser
     restylersManifest <- optional manifestParser

@@ -38,6 +38,7 @@ run
      , HasHostDirectory env
      , HasIgnores env
      , HasImageCleanup env
+     , HasKeepGoing env
      , HasLabelNames pr
      , HasManifest env
      , HasNoClean env

@@ -103,6 +103,7 @@ runRestylers
      , HasExclude env
      , HasHostDirectory env
      , HasImageCleanup env
+     , HasKeepGoing env
      , HasManifest env
      , HasNoCommit env
      , HasNoPull env
@@ -237,6 +238,7 @@ runRestyler
      , HasDryRun env
      , HasHostDirectory env
      , HasImageCleanup env
+     , HasKeepGoing env
      , HasNoCommit env
      , HasNoPull env
      , HasRestrictions env
@@ -271,6 +273,7 @@ runRestyler_
      , HasDryRun env
      , HasHostDirectory env
      , HasImageCleanup env
+     , HasKeepGoing env
      , HasNoPull env
      , HasRestrictions env
      , HasRunUser env
@@ -363,6 +366,7 @@ dockerRunRestyler
   :: ( HasCallStack
      , HasDryRun env
      , HasHostDirectory env
+     , HasKeepGoing env
      , HasRestrictions env
      , HasRunUser env
      , MonadDocker m
@@ -379,6 +383,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
   mRunUser <- asks getRunUser
   restrictions <- asks getRestrictions
   dryRun <- asks getDryRun
+  keepGoing <- asks getKeepGoing
 
   let
     args =
@@ -421,7 +426,7 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
       logRunningOn [path]
       unlessDryRun $ dockerRun $ args <> ["--" | sep] <> [prefix path]
 
-  case ec of
+  unless keepGoing $ case ec of
     ExitSuccess -> pure ()
     ExitFailure 137 -> throw $ RestylerOutOfMemory r
     ExitFailure 127 -> throw $ RestylerCommandNotFound r

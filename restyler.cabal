@@ -28,6 +28,7 @@ library
       Restyler.Config.ImageCleanup
       Restyler.Config.Include
       Restyler.Config.Interpreter
+      Restyler.Config.KeepGoing
       Restyler.Config.LogSettings
       Restyler.Config.Manifest
       Restyler.Config.NoClean
