@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.38.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -14,6 +14,7 @@ library
       Restyler.AnnotatedException
       Restyler.App
       Restyler.CLI
+      Restyler.CodeVolume
       Restyler.Config
       Restyler.Config.AutoEnable
       Restyler.Config.CommitTemplate
@@ -22,7 +23,6 @@ library
       Restyler.Config.Exclude
       Restyler.Config.FailOnDifferences
       Restyler.Config.Glob
-      Restyler.Config.HostDirectory
       Restyler.Config.Ignore
       Restyler.Config.Image
       Restyler.Config.ImageCleanup
