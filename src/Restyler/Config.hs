@@ -29,7 +29,6 @@ import Restyler.Config.Enabled as X
 import Restyler.Config.Exclude as X
 import Restyler.Config.FailOnDifferences as X
 import Restyler.Config.Glob
-import Restyler.Config.HostDirectory as X
 import Restyler.Config.Ignore as X
 import Restyler.Config.ImageCleanup as X
 import Restyler.Config.LogSettings as X
@@ -51,7 +50,6 @@ data Config = Config
   , restylerOverrides :: [RestylerOverride]
   , ignores :: Ignores
   , remoteFiles :: [RemoteFile]
-  , hostDirectory :: Path Abs Dir
   , imageCleanup :: Bool
   , noPull :: Bool
   , restrictions :: Restrictions
@@ -87,7 +85,6 @@ configParser sources =
     exclude <- excludeParser
     ignores <- ignoresParser
     remoteFiles <- remoteFilesParser
-    hostDirectory <- subConfig_ "docker" hostDirectoryParser
     imageCleanup <- subConfig_ "docker" imageCleanupParser
     noPull <- subConfig_ "docker" noPullParser
     restrictions <- subConfig_ "docker" $ subAll "restyler" restrictionsParser

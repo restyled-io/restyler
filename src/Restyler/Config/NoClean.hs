@@ -7,16 +7,12 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.Config.NoClean
-  ( HasNoClean (..)
-  , noCleanParser
+  ( noCleanParser
   ) where
 
 import Restyler.Prelude
 
 import OptEnvConf
-
-class HasNoClean env where
-  getNoClean :: env -> Bool
 
 noCleanParser :: Parser Bool
 noCleanParser =
@@ -24,7 +20,8 @@ noCleanParser =
     <$> withDefault
       False
       ( yesNoSwitch
-          [ help "Run git-clean after restyling"
+          [ help "Unused"
           , name "clean"
+          , hidden
           ]
       )
