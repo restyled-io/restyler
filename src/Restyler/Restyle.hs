@@ -35,12 +35,10 @@ run
      , HasDryRun env
      , HasEnabled env
      , HasExclude env
-     , HasHostDirectory env
      , HasIgnores env
      , HasImageCleanup env
      , HasLabelNames pr
      , HasManifest env
-     , HasNoClean env
      , HasNoCommit env
      , HasNoPull env
      , HasPullRequestState pr
@@ -91,8 +89,5 @@ run pr paths = do
              , "restyled" .= result.restyled
              , "sha" .= result.sha
              ]
-
-      noClean <- asks $ (||) <$> getDryRun <*> getNoClean
-      unless noClean gitClean
 
       pure $ maybe RestyleNoDifference (const RestyleDifference) mresults

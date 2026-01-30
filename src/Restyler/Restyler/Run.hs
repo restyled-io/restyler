@@ -36,6 +36,7 @@ import Control.Retry
 import Data.List (nub)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
+import Restyler.CodeVolume
 import Restyler.Config
 import Restyler.Config.Glob (match)
 import Restyler.Config.Include
@@ -101,7 +102,6 @@ runRestylers
      , HasCommitTemplate env
      , HasDryRun env
      , HasExclude env
-     , HasHostDirectory env
      , HasImageCleanup env
      , HasManifest env
      , HasNoCommit env
@@ -139,7 +139,8 @@ runRestylers argPaths = do
   for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
 
   restylers <- getEnabledRestylers
-  mResults <- withFilteredPaths restylers paths runRestyler
+  mResults <- withCodeVolume $ \vol ->
+    withFilteredPaths restylers paths (runRestyler vol)
   mResetTo <- join <$> traverse checkForNoop mResults
 
   case mResetTo of
@@ -234,7 +235,6 @@ runRestyler
   :: ( HasCallStack
      , HasCommitTemplate env
      , HasDryRun env
-     , HasHostDirectory env
      , HasImageCleanup env
      , HasNoCommit env
      , HasNoPull env
@@ -248,13 +248,15 @@ runRestyler
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => Restyler
+  => String
+  -- ^ Code volume name
+  -> Restyler
   -> [FilePath]
   -> m (Maybe RestylerResult)
-runRestyler r = \case
+runRestyler vol r = \case
   [] -> pure Nothing
   paths -> do
-    runRestyler_ r paths
+    runRestyler_ vol r paths
 
     isGit <- isGitRepository
 
@@ -267,7 +269,6 @@ runRestyler r = \case
 runRestyler_
   :: ( HasCallStack
      , HasDryRun env
-     , HasHostDirectory env
      , HasImageCleanup env
      , HasNoPull env
      , HasRestrictions env
@@ -279,11 +280,12 @@ runRestyler_
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => Restyler
+  => String
+  -> Restyler
   -> [FilePath]
   -> m ()
-runRestyler_ _ [] = pure ()
-runRestyler_ r paths = case rDelimiters r of
+runRestyler_ _ _ [] = pure ()
+runRestyler_ vol r paths = case rDelimiters r of
   Nothing -> run paths
   Just ds -> restyleDelimited ds run paths
  where
@@ -291,7 +293,7 @@ runRestyler_ r paths = case rDelimiters r of
     noPull <- asks $ (||) <$> getNoPull <*> getDryRun
     unless noPull $ dockerPullRestyler r
     dockerWithImageRm r
-      $ traverse_ (dockerRunRestyler r)
+      $ traverse_ (dockerRunRestyler vol r)
       $ withProgress
       $ getDockerRunStyles r ps
 
@@ -359,7 +361,6 @@ dockerPullRestyler r@Restyler {..} = do
 dockerRunRestyler
   :: ( HasCallStack
      , HasDryRun env
-     , HasHostDirectory env
      , HasRestrictions env
      , MonadDocker m
      , MonadLogger m
@@ -367,20 +368,26 @@ dockerRunRestyler
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => Restyler
+  => String
+  -> Restyler
   -> WithProgress DockerRunStyle
   -> m ()
-dockerRunRestyler r@Restyler {..} WithProgress {..} = do
-  cwd <- asks getHostDirectory
+dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
   restrictions <- asks getRestrictions
   dryRun <- asks getDryRun
 
   let
+    cName = "restyler-" <> rName
+
     args =
       restrictionOptions restrictions
+        <> ["--name", cName]
         <> ["--pull", "never"]
-        <> ["--volume", toFilePath cwd <> ":/code", rImage]
+        <> ["--volume", vol <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
+
+    copyRestyledPaths = traverse_ $ \path ->
+      dockerCp (cName <> ":" <> "/code/" <> path) path
 
     progressSuffix :: Text
     progressSuffix
@@ -401,18 +408,24 @@ dockerRunRestyler r@Restyler {..} WithProgress {..} = do
       | dryRun = pure ExitSuccess
       | otherwise = f
 
+    withDockerRm = (`finally` dockerRm cName)
+
   ec <- case pItem of
     DockerRunPathToStdout path -> do
       logRunningOn [path]
-      unlessDryRun $ do
+      unlessDryRun $ withDockerRm $ do
         (ec, out) <- dockerRunStdout $ args <> [prefix path]
         ec <$ writeFile path (fixNewline out)
     DockerRunPathsOverwrite sep paths -> do
       logRunningOn paths
-      unlessDryRun $ dockerRun $ args <> ["--" | sep] <> map prefix paths
+      unlessDryRun $ withDockerRm $ do
+        ec <- dockerRun $ args <> ["--" | sep] <> map prefix paths
+        ec <$ copyRestyledPaths (map prefix paths)
     DockerRunPathOverwrite sep path -> do
       logRunningOn [path]
-      unlessDryRun $ dockerRun $ args <> ["--" | sep] <> [prefix path]
+      unlessDryRun $ withDockerRm $ do
+        ec <- dockerRun $ args <> ["--" | sep] <> [prefix path]
+        ec <$ copyRestyledPaths [prefix path]
 
   case ec of
     ExitSuccess -> pure ()
