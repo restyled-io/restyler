@@ -7,7 +7,8 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.CodeVolume
-  ( withCodeVolume
+  ( VolumeName (..)
+  , withCodeVolume
   ) where
 
 import Restyler.Prelude
@@ -15,34 +16,47 @@ import Restyler.Prelude
 import Restyler.Monad.Docker
 import UnliftIO.Exception (bracket)
 
-withCodeVolume :: (MonadDocker m, MonadUnliftIO m) => (String -> m a) -> m a
-withCodeVolume = bracket acquire dockerVolumeRm
+newtype VolumeName = VolumeName
+  { unwrap :: String
+  }
+
+withCodeVolume :: (MonadDocker m, MonadUnliftIO m) => (VolumeName -> m a) -> m a
+withCodeVolume = bracket acquire (dockerVolumeRm . (.unwrap))
  where
-  acquire :: (MonadDocker m, MonadUnliftIO m) => m String
+  acquire :: (MonadDocker m, MonadUnliftIO m) => m VolumeName
   acquire = withVolumeInContainer tmpVolumeName $ \cName cPath -> do
-    tmpVolumeName <$ dockerCp "." (cName <> ":" <> cPath)
+    tmpVolumeName <$ dockerCp "." (cName.unwrap <> ":" <> cPath.unwrap)
+
+newtype ContainerName = ContainerName
+  { unwrap :: String
+  }
+
+newtype ContainerPath = ContainerPath
+  { unwrap :: FilePath
+  }
 
 withVolumeInContainer
   :: (MonadDocker m, MonadUnliftIO m)
-  => String
-  -> (String -> FilePath -> m a)
+  => VolumeName
+  -> (ContainerName -> ContainerPath -> m a)
   -> m a
-withVolumeInContainer name = bracket acquire (dockerRm . fst) . uncurry
+withVolumeInContainer name =
+  bracket acquire (dockerRm . (.unwrap) . fst) . uncurry
  where
-  acquire :: MonadDocker m => m (String, FilePath)
+  acquire :: MonadDocker m => m (ContainerName, ContainerPath)
   acquire = do
     dockerCreate
-      $ ["--name", tmpContainerName]
-      <> ["--volume", name <> ":" <> tmpContainerPath]
+      $ ["--name", tmpContainerName.unwrap]
+      <> ["--volume", name.unwrap <> ":" <> tmpContainerPath.unwrap]
       <> ["busybox"]
 
     pure (tmpContainerName, tmpContainerPath)
 
-tmpVolumeName :: String
-tmpVolumeName = "restyler-code-volume"
+tmpVolumeName :: VolumeName
+tmpVolumeName = VolumeName "restyler-code-volume"
 
-tmpContainerName :: String
-tmpContainerName = "restyler-tmp-container"
+tmpContainerName :: ContainerName
+tmpContainerName = ContainerName "restyler-tmp-container"
 
-tmpContainerPath :: FilePath
-tmpContainerPath = "/data"
+tmpContainerPath :: ContainerPath
+tmpContainerPath = ContainerPath "/data"

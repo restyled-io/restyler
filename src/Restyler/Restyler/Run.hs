@@ -247,8 +247,7 @@ runRestyler
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => String
-  -- ^ Code volume name
+  => VolumeName
   -> Restyler
   -> [FilePath]
   -> m (Maybe RestylerResult)
@@ -279,7 +278,7 @@ runRestyler_
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => String
+  => VolumeName
   -> Restyler
   -> [FilePath]
   -> m ()
@@ -367,7 +366,7 @@ dockerRunRestyler
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => String
+  => VolumeName
   -> Restyler
   -> WithProgress DockerRunStyle
   -> m ()
@@ -382,7 +381,7 @@ dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
       restrictionOptions restrictions
         <> ["--name", cName]
         <> ["--pull", "never"]
-        <> ["--volume", vol <> ":/code", rImage]
+        <> ["--volume", vol.unwrap <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
     copyRestyledPaths = traverse_ $ \path ->
