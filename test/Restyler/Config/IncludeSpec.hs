@@ -41,15 +41,16 @@ spec = do
       includePath includes "foo/bar.py" `shouldBe` True
       includePath includes "foo/bar.pyc" `shouldBe` False
 
-    it "matches hidden files, if you know how" $ do
+    it "matches hidden files (matchDotsImplicitly)" $ do
       let includes =
             [ Include "**/*.json"
-            , Include ".**/*.json"
-            , Include ".**/.*.json"
-            , Include "**/.*.json"
+            , Include "**/*.yml"
+            , Include "**/*.yaml"
             ]
 
       includePath includes "foo/bar.json" `shouldBe` True
       includePath includes ".foo/bar.json" `shouldBe` True
       includePath includes "foo/.bar.json" `shouldBe` True
       includePath includes ".foo/.bar.json" `shouldBe` True
+      includePath includes ".forgejo/workflows/restyled.yml" `shouldBe` True
+      includePath includes ".restyled.yaml" `shouldBe` True
