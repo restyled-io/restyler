@@ -139,8 +139,7 @@ runRestylers argPaths = do
   for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
 
   restylers <- getEnabledRestylers
-  mResults <- withCodeVolume $ \vol ->
-    withFilteredPaths restylers paths (runRestyler vol)
+  mResults <- withCodeVolume $ withFilteredPaths restylers paths . runRestyler
   mResetTo <- join <$> traverse checkForNoop mResults
 
   case mResetTo of
