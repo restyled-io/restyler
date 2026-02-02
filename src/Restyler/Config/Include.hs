@@ -16,7 +16,14 @@ import Restyler.Prelude
 
 import Autodocodec
 import Data.Aeson (FromJSON, ToJSON)
-import System.FilePath.Glob (Pattern, compile, decompile, match)
+import System.FilePath.Glob
+  ( MatchOptions (..)
+  , Pattern
+  , compile
+  , decompile
+  , matchDefault
+  , matchWith
+  )
 
 data Include
   = -- | @**\/*.hs@
@@ -60,3 +67,6 @@ includePath is fp = foldl' go False is
   go :: Bool -> Include -> Bool
   go b (Include p) = b || p `match` fp
   go b (Negated p) = b && not (p `match` fp)
+
+match :: Pattern -> FilePath -> Bool
+match = matchWith $ matchDefault {matchDotsImplicitly = True}
