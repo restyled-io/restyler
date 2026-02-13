@@ -24,6 +24,7 @@ import Restyler.Prelude hiding (Reader)
 import OptEnvConf
 import Paths_restyler qualified as Pkg
 import Restyler.Config.CommitTemplate as X
+import Restyler.Config.CopyFiles as X
 import Restyler.Config.DryRun as X
 import Restyler.Config.Enabled as X
 import Restyler.Config.Exclude as X
@@ -51,6 +52,7 @@ data Config = Config
   , restylerOverrides :: [RestylerOverride]
   , ignores :: Ignores
   , remoteFiles :: [RemoteFile]
+  , copyFiles :: CopyFiles
   , imageCleanup :: Bool
   , noPull :: Bool
   , restrictions :: Restrictions
@@ -86,6 +88,7 @@ configParser sources =
     exclude <- excludeParser
     ignores <- ignoresParser
     remoteFiles <- remoteFilesParser
+    copyFiles <- copyFilesParser
     imageCleanup <- subConfig_ "docker" imageCleanupParser
     noPull <- subConfig_ "docker" noPullParser
     restrictions <- subConfig_ "docker" $ subAll "restyler" restrictionsParser

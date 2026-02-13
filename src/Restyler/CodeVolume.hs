@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- |
 --
 -- Module      : Restyler.CodeVolume
@@ -7,56 +9,59 @@
 -- Stability   : experimental
 -- Portability : POSIX
 module Restyler.CodeVolume
-  ( VolumeName (..)
+  ( CodeVolume (..)
+  , VolumeName (..)
+  , ContainerName (..)
+  , ContainerPath (..)
   , withCodeVolume
   ) where
 
 import Restyler.Prelude
 
+import Path (absdir)
 import Restyler.Monad.Docker
 import UnliftIO.Exception (bracket)
+
+data CodeVolume = CodeVolume
+  { name :: VolumeName
+  , container :: ContainerName
+  , path :: ContainerPath
+  }
 
 newtype VolumeName = VolumeName
   { unwrap :: String
   }
-
-withCodeVolume :: (MonadDocker m, MonadUnliftIO m) => (VolumeName -> m a) -> m a
-withCodeVolume = bracket acquire (dockerVolumeRm . (.unwrap))
- where
-  acquire :: (MonadDocker m, MonadUnliftIO m) => m VolumeName
-  acquire = withVolumeInContainer tmpVolumeName $ \cName cPath -> do
-    tmpVolumeName <$ dockerCp "." (cName.unwrap <> ":" <> cPath.unwrap)
 
 newtype ContainerName = ContainerName
   { unwrap :: String
   }
 
 newtype ContainerPath = ContainerPath
-  { unwrap :: FilePath
+  { unwrap :: Path Abs Dir
   }
 
-withVolumeInContainer
-  :: (MonadDocker m, MonadUnliftIO m)
-  => VolumeName
-  -> (ContainerName -> ContainerPath -> m a)
-  -> m a
-withVolumeInContainer name =
-  bracket acquire (dockerRm . (.unwrap) . fst) . uncurry
+withCodeVolume :: (MonadDocker m, MonadUnliftIO m) => (CodeVolume -> m a) -> m a
+withCodeVolume = bracket acquire release
  where
-  acquire :: MonadDocker m => m (ContainerName, ContainerPath)
+  acquire :: MonadDocker m => m CodeVolume
   acquire = do
-    dockerCreate
-      $ ["--name", tmpContainerName.unwrap]
-      <> ["--volume", name.unwrap <> ":" <> tmpContainerPath.unwrap]
-      <> ["busybox"]
+    let
+      vol :: CodeVolume
+      vol =
+        CodeVolume
+          { name = VolumeName "restyler-code-volume"
+          , container = ContainerName "restyler-tmp-container"
+          , path = ContainerPath [absdir|/data|]
+          }
 
-    pure (tmpContainerName, tmpContainerPath)
+      mount :: String
+      mount = vol.name.unwrap <> ":" <> toFilePath vol.path.unwrap
 
-tmpVolumeName :: VolumeName
-tmpVolumeName = VolumeName "restyler-code-volume"
+    dockerVolumeCreate vol.name.unwrap
+    dockerCreate ["--name", vol.container.unwrap, "--volume", mount, "busybox"]
+    pure vol
 
-tmpContainerName :: ContainerName
-tmpContainerName = ContainerName "restyler-tmp-container"
-
-tmpContainerPath :: ContainerPath
-tmpContainerPath = ContainerPath "/data"
+  release :: MonadDocker m => CodeVolume -> m ()
+  release vol = do
+    dockerRm vol.container.unwrap
+    dockerVolumeRm vol.name.unwrap

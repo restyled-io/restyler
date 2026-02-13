@@ -56,7 +56,7 @@ instance
   dockerRun args = runDocker $ ["run"] <> args
   dockerRunStdout args = runDockerStdout $ ["run"] <> args
   dockerImageRm image = runDocker_ ["image", "rm", "--force", image]
-  dockerVolumeCreate name = runDocker_ ["volume", "create", "--quiet", name]
+  dockerVolumeCreate name = runDocker_ ["volume", "create", name]
   dockerVolumeRm name = runDocker_ ["volume", "rm", name]
   dockerCp src dst = runDocker_ ["cp", "--quiet", src, dst]
   dockerRm name = runDocker_ ["rm", name]

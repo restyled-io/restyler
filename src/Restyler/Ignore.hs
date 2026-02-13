@@ -38,5 +38,5 @@ getIgnoredReason i author branch labels =
   asum
     [ IgnoredByAuthor author <$ guard (i.byAuthor `matchAny` [author])
     , IgnoredByBranch branch <$ guard (i.byBranch `matchAny` [branch])
-    , IgnoredByLabels <$> i.byLabels `matchFirst` labels
+    , IgnoredByLabels <$> i.byLabels `globFirst` labels
     ]

@@ -11,11 +11,16 @@
 module Restyler.Config.Glob
   ( Glob (..)
   , GlobTarget (..)
+
+    -- * /match/ functions return boolean
   , match
   , matchPath
   , matchAny
-  , matchFirst
   , matchAnyInCurrentDirectory
+
+    -- * /glob/ functions return matched items
+  , globFirst
+  , globAnyInCurrentDirectory
   ) where
 
 import Restyler.Prelude
@@ -63,12 +68,18 @@ matchPath (Glob p) =
     . toFilePath
 
 matchAny :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Bool
-matchAny globs = any $ \x -> any (`match` x) globs
-
-matchFirst :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Maybe a
-matchFirst globs = find $ \x -> any (`match` x) globs
+matchAny gs = any $ \x -> any (`match` x) gs
 
 matchAnyInCurrentDirectory :: MonadDirectory m => [Glob FilePath] -> m Bool
 matchAnyInCurrentDirectory gs = do
   files <- listDirectoryRecur =<< getCurrentDirectory
   pure $ matchAny gs $ map toFilePath files
+
+globFirst :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Maybe a
+globFirst gs = find $ \x -> any (`match` x) gs
+
+globAnyInCurrentDirectory
+  :: MonadDirectory m => [Glob FilePath] -> m [Path Rel File]
+globAnyInCurrentDirectory gs = do
+  files <- listDirectoryRecur =<< getCurrentDirectory
+  pure $ filter (\f -> any (`match` toFilePath f) gs) files
