@@ -5,6 +5,8 @@ plugins:
     - preset: "conventionalcommits"
   - - "@semantic-release/release-notes-generator"
     - preset: "conventionalcommits"
+  - - "@semantic-release/exec"
+    - verifyReleaseCmd: "./bin/bump-package-yaml '${nextRelease.version}'"
   - - "@semantic-release/github"
     - assets: "*-binaries/restyler-*.tar.gz"
       successCommentCondition: false

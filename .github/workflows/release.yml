@@ -27,6 +27,19 @@ jobs:
       - id: stack
         uses: freckle/stack-action@v5
       - uses: extractions/setup-just@v2
+
+      # Do a dry-run release in order to update package.yaml before compilation,
+      # so the --version option works correctly.
+      - uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            conventional-changelog-conventionalcommits
+            @semantic-release/exec
+        env:
+          FORCE_COLOR: 1
+          GITHUB_TOKEN: ${{ github.token }}
+
       - run: just dist
       - uses: actions/upload-artifact@v4
         with:
@@ -55,6 +68,7 @@ jobs:
         with:
           extra_plugins: |
             conventional-changelog-conventionalcommits
+            @semantic-release/exec
         env:
           FORCE_COLOR: 1
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
@@ -76,6 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./install -t '${{ needs.release.outputs.tag }}'
+      - run: restyle --version
       - run: restyle --help
 
   docs:

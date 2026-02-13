@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (($# != 1)); then
+  echo "usage: bump-package-yaml <version>" >&2
+  exit 1
+fi
+
+IFS=.- read -r epoch _ < <(yq '.version' package.yaml)
+IFS=.- read -r major minor patch _ <<<"$1"
+
+version=$epoch.$major.$minor.$patch
+
+printf 'Updating package.yaml version to %s\n' "$version"
+yq -i ".version = \"$version\"" package.yaml
+
+stack build --dry-run --hpack-force
