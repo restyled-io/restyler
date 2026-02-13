@@ -57,6 +57,7 @@ data App = App
 
 {- FOURMOLU_DISABLE -}
 instance HasCommitTemplate App where getCommitTemplate = (.config.commitTemplate)
+instance HasCopyFiles App where getCopyFiles = (.config.copyFiles)
 instance HasDryRun App where getDryRun = (.config.dryRun)
 instance HasEnabled App where getEnabled = (.config.enabled)
 instance HasExclude App where getExclude = (.config.exclude)

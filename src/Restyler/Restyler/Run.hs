@@ -99,6 +99,7 @@ instance Exception RestylerCommandNotFound where
 runRestylers
   :: ( HasCallStack
      , HasCommitTemplate env
+     , HasCopyFiles env
      , HasDryRun env
      , HasExclude env
      , HasImageCleanup env
@@ -125,6 +126,11 @@ runRestylers argPaths = do
   expPaths <- expandSomePaths argPaths
   paths <- removeExcluded expPaths
 
+  remoteFiles <- asks getRemoteFiles
+  for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
+
+  copyFiles <- asks getCopyFiles
+
   logDebug
     $ "Paths"
     :# [ "pathsGiven" .= argPaths
@@ -132,11 +138,10 @@ runRestylers argPaths = do
        , "pathsExpandedIncluded" .= truncateList toFilePath 50 paths
        ]
 
-  remoteFiles <- asks getRemoteFiles
-  for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
-
   restylers <- getEnabledRestylers
-  mResults <- withCodeVolume $ withFilteredPaths restylers paths . runRestyler
+  mResults <- withCodeVolume $ \vol -> do
+    copyCodeFiles remoteFiles paths vol copyFiles
+    withFilteredPaths restylers paths $ runRestyler vol
   mResetTo <- join <$> traverse checkForNoop mResults
 
   case mResetTo of
@@ -244,7 +249,7 @@ runRestyler
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => VolumeName
+  => CodeVolume
   -> Restyler
   -> [Path Rel File]
   -> m (Maybe RestylerResult)
@@ -275,7 +280,7 @@ runRestyler_
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => VolumeName
+  => CodeVolume
   -> Restyler
   -> [Path Rel File]
   -> m ()
@@ -363,7 +368,7 @@ dockerRunRestyler
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => VolumeName
+  => CodeVolume
   -> Restyler
   -> WithProgress DockerRunStyle
   -> m ()
@@ -378,7 +383,7 @@ dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
       restrictionOptions restrictions
         <> ["--name", cName]
         <> ["--pull", "never"]
-        <> ["--volume", vol.unwrap <> ":/code", rImage]
+        <> ["--volume", vol.name.unwrap <> ":/code", rImage]
         <> nub (rCommand <> rArguments)
 
     copyRestyledPaths = traverse_ $ \path ->

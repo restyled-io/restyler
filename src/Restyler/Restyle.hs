@@ -33,6 +33,7 @@ run
      , HasBaseRef pr
      , HasCallStack
      , HasCommitTemplate env
+     , HasCopyFiles env
      , HasDryRun env
      , HasEnabled env
      , HasExclude env

@@ -18,6 +18,7 @@ library
       Restyler.Config
       Restyler.Config.AutoEnable
       Restyler.Config.CommitTemplate
+      Restyler.Config.CopyFiles
       Restyler.Config.DryRun
       Restyler.Config.Enabled
       Restyler.Config.Exclude
