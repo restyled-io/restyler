@@ -24,22 +24,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - id: stack
-        uses: freckle/stack-action@v5
-      - uses: extractions/setup-just@v2
 
-      # Do a dry-run release in order to update package.yaml before compilation,
-      # so the --version option works correctly.
-      - uses: cycjimmy/semantic-release-action@v4
+      # Use dry-run to get computed release
+      - id: release
+        uses: cycjimmy/semantic-release-action@v4
         with:
           dry_run: true
           extra_plugins: |
             conventional-changelog-conventionalcommits
-            @semantic-release/exec
         env:
           FORCE_COLOR: 1
           GITHUB_TOKEN: ${{ github.token }}
 
+      # update version in package.yaml, so the --version option works correctly
+      - run: bin/bump-package-yaml '${{ steps.release.outputs.new_release_git_tag }}'
+
+      - id: stack
+        uses: freckle/stack-action@v5
+      - uses: extractions/setup-just@v2
       - run: just dist
       - uses: actions/upload-artifact@v4
         with:
@@ -68,7 +70,6 @@ jobs:
         with:
           extra_plugins: |
             conventional-changelog-conventionalcommits
-            @semantic-release/exec
         env:
           FORCE_COLOR: 1
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
