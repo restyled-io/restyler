@@ -38,9 +38,13 @@ jobs:
 
       # update version in package.yaml, so the --version option works correctly
       - run: |
-          yq -i ".version = \"$NEW_PVP_VERSION\"" package.yaml
+          new_version=$EPOCH.$MAJOR.$MINOR.$PATCH
+          yq -i ".version = \"$new_version\"" package.yaml
         env:
-          NEW_PVP_VERSION: 0.${{ steps.release.outputs.new_release_version }}
+          EPOCH: 0
+          MAJOR: ${{ steps.release.outputs.new_release_major_version }}
+          MINOR: ${{ steps.release.outputs.new_release_minor_version }}
+          PATCH: ${{ steps.release.outputs.new_release_patch_version }}
 
       - id: stack
         uses: freckle/stack-action@v5
