@@ -24,7 +24,6 @@ import Data.Aeson
 import Restyler.Monad.Directory
 import System.FilePath ((</>))
 import System.FilePath.Glob hiding (match)
-import System.FilePath.Glob qualified as Glob
 
 newtype Glob a = Glob {unwrap :: String}
   deriving stock (Eq)
@@ -49,7 +48,11 @@ instance GlobTarget Text where
       }
 
 match :: forall a. GlobTarget a => Glob a -> a -> Bool
-match (Glob p) = Glob.match (compileWith (getCompOptions @a) p) . forMatch
+match (Glob p) =
+  matchWith
+    (matchDefault {matchDotsImplicitly = True})
+    (compileWith (getCompOptions @a) p)
+    . forMatch
 
 matchAny :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Bool
 matchAny globs = any $ \x -> any (`match` x) globs
