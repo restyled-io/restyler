@@ -37,7 +37,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       # update version in package.yaml, so the --version option works correctly
-      - run: bin/bump-package-yaml '${{ steps.release.outputs.new_release_git_tag }}'
+      - run: |
+          yq -i ".version = \"$NEW_PVP_VERSION\"" package.yaml
+        env:
+          NEW_PVP_VERSION: 0.${{ steps.release.outputs.new_release_version }}
 
       - id: stack
         uses: freckle/stack-action@v5
