@@ -22,6 +22,7 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git (MonadGit (..))
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
+import Restyler.Path
 import Restyler.RestyleResult
 import Restyler.Restyler
 import Restyler.Restyler.Run
@@ -57,7 +58,7 @@ run
      , MonadWriteFile m
      )
   => pr
-  -> [FilePath]
+  -> [SomePath]
   -> m RestyleResult
 run pr paths = do
   enabled <- asks getEnabled

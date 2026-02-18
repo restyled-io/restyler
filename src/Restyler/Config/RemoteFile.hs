@@ -18,13 +18,14 @@ import Autodocodec
 import Network.URI (parseAbsoluteURI)
 import Network.URI qualified as URI
 import OptEnvConf
+import Path (parseRelFile)
 
 class HasRemoteFiles env where
   getRemoteFiles :: env -> [RemoteFile]
 
 data RemoteFile = RemoteFile
   { url :: String
-  , path :: FilePath
+  , path :: Path Rel File
   }
   deriving stock (Eq, Show)
 
@@ -39,12 +40,13 @@ codecObject =
     <$> (requiredField "url" "URL to download" .= fst)
     <*> (optionalField "path" "Path to download to" .= snd)
 
-remoteFileFromPair :: (String, Maybe String) -> Either String RemoteFile
+remoteFileFromPair
+  :: (String, Maybe (Path Rel File)) -> Either String RemoteFile
 remoteFileFromPair (url, mPath) = case mPath of
   Nothing -> remoteFileFromUrl url
   Just path -> Right $ RemoteFile {url, path}
 
-remoteFileToPair :: RemoteFile -> (String, Maybe String)
+remoteFileToPair :: RemoteFile -> (String, Maybe (Path Rel File))
 remoteFileToPair rf = (rf.url, Just rf.path)
 
 codecUrl :: JSONCodec RemoteFile
@@ -53,9 +55,13 @@ codecUrl = bimapCodec remoteFileFromUrl remoteFileToUrl stringCodec <?> "URL wit
 remoteFileFromUrl :: String -> Either String RemoteFile
 remoteFileFromUrl url = do
   uri <- note "" $ parseAbsoluteURI url
-  case nonEmpty $ URI.pathSegments uri of
-    Nothing -> Left "RemoteFile's URL has no path, and one is not configured"
-    Just ps -> Right $ RemoteFile {url, path = last ps}
+  segs <-
+    note "RemoteFile's URL has no path, and one is not configured"
+      $ nonEmpty
+      $ URI.pathSegments uri
+  path <-
+    note "RemoteFile's URL path is not a valid file name" $ parseRelFile $ last segs
+  pure $ RemoteFile {url, path}
 
 -- | Invalid, but not the codec is never used to render
 remoteFileToUrl :: RemoteFile -> String

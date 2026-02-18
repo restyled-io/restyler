@@ -26,6 +26,7 @@ import Restyler.Prelude hiding ((.=))
 import Autodocodec
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text qualified as T
+import Path (addExtension)
 import Restyler.Monad.Directory
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
@@ -46,14 +47,14 @@ instance HasCodec Delimiters where
       <*> (requiredField' "end" .= dEnd)
 
 data DelimitedPath = DelimitedPath
-  { dpSource :: FilePath
+  { dpSource :: Path Rel File
   , dpParts :: [DelimitedPathPart]
   }
   deriving stock (Eq, Show)
 
 data DelimitedPathPart = DelimitedPathPart
   { dppIn :: Bool
-  , dppPath :: FilePath
+  , dppPath :: Path Rel File
   , dppMeta :: Maybe DelimitedMeta
   }
   deriving stock (Eq, Show)
@@ -73,9 +74,9 @@ restyleDelimited
      , MonadWriteFile m
      )
   => Delimiters
-  -> ([FilePath] -> m result)
+  -> ([Path Rel File] -> m result)
   -- ^ Restyle files inplace
-  -> [FilePath]
+  -> [Path Rel File]
   -> m result
 restyleDelimited delimiters restyle paths =
   bracket
@@ -85,7 +86,7 @@ restyleDelimited delimiters restyle paths =
       result <- restyle $ concatMap delimitedInPaths delimited
       result <$ traverse_ (undelimit delimiters) delimited
 
-delimitedInPaths :: DelimitedPath -> [FilePath]
+delimitedInPaths :: DelimitedPath -> [Path Rel File]
 delimitedInPaths = map dppPath . filter dppIn . dpParts
 
 -- | Split a File into separate files of the content between delimiters
@@ -101,7 +102,8 @@ delimitedInPaths = map dppPath . filter dppIn . dpParts
 -- delimiters (repeatedly). The returned value tracks which paths hold content
 -- that was delimited /in/ or /out/.
 delimit
-  :: (MonadReadFile m, MonadWriteFile m) => Delimiters -> FilePath -> m DelimitedPath
+  :: (MonadReadFile m, MonadWriteFile m)
+  => Delimiters -> Path Rel File -> m DelimitedPath
 delimit Delimiters {..} path = do
   content <- readFile path
   parts <-
@@ -115,12 +117,16 @@ delimit Delimiters {..} path = do
 
 writePart
   :: MonadWriteFile m
-  => FilePath
+  => Path Rel File
   -> Int
   -> Either Text Text
   -> m DelimitedPathPart
 writePart path n part = do
-  let path' = path <> "." <> show @String @Int n
+  let
+    -- NB. addExtension only throws if the extension is invalid, we know
+    -- ".{number}" is valid so, the error here is safe.
+    ext = "." <> show @String @Int n
+    path' = either (error . show) id $ addExtension ext path
 
   case part of
     Left content -> do

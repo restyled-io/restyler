@@ -20,7 +20,7 @@ import Conduit (runResourceT, sinkFile)
 import Network.HTTP.Simple hiding (Request)
 
 class Monad m => MonadDownloadFile m where
-  downloadFile :: String -> FilePath -> m ()
+  downloadFile :: String -> Path b File -> m ()
 
 newtype ActualDownloadFile m a = ActualDownloadFile
   { unwrap :: m a
@@ -42,7 +42,7 @@ instance
     logDebug $ "downloadFile" :# ["url" .= url]
     liftIO $ do
       request <- parseRequestThrow url
-      runResourceT $ httpSink request $ \_ -> sinkFile path
+      runResourceT $ httpSink request $ \_ -> sinkFile (toFilePath path)
 
 newtype NullDownloadFile m a = NullDownloadFile
   { unwrap :: m a

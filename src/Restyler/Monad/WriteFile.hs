@@ -18,7 +18,7 @@ import Restyler.Prelude
 import Relude qualified as Prelude
 
 class Monad m => MonadWriteFile m where
-  writeFile :: FilePath -> Text -> m ()
+  writeFile :: forall b. Path b File -> Text -> m ()
 
 newtype ActualWriteFile m a = ActualWriteFile
   { unwrap :: m a
@@ -34,4 +34,4 @@ newtype ActualWriteFile m a = ActualWriteFile
 instance (MonadIO m, MonadLogger m) => MonadWriteFile (ActualWriteFile m) where
   writeFile path contents = do
     logTrace $ "writeFile" :# ["path" .= path]
-    Prelude.writeFileText path contents
+    Prelude.writeFileText (toFilePath path) contents

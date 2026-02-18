@@ -24,11 +24,11 @@ import Data.Aeson.Casing
 import Data.Aeson.KeyMap (KeyMap)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Yaml (decodeFileThrow)
+import Path (parseAbsFile)
 import Restyler.Config.AutoEnable
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Config.Manifest
-import Restyler.Config.RemoteFile
 import Restyler.Delimited
 import Restyler.Monad.Directory
 import Restyler.Monad.DownloadFile
@@ -133,16 +133,18 @@ getAllRestylersVersioned version = do
   mManifest <- asks getManifest
   case mManifest of
     Nothing -> do
-      exists <- doesFileExist restylers.path
-      unless exists $ downloadFile restylers.url restylers.path
-      decodeFileThrow $ restylers.path
+      exists <- doesFileExist restylersPath
+      unless exists $ downloadFile restylersUrl restylersPath
+      decodeFileThrow $ toFilePath restylersPath
     Just path -> decodeFileThrow $ toFilePath path
  where
-  restylers =
-    RemoteFile
-      { url = restylersYamlUrl version
-      , path = "/tmp/restylers-" <> version <> ".yaml"
-      }
+  restylersUrl = restylersYamlUrl version
+  restylersPath =
+    either (error . show) id
+      $ parseAbsFile
+      $ "/tmp/restylers-"
+      <> version
+      <> ".yaml"
 
 restylersYamlUrl :: String -> String
 restylersYamlUrl version =

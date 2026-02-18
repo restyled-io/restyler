@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- |
 --
 -- Module      : Restyler.Config.RestylerSpec
@@ -17,6 +19,7 @@ import Autodocodec.Yaml (eitherDecodeYamlViaCodec)
 import Data.Aeson (FromJSON)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
+import Path (relfile)
 import Restyler.Config.Restyler
 import Restyler.Restyler
 import Restyler.Test.App
@@ -70,14 +73,14 @@ spec = do
           overrides `shouldBe` [enabled "brittany"]
 
         it "by configuration" $ do
-          writeFile ".fourmolu.yaml" ""
+          writeFile [relfile|.fourmolu.yaml|] ""
 
           overrides <- autoEnableTest restylersYaml Nothing
           overrides `shouldBe` [enabled "fourmolu"]
 
         it "multiple configurations" $ do
-          writeFile ".fourmolu.yaml" ""
-          writeFile ".brittany.yaml" ""
+          writeFile [relfile|.fourmolu.yaml|] ""
+          writeFile [relfile|.brittany.yaml|] ""
 
           overrides <- autoEnableTest restylersYaml Nothing
           overrides `shouldBe` [enabled "fourmolu", enabled "brittany"]
@@ -87,7 +90,7 @@ spec = do
           overrides `shouldBe` [enabled "stylish-haskell"]
 
         it "explicit selection with config" $ do
-          writeFile ".brittany.yaml" ""
+          writeFile [relfile|.brittany.yaml|] ""
           overrides <- autoEnableTest restylersYaml $ Just ["- stylish-haskell"]
           overrides `shouldBe` [enabled "brittany", enabled "stylish-haskell"]
 

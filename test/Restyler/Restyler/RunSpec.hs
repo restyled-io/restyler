@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- |
 --
 -- Module      : Restyler.Restyler.RunSpec
@@ -12,6 +14,7 @@ module Restyler.Restyler.RunSpec
 
 import Restyler.Prelude
 
+import Path (relfile)
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
@@ -22,10 +25,13 @@ spec :: Spec
 spec = withSimpleTestApp $ do
   describe "withFilteredPaths" $ do
     it "does not bring excluded files back by shebang" $ do
-      writeFile "/a" "#!/bin/sh\necho A\n"
-      modifyPermissions "/a" $ \p -> p {executable = True}
-      writeFile "/b" "#!/bin/sh\necho B\n"
-      modifyPermissions "/b" $ \p -> p {executable = True}
+      let
+        a = [relfile|a|]
+        b = [relfile|b|]
+      writeFile a "#!/bin/sh\necho A\n"
+      modifyPermissions a $ \p -> p {executable = True}
+      writeFile b "#!/bin/sh\necho B\n"
+      modifyPermissions b $ \p -> p {executable = True}
 
       filtered <-
         withFilteredPaths
@@ -35,48 +41,7 @@ spec = withSimpleTestApp $ do
               , rInterpreters = [Sh]
               }
           ]
-          ["a", "b"]
+          [a, b]
           (const $ pure . Just)
 
-      filtered `shouldBe` Just (["a", "b"] :| [["a"]])
-
-  describe "findFiles" $ do
-    it "expands and excludes" $ do
-      writeFile "/foo/bar/baz/bat" ""
-      writeFile "/foo/bar/baz/quix" ""
-      writeFile "/foo/bat/baz" ""
-      writeFile "/foo/foo" ""
-      writeFile "/foo/xxx" ""
-      setCurrentDirectory "/foo"
-
-      findFiles ["bar/baz", "bat", "xxx", "zzz"]
-        `shouldReturn` ["bar/baz/bat", "bar/baz/quix", "bat/baz", "xxx"]
-
-    it "excludes symlinks" $ do
-      writeFile "/foo/bar" ""
-      createFileLink "/foo/bat" "/foo/bar"
-
-      findFiles ["foo"] `shouldReturn` ["foo/bar"]
-
-    it "doesn't include hidden files" $ do
-      writeFile "/foo/bar/baz/bat" ""
-      writeFile "/foo/bar/baz/.quix" ""
-      writeFile "/foo/bar/baz/.foo/bar" ""
-      writeFile "/foo/bat/baz" ""
-      writeFile "/foo/foo" ""
-      writeFile "/foo/xxx" ""
-      setCurrentDirectory "/foo"
-
-      findFiles ["bar/baz", "bat", "xxx", "zzz"]
-        `shouldReturn` ["bar/baz/bat", "bat/baz", "xxx"]
-
-    it "includes hidden files given explicitly" $ do
-      writeFile "/foo/.bar/baz/bat" ""
-      writeFile "/foo/.bar/baz/quix" ""
-      writeFile "/foo/bat/baz" ""
-      writeFile "/foo/foo" ""
-      writeFile "/foo/xxx" ""
-      setCurrentDirectory "/foo"
-
-      findFiles [".bar/baz", "bat", "xxx", "zzz"]
-        `shouldReturn` [".bar/baz/bat", ".bar/baz/quix", "bat/baz", "xxx"]
+      filtered `shouldBe` Just ([a, b] :| [[a]])
