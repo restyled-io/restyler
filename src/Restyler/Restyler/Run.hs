@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -21,7 +22,6 @@ module Restyler.Restyler.Run
     -- * Exported for testing only
   , runRestyler
   , withFilteredPaths
-  , findFiles
   ) where
 
 import Restyler.Prelude
@@ -38,7 +38,7 @@ import Data.Text qualified as T
 import Restyler.AnnotatedException
 import Restyler.CodeVolume
 import Restyler.Config
-import Restyler.Config.Glob (match)
+import Restyler.Config.Glob (matchPath)
 import Restyler.Config.Include
 import Restyler.Config.Interpreter
 import Restyler.Delimited
@@ -48,10 +48,9 @@ import Restyler.Monad.DownloadFile
 import Restyler.Monad.Git
 import Restyler.Monad.ReadFile
 import Restyler.Monad.WriteFile
+import Restyler.Path
 import Restyler.Restyler
 import Restyler.RestylerResult
-import System.FilePath ((</>))
-import System.FilePath qualified as FilePath
 
 data RestylerPullFailure = RestylerPullFailure Restyler Int
   deriving stock (Eq, Show)
@@ -120,19 +119,17 @@ runRestylers
      , MonadUnliftIO m
      , MonadWriteFile m
      )
-  => [FilePath]
+  => [SomePath]
   -> m (Maybe (NonEmpty RestylerResult))
 runRestylers argPaths = do
-  allPaths <- removeExcluded $ map FilePath.normalise argPaths
-  expPaths <- findFiles allPaths
+  expPaths <- expandSomePaths argPaths
   paths <- removeExcluded expPaths
 
   logDebug
     $ "Paths"
     :# [ "pathsGiven" .= argPaths
-       , "pathsGivenIncluded" .= allPaths
-       , "pathsExpanded" .= truncatePaths 50 expPaths
-       , "pathsExpandedIncluded" .= truncatePaths 50 paths
+       , "pathsExpanded" .= truncateList toFilePath 50 expPaths
+       , "pathsExpandedIncluded" .= truncateList toFilePath 50 paths
        ]
 
   remoteFiles <- asks getRemoteFiles
@@ -150,11 +147,11 @@ runRestylers argPaths = do
 
 removeExcluded
   :: (HasExclude env, MonadReader env m)
-  => [FilePath]
-  -> m [FilePath]
+  => [Path Rel File]
+  -> m [Path Rel File]
 removeExcluded ps = do
   exclude <- asks getExclude
-  pure $ filter (\path -> none (`match` path) exclude) ps
+  pure $ filter (\path -> none (`matchPath` path) exclude) ps
 
 -- | See if multiple restylers offset each other
 --
@@ -162,9 +159,9 @@ removeExcluded ps = do
 checkForNoop :: MonadGit m => NonEmpty RestylerResult -> m (Maybe String)
 checkForNoop results = runMaybeT $ do
   sha <- hoistMaybe result.sha
-  let parent = sha <> "^"
-  changed <- lift $ gitDiffNameOnly $ Just parent
-  parent <$ guard (null changed)
+  let parentRef = sha <> "^"
+  changed <- lift $ gitDiffNameOnly $ Just parentRef
+  parentRef <$ guard (null changed)
  where
   result = head results
 
@@ -181,8 +178,8 @@ withFilteredPaths
      , MonadUnliftIO m
      )
   => [Restyler]
-  -> [FilePath]
-  -> (Restyler -> [FilePath] -> m (Maybe a))
+  -> [Path Rel File]
+  -> (Restyler -> [Path Rel File] -> m (Maybe a))
   -> m (Maybe (NonEmpty a))
 withFilteredPaths restylers paths run = do
   withInterpreters <- traverse addExecutableInterpreter paths
@@ -195,9 +192,9 @@ withFilteredPaths restylers paths run = do
           pure $ interpreter `elem` rInterpreters r
         includes =
           if matched
-            then explicit path : rInclude r
+            then explicit (toFilePath path) : rInclude r
             else rInclude r
-        included = includePath includes path
+        included = includePath includes $ toFilePath path
 
       logTrace
         $ "Matching path"
@@ -219,8 +216,8 @@ withFilteredPaths restylers paths run = do
 
 addExecutableInterpreter
   :: (MonadDirectory m, MonadReadFile m, MonadUnliftIO m)
-  => FilePath
-  -> m (FilePath, Maybe Interpreter)
+  => Path Rel File
+  -> m (Path Rel File, Maybe Interpreter)
 addExecutableInterpreter path = suppressWith (path, Nothing) $ do
   isExec <- isFileExecutable path
 
@@ -249,7 +246,7 @@ runRestyler
      )
   => VolumeName
   -> Restyler
-  -> [FilePath]
+  -> [Path Rel File]
   -> m (Maybe RestylerResult)
 runRestyler vol r = \case
   [] -> pure Nothing
@@ -280,7 +277,7 @@ runRestyler_
      )
   => VolumeName
   -> Restyler
-  -> [FilePath]
+  -> [Path Rel File]
   -> m ()
 runRestyler_ _ _ [] = pure ()
 runRestyler_ vol r paths = case rDelimiters r of
@@ -314,12 +311,12 @@ withProgress xs = zipWith toWithProgress [1 ..] xs
   total = genericLength xs
 
 data DockerRunStyle
-  = DockerRunPathToStdout FilePath
-  | DockerRunPathsOverwrite Bool [FilePath]
-  | DockerRunPathOverwrite Bool FilePath
+  = DockerRunPathToStdout (Path Rel File)
+  | DockerRunPathsOverwrite Bool [Path Rel File]
+  | DockerRunPathOverwrite Bool (Path Rel File)
   deriving stock (Show)
 
-getDockerRunStyles :: Restyler -> [FilePath] -> [DockerRunStyle]
+getDockerRunStyles :: Restyler -> [Path Rel File] -> [DockerRunStyle]
 getDockerRunStyles Restyler {..} paths = case rRunStyle of
   RestylerRunStylePathToStdout -> map DockerRunPathToStdout paths
   RestylerRunStylePathsOverwrite -> [DockerRunPathsOverwrite False paths]
@@ -385,7 +382,8 @@ dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
         <> nub (rCommand <> rArguments)
 
     copyRestyledPaths = traverse_ $ \path ->
-      dockerCp (cName <> ":" <> "/code/" <> path) path
+      dockerCp (cName <> ":" <> toFilePath ([absdir|/code|] </> path))
+        $ toFilePath path
 
     progressSuffix :: Text
     progressSuffix
@@ -399,7 +397,7 @@ dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
         . (<> progressSuffix)
         . \case
           [] -> "no paths" -- "impossible"
-          [path] -> pack path
+          [path] -> pack (toFilePath path)
           paths -> show (length paths) <> " paths"
 
     unlessDryRun f
@@ -418,12 +416,12 @@ dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
       logRunningOn paths
       unlessDryRun $ withDockerRm $ do
         ec <- dockerRun $ args <> ["--" | sep] <> map prefix paths
-        ec <$ copyRestyledPaths (map prefix paths)
+        ec <$ copyRestyledPaths paths
     DockerRunPathOverwrite sep path -> do
       logRunningOn [path]
       unlessDryRun $ withDockerRm $ do
         ec <- dockerRun $ args <> ["--" | sep] <> [prefix path]
-        ec <$ copyRestyledPaths [prefix path]
+        ec <$ copyRestyledPaths [path]
 
   case ec of
     ExitSuccess -> pure ()
@@ -431,9 +429,11 @@ dockerRunRestyler vol r@Restyler {..} WithProgress {..} = do
     ExitFailure 127 -> throw $ RestylerCommandNotFound r
     ExitFailure i -> throw $ RestylerExitFailure r i
  where
-  prefix p
-    | "./" `isPrefixOf` p = p
-    | otherwise = "./" <> p
+  -- Some restylers (at least astyle) actually require an explicit ./ prefix for
+  -- relative path arguments. It shouldn't be harmful to those that don't, so we
+  -- do it all the time.
+  prefix :: Path b File -> FilePath
+  prefix = ("./" <>) . toFilePath
 
 fixNewline :: Text -> Text
 fixNewline = (<> "\n") . T.dropWhileEnd (== '\n')
@@ -461,33 +461,9 @@ dockerWithImageRm r f = do
     then finally f $ suppressWarn $ dockerImageRm $ rImage r
     else f
 
--- | Expand directory arguments and filter to only existing paths
---
--- The existence filtering is important for normal Restyling, where we may get
--- path arguments of removed files in the PR. The expansion is important for
--- @restyle-path@, where we may be given directories as arguments.
-findFiles :: MonadDirectory m => [FilePath] -> m [FilePath]
-findFiles = fmap concat . traverse go
- where
-  go :: MonadDirectory m => FilePath -> m [FilePath]
-  go parent = do
-    isDirectory <- doesDirectoryExist parent
-
-    if isDirectory
-      then do
-        files <- listDirectory parent
-        findFiles $ map (parent </>) $ filter (not . isHidden) files
-      else fmap maybeToList $ runMaybeT $ do
-        guardM $ lift $ doesFileExist parent
-        guardM $ lift $ not <$> pathIsSymbolicLink parent
-        pure $ FilePath.normalise parent
-
-isHidden :: FilePath -> Bool
-isHidden path = "." `isPrefixOf` path && path `notElem` [".", ".."]
-
-truncatePaths :: Int -> [FilePath] -> [String]
-truncatePaths n ps
-  | len > n = take n ps <> ["And " <> show (len - n) <> " more..."]
-  | otherwise = ps
+truncateList :: (a -> String) -> Int -> [a] -> [String]
+truncateList f n ps
+  | len > n = map f (take n ps) <> ["And " <> show (len - n) <> " more..."]
+  | otherwise = map f ps
  where
   len = length ps

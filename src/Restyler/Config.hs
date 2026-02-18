@@ -39,6 +39,7 @@ import Restyler.Config.NoPull as X
 import Restyler.Config.RemoteFile as X
 import Restyler.Config.Restrictions as X
 import Restyler.Config.Restyler as X
+import Restyler.Path
 
 data Config = Config
   { enabled :: Bool
@@ -59,7 +60,7 @@ data Config = Config
   , logSettings :: LogSettingsOption
   , githubActions :: Bool
   , pullRequestJson :: Maybe (Path Abs File)
-  , paths :: NonEmpty FilePath
+  , paths :: NonEmpty SomePath
   }
 
 parseConfig :: IO Config
@@ -108,14 +109,7 @@ configParser sources =
           , option
           , long "pull-request-json"
           ]
-    paths <-
-      someNonEmpty
-        $ setting
-          [ help "Path to restyle"
-          , argument
-          , reader str
-          , metavar "PATH"
-          ]
+    paths <- someNonEmpty somePathParser
     pure Config {..}
 
 -- | Use 'filePathSetting' to handle creating the @'Path' 'Abs' 'File'@ we need

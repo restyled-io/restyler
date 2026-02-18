@@ -18,10 +18,10 @@ import Restyler.Prelude
 import Relude qualified as Prelude
 
 class Monad m => MonadReadFile m where
-  readFileBS :: FilePath -> m ByteString
+  readFileBS :: forall b. Path b File -> m ByteString
   readFileBS = fmap encodeUtf8 . readFile
 
-  readFile :: FilePath -> m Text
+  readFile :: forall b. Path b File -> m Text
   readFile = fmap (decodeUtf8With lenientDecode) . readFileBS
   {-# MINIMAL readFileBS | readFile #-}
 
@@ -39,4 +39,4 @@ newtype ActualReadFile m a = ActualReadFile
 instance (MonadIO m, MonadLogger m) => MonadReadFile (ActualReadFile m) where
   readFileBS path = do
     logTrace $ "readFileBS" :# ["path" .= path]
-    Prelude.readFileBS path
+    Prelude.readFileBS $ toFilePath path

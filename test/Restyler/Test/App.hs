@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- |
 --
 -- Module      : Restyler.Test.App
@@ -20,6 +22,7 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings (defaultLogSettings)
 import Blammo.Logging.Logger (newTestLogger)
+import Path (absdir)
 import Restyler.Monad.Directory as X
 import Restyler.Monad.Docker as X
 import Restyler.Monad.DownloadFile as X
@@ -77,7 +80,7 @@ withSimpleTestApp =
   before
     $ SimpleTestApp
     <$> newTestLogger defaultLogSettings
-    <*> FS.build "/" []
+    <*> FS.build [absdir|/|] []
 
 shouldBe :: (Eq a, HasCallStack, Show a) => a -> a -> TestAppT env ()
 shouldBe = Lifted.shouldBe

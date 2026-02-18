@@ -62,6 +62,7 @@ library:
     - network-uri
     - opt-env-conf >= 0.6.0.2
     - path
+    - path-io
     - relude
     - retry
     - ronn
@@ -100,15 +101,13 @@ tests:
       - autodocodec
       - autodocodec-yaml
       - containers
-      - directory
-      - extra
-      - filepath
       - hspec
       - hspec-core
       - hspec-expectations-lifted
       - lens-aeson
       - opt-env-conf
       - path
+      - path-io
       - restyler
       - safe-coloured-text
       - text

@@ -19,13 +19,14 @@ module Restyler.Monad.Git
 import Restyler.Prelude
 
 import Data.Text qualified as T
+import Path (parseRelFile)
 import Restyler.AnnotatedException
 import System.Process.Typed
 
 class Monad m => MonadGit m where
   isGitRepository :: HasCallStack => m Bool
-  gitDiffNameOnly :: HasCallStack => Maybe String -> m [FilePath]
-  gitCommit :: HasCallStack => String -> NonEmpty FilePath -> m String
+  gitDiffNameOnly :: HasCallStack => Maybe String -> m [Path Rel File]
+  gitCommit :: HasCallStack => String -> NonEmpty (Path Rel File) -> m String
   gitResetHard :: HasCallStack => String -> m ()
 
 -- | An instance that invokes the real @git@
@@ -47,9 +48,13 @@ instance
   => MonadGit (ActualGit m)
   where
   isGitRepository = (== ExitSuccess) <$> runGitExitCode ["rev-parse"]
-  gitDiffNameOnly mRef = readGitLines $ ["diff", "--name-only"] <> maybeToList mRef
+  gitDiffNameOnly mRef =
+    fmap (mapMaybe parseRelFile)
+      $ readGitLines
+      $ ["diff", "--name-only"]
+      <> maybeToList mRef
   gitCommit msg paths = do
-    runGit_ $ ["commit", "--message", msg, "--"] <> toList paths
+    runGit_ $ ["commit", "--message", msg, "--"] <> map toFilePath (toList paths)
     readGitChomp ["rev-parse", "HEAD"]
   gitResetHard ref = runGit_ ["reset", "--hard", ref]
 

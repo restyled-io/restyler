@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- |
 --
 -- Module      : Restyler.DelimitedSpec
@@ -13,19 +15,20 @@ module Restyler.DelimitedSpec
 import Restyler.Prelude
 
 import Data.Text qualified as T
+import Path (absdir, relfile)
 import Restyler.Delimited
 import Restyler.Test.App
 import Restyler.Test.FS (FS)
 import Restyler.Test.FS qualified as FS
 
 withFS :: SpecWith FS -> Spec
-withFS = before $ FS.build "/" []
+withFS = before $ FS.build [absdir|/|] []
 
 spec :: Spec
 spec = withFS $ do
   describe "restyleDelimited" $ do
     it "restyles delimited content" $ do
-      writeFile "foo.rb"
+      writeFile [relfile|foo.rb|]
         $ T.unlines
           [ "def some_ruby"
           , "  <<-EOSQL"
@@ -38,9 +41,9 @@ spec = withFS $ do
       restyleDelimited
         (Delimiters "<<-EOSQL" "EOSQL")
         markLinesRestyled
-        ["foo.rb"]
+        [[relfile|foo.rb|]]
 
-      readFile "foo.rb"
+      readFile [relfile|foo.rb|]
         `shouldReturn` T.unlines
           [ "def some_ruby"
           , "  <<-EOSQL"
@@ -51,10 +54,10 @@ spec = withFS $ do
           ]
 
       -- Test cleanup
-      doesFileExist "foo.rb.0" `shouldReturn` False
+      doesFileExist [relfile|foo.rb.0|] `shouldReturn` False
 
     it "works for markdown lists" $ do
-      writeFile "foo.md"
+      writeFile [relfile|foo.md|]
         $ T.unlines
           [ "1. A request API Type should be named `Api{Action}{Resource}({Target})`."
           , ""
@@ -76,9 +79,9 @@ spec = withFS $ do
       restyleDelimited
         (Delimiters "```hs" "```")
         markLinesRestyled
-        ["foo.md"]
+        [[relfile|foo.md|]]
 
-      readFile "foo.md"
+      readFile [relfile|foo.md|]
         `shouldReturn` T.unlines
           [ "1. A request API Type should be named `Api{Action}{Resource}({Target})`."
           , ""
@@ -99,7 +102,7 @@ spec = withFS $ do
 
   describe "delimit" $ do
     it "splits a file, respecting indentation" $ do
-      writeFile "foo.rb"
+      writeFile [relfile|foo.rb|]
         $ T.unlines
           [ "def some_ruby"
           , "  <<-EOSQL"
@@ -109,39 +112,39 @@ spec = withFS $ do
           , "end"
           ]
 
-      result <- delimit (Delimiters "<<-EOSQL" "EOSQL") "foo.rb"
+      result <- delimit (Delimiters "<<-EOSQL" "EOSQL") [relfile|foo.rb|]
 
       result
         `shouldBe` DelimitedPath
-          { dpSource = "foo.rb"
+          { dpSource = [relfile|foo.rb|]
           , dpParts =
-              [ outPart "foo.rb.0"
-              , inPart "foo.rb.1" "\n" "  " 4
-              , outPart "foo.rb.2"
+              [ outPart [relfile|foo.rb.0|]
+              , inPart [relfile|foo.rb.1|] "\n" "  " 4
+              , outPart [relfile|foo.rb.2|]
               ]
           }
-      readFile "foo.rb.0" `shouldReturn` "def some_ruby\n  "
-      readFile "foo.rb.1" `shouldReturn` "SELECT\nFROM\n"
-      readFile "foo.rb.2" `shouldReturn` "\nend\n"
+      readFile [relfile|foo.rb.0|] `shouldReturn` "def some_ruby\n  "
+      readFile [relfile|foo.rb.1|] `shouldReturn` "SELECT\nFROM\n"
+      readFile [relfile|foo.rb.2|] `shouldReturn` "\nend\n"
 
   describe "undelimit" $ do
     it "can reconstruct a delimited path" $ do
-      writeFile "foo.rb.0" "def some_ruby\n  "
-      writeFile "foo.rb.1" "SELECT\nFROM\n"
-      writeFile "foo.rb.2" "\nend\n"
+      writeFile [relfile|foo.rb.0|] "def some_ruby\n  "
+      writeFile [relfile|foo.rb.1|] "SELECT\nFROM\n"
+      writeFile [relfile|foo.rb.2|] "\nend\n"
 
       undelimit
         (Delimiters "<<-EOSQL" "EOSQL")
         DelimitedPath
-          { dpSource = "foo.rb"
+          { dpSource = [relfile|foo.rb|]
           , dpParts =
-              [ outPart "foo.rb.0"
-              , inPart "foo.rb.1" "\n" "  " 4
-              , outPart "foo.rb.2"
+              [ outPart [relfile|foo.rb.0|]
+              , inPart [relfile|foo.rb.1|] "\n" "  " 4
+              , outPart [relfile|foo.rb.2|]
               ]
           }
 
-      readFile "/foo.rb"
+      readFile [relfile|foo.rb|]
         `shouldReturn` T.unlines
           [ "def some_ruby"
           , "  <<-EOSQL"
@@ -152,17 +155,17 @@ spec = withFS $ do
           ]
 
 markLinesRestyled
-  :: (MonadDirectory m, MonadReadFile m, MonadWriteFile m) => [FilePath] -> m ()
+  :: (MonadDirectory m, MonadReadFile m, MonadWriteFile m) => [Path Rel File] -> m ()
 markLinesRestyled = traverse_
   $ \path -> writeFile path . mark =<< readFile path
  where
   mark = T.unlines . map ("RESTYLED: " <>) . T.lines
 
-outPart :: FilePath -> DelimitedPathPart
+outPart :: Path Rel File -> DelimitedPathPart
 outPart path =
   DelimitedPathPart {dppIn = False, dppPath = path, dppMeta = Nothing}
 
-inPart :: FilePath -> Text -> Text -> Natural -> DelimitedPathPart
+inPart :: Path Rel File -> Text -> Text -> Natural -> DelimitedPathPart
 inPart path leading trailing indent =
   DelimitedPathPart
     { dppIn = True

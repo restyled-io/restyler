@@ -1,3 +1,11 @@
+-- |
+--
+-- Module      : Restyler.Config.AutoEnable
+-- Copyright   : (c) 2026 Patrick Brisbin
+-- License     : AGPL-3
+-- Maintainer  : pbrisbin@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
 module Restyler.Config.AutoEnable
   ( -- * Configuration
     AutoEnable (..)

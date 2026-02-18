@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 
@@ -17,7 +18,7 @@ import Restyler.Prelude
 
 import Blammo.Logging.LogSettings (defaultLogSettings, shouldLogLevel)
 import Data.Text.IO (hPutStr)
-import Path (mkAbsFile)
+import Path (mkAbsFile, relfile)
 import Restyler.Config
 import Restyler.Config.Restrictions.Bytes
 import Restyler.Test.Fixtures
@@ -135,7 +136,11 @@ spec = do
       config.failOnDifferences `shouldBe` True
       config.commitTemplate `shouldBe` "Hi"
       config.remoteFiles
-        `shouldBe` [RemoteFile {url = "https://example.com", path = "example.txt"}]
+        `shouldBe` [ RemoteFile
+                       { url = "https://example.com"
+                       , path = [relfile|example.txt|]
+                       }
+                   ]
       config.ignores
         `shouldBe` Ignores
           { byAuthor = ["x"]
@@ -172,7 +177,7 @@ spec = do
         config.remoteFiles
           `shouldBe` [ RemoteFile
                          { url = "https://example.com/foo/bar.txt"
-                         , path = "bar.txt"
+                         , path = [relfile|bar.txt|]
                          }
                      ]
 
@@ -189,7 +194,7 @@ spec = do
         config.remoteFiles
           `shouldBe` [ RemoteFile
                          { url = "https://example.com"
-                         , path = "bar.txt"
+                         , path = [relfile|bar.txt|]
                          }
                      ]
 

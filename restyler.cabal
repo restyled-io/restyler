@@ -49,6 +49,8 @@ library
       Restyler.Monad.Git
       Restyler.Monad.ReadFile
       Restyler.Monad.WriteFile
+      Restyler.OrphanInstances
+      Restyler.Path
       Restyler.Prelude
       Restyler.ReadP
       Restyler.Restyle
@@ -100,6 +102,7 @@ library
     , network-uri
     , opt-env-conf >=0.6.0.2
     , path
+    , path-io
     , relude
     , retry
     , ronn
@@ -157,6 +160,7 @@ test-suite test
       Restyler.ConfigSpec
       Restyler.DelimitedSpec
       Restyler.IgnoreSpec
+      Restyler.PathSpec
       Restyler.RestrictionsSpec
       Restyler.Restyler.RunSpec
       Restyler.RestylerSpec
@@ -191,15 +195,13 @@ test-suite test
     , autodocodec-yaml
     , base
     , containers
-    , directory
-    , extra
-    , filepath
     , hspec
     , hspec-core
     , hspec-expectations-lifted
     , lens-aeson
     , opt-env-conf
     , path
+    , path-io
     , restyler
     , safe-coloured-text
     , text

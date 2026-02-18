@@ -12,6 +12,7 @@ module Restyler.Config.Glob
   ( Glob (..)
   , GlobTarget (..)
   , match
+  , matchPath
   , matchAny
   , matchFirst
   , matchAnyInCurrentDirectory
@@ -22,7 +23,6 @@ import Restyler.Prelude
 import Autodocodec (Autodocodec (..), HasCodec)
 import Data.Aeson
 import Restyler.Monad.Directory
-import System.FilePath ((</>))
 import System.FilePath.Glob hiding (match)
 
 newtype Glob a = Glob {unwrap :: String}
@@ -54,6 +54,14 @@ match (Glob p) =
     (compileWith (getCompOptions @a) p)
     . forMatch
 
+matchPath :: Glob FilePath -> Path b t -> Bool
+matchPath (Glob p) =
+  matchWith
+    (matchDefault {matchDotsImplicitly = True})
+    (compileWith (getCompOptions @FilePath) p)
+    . forMatch
+    . toFilePath
+
 matchAny :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Bool
 matchAny globs = any $ \x -> any (`match` x) globs
 
@@ -61,12 +69,6 @@ matchFirst :: (Foldable t, GlobTarget a) => [Glob a] -> t a -> Maybe a
 matchFirst globs = find $ \x -> any (`match` x) globs
 
 matchAnyInCurrentDirectory :: MonadDirectory m => [Glob FilePath] -> m Bool
-matchAnyInCurrentDirectory gs = go id =<< getCurrentDirectory
- where
-  go :: MonadDirectory m => (FilePath -> FilePath) -> FilePath -> m Bool
-  go prefix d = do
-    contents <- map prefix <$> listDirectory d
-
-    if matchAny gs contents
-      then pure True
-      else anyM (go (d </>)) =<< filterM doesDirectoryExist contents
+matchAnyInCurrentDirectory gs = do
+  files <- listDirectoryRecur =<< getCurrentDirectory
+  pure $ matchAny gs $ map toFilePath files

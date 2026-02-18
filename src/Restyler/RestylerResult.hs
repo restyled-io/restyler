@@ -20,7 +20,7 @@ import Restyler.Restyler
 
 data RestylerResult = RestylerResult
   { restyler :: Restyler
-  , restyled :: NonEmpty FilePath
+  , restyled :: NonEmpty (Path Rel File)
   , sha :: Maybe String
   }
   deriving stock (Generic)
@@ -36,7 +36,7 @@ getRestylerResult
      , MonadGit m
      , MonadReader env m
      )
-  => [FilePath]
+  => [Path Rel File]
   -> Restyler
   -> m (Maybe RestylerResult)
 getRestylerResult paths restyler = do
