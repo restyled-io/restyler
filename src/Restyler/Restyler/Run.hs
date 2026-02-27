@@ -126,11 +126,6 @@ runRestylers argPaths = do
   expPaths <- expandSomePaths argPaths
   paths <- removeExcluded expPaths
 
-  remoteFiles <- asks getRemoteFiles
-  for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
-
-  copyFiles <- asks getCopyFiles
-
   logDebug
     $ "Paths"
     :# [ "pathsGiven" .= argPaths
@@ -138,8 +133,12 @@ runRestylers argPaths = do
        , "pathsExpandedIncluded" .= truncateList toFilePath 50 paths
        ]
 
+  remoteFiles <- asks getRemoteFiles
+  for_ remoteFiles $ \rf -> downloadFile rf.url rf.path
+
   restylers <- getEnabledRestylers
   mResults <- withCodeVolume $ \vol -> do
+    copyFiles <- asks getCopyFiles
     copyCodeFiles remoteFiles paths vol copyFiles
     withFilteredPaths restylers paths $ runRestyler vol
   mResetTo <- join <$> traverse checkForNoop mResults
