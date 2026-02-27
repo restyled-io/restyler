@@ -138,8 +138,7 @@ runRestylers argPaths = do
 
   restylers <- getEnabledRestylers
   mResults <- withCodeVolume $ \vol -> do
-    copyFiles <- asks getCopyFiles
-    copyCodeFiles remoteFiles paths vol copyFiles
+    copyCodeFiles remoteFiles paths vol
     withFilteredPaths restylers paths $ runRestyler vol
   mResetTo <- join <$> traverse checkForNoop mResults
 
