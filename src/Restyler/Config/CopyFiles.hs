@@ -79,7 +79,12 @@ copyFilesParser =
     ]
 
 copyCodeFiles
-  :: (MonadDirectory m, MonadDocker m, MonadLogger m)
+  :: ( HasCopyFiles env
+     , MonadDirectory m
+     , MonadDocker m
+     , MonadLogger m
+     , MonadReader env m
+     )
   => [RemoteFile]
   -- ^ Downloaded remote files
   --
@@ -89,19 +94,19 @@ copyCodeFiles
   --
   -- These must also always be in context.
   -> CodeVolume
-  -> CopyFiles
   -> m ()
-copyCodeFiles remoteFiles paths vol = \case
-  CopyAll -> do
-    logDebug "Copying all of . into code volume"
-    dockerCpDot
-  CopyNone -> do
-    logDebug "Copying no extra paths into code volume"
-    dockerCpAll alwaysPaths
-  CopyOnly gs -> do
-    logDebug $ "Copying explicit paths into code volume" :# ["globs" .= gs]
-    ps <- globAnyInCurrentDirectory $ toList gs
-    dockerCpAll $ alwaysPaths <> ps
+copyCodeFiles remoteFiles paths vol = do
+  asks getCopyFiles >>= \case
+    CopyAll -> do
+      logDebug "Copying all of . into code volume"
+      dockerCpDot
+    CopyNone -> do
+      logDebug "Copying no extra paths into code volume"
+      dockerCpAll alwaysPaths
+    CopyOnly gs -> do
+      logDebug $ "Copying explicit paths into code volume" :# ["globs" .= gs]
+      ps <- globAnyInCurrentDirectory $ toList gs
+      dockerCpAll $ alwaysPaths <> ps
  where
   alwaysPaths = map (.path) remoteFiles <> paths
 
