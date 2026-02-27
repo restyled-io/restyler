@@ -17,7 +17,6 @@ import Restyler.Prelude
 
 import Autodocodec hiding ((.=))
 import OptEnvConf hiding (env)
-import Path ((</>))
 import Restyler.CodeVolume
 import Restyler.Config.Glob
 import Restyler.Config.RemoteFile
@@ -110,9 +109,6 @@ copyCodeFiles remoteFiles paths vol = \case
     -- docker cp . container:/path
     dockerCp "." $ vol.container.unwrap <> ":" <> toFilePath vol.path.unwrap
 
-  dockerCpAll = traverse_ $ \p -> do
-    -- docker cp foo/bar.x container:/path/foo/bar.x
-    dockerCp (toFilePath p)
-      $ vol.container.unwrap
-      <> ":"
-      <> toFilePath (vol.path.unwrap </> p)
+  dockerCpAll ps =
+    -- tar -cf - ps | docker cp - container:/path
+    dockerCpTar ps $ vol.container.unwrap <> ":" <> toFilePath vol.path.unwrap

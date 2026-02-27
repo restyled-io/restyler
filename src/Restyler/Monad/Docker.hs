@@ -31,6 +31,7 @@ class Monad m => MonadDocker m where
   dockerVolumeCreate :: HasCallStack => String -> m ()
   dockerVolumeRm :: HasCallStack => String -> m ()
   dockerCp :: String -> String -> m ()
+  dockerCpTar :: [Path Rel File] -> String -> m ()
   dockerRm :: String -> m ()
 
 -- | An instance that invokes the real @docker@
@@ -59,6 +60,19 @@ instance
   dockerVolumeCreate name = runDocker_ ["volume", "create", name]
   dockerVolumeRm name = runDocker_ ["volume", "rm", name]
   dockerCp src dst = runDocker_ ["cp", "--quiet", src, dst]
+  dockerCpTar ps dst = do
+    let
+      tArgs :: [String]
+      tArgs = ["-cf", "-"] <> map toFilePath ps
+
+      dArgs :: [String]
+      dArgs = ["cp", "--quiet", "-", dst]
+
+    logProc "tar" tArgs
+    withProcessWait_ (setStdout createPipe $ proc "tar" tArgs) $ \p -> do
+      logProc "docker" dArgs
+      runProcess_ $ setStdin (useHandleClose $ getStdout p) $ proc "docker" dArgs
+
   dockerRm name = runDocker_ ["rm", name]
 
 runDocker
@@ -103,4 +117,5 @@ instance Monad m => MonadDocker (NullDocker m) where
   dockerVolumeCreate _ = pure ()
   dockerVolumeRm _ = pure ()
   dockerCp _ _ = pure ()
+  dockerCpTar _ _ = pure ()
   dockerRm _ = pure ()
