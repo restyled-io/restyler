@@ -18,6 +18,7 @@ module Restyler.Monad.Docker
 
 import Restyler.Prelude
 
+import Data.List (nub)
 import Data.Text qualified as T
 import Restyler.AnnotatedException
 import System.Process.Typed
@@ -62,8 +63,13 @@ instance
   dockerCp src dst = runDocker_ ["cp", "--quiet", src, dst]
   dockerCpTar ps dst = do
     let
+      -- Ensure ps doesn't contain duplicates, otherwise you'll get an obscure
+      -- error from docker-cp, that it can't find /data.
+      --
+      -- https://github.com/restyled-io/actions/issues/391
+      --
       tArgs :: [String]
-      tArgs = ["-cf", "-"] <> map toFilePath ps
+      tArgs = ["-cf", "-"] <> map toFilePath (nub ps)
 
       dArgs :: [String]
       dArgs = ["cp", "--quiet", "-", dst]

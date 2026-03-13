@@ -16,7 +16,6 @@ module Restyler.Config.CopyFiles
 import Restyler.Prelude
 
 import Autodocodec hiding ((.=))
-import Data.List (nub)
 import OptEnvConf hiding (env)
 import Restyler.CodeVolume
 import Restyler.Config.Glob
@@ -117,9 +116,4 @@ copyCodeFiles remoteFiles paths vol = do
 
   dockerCpAll ps =
     -- tar -cf - ps | docker cp - container:/path
-    --
-    -- Ensure ps doesn't contain duplicates, otherwise you'll get an obscure
-    -- error from docker-cp, that it can't find /data.
-    --
-    -- https://github.com/restyled-io/actions/issues/391
-    dockerCpTar (nub ps) $ vol.container.unwrap <> ":" <> toFilePath vol.path.unwrap
+    dockerCpTar ps $ vol.container.unwrap <> ":" <> toFilePath vol.path.unwrap
