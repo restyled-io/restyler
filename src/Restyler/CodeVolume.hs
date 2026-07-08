@@ -20,6 +20,7 @@ import Restyler.Prelude
 
 import Path (absdir)
 import Restyler.Monad.Docker
+import System.Random (getStdGen, uniformRs)
 import UnliftIO.Exception (bracket)
 
 data CodeVolume = CodeVolume
@@ -43,14 +44,16 @@ newtype ContainerPath = ContainerPath
 withCodeVolume :: (MonadDocker m, MonadUnliftIO m) => (CodeVolume -> m a) -> m a
 withCodeVolume = bracket acquire release
  where
-  acquire :: MonadDocker m => m CodeVolume
+  acquire :: (MonadDocker m, MonadIO m) => m CodeVolume
   acquire = do
+    suffix <- liftIO $ take 5 . uniformRs ('a', 'z') <$> getStdGen
+
     let
       vol :: CodeVolume
       vol =
         CodeVolume
-          { name = VolumeName "restyler-code-volume"
-          , container = ContainerName "restyler-tmp-container"
+          { name = VolumeName $ "restyler-v-" <> suffix
+          , container = ContainerName $ "restyler-c-" <> suffix
           , path = ContainerPath [absdir|/data|]
           }
 

@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: random-1.3.1@sha256:0b4f649c3e78713b2ccad1535251ee34b148237fb2229d7058c2b1d9ccc324b8,6004
+    pantry-tree:
+      sha256: 9e92209c00b0c00b7d1c503e15a27b67b74ac2e3b48269a9255893b06de6836c
+      size: 1667
+  original:
+    hackage: random-1.3.1
+- completed:
     hackage: ronn-1.1.1.0@sha256:6852148b2cd62b3912f1ca851badbac851e0466ce5998ee9c5dd2435d5ea79f8,2834
     pantry-tree:
       sha256: ec76e5661a2d4a1db26c74650b06458c13c2bd0b6ac382022e88b130f0af68c1
