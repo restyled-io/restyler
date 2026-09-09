@@ -46,7 +46,6 @@ excludeParser =
           , "**/stack*.yaml.lock"
           , "**/vendor/**/*"
           , "**/yarn.lock"
-          , ".github/workflows/**/*"
           ]
       ]
     <*> setting
