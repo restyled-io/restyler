@@ -39,8 +39,13 @@ excludeParser =
       , value
           [ "**/*.patch"
           , "**/.git/**/*"
+          , "**/Gemfile.lock"
           , "**/node_modules/**/*"
+          , "**/package-lock.json"
+          , "**/pnpm-lock.json"
+          , "**/stack*.yaml.lock"
           , "**/vendor/**/*"
+          , "**/yarn.lock"
           , ".github/workflows/**/*"
           ]
       ]
