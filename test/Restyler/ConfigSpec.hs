@@ -66,9 +66,13 @@ spec = do
       config.exclude
         `shouldBe` [ "**/*.patch"
                    , "**/.git/**/*"
+                   , "**/Gemfile.lock"
                    , "**/node_modules/**/*"
+                   , "**/package-lock.json"
+                   , "**/pnpm-lock.json"
+                   , "**/stack*.yaml.lock"
                    , "**/vendor/**/*"
-                   , ".github/workflows/**/*"
+                   , "**/yarn.lock"
                    ]
       config.dryRun `shouldBe` False
       config.failOnDifferences `shouldBe` False
