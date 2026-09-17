@@ -5,5 +5,5 @@
 **/.hiedb
 
 doc/*
-!doc/custom.css
-!doc/index.txt
+!doc/style.css
+!doc/*.template
