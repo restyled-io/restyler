@@ -113,43 +113,31 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - run: gem install --user ronn-ng
-      - run: |
-          for bin in ~/.local/share/gem/ruby/*/bin; do
-            echo "$bin"
-          done >>"$GITHUB_PATH"
-
       - uses: actions/download-artifact@v4
         with:
           name: linux-binaries
+
       - run: |
           tar xzf restyler-*.tar.gz
           mkdir -p ./bin
           sudo mv -v restyler-*/restyle /usr/local/bin
+
+      - uses: extractions/setup-just@v4
 
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             doc
 
-      - name: Generate ronn documenation
+      - name: Generate docs to _site
         run: |
-          restyle __render-docs-man1__ > doc/restyle.1.ronn
-          restyle __render-docs-man5__ > doc/restyled.yaml.5.ronn
-
-      - name: Generate HTML sources to _site
-        run: |
-          env \
-            RONN_STYLE=./doc \
-            RONN_ORGANIZATION=Restyled \
-            RONN_MANUAL="Restyler v$(restyle --version | cut -d' ' -f 2)" \
-            ronn --style toc,custom --roff --html doc/*.ronn
-
+          just docs
           mkdir -p _site/man-pages
           cp -v doc/*.html _site/man-pages/
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
       - id: deployment
         uses: actions/deploy-pages@v4

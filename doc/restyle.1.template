@@ -1,0 +1,21 @@
+.\" vim: ft=nroff
+.Dd $Mdocdate$
+.Dt {{docTitle}} {{docSection}}
+.Os
+.Sh NAME
+.Nm {{name}}
+.Nd {{nameDescription}}
+.Sh SYNOPSIS
+{{synopsis}}
+.Sh DESCRIPTION
+{{description}}
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa .restyled.yaml
+Configuration for Restyled, see
+.Xr restyled.yaml 5
+.El
+.Sh SEE ALSO
+.Xr restyled.yaml 5
+.Xr docker 1
+.Xr git 1
