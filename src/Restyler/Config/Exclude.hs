@@ -26,22 +26,22 @@ instance HasExclude [Glob FilePath] where
 excludeParser :: Parser [Glob FilePath]
 excludeParser =
   (<>)
-    <$> setting
-      [ help
-          $ unpack
-          $ unlines
-            [ "Exclude paths matching the given globs (instead of defaults)"
-            , "By default, we ignore directories that are often checked-in but"
-            , "rarely represent project code. Some globs are slightly complicated"
-            , "match paths within directories of names appearing at any depth."
-            ]
-      , example "exclude: []"
-      , option
-      , name "exclude"
-      , reader $ commaSeparatedList str
-      , metavar "GLOB[,GLOB]"
-      , value defaultExcludes
-      ]
+    <$> withShownDefault
+      (const "[...]")
+      defaultExcludes
+      ( setting
+          [ help
+              $ "Exclude paths matching the given globs (instead of defaults)"
+              <> "\nBy default, we ignore directories that are often checked-in"
+              <> " but rarely represent project code."
+          , example "# disable built-in excludes"
+          , example "exclude: []"
+          , option
+          , name "exclude"
+          , reader $ commaSeparatedList str
+          , metavar "GLOB[,GLOB]"
+          ]
+      )
     <*> setting
       [ help "Exclude paths matching the given globs (in addition to defaults)"
       , option

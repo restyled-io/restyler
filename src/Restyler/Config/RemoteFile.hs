@@ -35,7 +35,7 @@ instance HasCodec RemoteFile where
 codecObject :: JSONCodec RemoteFile
 codecObject =
   bimapCodec remoteFileFromPair remoteFileToPair
-    $ object "RemoteFile"
+    $ object "{url:, path?:}"
     $ (,)
     <$> (requiredField "url" "URL to download" .= fst)
     <*> (optionalField "path" "Path to download to" .= snd)
@@ -50,7 +50,9 @@ remoteFileToPair :: RemoteFile -> (String, Maybe (Path Rel File))
 remoteFileToPair rf = (rf.url, Just rf.path)
 
 codecUrl :: JSONCodec RemoteFile
-codecUrl = bimapCodec remoteFileFromUrl remoteFileToUrl stringCodec <?> "URL with path"
+codecUrl =
+  bimapCodec remoteFileFromUrl remoteFileToUrl stringCodec
+    <?> "https://.../<path>"
 
 remoteFileFromUrl :: String -> Either String RemoteFile
 remoteFileFromUrl url = do
@@ -70,11 +72,7 @@ remoteFileToUrl = (.url)
 remoteFilesParser :: Parser [RemoteFile]
 remoteFilesParser =
   setting
-    [ help
-        $ unpack
-        $ unlines
-          [ "Download remote file before restyling"
-          ]
+    [ help "Download remote file before restyling"
     , example
         $ unpack
         $ unlines

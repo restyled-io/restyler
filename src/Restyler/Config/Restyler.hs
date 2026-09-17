@@ -53,12 +53,7 @@ class HasRestylersVersion env where
 restylersVersionParser :: Parser String
 restylersVersionParser =
   setting
-    [ help
-        $ unpack
-        $ unlines
-          [ "Version of Restylers manifest to use"
-          , "Ignored if manifest is given"
-          ]
+    [ help "Version of Restylers manifest to use (ignored if manifest is given)"
     , option
     , long "restylers-version"
     , reader str
