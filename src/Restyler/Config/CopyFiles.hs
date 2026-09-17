@@ -26,39 +26,21 @@ import Restyler.Monad.Docker
 class HasCopyFiles env where
   getCopyFiles :: env -> CopyFiles
 
-data CopyFiles
-  = CopyAll
-  | CopyNone
-  | CopyOnly (NonEmpty (Glob FilePath))
-  deriving stock (Eq, Show)
-
-instance HasCodec CopyFiles where
-  codec = dimapCodec toCopyFiles fromCopyFiles $ maybeCodec codec
-
-toCopyFiles :: Maybe [Glob FilePath] -> CopyFiles
-toCopyFiles = \case
-  Nothing -> CopyAll
-  Just gs -> maybe CopyNone CopyOnly $ nonEmpty gs
-
-fromCopyFiles :: CopyFiles -> Maybe [Glob FilePath]
-fromCopyFiles = \case
-  CopyAll -> Nothing
-  CopyNone -> Just []
-  CopyOnly negs -> Just $ toList negs
+newtype CopyFiles = CopyFiles
+  { unwrap :: [Glob FilePath]
+  }
+  deriving stock (Eq)
+  deriving newtype (HasCodec, Show)
 
 copyFilesParser :: Parser CopyFiles
 copyFilesParser =
   setting
-    [ help
-        $ unpack
-        $ unlines
-          [ "Files to include into restyling context"
-          ]
+    [ help "Files to include into restyling context"
     , example
         $ unpack
         $ unlines
           [ "# copy the entire current directory (default)"
-          , "copy_files: null"
+          , "copy_files: [\".\"]"
           ]
     , example
         $ unpack
@@ -75,7 +57,7 @@ copyFilesParser =
           , "  - .prettierrc"
           ]
     , conf "copy_files"
-    , value CopyAll
+    , value $ CopyFiles ["."]
     ]
 
 copyCodeFiles
@@ -97,15 +79,20 @@ copyCodeFiles
   -> m ()
 copyCodeFiles remoteFiles paths vol = do
   asks getCopyFiles >>= \case
-    CopyAll -> do
-      logDebug "Copying all of . into code volume"
-      dockerCpDot
-    CopyNone -> do
+    CopyFiles [] -> do
       logDebug "Copying no extra paths into code volume"
       dockerCpAll alwaysPaths
-    CopyOnly gs -> do
+    CopyFiles ["."] -> do
+      logDebug "Copying all of . into code volume"
+      dockerCpDot
+    CopyFiles gs | "." `elem` gs -> do
+      logDebug
+        $ "Copying all of . into code volume (ignoring all other globs)"
+        :# ["globs" .= gs]
+      dockerCpDot
+    CopyFiles gs -> do
       logDebug $ "Copying explicit paths into code volume" :# ["globs" .= gs]
-      ps <- globAnyInCurrentDirectory $ toList gs
+      ps <- globAnyInCurrentDirectory gs
       dockerCpAll $ alwaysPaths <> ps
  where
   alwaysPaths = map (.path) remoteFiles <> paths
