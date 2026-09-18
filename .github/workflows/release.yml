@@ -131,7 +131,7 @@ jobs:
 
       - name: Generate docs to _site
         run: |
-          just docs
+          just docs-nroff docs-html
           mkdir -p _site/man-pages
           cp -v doc/*.html _site/man-pages/
 
