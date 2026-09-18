@@ -149,7 +149,7 @@ jobs:
       - name: Create _site
         run: |
           mkdir -p _site/man-pages
-          cp -v doc/*.html _site/man-pages/
+          cp -v doc/*.css doc/*.html _site/man-pages/
 
       - uses: actions/upload-pages-artifact@v3
         with:
