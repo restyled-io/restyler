@@ -55,25 +55,15 @@ spec = do
       config.restylersManifest `shouldBe` Just $(mkAbsFile "/foo/bar/x.yaml")
 
   context "configuration" $ do
-    -- This test is a maintainence burden, in that when config/default.yaml
-    -- changes, we need a corresponding update here. But it ensures we don't
-    -- unintentionally break loading the defaults.
+    -- This test is a maintainence burden, in that when defaults change, we need
+    -- a corresponding update here. But it ensures we don't unintentionally
+    -- break loading the defaults.
     it "uses defined defaults" $ do
       config <- loadTestConfig ["Foo.hs"] [] []
 
       -- config.logSettings `shouldBe` _
       config.enabled `shouldBe` True
-      config.exclude
-        `shouldBe` [ "**/*.patch"
-                   , "**/.git/**/*"
-                   , "**/Gemfile.lock"
-                   , "**/node_modules/**/*"
-                   , "**/package-lock.json"
-                   , "**/pnpm-lock.json"
-                   , "**/stack*.yaml.lock"
-                   , "**/vendor/**/*"
-                   , "**/yarn.lock"
-                   ]
+      config.exclude `shouldBe` defaultExcludes
       config.dryRun `shouldBe` False
       config.failOnDifferences `shouldBe` False
       config.commitTemplate `shouldBe` "Restyled by ${restyler.name}\n"
