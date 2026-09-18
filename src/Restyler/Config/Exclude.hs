@@ -60,7 +60,7 @@ defaultExcludes =
   , "**/Gemfile.lock"
   , "**/node_modules/**/*"
   , "**/package-lock.json"
-  , "**/pnpm-lock.json"
+  , "**/pnpm-lock.yaml"
   , "**/stack*.yaml.lock"
   , "**/vendor/**/*"
   , "**/yarn.lock"
