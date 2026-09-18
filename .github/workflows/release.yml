@@ -113,31 +113,44 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
+      - name: Install mandoc
+        run: sudo apt-get install -y mandoc
+
       - uses: actions/download-artifact@v4
         with:
           name: linux-binaries
-
       - run: |
           tar xzf restyler-*.tar.gz
           mkdir -p ./bin
           sudo mv -v restyler-*/restyle /usr/local/bin
-
-      - uses: extractions/setup-just@v4
 
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             doc
 
-      - name: Generate docs to _site
+      - name: Generate nroff documenation
         run: |
-          just docs-nroff docs-html
+          restyle __render-docs-man1__ > doc/restyle.1
+          restyle __render-docs-man5__ > doc/restyled.yaml.5
+
+      - name: Generate HTML sources to _site
+        working-directory: doc
+        run: |
+          mandoc -T html \
+              -O 'man=./%N.%S.html;https://manpages.org/%N.%S,style=./style.css' \
+              < restyle.1 \
+              > restyle.1.html
+          mandoc -T html \
+              -O 'man=./%N.%S.html;https://manpages.org/%N.%S,style=./style.css' \
+              < restyled.yaml.5 \
+              > restyled.yaml.5.html
+
           mkdir -p _site/man-pages
           cp -v doc/*.html _site/man-pages/
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-
       - id: deployment
         uses: actions/deploy-pages@v4
