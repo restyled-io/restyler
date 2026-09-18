@@ -9,6 +9,7 @@
 module Restyler.Config.Exclude
   ( HasExclude (..)
   , excludeParser
+  , defaultExcludes
   ) where
 
 import Restyler.Prelude
@@ -18,6 +19,9 @@ import Restyler.Config.Glob
 
 class HasExclude env where
   getExclude :: env -> [Glob FilePath]
+
+instance HasExclude [Glob FilePath] where
+  getExclude = id
 
 excludeParser :: Parser [Glob FilePath]
 excludeParser =
@@ -36,17 +40,7 @@ excludeParser =
       , name "exclude"
       , reader $ commaSeparatedList str
       , metavar "GLOB[,GLOB]"
-      , value
-          [ "**/*.patch"
-          , "**/.git/**/*"
-          , "**/Gemfile.lock"
-          , "**/node_modules/**/*"
-          , "**/package-lock.json"
-          , "**/pnpm-lock.json"
-          , "**/stack*.yaml.lock"
-          , "**/vendor/**/*"
-          , "**/yarn.lock"
-          ]
+      , value defaultExcludes
       ]
     <*> setting
       [ help "Exclude paths matching the given globs (in addition to defaults)"
@@ -58,3 +52,16 @@ excludeParser =
       , conf "also_exclude"
       , value []
       ]
+
+defaultExcludes :: [Glob FilePath]
+defaultExcludes =
+  [ "**/*.patch"
+  , "**/.git/**/*"
+  , "**/Gemfile.lock"
+  , "**/node_modules/**/*"
+  , "**/package-lock.json"
+  , "**/pnpm-lock.json"
+  , "**/stack*.yaml.lock"
+  , "**/vendor/**/*"
+  , "**/yarn.lock"
+  ]

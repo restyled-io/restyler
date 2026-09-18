@@ -15,6 +15,7 @@ module Restyler.Restyler.RunSpec
 import Restyler.Prelude
 
 import Path (relfile)
+import Restyler.Config.Exclude
 import Restyler.Config.Interpreter
 import Restyler.Restyler
 import Restyler.Restyler.Run
@@ -45,3 +46,16 @@ spec = withSimpleTestApp $ do
           (const $ pure . Just)
 
       filtered `shouldBe` Just ([a, b] :| [[a]])
+
+  describe "removeExcluded" $ do
+    context "defaults" $ do
+      it "excludes pnpm-lock.yaml" $ do
+        ps <- flip runReaderT defaultExcludes $ do
+          removeExcluded
+            [ [relfile|pnpm-lock.yaml|]
+            , [relfile|sub/pnpm-lock.yaml|]
+            , [relfile|sub/sub/pnpm-lock.yaml|]
+            , [relfile|other.txt|]
+            ]
+
+        ps `shouldBe` [[relfile|other.txt|]]
