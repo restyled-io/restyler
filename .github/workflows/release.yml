@@ -134,7 +134,7 @@ jobs:
           restyle __render-docs-man1__ > doc/restyle.1
           restyle __render-docs-man5__ > doc/restyled.yaml.5
 
-      - name: Generate HTML sources to _site
+      - name: Generate HTML documentation
         working-directory: doc
         run: |
           mandoc -T html \
@@ -146,6 +146,8 @@ jobs:
               < restyled.yaml.5 \
               > restyled.yaml.5.html
 
+      - name: Create _site
+        run: |
           mkdir -p _site/man-pages
           cp -v doc/*.html _site/man-pages/
 
