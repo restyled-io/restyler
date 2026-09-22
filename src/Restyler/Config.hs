@@ -58,7 +58,6 @@ data Config = Config
   , restrictions :: Restrictions
   , commitTemplate :: CommitTemplate
   , noCommit :: Bool
-  , noClean :: Bool
   , logSettings :: LogSettingsOption
   , githubActions :: Bool
   , pullRequestJson :: Maybe (Path Abs File)
@@ -97,7 +96,7 @@ configParser sources =
     restrictions <- subConfig_ "docker" $ subAll "restyler" restrictionsParser
     commitTemplate <- commitTemplateParser
     noCommit <- subConfig_ "git" noCommitParser
-    noClean <- subConfig_ "git" noCleanParser
+    _noClean <- subConfig_ "git" noCleanParser
     logSettings <- subConfig_ "logging" logSettingsOptionParser
     githubActions <-
       setting

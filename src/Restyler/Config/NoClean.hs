@@ -14,14 +14,9 @@ import Restyler.Prelude
 
 import OptEnvConf
 
-noCleanParser :: Parser Bool
+-- | Unused, parsed to avoid usage-error
+noCleanParser :: Parser ()
 noCleanParser =
-  not
-    <$> withDefault
-      False
-      ( yesNoSwitch
-          [ help "Unused"
-          , name "clean"
-          , hidden
-          ]
-      )
+  void $ (,)
+    <$> optional (setting [switch (), long "clean", hidden])
+    <*> optional (setting [switch (), long "no-clean", hidden])
