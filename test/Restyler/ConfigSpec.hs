@@ -80,7 +80,6 @@ spec = do
       -- config.hostDirectory `shouldBe` _
       config.imageCleanup `shouldBe` False
       config.noCommit `shouldBe` True
-      config.noClean `shouldBe` True
       config.noPull `shouldBe` False
       config.restrictions
         `shouldBe` Restrictions
@@ -147,7 +146,6 @@ spec = do
       -- config.hostDirectory `shouldBe` _
       config.imageCleanup `shouldBe` True
       config.noCommit `shouldBe` True
-      config.noClean `shouldBe` True
       config.noPull `shouldBe` True
       config.restrictions
         `shouldBe` Restrictions
