@@ -9,7 +9,7 @@
 .Sh DESCRIPTION
 {{description}}
 .Sh FILES
-.Bl -tag -width Ds
+.Bl -tag -width ".restyled.yaml" -compact
 .It Pa .restyled.yaml
 Configuration for Restyled, see
 .Xr restyled.yaml 5
