@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
+
 -- |
 --
 -- Module      : Restyler.Docs
@@ -14,28 +16,29 @@ where
 
 import Restyler.Prelude
 
-import Mdoc.Gen
+import Mdoc
+import Mdoc.Template qualified as Template
 import OptEnvConf.Mdoc
-import Restyler.Config (configParser, configPaths)
+import Restyler.Config (configParser)
 
 data DocsPage = Restyle1 | RestyledYaml5
 
 renderDocsPage :: DocsPage -> IO ()
-renderDocsPage =
-  go . \case
-    Restyle1 ->
-      genMan1Template
-        (ManTemplateFile "doc/restyle.1.template")
-        "restyle"
-        "restyle local files"
-    RestyledYaml5 ->
-      genMan5
-        "restyled.yaml"
-        "restyled configuration file"
-        $ intercalate ", " configPaths
- where
-  go :: (ManData -> IO Mdoc) -> IO ()
-  go f = do
-    mdoc <- f $ getManData $ configParser []
-    putDoc ColorAuto stdout $ prettyMdoc mdoc
-    exitSuccess
+renderDocsPage dp = do
+  let page = getPage (configParser [])
+
+  mdoc <- case dp of
+    Restyle1 -> do
+      t <- Template.custom "doc/restyle.1.mustache"
+      page
+        & name "restyle" "restyle local files"
+        & renderTemplateThrow t
+    RestyledYaml5 -> do
+      -- TODO: add configPaths
+      t <- Template.custom "doc/restyled.yaml.5.mustache"
+      page
+        & name "restyled.yaml" "restyled configuration file"
+        & renderTemplateThrow t
+
+  putMdoc mdoc
+  exitSuccess

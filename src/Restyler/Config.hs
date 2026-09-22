@@ -66,15 +66,18 @@ data Config = Config
   }
 
 parseConfig :: IO Config
-parseConfig = runParser Pkg.version "Restyle local files" $ configParser configPaths
+parseConfig =
+  runParser Pkg.version "Restyle local files"
+    $ configParser
+    $ toList configPaths
 
-configPaths :: [FilePath]
+configPaths :: NonEmpty FilePath
 configPaths =
-  [ ".restyled.yaml"
-  , ".restyled.yml"
-  , ".github/restyled.yaml"
-  , ".github/restyled.yml"
-  ]
+  ".restyled.yaml"
+    :| [ ".restyled.yml"
+       , ".github/restyled.yaml"
+       , ".github/restyled.yml"
+       ]
 
 configParser :: [FilePath] -> Parser Config
 configParser sources =
