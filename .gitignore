@@ -6,4 +6,4 @@
 
 doc/*
 !doc/style.css
-!doc/*.template
+!doc/*.mustache
