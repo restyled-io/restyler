@@ -34,8 +34,12 @@ excludeParser =
               $ "Exclude paths matching the given globs (instead of defaults)"
               <> "\nBy default, we ignore directories that are often checked-in"
               <> " but rarely represent project code."
-          , example "# disable built-in excludes"
-          , example "exclude: []"
+          , example
+              $ unpack
+              $ unlines
+                [ "# disable built-in excludes"
+                , "exclude: []"
+                ]
           , option
           , name "exclude"
           , reader $ commaSeparatedList str
